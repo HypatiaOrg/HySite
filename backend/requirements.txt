@@ -1,0 +1,17 @@
+# Toml is part of the part of the Python standard libray after python 3.11
+toml
+# absolutely required for core functions
+numpy
+matplotlib
+astropy
+astroquery
+pandas
+tables
+pymongo==3.12.3
+mongoengine
+python-dotenv
+# Required for the web interface
+django>=5.0.3
+djongo
+# Caleb Wheeler's data harvesting repositoryastropy
+# astroquery
