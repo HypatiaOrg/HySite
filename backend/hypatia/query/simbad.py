@@ -27,7 +27,7 @@ def count_wrapper(func):
         simbad_count += 1
         print(f"{simbad_name:16} Simbad Query Count: {simbad_count}")
         results = func(simbad_name)
-        if simbad_count % count_per_big_sleep == 0:
+        if count_per_big_sleep <= simbad_count:
             print(f"\nSimbad Query Count: {simbad_count}\n")
             print(f"Sleeping for {big_sleep_seconds} seconds...\n")
             simbad_count = 0
@@ -44,10 +44,10 @@ def count_wrapper(func):
 def query_simbad_star_names(simbad_name: str) -> list[str] or None:
     raw_results = AQSimbad.query_objectids(simbad_name)
     if raw_results is None:
-        print(f"  No star Name results for {simbad_name} ")
+        print(f"  No star name results for {simbad_name} ")
         return None
     else:
-        print(f"  star Name results for {simbad_name} ")
+        print(f"  Found star name results for {simbad_name} ")
         # we are expecting a table with a single column of star names
         names_list = list(raw_results.columns["ID"])
     return names_list

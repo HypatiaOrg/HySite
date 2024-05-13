@@ -6,6 +6,7 @@ from hypatia.database.collect import StarCollection, indexed_name_types
 
 no_simbad_reset_time_seconds = 60 * 60 * 24 * 365.24  # 1 year
 cache_names = {}
+cache_docs = {}
 star_collection = StarCollection(collection_name="stars")
 
 
@@ -50,12 +51,14 @@ def uniquify_star_names(star_names: list[str], simbad_main_id: str) -> list[str]
     return sorted(unique_list)
 
 
-def ask_simbad(test_name: str) -> str or None:
+def ask_simbad(test_name: str, original_name: str = None) -> str or None:
     has_simbad_name, simbad_main_id, star_names_list, star_data = query_simbad_star(test_name)
     if has_simbad_name:
         # add this name to the name cache
         cache_names[test_name.lower()] = simbad_main_id
         star_names_list.append(test_name)
+        if original_name is not None:
+            star_names_list.append(original_name)
         # uniquify the star names, and this will update the cache
         star_names = uniquify_star_names(star_names_list, simbad_main_id)
         # asemble the record to add to the database
@@ -95,14 +98,20 @@ def no_simbad_add_name(name: str, origin: str) -> None:
 def interactive_name_menu(test_name: str = '', test_origin: str = 'unknown',  max_tries: int = 5) -> str:
     count = 0
     user_response = None
+    original_test_name = None
     while count < max_tries:
         if user_response in {'no-simbad', '2'}:
-            no_simbad_add_name(name=test_name, origin=test_origin)
+            if original_test_name is None:
+                original_test_name = test_name
+            no_simbad_add_name(name=original_test_name, origin=test_origin)
             return test_name
         elif user_response is not None:
             test_name = user_response
         if test_name != '':
-            simbad_main_id = ask_simbad(test_name)
+            if user_response is None:
+                # we want to save this name to make sure we do not query it when it is seen again.
+                original_test_name = test_name
+            simbad_main_id = ask_simbad(test_name, original_test_name)
             if simbad_main_id is not None:
                 return simbad_main_id
         print(f"This star's test_name: {test_name} origin: {test_origin}")
@@ -152,4 +161,4 @@ def get_star_data(test_name: str, test_origin: str = "unknown") -> dict[str, any
 
 if __name__ == "__main__":
     # star_collection.reset()
-    get_main_id("wasp-173")
+    get_main_id("wasp-173 b")
