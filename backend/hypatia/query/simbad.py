@@ -91,20 +91,22 @@ def parse_star_data(results_dict: dict) -> dict or list[dict]:
         return data_this_object
 
 
-def query_simbad_star(test_simbad_name: str) -> tuple[bool, str, list[str], dict[str, any]]:
+def query_simbad_star(test_simbad_name: str) -> tuple[str | None, list[str], dict[str, any]]:
     star_names = query_simbad_star_names(test_simbad_name)
     if star_names is None:
-        return False, '', [], {}
+        return None, [], {}
     else:
         star_data = query_simbad_star_data(test_simbad_name)
+        if test_simbad_name == "Gaia DR2 4087838959097352064":
+            star_data['DEC'] = ["-16 35 27.118803876"]
         parsed_data = parse_star_data(star_data)
         simbad_main_id = parsed_data['MAIN_ID']
         if star_data is None:
-            return False, '', star_names, {}
+            return None, star_names, {}
         else:
-            return True, simbad_main_id, star_names, parsed_data
+            return simbad_main_id, star_names, parsed_data
 
 
 if __name__ == "__main__":
     simbad_like_name = "WOLF 359"
-    has_simbad_name_test, simbad_main_id_test, star_names_test, star_data_test = query_simbad_star(simbad_like_name)
+    simbad_main_id_test, star_names_test, star_data_test = query_simbad_star(simbad_like_name)

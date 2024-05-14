@@ -179,17 +179,9 @@ class StarCollection(BaseCollection):
             self.collection_add_index(index_name=name_type, ascending=True, unique=False)
         self.collection_add_index(index_name='aliases', ascending=True, unique=False)
 
-    def add_or_update(self, doc: dict[str, list | str | float]) -> pymongo.results.InsertOneResult:
-        main_id = doc["_id"]
-        cursor = self.collection.find({"_id": main_id})
-        found_doc = next(cursor, None)
-        if found_doc:
-            total_aliases = sorted(set(found_doc["aliases"] + doc["aliases"]))
-            doc['aliases'] = total_aliases
-            doc['timestamp'] = time.time()
-            return self.collection.replace_one({"_id": main_id}, doc)
-        else:
-            return self.add_one(doc)
+    def update(self, main_id: str, doc: dict[str, list | str | float]) -> pymongo.results.InsertOneResult:
+        return self.collection.replace_one({"_id": main_id}, doc)
+
 
     def find_name_match(self, name: str) -> dict | None:
         result = self.collection.find_one({'aliases': {"$in": [name]}})

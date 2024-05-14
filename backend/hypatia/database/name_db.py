@@ -37,6 +37,36 @@ def parse_indexed_name(star_names: list[str]) -> dict[str, str]:
     return indexed_names
 
 
+def set_default_main_id(simbad_main_id: str) -> str:
+    """
+    Add the SIMBAD main_id to the cache, however if the lowercase version of the main_id is already in the cache,
+    then, we return the main_id that was found last time, which might have a different capitalization
+    from the SIMBAD database.
+    """
+    return cache_names.setdefault(simbad_main_id.lower(), simbad_main_id)
+
+
+def set_cache_data(simbad_main_id: str, star_data: dict[str, any] = None, star_name_aliases: set[str] = None) -> None:
+    # make sure the main_id is in the cache
+    simbad_main_id = set_default_main_id(simbad_main_id)
+    if star_data is not None:
+        cache_docs[simbad_main_id] = star_data
+    if star_name_aliases is not None:
+        if not isinstance(star_name_aliases, set):
+            star_name_aliases = set(star_name_aliases)
+        # insert the key, with the specified value if it does not exist
+        [cache_names.setdefault(alias.lower(), simbad_main_id) for alias in star_name_aliases]
+
+
+def get_all_star_docs(do_cache_update: bool = True) -> dict[str, any]:
+    all_star_docs = star_collection.find_all()
+    if do_cache_update:
+        for one_doc in all_star_docs:
+            simbad_main_id = one_doc["_id"]
+            set_cache_data(simbad_main_id=simbad_main_id, star_data=one_doc, star_name_aliases=set(one_doc["aliases"]))
+    return {one_doc["_id"]: one_doc for one_doc in all_star_docs}
+
+
 def uniquify_star_names(star_names: list[str], simbad_main_id: str) -> list[str]:
     """Uniquify the star names in the list and update the cache."""
     unique_set_lower = set()
@@ -46,45 +76,20 @@ def uniquify_star_names(star_names: list[str], simbad_main_id: str) -> list[str]
             unique_set_lower.add(name.lower())
             unique_list.append(name)
     # update all the aliases for this star
-    cache_update = {alias.lower(): simbad_main_id for alias in unique_set_lower}
-    cache_names.update(cache_update)
+    set_cache_data(simbad_main_id=simbad_main_id, star_name_aliases=unique_set_lower)
     return sorted(unique_list)
 
 
-def ask_simbad(test_name: str, original_name: str = None) -> str or None:
-    has_simbad_name, simbad_main_id, star_names_list, star_data = query_simbad_star(test_name)
-    if has_simbad_name:
-        # add this name to the name cache
-        cache_names[test_name.lower()] = simbad_main_id
-        star_names_list.append(test_name)
-        if original_name is not None:
-            star_names_list.append(original_name)
-        # uniquify the star names, and this will update the cache
-        star_names = uniquify_star_names(star_names_list, simbad_main_id)
-        # asemble the record to add to the database
-        star_record = {
-            "_id": simbad_main_id,
-            "attr_name": get_attr_name(simbad_main_id),
-            "origin": "simbad",
-            "timestamp": time.time(),
-            "ra": star_data['ra'],
-            "dec": star_data['dec'],
-            "hmsdms": star_data['hmsdms'],
-            **parse_indexed_name(star_names),
-            "aliases": star_names,
-        }
-        # add the main_id to the that database table
-        star_collection.add_or_update(doc=star_record)
-        return simbad_main_id
-    else:
-        return None
+def get_simbad_main_id(test_name: str) -> str | None:
+    """Get the main_id for a star name from the cache, return None if the name is not in the cache."""
+    return cache_names.get(test_name.lower(), None)
 
 
 def no_simbad_add_name(name: str, origin: str) -> None:
     # asemble the record to add to the database
     star_names_list = [name]
     star_record = {
-        "_id": name,
+        "_id": get_main_id(name, test_origin=origin),
         "attr_name": get_attr_name(name),
         "origin": origin,
         "timestamp": time.time(),
@@ -92,7 +97,74 @@ def no_simbad_add_name(name: str, origin: str) -> None:
         "aliases": star_names_list,
     }
     # add the main_id to the that database table
-    star_collection.add_or_update(doc=star_record)
+    star_collection.add_one(doc=star_record)
+
+
+def format_simbad_star_record(simbad_main_id: str, star_data: dict[str, any], star_names: list[str]) -> dict[str, any]:
+    return {
+        "_id": simbad_main_id,
+        "attr_name": get_attr_name(simbad_main_id),
+        "origin": "simbad",
+        "timestamp": time.time(),
+        "ra": star_data['ra'],
+        "dec": star_data['dec'],
+        "hmsdms": star_data['hmsdms'],
+        **parse_indexed_name(star_names),
+        "aliases": star_names,
+    }
+
+
+def get_star_data_by_main_id(main_id: str, no_cache: bool = False) -> dict[str, any]:
+    if no_cache:
+        return star_collection.find_by_id(find_id=main_id)
+    cache_doc = cache_docs.get(main_id, None)
+    if cache_doc is None:
+        cache_doc = star_collection.find_by_id(find_id=main_id)
+        cache_docs[main_id] = cache_doc
+    return cache_doc
+
+
+def ask_simbad(test_name: str, original_name: str = None) -> str or None:
+    # query SIMBAD for the star data
+    simbad_main_id_found, star_names_list, star_data = query_simbad_star(test_name)
+    # check if the star data was found
+    if simbad_main_id_found is None:
+        # no star data was found from SIMBAD
+        return None
+    # we need to update the cache and the database with the new to skip this step next time
+    update_names = {test_name}
+    if original_name is not None:
+        update_names.add(original_name)
+    # is this a new record or an update?
+    simbad_main_id_existing = get_simbad_main_id(simbad_main_id_found)
+    if simbad_main_id_existing is None:
+        # create a cache and database records for this star
+        # check for capitalization differences in the main_id
+        simbad_main_id = set_default_main_id(simbad_main_id_found)
+        # uniquify the star names, and this will update the cache
+        star_names = uniquify_star_names(star_names_list + list(update_names), simbad_main_id)
+        star_record = format_simbad_star_record(simbad_main_id, star_data, star_names)
+        # update the database with the new data
+        star_collection.add_one(doc=star_record)
+        # update the cache with the new data
+        set_cache_data(simbad_main_id=simbad_main_id, star_data=star_data, star_name_aliases=set(star_names))
+        # return the main_id
+        return simbad_main_id
+    # get the existing record from the cache/database
+    star_record_existing = get_star_data_by_main_id(simbad_main_id_existing)
+    # update the cache and the database with the new data
+    simbad_main_id = simbad_main_id_existing
+    # uniquify the star names, and this will update the cache
+    star_names = uniquify_star_names(star_record_existing['aliases'] + star_names_list + list(update_names),
+                                     simbad_main_id)
+    star_record = format_simbad_star_record(simbad_main_id, star_data, star_names)
+    # update the database with the new data
+    # this will replace the existing record with the new one in the cache
+    star_record_existing.update(star_record)
+    set_cache_data(simbad_main_id=simbad_main_id, star_data=star_data, star_name_aliases=set(star_names))
+    # add the main_id to the that database table
+    star_collection.update(main_id=simbad_main_id, doc=star_record)
+    return simbad_main_id
 
 
 def interactive_name_menu(test_name: str = '', test_origin: str = 'unknown',  max_tries: int = 5) -> str:
@@ -155,9 +227,13 @@ def get_main_id(test_name, test_origin="unknown") -> str:
     return interactive_name_menu(test_name=test_name, test_origin=test_origin)
 
 
-def get_star_data(test_name: str, test_origin: str = "unknown") -> dict[str, any]:
-    return star_collection.find_by_id(find_id=get_main_id(test_name, test_origin))
+def get_star_data(test_name: str, test_origin: str = "unknown", no_cache: bool = False) -> dict[str, any]:
+    main_id = get_main_id(test_name, test_origin)
+    return get_star_data_by_main_id(main_id, no_cache)
 
+
+# preloading the cache with all the star data
+get_all_star_docs()
 
 if __name__ == "__main__":
     # star_collection.reset()
