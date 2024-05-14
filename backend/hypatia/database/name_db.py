@@ -46,11 +46,11 @@ def set_default_main_id(simbad_main_id: str) -> str:
     return cache_names.setdefault(simbad_main_id.lower(), simbad_main_id)
 
 
-def set_cache_data(simbad_main_id: str, star_data: dict[str, any] = None, star_name_aliases: set[str] = None) -> None:
+def set_cache_data(simbad_main_id: str, star_record: dict[str, any] = None, star_name_aliases: set[str] = None) -> None:
     # make sure the main_id is in the cache
     simbad_main_id = set_default_main_id(simbad_main_id)
-    if star_data is not None:
-        cache_docs[simbad_main_id] = star_data
+    if star_record is not None:
+        cache_docs[simbad_main_id] = star_record
     if star_name_aliases is not None:
         if not isinstance(star_name_aliases, set):
             star_name_aliases = set(star_name_aliases)
@@ -63,7 +63,8 @@ def get_all_star_docs(do_cache_update: bool = True) -> dict[str, any]:
     if do_cache_update:
         for one_doc in all_star_docs:
             simbad_main_id = one_doc["_id"]
-            set_cache_data(simbad_main_id=simbad_main_id, star_data=one_doc, star_name_aliases=set(one_doc["aliases"]))
+            set_cache_data(simbad_main_id=simbad_main_id, star_record=one_doc,
+                           star_name_aliases=set(one_doc["aliases"]))
     return {one_doc["_id"]: one_doc for one_doc in all_star_docs}
 
 
@@ -147,7 +148,7 @@ def ask_simbad(test_name: str, original_name: str = None) -> str or None:
         # update the database with the new data
         star_collection.add_one(doc=star_record)
         # update the cache with the new data
-        set_cache_data(simbad_main_id=simbad_main_id, star_data=star_data, star_name_aliases=set(star_names))
+        set_cache_data(simbad_main_id=simbad_main_id, star_record=star_record, star_name_aliases=set(star_names))
         # return the main_id
         return simbad_main_id
     # get the existing record from the cache/database
@@ -161,7 +162,7 @@ def ask_simbad(test_name: str, original_name: str = None) -> str or None:
     # update the database with the new data
     # this will replace the existing record with the new one in the cache
     star_record_existing.update(star_record)
-    set_cache_data(simbad_main_id=simbad_main_id, star_data=star_data, star_name_aliases=set(star_names))
+    set_cache_data(simbad_main_id=simbad_main_id, star_record=star_record, star_name_aliases=set(star_names))
     # add the main_id to the that database table
     star_collection.update(main_id=simbad_main_id, doc=star_record)
     return simbad_main_id
