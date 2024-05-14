@@ -17,7 +17,7 @@ def num_format(a_string):
         try:
             return float(a_string)
         except ValueError:
-            return a_string
+            return a_string.strip('\"')
 
 
 def get_table_data(filename, delimiter=',', remove_str=None):

@@ -1,5 +1,4 @@
 import time
-from typing import List
 from urllib.request import urlretrieve
 
 from hypatia.load.table_read import row_dict
@@ -9,10 +8,13 @@ from hypatia.config import (exoplanet_archive_filename, nea_exo_star_name_column
                             nea_unphysical_if_zero_params, nea_requested_data_types_default)
 
 
+nea_exo_star_name_columns_set = set(nea_exo_star_name_columns)
+
+
 class ExoPlanet:
     def __init__(self, exo_data):
         [setattr(self, planet_param, exo_data[planet_param])
-         for planet_param in set(exo_data.keys()) - nea_exo_star_name_columns
+         for planet_param in set(exo_data.keys()) - nea_exo_star_name_columns_set
          if exo_data[planet_param] != ""
          and not (exo_data[planet_param] == 0 and planet_param in nea_unphysical_if_zero_params)
          and not (planet_param == "pl_orbeccen" and exo_data[planet_param] == 0 and exo_data["pl_orbeccen"] == 0)]
@@ -31,19 +33,20 @@ class ExoPlanetHost:
             self.planet_letters.add(pl_letter)
 
         # extract the star's names from the Exoplanet class and add those attributes to this class
-        star_name_types = set()
         for planet_letter in self.planet_letters:
-            star_name_types = nea_exo_star_name_columns & set(exo_planets_dict[planet_letter].keys())
+            star_name_types = nea_exo_star_name_columns_set & set(exo_planets_dict[planet_letter].keys())
             # these names are the small across all the exoplanet letters.
+            for exo_star_name in star_name_types:
+                if exo_planets_dict[planet_letter][exo_star_name] != "":
+                    self.simbad_doc = get_star_data(exo_planets_dict[planet_letter][exo_star_name], test_origin="nea")
+                    self.main_star_id = self.simbad_doc["_id"]
+                    self.main_star_attr = self.simbad_doc["attr_name"]
+                    break
+            else:
+                raise KeyError("No star name found in the exoplanet data.")
+            # only run this loop once
             break
-        for exo_star_name in star_name_types:
-            if exo_planets_dict[planet_letter][exo_star_name] != "":
-                self.simbad_doc = get_star_data(exo_planets_dict[planet_letter][exo_star_name], test_origin="nea")
-                self.main_star_id = self.simbad_doc["_id"]
-                self.main_star_attr = self.simbad_doc["attr_name"]
-                break
-        else:
-            raise KeyError("No star name found in the exoplanet data.")
+
 
         # extract this star's parameters (radius, mass, distance associated errors) and add to this class
         stellar_params = {}
@@ -65,7 +68,7 @@ class ExoPlanetHost:
 
 class AllExoPlanets:
     def __init__(self,
-                 requested_data_types: List[str] = None,
+                 requested_data_types: list[str] = None,
                  refresh_data: bool = True,
                  verbose: bool = True,
                  ref_star_names_from_scratch: bool = True):
@@ -92,22 +95,21 @@ class AllExoPlanets:
         self.single_name_stars = None
         self.multi_name_stars = None
         self.refresh_simbad_ref_data = False
-        raw_exo = row_dict(self.exo_ref_file, key="hostname", delimiter=",", inner_key_remove=True)
+        raw_exo = row_dict(self.exo_ref_file, key="hostname", delimiter=",", inner_key_remove=False)
         self.exo_host_names = set()
-        non_host_names = set(raw_exo.keys) - {"pl_letter"}
+
         data_by_host_name = {}
         for nea_star_name in sorted(raw_exo.keys()):
             nea_row = raw_exo[nea_star_name]
-            pl_letter = raw_exo['pl_letter']
-            data_line_dict = {key: nea_row[key] for key in non_host_names}
+            pl_letter = nea_row['pl_letter']
+            data_line_dict = {key: nea_row[key] for key in set(nea_row.keys()) - {"pl_letter"}}
             if nea_star_name in data_by_host_name:
                 data_by_host_name[nea_star_name][pl_letter] = data_line_dict
             else:
                 data_by_host_name[nea_star_name] = {pl_letter: data_line_dict}
         self.main_id_to_attr = {}
-        for host_name in data_by_host_name.keys():
-            data_by_host_name = data_by_host_name[host_name]
-            exo_host = ExoPlanetHost(data_by_host_name)
+        for host_name, data_this_host in data_by_host_name.items():
+            exo_host = ExoPlanetHost(data_this_host)
             self.exo_host_names.add(exo_host.main_star_id)
             setattr(self, exo_host.main_star_attr, exo_host)
             self.main_id_to_attr[exo_host.main_star_id] = exo_host.main_star_attr
@@ -174,6 +176,6 @@ class AllExoPlanets:
 
 
 if __name__ == "__main__":
-    xo = AllExoPlanets(refresh_data=True, verbose=True, ref_star_names_from_scratch=True)
+    xo = AllExoPlanets(refresh_data=False, verbose=True, ref_star_names_from_scratch=True)
     # xo.inspect()
     xo.load_reference_host_names()
