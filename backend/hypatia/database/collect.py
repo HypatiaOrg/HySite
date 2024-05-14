@@ -182,7 +182,6 @@ class StarCollection(BaseCollection):
     def update(self, main_id: str, doc: dict[str, list | str | float]) -> pymongo.results.InsertOneResult:
         return self.collection.replace_one({"_id": main_id}, doc)
 
-
     def find_name_match(self, name: str) -> dict | None:
         result = self.collection.find_one({'aliases': {"$in": [name]}})
         if result:

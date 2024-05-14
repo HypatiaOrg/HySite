@@ -90,7 +90,7 @@ def no_simbad_add_name(name: str, origin: str) -> None:
     # asemble the record to add to the database
     star_names_list = [name]
     star_record = {
-        "_id": get_main_id(name, test_origin=origin),
+        "_id": name,
         "attr_name": get_attr_name(name),
         "origin": origin,
         "timestamp": time.time(),
@@ -98,7 +98,9 @@ def no_simbad_add_name(name: str, origin: str) -> None:
         "aliases": star_names_list,
     }
     # add the main_id to the that database table
+    print('before')
     star_collection.add_one(doc=star_record)
+    print('after')
 
 
 def format_simbad_star_record(simbad_main_id: str, star_data: dict[str, any], star_names: list[str]) -> dict[str, any]:
