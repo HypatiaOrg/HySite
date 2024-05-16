@@ -84,10 +84,22 @@ def parse_star_data(results_dict: dict) -> dict or list[dict]:
     else:
         data_this_object = {results_key: np.array(results_array_value)[0]
                             for results_key, results_array_value in results_dict.items()}
-        ra_deg, dec_deg, hmsdms = simbad_coord_to_deg(data_this_object["RA"], data_this_object["DEC"])
-        data_this_object["ra"] = ra_deg
-        data_this_object["dec"] = dec_deg
-        data_this_object["hmsdms"] = hmsdms
+        ra_raw, dec_raw = data_this_object["RA"], data_this_object["DEC"]
+        main_id = results_dict["MAIN_ID"][0]
+        if ra_raw == "" and dec_raw == "":
+            # this is a known issue where RA and Dec values are not available on SIMBAD.
+            print(f"    No RA Dec results from the SIMBAD record for {main_id}")
+        else:
+            if dec_raw == "-":
+                url_id = main_id.replace(" ", "+")
+                print(f"Vist the SIMBAD pages for {main_id} at:")
+                print(f"https://simbad.cds.unistra.fr/simbad/sim-basic?Ident={url_id}&submit=SIMBAD+search")
+                print("This is known issue where the DECLINATION value is not available on the API")
+                dec_raw = input("Copy and paste the value here and continue:\n")
+            ra_deg, dec_deg, hmsdms = simbad_coord_to_deg(ra=ra_raw, dec=dec_raw)
+            data_this_object["ra"] = ra_deg
+            data_this_object["dec"] = dec_deg
+            data_this_object["hmsdms"] = hmsdms
         return data_this_object
 
 

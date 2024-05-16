@@ -103,15 +103,16 @@ def no_simbad_add_name(name: str, origin: str) -> None:
     print('after')
 
 
+ra_dec_fields = {"ra", "dec", "hmsdms"}
+
+
 def format_simbad_star_record(simbad_main_id: str, star_data: dict[str, any], star_names: list[str]) -> dict[str, any]:
     return {
         "_id": simbad_main_id,
         "attr_name": get_attr_name(simbad_main_id),
         "origin": "simbad",
         "timestamp": time.time(),
-        "ra": star_data['ra'],
-        "dec": star_data['dec'],
-        "hmsdms": star_data['hmsdms'],
+        **{field: star_data[field] for field in ra_dec_fields if field in star_data.keys()},
         **parse_indexed_name(star_names),
         "aliases": star_names,
     }
