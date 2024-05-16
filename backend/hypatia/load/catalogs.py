@@ -4,10 +4,10 @@ import shutil
 import datetime
 from warnings import warn
 
-from hypatia.tools.elements import element_rank
+from hypatia.database.elements import element_rank
 from hypatia.load.table_read import ClassyReader
 from hypatia.tools.star_names import calc_simbad_name
-from hypatia.database.name_db import get_star_data, get_main_id
+from hypatia.database.simbad.ops import get_star_data, get_main_id
 from hypatia.config import abundance_dir, ref_dir, cat_pickles_dir
 from hypatia.load.solar import SolarNorm, ratio_to_element, un_norm
 

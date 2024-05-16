@@ -1,7 +1,8 @@
 import time
 
-from hypatia.query.simbad import query_simbad_star
-from hypatia.database.collect import StarCollection, indexed_name_types
+from hypatia.tools.exceptions import StarNameNotFound
+from hypatia.database.simbad.query import query_simbad_star
+from hypatia.database.simbad.db import StarCollection, indexed_name_types
 
 
 no_simbad_reset_time_seconds = 60 * 60 * 24 * 365.24  # 1 year
@@ -86,9 +87,19 @@ def get_simbad_main_id(test_name: str) -> str | None:
     return cache_names.get(test_name.lower(), None)
 
 
-def no_simbad_add_name(name: str, origin: str) -> None:
+def no_simbad_add_name(name: str, origin: str, aliases: list[str] = None) -> None:
     # asemble the record to add to the database
-    star_names_list = [name]
+    if aliases is None:
+        aliases = set()
+    else:
+        aliases = set(aliases)
+    if name:
+        aliases.add(name)
+    star_names_list = list(aliases)
+    if not star_names_list:
+        raise ValueError("No names were provided to add to the no-SIMBAD database.")
+    if not name:
+        name = star_names_list[0]
     star_record = {
         "_id": name,
         "attr_name": get_attr_name(name),
@@ -98,9 +109,7 @@ def no_simbad_add_name(name: str, origin: str) -> None:
         "aliases": star_names_list,
     }
     # add the main_id to the that database table
-    print('before')
     star_collection.add_one(doc=star_record)
-    print('after')
 
 
 ra_dec_fields = {"ra", "dec", "hmsdms"}
@@ -171,7 +180,8 @@ def ask_simbad(test_name: str, original_name: str = None) -> str or None:
     return simbad_main_id
 
 
-def interactive_name_menu(test_name: str = '', test_origin: str = 'unknown',  max_tries: int = 5) -> str:
+def interactive_name_menu(test_name: str = '', test_origin: str = 'unknown',  max_tries: int = 5,
+                          aliases: list[str] = None) -> str:
     count = 0
     user_response = None
     original_test_name = None
@@ -179,18 +189,26 @@ def interactive_name_menu(test_name: str = '', test_origin: str = 'unknown',  ma
         if user_response in {'no-simbad', '2'}:
             if original_test_name is None:
                 original_test_name = test_name
-            no_simbad_add_name(name=original_test_name, origin=test_origin)
+            no_simbad_add_name(name=original_test_name, origin=test_origin, aliases=aliases)
             return test_name
         elif user_response is not None:
             test_name = user_response
-        if test_name != '':
+        if test_name == '':
+            if original_test_name is not None:
+                print(f"This star's test_name: {original_test_name} origin: {test_origin}")
+                test_name = original_test_name
+            elif aliases is not None:
+                print(f"This star's names: {' '.join(aliases)} origin: {test_origin}")
+                test_name = aliases[0]
+                original_test_name = test_name
+        else:
             if user_response is None:
                 # we want to save this name to make sure we do not query it when it is seen again.
                 original_test_name = test_name
             simbad_main_id = ask_simbad(test_name, original_test_name)
             if simbad_main_id is not None:
                 return simbad_main_id
-        print(f"This star's test_name: {test_name} origin: {test_origin}")
+            print(f"This star's test_name: {test_name} origin: {test_origin}")
         print(" is not in the database tables and it was not found on SIMBAD.")
         print("Please select an option (or use control-c to exit):")
         print(" 1. Enter a new name to try to query for SIMBAD (default).")
@@ -200,7 +218,7 @@ def interactive_name_menu(test_name: str = '', test_origin: str = 'unknown',  ma
         count += 1
 
 
-def get_main_id(test_name, test_origin="unknown") -> str:
+def get_main_id(test_name: str, test_origin: str = "unknown", allow_interaction: bool = True) -> str:
     # check if the name has been queried this session.
     test_name_lower = test_name.lower()
     if test_name_lower in cache_names:
@@ -228,7 +246,13 @@ def get_main_id(test_name, test_origin="unknown") -> str:
         cache_names.update(cache_update)
         return main_id
     # this needs user intervention to continue
-    return interactive_name_menu(test_name=test_name, test_origin=test_origin)
+    if allow_interaction:
+        return interactive_name_menu(test_name=test_name, test_origin=test_origin)
+    # We will try to query SIMBAD for this star
+    simbad_main_id = ask_simbad(test_name)
+    if simbad_main_id is None:
+        raise StarNameNotFound(f"The star name '{test_name}' {test_origin} was not found in the database.")
+    return simbad_main_id
 
 
 def get_star_data(test_name: str, test_origin: str = "unknown", no_cache: bool = False) -> dict[str, any]:

@@ -10,7 +10,7 @@ This file read-in file for data is tailored to replace the "atpy" packages read-
 """
 
 
-def num_format(a_string):
+def num_format(a_string: str) -> int | float | str:
     try:
         return int(a_string)
     except ValueError:

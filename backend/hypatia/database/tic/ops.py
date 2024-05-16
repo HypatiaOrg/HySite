@@ -1,6 +1,6 @@
-from hypatia.query.tic import query_tic_data
-from hypatia.database.name_db import get_star_data
-from hypatia.database.collect import TICCollection, primary_values
+from hypatia.database.tic.query import query_tic_data
+from hypatia.database.simbad.ops import get_star_data
+from hypatia.database.tic.db import TICCollection, primary_values
 
 
 tic_reference = "TESS Input Catalog"

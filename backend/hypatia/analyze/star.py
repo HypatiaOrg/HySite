@@ -1,5 +1,5 @@
 from hypatia.analyze.abund_cat import CatalogData
-from hypatia.database.name_db import get_attr_name
+from hypatia.database.simbad.ops import get_attr_name
 from hypatia.analyze.stats import ReducedAbundances
 from hypatia.analyze.params import SingleStarParams
 from hypatia.data_structures.object_params import ObjectParams, SingleParam

@@ -1,4 +1,5 @@
 import time
+from urllib.parse import quote_plus
 
 import numpy as np
 
@@ -12,6 +13,11 @@ simbad_count = 0
 count_per_big_sleep = 100
 big_sleep_seconds = 30
 small_sleep_seconds = 1
+
+
+def simbad_url(simbad_name: str) -> str:
+    url_id = quote_plus(simbad_name).replace(" ", "+")
+    return f"https://simbad.cds.unistra.fr/simbad/sim-basic?Ident={url_id}&submit=SIMBAD+search"
 
 
 def simbad_coord_to_deg(ra: str, dec: str) -> tuple[float, float, str]:
@@ -91,9 +97,8 @@ def parse_star_data(results_dict: dict) -> dict or list[dict]:
             print(f"    No RA Dec results from the SIMBAD record for {main_id}")
         else:
             if dec_raw == "-":
-                url_id = main_id.replace(" ", "+")
                 print(f"Vist the SIMBAD pages for {main_id} at:")
-                print(f"https://simbad.cds.unistra.fr/simbad/sim-basic?Ident={url_id}&submit=SIMBAD+search")
+                print(f"{simbad_url(main_id)}")
                 print("This is known issue where the DECLINATION value is not available on the API")
                 dec_raw = input("Copy and paste the value here and continue:\n")
             ra_deg, dec_deg, hmsdms = simbad_coord_to_deg(ra=ra_raw, dec=dec_raw)

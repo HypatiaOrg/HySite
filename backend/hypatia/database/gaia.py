@@ -9,7 +9,7 @@ from astropy.coordinates import SkyCoord, Distance
 
 from hypatia.config import ref_dir
 from hypatia.load.table_read import row_dict
-from hypatia.database.name_db import get_star_data
+from hypatia.database.simbad.ops import get_star_data
 from hypatia.data_structures.object_params import ObjectParams, set_single_param
 
 from hypatia.tools.star_names import star_name_format, StringStarName, StarName

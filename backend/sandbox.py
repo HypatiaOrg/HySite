@@ -11,10 +11,9 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from standard_lib import standard_output
 from hypatia.analyze.stats import autolabel
-from hypatia.config import ref_dir, working_dir
-from hypatia.tools.elements import element_rank
+from hypatia.config import working_dir
+from hypatia.database.elements import element_rank
 
 from hypatia.analyze.sorting import NatCat, load_catalog_query
 from hypatia.analyze.output_star_data import load_pickled_output

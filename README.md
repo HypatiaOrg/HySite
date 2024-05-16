@@ -17,6 +17,6 @@ cd HySite
 
 ## Clone the data repository
 ```bash
-cd backend
+cd backend/hypatia
 git clone https://github.com/HypatiaOrg/HyData
 ```

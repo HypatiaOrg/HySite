@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from hypatia.config import working_dir
-from hypatia.tools.elements import element_rank
+from hypatia.database.elements import element_rank
 
 
 def autolabel(rects):

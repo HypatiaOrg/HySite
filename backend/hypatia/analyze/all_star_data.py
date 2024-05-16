@@ -3,15 +3,15 @@ import datetime
 
 import numpy as np
 
-from hypatia.query.gaia import GaiaLib
-from hypatia.query.nea import AllExoPlanets
+from hypatia.database.gaia import GaiaLib
+from hypatia.database.nea.query import AllExoPlanets
 from hypatia.analyze.star import SingleStar
 from hypatia.config import star_data_output_dir
-from hypatia.tools.elements import element_rank
+from hypatia.database.elements import element_rank
 from hypatia.analyze.stats import StarDataStats
 from hypatia.plots.histograms import simple_hist
 from hypatia.plots.quick_plots import quick_plotter
-from hypatia.database.name_db import get_star_data, get_main_id
+from hypatia.database.simbad.ops import get_star_data, get_main_id
 from hypatia.data_structures.object_params import StarDict, SingleParam
 
 
