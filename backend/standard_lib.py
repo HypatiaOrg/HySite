@@ -4,7 +4,7 @@ import math
 import numpy as np
 
 from hypatia.config import ref_dir, base_dir
-from hypatia.tools.cat_file_ops import CatOps
+from hypatia.database.catalogs.cat_file_ops import CatOps
 from hypatia.database.elements import element_rank
 from hypatia.plots.scatter_hist_hist_plot import histPlot
 from hypatia.analyze.sorting import NatCat, load_catalog_query

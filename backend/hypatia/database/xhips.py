@@ -1,9 +1,15 @@
 import os
 
 from hypatia.config import ref_dir
-from hypatia.load.table_read import row_dict
+from hypatia.tools.table_read import row_dict
+from hypatia.data_structures.object_params import ObjectParams, SingleParam
+
 
 class Xhip:
+    xhip_params = {"RAJ2000", "DECJ2000", "Plx", "e_Plx", "pmRA", "pmDE", "GLon", "Glat", "Dist", "X",
+                   "Y", "Z", "SpType", "RV", "U", "V", "W", "Bmag", "Vmag", "TWOMASS", "Lum", "rSpType", "BV"}
+    rename_dict = {"X": "X_pos", "Y": "Y_pos", "Z": "Z_pos", "U": "U_vel", "V": "V_vel", "W": "W_vel"}
+
     def __init__(self, auto_load=False):
         self.xhip_file_name = os.path.join(ref_dir, "xhip.csv")
         self.ref_data = None
@@ -25,6 +31,25 @@ class Xhip:
         if self.comments is not None:
             self.ref_data["comments"] = self.comments
         self.available_hip_names = set(self.ref_data.keys())
+
+    def get_xhip_data(self, hip_name: str) -> ObjectParams or None:
+        hip_number = int(hip_name.lower().split("hip")[1].strip())
+        if hip_number in self.available_hip_names:
+            xhip_params_dict_before_rename = {param: xhip.ref_data[hip_number][param]
+                                              for param in self.xhip_params
+                                              if param in xhip.ref_data[hip_number].keys()}
+            xhip_params_dict = ObjectParams()
+            rename_keys = set(self.rename_dict.keys())
+            for param_name in xhip_params_dict_before_rename:
+                single_param = SingleParam(value=xhip_params_dict_before_rename[param_name], ref='xhip')
+                if param_name in rename_keys:
+                    xhip_params_dict[self.rename_dict[param_name]] = single_param
+                else:
+                    xhip_params_dict[param_name] = single_param
+            # Update in this way so that existing parameter keys-value pairs are prioritized over new values.
+            return xhip_params_dict
+        return None
+
 
 if __name__ == "__main__":
     xhip = Xhip(auto_load=True)

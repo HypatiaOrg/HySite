@@ -87,10 +87,10 @@ import os
 import sys
 import shutil
 from hypatia.config import working_dir
-from hypatia.load.solar import SolarNorm
+from hypatia.database.catalogs.solar import SolarNorm
 from hypatia.analyze.sorting import NatCat
-from hypatia.tools.cat_file_ops import CatOps
-from hypatia.load.catalogs import get_catalogs
+from hypatia.database.catalogs.cat_file_ops import CatOps
+from hypatia.database.catalogs.catalogs import get_catalogs
 
 # File locations
 new_abundances_dir = os.path.join(working_dir, 'load', "abundance_data", "new_data")

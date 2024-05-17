@@ -2,17 +2,21 @@ import os
 import pickle
 
 from statistics import mean, stdev
-from hypatia.config import ref_dir
+from hypatia.tools.table_read import get_table_data
 from hypatia.tools.star_names import star_name_format
-from hypatia.load.table_read import row_dict, get_table_data
+from hypatia.config import ref_dir, output_products_dir
+from hypatia.data_structures.object_params import ObjectParams, SingleParam
 
 
 # When updating a new Pastel file, change the filename on Line 35 and the delimiter on Line 55.
 # The file needs to have ID, Bmag, Vmag, Jmag, Hmag, Ksmag, Teff, logg, Author, and bibcode which can come from Vizier.
 class Pastel:
+    pastel_dict_names = {"hip", "2mass", 'bd', "hd", "tyc", "cd", "*", "g", "hat", "koi", "k2", "kepler", "v*"}
+    requested_pastel_params = {"logg", "logg_std", "teff", "teff_std", "bmag", "bmag_std", "vmag", "vmag_std", "author"}
+
     def __init__(self, auto_load=False, from_scratch=False):
         self.pastel_file_name = os.path.join(ref_dir, "Pastel20.psv")
-        self.pastel_processed_pickle_file = os.path.join(ref_dir, 'pastel_processes.pkl')
+        self.pastel_processed_pickle_file = os.path.join(output_products_dir, 'pastel_processes.pkl')
         self.pastel_raw = None
         self.pastel_ave = None
         self.pastel_star_names = None
@@ -29,28 +33,28 @@ class Pastel:
         if from_scratch or not os.path.exists(self.pastel_processed_pickle_file):
             self.pastel_ave = {}
             # these names cover the majority of unique names in Pastel
-            pastel_dict_names = {"hip", "2mass", 'bd', "hd", "tyc", "cd", "*", "g", "hat", "koi", "k2", "kepler", "v*"}
             # read in the pastel data from a raw reference file
             self.pastel_raw = get_table_data(self.pastel_file_name, delimiter="|")
             # list all the lines for the same hipparcos names in a dictionary with keys of hipparcos names
             pastel_star_names_to_line_indexes = {}
             self.pastel_star_names = {}
-            for dict_name in pastel_dict_names:
+            for dict_name in self.pastel_dict_names:
                 pastel_star_names_to_line_indexes[dict_name] = {}
                 self.pastel_star_names[dict_name] = set()
             for pastel_index in range(len(self.pastel_raw["ID"])):
                 try:
                     star_type, star_id = star_name_format(self.pastel_raw["ID"][pastel_index])
-                    if star_type in pastel_dict_names:
+                except ValueError:
+                    pass
+                else:
+                    if star_type in self.pastel_dict_names:
                         if star_id in set(pastel_star_names_to_line_indexes[star_type].keys()):
                             pastel_star_names_to_line_indexes[star_type][star_id].append(pastel_index)
                         else:
                             pastel_star_names_to_line_indexes[star_type][star_id] = [pastel_index]
                         self.pastel_star_names[star_type].add(star_id)
-                except ValueError:
-                    pass
             # make a dictionary of the average values per Hipparcos star for each parameters in the pastel file
-            for dict_name in pastel_dict_names:
+            for dict_name in self.pastel_dict_names:
                 self.pastel_ave[dict_name] = {}
                 if "comments" in self.pastel_raw.keys():
                     self.comments = self.pastel_raw['comments']
@@ -84,6 +88,35 @@ class Pastel:
         else:
             pastel_data = pickle.load(open(self.pastel_processed_pickle_file, "rb"))
             (self.pastel_ave, self.pastel_raw, self.pastel_star_names) = pastel_data
+
+    def get_record_from_aliases(self, aliases: list[str]) -> dict | None:
+        found_names = {}
+        for star_name in aliases:
+            for pastel_name_type in self.pastel_dict_names:
+                if star_name.lower().startswith(pastel_name_type):
+                    if not (star_name[0] == "*" and star_name[1] == "*"):
+                        found_names[pastel_name_type] = star_name
+                        break
+        pastel_params_dict = None
+        if found_names:
+            for this_star_name_type, this_star_name in found_names.items():
+                try:
+                    name_type, hash_formatted_id = star_name_format(this_star_name, key=this_star_name_type)
+                except ValueError:
+                    pass
+                else:
+                    if hash_formatted_id in self.pastel_star_names[this_star_name_type]:
+                        found_params = self.requested_pastel_params & \
+                                       set(self.pastel_ave[this_star_name_type][hash_formatted_id].keys())
+                        pastel_params_dict = ObjectParams({param: SingleParam(
+                            value=self.pastel_ave[this_star_name_type][hash_formatted_id][param], ref='Pastel')
+                                                           for param in found_params})
+                        """
+                        No need to keep searching, there will only be star_type, star_id combination for the pastel 
+                        reference data.
+                        """
+                        break
+        return pastel_params_dict
 
 
 if __name__ == "__main__":

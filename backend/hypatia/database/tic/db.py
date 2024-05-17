@@ -1,3 +1,5 @@
+import time
+
 from hypatia.database.collect import BaseCollection
 
 # Tess Input Catalog
@@ -51,6 +53,9 @@ class TICCollection(BaseCollection):
             }
         }
     }
+
+    def create_indexes(self):
+        self.collection_add_index('_id', unique=True)
 
     def set_null_record(self, star_name: str):
         self.collection.insert_one({"_id": star_name, "is_tic": False, "timestamp": time.time()})

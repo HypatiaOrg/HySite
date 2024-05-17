@@ -1,12 +1,13 @@
 import os
 import pickle
 
-from hypatia.load.pastel import Pastel
+from hypatia.database.pastel import Pastel
 from hypatia.database.xhips import Xhip
-from hypatia.load.solar import SolarNorm
+from hypatia.database.catalogs.solar import SolarNorm
 from hypatia.database.gaia import GaiaLib
-from hypatia.load.table_read import row_dict
-from hypatia.load.catalogs import get_catalogs
+from hypatia.tools.table_read import row_dict
+from hypatia.database.catalogs.catalogs import get_catalogs
+from hypatia.database.tic.ops import get_hy_tic_data
 from hypatia.analyze.all_star_data import AllStarData
 from hypatia.analyze.output_star_data import OutputStarData
 from hypatia.data_structures.object_params import SingleParam
@@ -19,10 +20,7 @@ def load_catalog_query():
 
 
 class NatCat:
-    requested_pastel_params = {"logg", "logg_std", "teff", "teff_std", "bmag", "bmag_std", "vmag", "vmag_std", "author"}
-    xhip_params = {"RAJ2000", "DECJ2000", "Plx", "e_Plx", "pmRA", "pmDE", "GLon", "Glat", "Dist", "X",
-                   "Y", "Z", "SpType", "RV", "U", "V", "W", "Bmag", "Vmag", "TWOMASS", "Lum", "rSpType",
-                   "BV"}
+    tic_batch_update_rate = 20
 
     def __init__(self, params_list_for_stats=None, star_types_for_stats=None,
                  catalogs_from_scratch=False, verbose=False, catalogs_verbose=True,
@@ -83,6 +81,11 @@ class NatCat:
         self.stats = self.star_data.stats
         self.star_data.find_available_attributes()
 
+    def __iter__(self):
+        for star_name in sorted(self.star_data.star_names):
+            attr_name = get_star_data(test_name=star_name, test_origin="NatCat.__iter__()")['attr_name']
+            yield self.star_data.__getattribute__(attr_name)
+
     def catalog_data(self):
         if self.verbose:
             print('\nLoading and mapping the stellar abundance data...')
@@ -142,40 +145,19 @@ class NatCat:
         if get_pastel_params:
             if self.pastel.pastel_ave is None:
                 self.pastel.load()
-            pastel_name_types = set(self.pastel.pastel_ave.keys())
-            for reference_star_name in self.star_data.star_names:
-                simbad_doc = get_star_data(test_name=reference_star_name, test_origin="pastel")
-                attr_name = simbad_doc['attr_name']
-                self.star_data.__getattribute__(attr_name).pastel_params(pastel_name_types,
-                                                                         self.pastel, self.requested_pastel_params)
+            for single_star in self:
+                pastel_record = self.pastel.get_record_from_aliases(aliases=single_star.simbad_doc['aliases'])
+                if pastel_record is not None:
+                    single_star.pastel_params(pastel_record)
             if self.verbose:
                 print("  Pastel stellar parameters acquired.")
 
         # Stellar Parameters from the Tess Input Catalog
         if get_tic_params:
-            tic_params_rename = {"mass": "st_mass", "rad": "st_rad"}
-            rename_keys = set(tic_params_rename.keys())
-            self.tic.make_ref_data_look_up_dicts()
-            tic_batch_update = False
-            update_trigger = True
-            for hypatia_handle in sorted(self.star_data.star_names):
-                star_names_dict = self.star_data.__getattribute__(hypatia_handle).star_names_dict
-                if self.tic.new_data_count < self.tic_batch_update_rate + 1:
-                    requested_tic_dict = self.tic.get_object_params(star_names_dict, update_ref=True)
-                else:
-                    requested_tic_dict = self.tic.get_object_params(star_names_dict, update_ref=False)
-                    tic_batch_update = True
-                    if self.tic.new_data_count % self.tic_batch_update_rate == 0:
-                        if update_trigger:
-                            self.tic.update_ref()
-                            update_trigger = False
-                    else:
-                        update_trigger = True
-                if requested_tic_dict:
-                    self.star_data.__getattribute__(hypatia_handle).params.update_params(requested_tic_dict,
-                                                                                         overwrite_existing=False)
-            if tic_batch_update and self.tic.new_tic_data:
-                self.tic.update_ref()
+            for single_star in self:
+                requested_tic = get_hy_tic_data(single_star.star_reference_name)
+                if requested_tic is not None:
+                    single_star.params.update_params(requested_tic, overwrite_existing=False)
             if self.verbose:
                 print("  Tess Input Catalog stellar parameters acquired.")
 
@@ -183,11 +165,12 @@ class NatCat:
         if get_hipparcos_params:
             if self.xhip.ref_data is None:
                 self.xhip.load()
-            rename_dict = {"X": "X_pos", "Y": "Y_pos", "Z": "Z_pos", "U": "U_vel", "V": "V_vel", "W": "W_vel"}
-            available_xhip_ids = set(self.xhip.ref_data.keys())
-            for reference_star_name in self.star_data.star_names:
-                single_star = self.star_data.__getattribute__(reference_star_name)
-                single_star.xhip_params(self.xhip, available_xhip_ids, self.xhip_params, rename_dict)
+            for single_star in self:
+                if "hip" in single_star.simbad_doc.keys():
+                    hip_name = single_star.simbad_doc["hip"]
+                    xhip_params_dict = self.xhip.get_xhip_data(hip_name=hip_name)
+                    if xhip_params_dict is not None:
+                        single_star.xhip_params(xhip_params_dict)
             if self.verbose:
                 print("  X-Hipparcos stellar parameters acquired.")
 

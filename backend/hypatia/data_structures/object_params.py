@@ -52,13 +52,13 @@ class ObjectParams(StarDict):
 class SingleParam(NamedTuple):
     """ Represents all the attributes for a single parameter value."""
     value: Union[float, int, str]
-    err: Optional[Union[float, int, str, tuple]] = None
+    err_low: Optional[Union[float, int, str, tuple]] = None
+    err_high: Optional[Union[float, int, str, tuple]] = None
     ref: Optional[str] = None
     units: Optional[str] = None
-    notes: Optional[str] = None
 
 
-def set_single_param(param_dict=None, value=None, err=None, units=None, ref=None, notes=None):
+def set_single_param(param_dict=None, value=None, err_low=None, err_high=None, units=None, ref=None):
     if param_dict is not None:
         keys = set(param_dict.keys())
         if "value" in keys:
@@ -69,11 +69,11 @@ def set_single_param(param_dict=None, value=None, err=None, units=None, ref=None
                 else:
                     internal_param_dict[param_key] = None
             return SingleParam(value=internal_param_dict["value"],
-                               err=internal_param_dict['err'],
+                               err_low=internal_param_dict['err_low'],
+                               err_high=internal_param_dict['err_high'],
                                units=internal_param_dict['units'],
-                               ref=internal_param_dict['ref'],
-                               notes=internal_param_dict['notes'])
+                               ref=internal_param_dict['ref'])
     elif value is not None:
-        return SingleParam(value=value, err=err, units=units, ref=ref, notes=notes)
+        return SingleParam(value=value, err_low=err_low, err_high=err_high, units=units, ref=ref)
     raise ValueError("A key named 'value' is needed to set a parameter")
 

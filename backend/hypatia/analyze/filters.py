@@ -1,4 +1,4 @@
-from hypatia.load.solar import strip_ionization
+from hypatia.database.catalogs.solar import strip_ionization
 from hypatia.database.elements import all_elements
 
 

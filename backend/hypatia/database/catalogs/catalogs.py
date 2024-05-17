@@ -5,11 +5,11 @@ import datetime
 from warnings import warn
 
 from hypatia.database.elements import element_rank
-from hypatia.load.table_read import ClassyReader
+from hypatia.tools.table_read import ClassyReader
 from hypatia.tools.star_names import calc_simbad_name
 from hypatia.database.simbad.ops import get_star_data, get_main_id
 from hypatia.config import abundance_dir, ref_dir, cat_pickles_dir
-from hypatia.load.solar import SolarNorm, ratio_to_element, un_norm
+from hypatia.database.catalogs.solar import SolarNorm, ratio_to_element, un_norm
 
 
 indicates_mixed_name_types = {"Star", "star", "Stars", "starname", "Starname", "Name", "ID", "Object", "HDBD"}
@@ -54,9 +54,12 @@ def get_catalogs(from_scratch=False, catalogs_file_name=None, local_abundance_di
             cat_data.un_normalize()
 
     else:
-        catalog_dict = {key: pickle.load(open(os.path.join(cat_pickles_dir,
-                                                           key.lower().replace(" ", '')) + ".pkl", "rb"))
-                        for key in catalog_names}
+        catalog_pickle_files = [(catalog_name, os.path.join(cat_pickles_dir, f"{catalog_name.lower().replace(" ", '')}.pkl"))
+                                for catalog_name in catalog_names]
+        catalog_dict = {}
+        for catalog_name, catalog_pickle_file in catalog_pickle_files:
+            catalog_dict[catalog_name] = pickle.load(open(catalog_pickle_file, 'rb'))
+
     return catalog_dict
 
 

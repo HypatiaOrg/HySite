@@ -1,6 +1,9 @@
+import numpy as np
+
 from hypatia.database.tic.query import query_tic_data
 from hypatia.database.simbad.ops import get_star_data
 from hypatia.database.tic.db import TICCollection, primary_values
+from hypatia.data_structures.object_params import ObjectParams, SingleParam
 
 
 tic_reference = "TESS Input Catalog"
@@ -14,11 +17,14 @@ name_preference = ["gaia dr2", "2mass", "tyc", "hip"]
 allowed_names = {name_type for name_type in name_preference}
 
 tic_collection = TICCollection(collection_name="tic", name_col="_id")
+tic_cache = {tic_doc['_id']: tic_doc for tic_doc in tic_collection.find_all()}
 
 
 def get_tic_data(star_name: str) -> dict or None:
     simbad_doc = get_star_data(star_name, test_origin="tic")
     main_star_id = simbad_doc["_id"]
+    if main_star_id in tic_cache.keys():
+        return tic_cache[main_star_id]
     tic_doc = tic_collection.find_by_id(main_star_id)
     if tic_doc:
         if tic_doc['is_tic']:
@@ -39,6 +45,7 @@ def get_tic_data(star_name: str) -> dict or None:
     if tic_dict is None:
         # The query failed to return any data
         tic_collection.set_null_record(main_star_id)
+        print(f"  No TIC data found for main_star_id: {main_star_id}")
         return None
     # parse the TIC data and add it to the local database.
     found_params = set(tic_dict.keys()) & tic_data_wanted
@@ -54,16 +61,43 @@ def get_tic_data(star_name: str) -> dict or None:
         if primary_field in data_params.keys():
             primary_value = data_params[primary_field]
             error_field = primary_values_to_error[primary_field]
-            if error_field in data_params.keys():
-                error_value = data_params[error_field]
-                params_data = {'value': primary_value, 'err': error_value}
-            else:
-                params_data = {'value': primary_value}
-            data_record[primary_field] = params_data
+            params_data = {}
+            if not np.isnan(primary_value):
+                params_data['value'] = primary_value
+                if error_field in data_params.keys():
+                    error_value = data_params[error_field]
+                    if not np.isnan(error_value):
+                        params_data['err'] = error_value
+
+            if params_data:
+                data_record[primary_field] = params_data
     # add the units to the data record
     tic_collection.set_record(main_star_id, data_record)
+    tic_cache[main_star_id] = tic_collection.find_by_id(main_star_id)
+    print(f"  TIC data added to the hypatia database for main_star_id: {main_star_id}")
     # try again to get the newly updated star data from the local database
     return get_tic_data(star_name=star_name)
+
+
+def get_hy_tic_data(star_name: str) -> dict or None:
+    tic_doc = get_tic_data(star_name)
+    if tic_doc is None:
+        return None
+    tic_data = tic_doc.get('data', {})
+    if tic_doc['is_tic'] and tic_data:
+        object_params = ObjectParams()
+        for field_name in tic_data.keys():
+            field_data = tic_data[field_name]
+            if 'value' in field_data:
+                field_data['units'] = units_dict[field_name]
+            field_data['ref'] = tic_reference
+            if 'err' in field_data:
+                field_data['err_low'] = field_data['err']
+                field_data['err_high'] = field_data['err']
+                del field_data['err']
+            object_params[field_name] = SingleParam(**field_data)
+        return object_params
+    return None
 
 
 if __name__ == "__main__":

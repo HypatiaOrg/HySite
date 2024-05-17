@@ -1,6 +1,6 @@
 import requests
 
-from hypatia.load.table_read import num_format
+from hypatia.tools.table_read import num_format
 
 
 nea_host_name_rank_order = [

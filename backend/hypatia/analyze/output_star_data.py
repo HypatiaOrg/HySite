@@ -1,7 +1,7 @@
 import copy
 import pickle
 from hypatia.config import pickle_out
-from hypatia.load.solar import SolarNorm
+from hypatia.database.catalogs.solar import SolarNorm
 from hypatia.analyze.filters import core_filter
 from hypatia.analyze.all_star_data import AllStarData
 from hypatia.plots.element_rad_plot import make_element_distance_plots

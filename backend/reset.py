@@ -4,7 +4,7 @@ from hypatia.config import ref_dir
 from hypatia.database.gaia import GaiaLib
 from standard_lib import standard_output
 from hypatia.analyze.sorting import NatCat
-from hypatia.tools.cat_file_ops import CatOps
+from hypatia.database.catalogs.cat_file_ops import CatOps
 from hypatia.database.tic.ops import tic_collection
 from hypatia.database.simbad.ops import star_collection
 from new_catalog import unique_abundances, insert_new_catalogs, new_catalogs_file_name, new_abundances_dir

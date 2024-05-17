@@ -8,7 +8,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord, Distance
 
 from hypatia.config import ref_dir
-from hypatia.load.table_read import row_dict
+from hypatia.tools.table_read import row_dict
 from hypatia.database.simbad.ops import get_star_data
 from hypatia.data_structures.object_params import ObjectParams, set_single_param
 
