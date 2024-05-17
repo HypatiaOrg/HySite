@@ -1,7 +1,8 @@
+from hypatia.database.nea.db import ExoPlanetCollection
 from hypatia.tools.exceptions import StarNameNotFound
 from hypatia.database.nea.query import query_nea, set_data_by_host, hypatia_host_name_rank_order
-from hypatia.database.nea.db import ExoPlanetCollection
-from hypatia.database.simbad.ops import get_main_id, interactive_name_menu, star_collection, no_simbad_add_name
+from hypatia.database.simbad.ops import (get_main_id, interactive_name_menu, star_collection, no_simbad_add_name,
+                                         get_attr_name)
 
 
 nea_ref = "NASA Exoplanet Archive"
@@ -72,17 +73,21 @@ def format_for_mongo(host_data: dict) -> dict:
             # automatically add the name to the database without a SIMBAD name or a prompt
             no_simbad_add_name(name=nea_name, aliases=names_to_try, origin="nea")
             found_id = get_main_id(test_name=nea_name, test_origin="nea", allow_interaction=False)
-    return {"_id": found_id, 'planet_letters': list(host_data['planets'].keys()), **host_data}
+    return {"_id": found_id, 'attr_name': get_attr_name(found_id), 'planet_letters': list(host_data['planets'].keys()), **host_data}
 
 
 def refresh_nea_data(verbose: bool = False):
     nea_collection.reset()
     if verbose:
         print("Refreshing NEA data")
-    [nea_collection.add_one(format_for_mongo(host_data)) for host_data in set_data_by_host(query_nea()).values()]
-    if verbose:
-        print("NEA data refreshed")
+    return [nea_collection.add_one(format_for_mongo(host_data)) for host_data in set_data_by_host(query_nea()).values()]
+
+
+def get_all_nea() -> list[dict[str, any]]:
+    """Get all the data from the Hypatia NEA database in MongoDB"""
+    return list(nea_collection.find_all())
 
 
 if __name__ == '__main__':
     refresh_nea_data()
+    nea_docs = get_all_nea()

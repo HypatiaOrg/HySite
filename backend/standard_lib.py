@@ -426,9 +426,10 @@ if __name__ == "__main__":
                                                                       norm_key="lodders09",
                                                                       fast_update_gaia=True, from_pickle=False)
     elif run_normally:
-        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=True,
+        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=False,
                                                                       norm_key="lodders09",
-                                                                      fast_update_gaia=True, from_pickle=False)
+                                                                      fast_update_gaia=True,
+                                                                      from_pickle=False)
 
 
     # output_star_data.xy_plot(x_thing='dist', y_thing='Fe', color="darkorchid", show=False, save=True)

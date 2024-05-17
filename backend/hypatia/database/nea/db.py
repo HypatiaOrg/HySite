@@ -59,7 +59,7 @@ validator = {
     "$jsonSchema": {
         "bsonType": "object",
         "title": "The validator schema for the StarName class",
-        "required": ["_id", "nea_name", "planet_letters", "planets"],
+        "required": ["_id", "nea_name", "attr_name", "planet_letters", "planets"],
         "properties": {
             "_id": {
                 "bsonType": "string",
@@ -68,6 +68,10 @@ validator = {
             "nea_name": {
                 "bsonType": "string",
                 "description": "must be a string and is required and unique"
+            },
+            "attr_name": {
+                "bsonType": "string",
+                "description": "must be a string and is not required"
             },
             "tic": {
                 "bsonType": "string",

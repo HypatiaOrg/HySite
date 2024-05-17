@@ -21,9 +21,8 @@ class SingleStar:
         self.is_target = is_target
         self.verbose = verbose
         self.star_reference_name = star_reference_name
-        self.preferred_star_name = get_attr_name(star_reference_name)
         self.simbad_doc = simbad_doc
-        self.available_star_name_types = set(self.simbad_doc.keys())
+        self.star_names = set(self.simbad_doc['aliases'])
         self.params = SingleStarParams()
         self.available_data_types = set()
         self.available_abundance_catalogs = set()
@@ -47,21 +46,28 @@ class SingleStar:
                                      overwrite_existing=True)
 
     def pastel_params(self, pastel_name_types, pastel, requested_pastel_params):
-        for this_star_name_type in self.available_star_name_types:
-            if this_star_name_type in pastel_name_types:
-                for star_id in self.simbad_doc[this_star_name_type]:
-                    if star_id in pastel.pastel_star_names[this_star_name_type]:
-                        found_params = requested_pastel_params & \
-                                       set(pastel.pastel_ave[this_star_name_type][star_id].keys())
-                        pastel_params_dict = ObjectParams({param: SingleParam(value=pastel.pastel_ave[this_star_name_type][star_id][param], ref='Pastel')
-                                                           for param in found_params})
-                        # Update so that existing parameter keys-value pairs are prioritized over new values.
-                        self.params.update_params(pastel_params_dict, overwrite_existing=False)
-                        """
-                        No need to keep searching, there will only be star_type, star_id combination for the pastel 
-                        reference data.
-                        """
+        found_names = {}
+        names_this_star = set(self.star_names)
+        for star_name in names_this_star:
+            for pastel_name_type in pastel_name_types:
+                if star_name.lower().startswith(pastel_name_type):
+                    if not (star_name[0] == "*" and star_name[1] == "*"):
+                        found_names[pastel_name_type] = star_name
                         break
+
+        for this_star_name_type, this_star_name in found_names.items():
+            if this_star_name in pastel.pastel_star_names[this_star_name_type]:
+                found_params = requested_pastel_params & \
+                               set(pastel.pastel_ave[this_star_name_type][this_star_name].keys())
+                pastel_params_dict = ObjectParams({param: SingleParam(value=pastel.pastel_ave[this_star_name_type][this_star_name][param], ref='Pastel')
+                                                   for param in found_params})
+                # Update so that existing parameter keys-value pairs are prioritized over new values.
+                self.params.update_params(pastel_params_dict, overwrite_existing=False)
+                """
+                No need to keep searching, there will only be star_type, star_id combination for the pastel 
+                reference data.
+                """
+                break
 
     def xhip_params(self, xhip, available_xhip_ids, xhip_params, rename_dict):
         if "hip" in self.available_star_name_types:

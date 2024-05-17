@@ -1,6 +1,7 @@
 class CatalogData:
     def __init__(self, catalog_dict):
-        self.original_catalog_star_name = catalog_dict["star_name"]
+        self.original_catalog_star_name = catalog_dict["original_star_name"]
+        self.main_star_id = catalog_dict["main_id"]
         self.original_catalog_norm = catalog_dict["norm_key"]
         self.catalog_long_name = catalog_dict["long_name"]
         self.available_abundances = set()

@@ -7,30 +7,6 @@ from hypatia.tools.star_names import star_name_format
 from hypatia.load.table_read import row_dict, get_table_data
 
 
-class Xhip:
-    def __init__(self, auto_load=False):
-        self.xhip_file_name = os.path.join(ref_dir, "xhip.csv")
-        self.ref_data = None
-        self.comments = None
-        self.available_hip_names = None
-        if auto_load:
-            self.load()
-
-    def load(self):
-        """
-        X Hip - it has two types of null values 99.99 and ''
-        """
-        raw_data = row_dict(self.xhip_file_name, key='HIP', delimiter=",", null_value=99.99)
-        if "comments" in raw_data.keys():
-            self.comments = raw_data['comments']
-            del raw_data['comments']
-        self.ref_data = {xhip_key: {param_key: raw_data[xhip_key][param_key] for param_key in raw_data[xhip_key].keys()
-                                    if raw_data[xhip_key][param_key] != ""} for xhip_key in raw_data.keys()}
-        if self.comments is not None:
-            self.ref_data["comments"] = self.comments
-        self.available_hip_names = set(self.ref_data.keys())
-
-
 # When updating a new Pastel file, change the filename on Line 35 and the delimiter on Line 55.
 # The file needs to have ID, Bmag, Vmag, Jmag, Hmag, Ksmag, Teff, logg, Author, and bibcode which can come from Vizier.
 class Pastel:
@@ -110,14 +86,6 @@ class Pastel:
             (self.pastel_ave, self.pastel_raw, self.pastel_star_names) = pastel_data
 
 
-class StarParams:
-    def __init__(self):
-        self.hip_file_name = os.path.join(ref_dir, "hipparcos.tsv")
-        self.hip = row_dict(self.hip_file_name, key='HIP', delimiter="|", null_value="")
-
-
 if __name__ == "__main__":
-    # sp = StarParams(verbose=True)
-    xhip = Xhip(auto_load=True)
     # from_scratch is needed to delete the pkl file and test a new imported file
     pastel = Pastel(auto_load=True, from_scratch=True)

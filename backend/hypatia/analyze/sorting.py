@@ -1,11 +1,12 @@
 import os
 import pickle
 
-from hypatia.database.gaia import GaiaLib
+from hypatia.load.pastel import Pastel
+from hypatia.database.xhips import Xhip
 from hypatia.load.solar import SolarNorm
+from hypatia.database.gaia import GaiaLib
 from hypatia.load.table_read import row_dict
 from hypatia.load.catalogs import get_catalogs
-from hypatia.load.star_params import Pastel, Xhip
 from hypatia.analyze.all_star_data import AllStarData
 from hypatia.analyze.output_star_data import OutputStarData
 from hypatia.data_structures.object_params import SingleParam
@@ -62,8 +63,6 @@ class NatCat:
         self.init_catalogs = set()
         self.unreferenced_stars = None
 
-        self.xo = None
-
         # get the solar normalization data
         sn = SolarNorm()
         self.solar_norm_dict = sn()
@@ -108,7 +107,7 @@ class NatCat:
             print("Stellar abundance data acquired.\n")
 
     def xo_data(self):
-        self.xo = self.star_data.get_exoplanets(refresh_exo_data=self.refresh_exo_data)
+        self.star_data.get_exoplanets(refresh_exo_data=self.refresh_exo_data)
 
     def target_data(self, target_list: list[str] or str):
         if self.verbose:
@@ -132,33 +131,23 @@ class NatCat:
         if self.verbose:
             print("Acquiring stellar parameter data...")
         if get_gaia_params:
-            """
-            The gaia data that is first in the list variable "gaia_data_list", will have the highest priory for
-            populating the values for Gaia parameters. For example if you prefer to have the latest released value
-            for the parameter distance (dist), make sure that the latest Gia release is first in this list.
-            """
             gaia_lib = GaiaLib(verbose=self.verbose)
-            for reference_star_name in self.star_data.star_names:
-                single_star = self.star_data.__getattribute__(reference_star_name)
-                star_names_dict = single_star.star_names_dict
-                hypatia_handle, gaia_params_dict = gaia_lib.get_object_params(star_names_dict)
-                if hypatia_handle != reference_star_name:
-                    raise KeyError("The Gaia parameters returned a different hypatia handle then the star they were " +
-                                   "associated with.")
-                single_star.gaia_params(gaia_params_dict)
+            for main_star_id in self.star_data.star_names:
+                attr_name, gaia_params_dict = gaia_lib.get_object_params(main_star_id)
+                self.star_data.__getattribute__(attr_name).gaia_params(gaia_params_dict)
             if self.verbose:
                 print("  Gaia stellar parameters acquired.")
 
         # Star Parameters from the Pastel Catalog (effective temperature and Log values for surface gravity)
         if get_pastel_params:
-
             if self.pastel.pastel_ave is None:
                 self.pastel.load()
             pastel_name_types = set(self.pastel.pastel_ave.keys())
             for reference_star_name in self.star_data.star_names:
-                self.star_data.__getattribute__(reference_star_name).pastel_params(pastel_name_types,
-                                                                                   self.pastel,
-                                                                                   self.requested_pastel_params)
+                simbad_doc = get_star_data(test_name=reference_star_name, test_origin="pastel")
+                attr_name = simbad_doc['attr_name']
+                self.star_data.__getattribute__(attr_name).pastel_params(pastel_name_types,
+                                                                         self.pastel, self.requested_pastel_params)
             if self.verbose:
                 print("  Pastel stellar parameters acquired.")
 

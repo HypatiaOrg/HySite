@@ -12,11 +12,22 @@ from hypatia.load.table_read import row_dict
 from hypatia.database.simbad.ops import get_star_data
 from hypatia.data_structures.object_params import ObjectParams, set_single_param
 
-from hypatia.tools.star_names import star_name_format, StringStarName, StarName
-
 
 deg_per_mas = 1.0 / (1000.0 * 60.0 * 60.0)
 gaia_dr3_ref = "Gaia DR3 Gaia Collaboration et al. (2016b) and Gaia Collaboration et al. (2022k)"
+
+
+def parse_gaia_name(gaia_name: str) -> tuple[int, int]:
+    gaia_name_lower = gaia_name.lower().strip()
+    if not gaia_name_lower.startswith("gaia dr"):
+        raise KeyError(f"The given Gaia name is not of the format 'Gaia DR# #', see:{gaia_name}.")
+    data_str = gaia_name_lower.replace("gaia dr", "")
+    dr_number_str, id_number_str = data_str.split(" ")
+    return int(dr_number_str), int(id_number_str)
+
+
+def string_gaia_name(dr_number: int, id_number: int) -> str:
+    return "Gaia DR" + str(dr_number) + " " + str(id_number)
 
 
 def simple_job_text(dr_num, sub_list):
@@ -57,25 +68,20 @@ class GaiaLib:
         if gaia_star_ids != set():
             gaia_ref.save()
 
-    def get_gaia_names_dict(self, star_name) -> tuple[str, dict[str, str]]:
+    def get_gaia_names_dict(self, star_name: str) -> tuple[str, dict[str, str]]:
         star_data_doc = get_star_data(star_name)
-        main_id = star_data_doc["_id"]
-        gaia_star_names_dict = {star_type: star_data_doc[star_type] for star_type in self.gaia_name_types}
-        return main_id, gaia_star_names_dict
+        attr_name = star_data_doc["attr_name"]
+        available_gaia_name_types = set(star_data_doc.keys()) & self.gaia_name_types
+        gaia_star_names_dict = {star_type: star_data_doc[star_type] for star_type in available_gaia_name_types}
+        return attr_name, gaia_star_names_dict
 
-    def get_single_dr_number_data(self, gaia_hypatia_name):
-        gaia_name_type, gaia_star_id = gaia_hypatia_name
-        dr_number = int(gaia_name_type.replace("gaia dr", "").strip())
+    def get_single_dr_number_data(self, gaia_name):
+        dr_number, gaia_star_id = parse_gaia_name(gaia_name)
         gaia_ref = self.__getattribute__('gaiadr' + str(dr_number) + "_ref")
         test_output = gaia_ref.find(gaia_star_id=gaia_star_id)
-        if test_output is not None:
-            # This is the primary case, data is available in the reference file, and is returned
-            return test_output
-        else:
+        if test_output is None:
             # is data available on the ESA website?
-            dr_number = int(gaia_name_type.lower().replace("gaia dr", "").strip())
-            self.gaia_query.astroquery_source([StringStarName(StarName(gaia_name_type, gaia_star_id)).string_name],
-                                              dr_num=dr_number)
+            self.gaia_query.astroquery_source([gaia_name], dr_num=dr_number)
             if gaia_star_id in self.gaia_query.star_dict.keys():
                 # We found the data and can update the reference data so that it is found first next time
                 gaia_params_dict = self.gaia_query.star_dict[gaia_star_id]
@@ -86,22 +92,20 @@ class GaiaLib:
             gaia_ref.save()
             gaia_ref.load()
             gaia_ref.make_lookup()
-            return self.get_single_dr_number_data(gaia_hypatia_name)
+            # we try again to get the data, this time it should be found.
+            return self.get_single_dr_number_data(gaia_name)
+        # This is the default case, data is available in the reference file, and is returned
+        return test_output
 
-    def get(self, hypatia_name):
-        hypatia_handle, gaia_star_names_dict = self.get_gaia_names_dict(hypatia_name)
-        gaia_hypatia_names = []
-        for gaia_name_type in gaia_star_names_dict.keys():
-            for star_id in gaia_star_names_dict[gaia_name_type]:
-                gaia_hypatia_names.append(StarName(gaia_name_type, star_id))
-        return hypatia_handle, {gaia_hypatia_name: self.get_single_dr_number_data(gaia_hypatia_name)
-                                for gaia_hypatia_name in gaia_hypatia_names}
+    def get_params_data(self, star_name: str) -> tuple[str, dict[str, any]]:
+        attr_name, gaia_star_names_dict = self.get_gaia_names_dict(star_name=star_name)
+        return attr_name, {gaia_name: self.get_single_dr_number_data(gaia_name)
+                           for gaia_name in gaia_star_names_dict.values()}
 
     def convert_to_object_params(self, gaia_params_dicts):
         new_object_params = ObjectParams()
         for gaia_hypatia_name in gaia_params_dicts.keys():
-            gaia_name_type, _gaia_star_id = gaia_hypatia_name
-            dr_number = int(gaia_name_type.replace("gaia dr", "").strip())
+            dr_number, _gaia_star_id = parse_gaia_name(gaia_hypatia_name)
             _gaia_ids, gaia_params_dict = gaia_params_dicts[gaia_hypatia_name]
             gaia_params_dict_keys = set(gaia_params_dict.keys())
             if dr_number == 3:
@@ -197,9 +201,9 @@ class GaiaLib:
                 new_object_params[param_name] = this_param_single_param
         return new_object_params
 
-    def get_object_params(self, hypatia_name):
-        hypatia_handle, gaia_params_dicts = self.get(hypatia_name)
-        return hypatia_handle, self.convert_to_object_params(gaia_params_dicts=gaia_params_dicts)
+    def get_object_params(self, star_name: str):
+        attr_name, gaia_params_dicts = self.get_params_data(star_name=star_name)
+        return attr_name, self.convert_to_object_params(gaia_params_dicts=gaia_params_dicts)
 
 
 class GaiaRef:
@@ -219,11 +223,11 @@ class GaiaRef:
             for saved_names in read_ref.keys():
                 star_ids = set()
                 for simbad_formatted_gaia_name in saved_names.split("|"):
-                    gaia_name_type, gaia_star_id = star_name_format(simbad_formatted_gaia_name)
+                    dr_number, gaia_star_id = parse_gaia_name(simbad_formatted_gaia_name)
                     star_ids.add(gaia_star_id)
-                    if not gaia_name_type == self.gaia_name_type:
-                        raise KeyError("Gaia Data Release," + str(self.gaia_name_type) + ", received:" +
-                                       str(gaia_name_type))
+                    if dr_number != self.dr_number:
+                        raise KeyError(f"GaiaRef for data release {self.dr_number} " +
+                                       f" received a Gaia name with the wrong release number: {simbad_formatted_gaia_name}.")
                 self.ref_data.append((star_ids, read_ref[saved_names]))
 
     def save(self):
@@ -234,9 +238,8 @@ class GaiaRef:
             header_params |= set(params.keys())
             star_names_string = ""
             for star_id in star_ids:
-                hypatia_name = StarName(self.gaia_name_type, star_id)
-                simbad_formatted_name = StringStarName(hypatia_name=hypatia_name).string_name
-                star_names_string += simbad_formatted_name + "|"
+                formatted_name = string_gaia_name(self.dr_number, star_id)
+                star_names_string += formatted_name + "|"
             name_string_to_params[star_names_string[:-1]] = params
         header = "name,"
         sorted_header_params = sorted(header_params)
@@ -352,10 +355,11 @@ class GaiaQuery:
         else:
             raise KeyError("The given Gaia Data Release number " + str(dr_num) + " is not of the format.")
 
-        for index in range(len(raw_results.columns["source_id"])):
-            available_params = set(raw_results.columns)
-            params_dict = {param: raw_results.columns[param][index] for param in available_params & query_params
-                           if not np.ma.is_masked(raw_results.columns[param][index])}
+        column_names = set(raw_results.columns)
+        lower_to_column_names = {column_name.lower(): column_name for column_name in column_names}
+        for index in range(len(raw_results.columns[lower_to_column_names["source_id"]])):
+            params_dict = {param: raw_results.columns[lower_to_column_names[param]][index] for param in (lower_to_column_names.keys()) & query_params
+                           if not np.ma.is_masked(raw_results.columns[lower_to_column_names[param]][index])}
             found_params = set(params_dict.keys())
             if {'ra', 'dec', 'pmra', 'pmdec', "ref_epoch"} - found_params == set():
                 # if parallax is available, do a more precise calculation using the distance.
@@ -379,9 +383,6 @@ class GaiaQuery:
                 if 'parallax' in found_params:
                     parallax_arcsec = float(params_dict['parallax']) * 0.001
                     params_dict['dist_parallax'] = 1.0 / parallax_arcsec
-                    # if "parallax_error" in found_params:
-                    #     parallax_error_arcsec = float(params_dict['parallax_error']) * 0.001
-                    #     params_dict['dist_parallax_error'] = 1.0 / (parallax_arcsec - (2.0 * parallax_error_arcsec))
             sources_dict[params_dict['source_id']] = {param: params_dict[param] for param in params_dict.keys()
                                                       if params_dict[param] != '--'}
         return sources_dict
@@ -417,22 +418,11 @@ class GaiaQuery:
                 job_text = simple_job_text(dr_num, redo_ids)
                 job = self.Gaia.launch_job_async(job_text)
                 sources_dict.update(self.astroquery_get_job(job, dr_num=dr_num))
-            self.star_dict.update({(gaia_id_int,): sources_dict[gaia_id_int] for gaia_id_int in sources_dict.keys()})
-
-    def astroquery_cone(self, ra_icrs, dec_icrs, radius_deg=1.0):
-        # gaia_coord = convert_to_gaia_dr2_coord(ra_icrs, dec_icrs)
-
-        job_text = "SELECT * FROM gaiadr2.gaia_source WHERE " + \
-                   "CONTAINS(POINT('ICRS',gaiadr2.gaia_source.ra,gaiadr2.gaia_source.dec)," + \
-                   "CIRCLE('ICRS'," + str(ra_icrs) + "," + str(dec_icrs) + "," + str(radius_deg) + "))=1;"
-
-        job = self.Gaia.launch_job_async(job_text)
-        sources_dict = self.astroquery_get_job(job)
-        return sources_dict
+            self.star_dict.update({gaia_id_int: sources_dict[gaia_id_int] for gaia_id_int in sources_dict.keys()})
 
 
 if __name__ == "__main__":
     gl = GaiaLib(verbose=True)
-    hypatia_handle, gaia_params = gl.get(hypatia_name="HD 1234")
+    hypatia_attr_name, gaia_params = gl.get_params_data(star_name="HD 1234")
     # gl.gaia_query.astroquery_source(simbad_formatted_name_list=["Gaia DR2 1016674048078637568",
     #                                                               "Gaia DR2 1076515002779544960"], dr_num=2)

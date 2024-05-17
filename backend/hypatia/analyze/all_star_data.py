@@ -4,13 +4,13 @@ import datetime
 import numpy as np
 
 from hypatia.database.gaia import GaiaLib
-from hypatia.database.nea.query import AllExoPlanets
 from hypatia.analyze.star import SingleStar
 from hypatia.config import star_data_output_dir
 from hypatia.database.elements import element_rank
 from hypatia.analyze.stats import StarDataStats
 from hypatia.plots.histograms import simple_hist
 from hypatia.plots.quick_plots import quick_plotter
+from hypatia.database.nea.ops import get_all_nea, refresh_nea_data
 from hypatia.database.simbad.ops import get_star_data, get_main_id
 from hypatia.data_structures.object_params import StarDict, SingleParam
 
@@ -28,6 +28,7 @@ def params_check(params_dict, hypatia_handle):
 
 class AllStarData:
     batch_len = 500
+    non_abundance_keys = {'star_names', "main_id", "simbad_doc", 'original_star_names'}
 
     def __init__(self, verbose=True):
         self.verbose = verbose
@@ -55,43 +56,44 @@ class AllStarData:
     def get_abundances(self, all_catalogs):
         for short_catalog_name in sorted(all_catalogs.keys()):
             for single_star in all_catalogs[short_catalog_name].abs_star_data:
-                star_names_dict = single_star['star_names_dict']
-                hypatia_handle = single_star["hypatia_handle"]
-                catalog_dict = {key: single_star[key] for key in set(single_star.keys()) - {'star_names',
-                                                                                            "star_names_dict",
-                                                                                            "hypatia_handle"}}
+                simbad_doc = single_star['simbad_doc']
+                main_id = single_star["main_id"]
+                catalog_dict = {key: single_star[key] for key in set(single_star.keys()) - self.non_abundance_keys}
                 catalog_dict["norm_key"] = all_catalogs[short_catalog_name].norm_key
                 catalog_dict["long_name"] = all_catalogs[short_catalog_name].long_name
+                catalog_dict['original_star_name'] = single_star['original_star_names']
+                catalog_dict['main_id'] = main_id
                 # check to see if there is already an entry for this reference name
-                if hypatia_handle not in self.star_names:
+                attr_name = simbad_doc['attr_name']
+                if main_id not in self.star_names:
                     # add this reference name to the set of names
-                    self.star_names.add(hypatia_handle)
+                    self.star_names.add(main_id)
                     # create entry for the catalog information
-                    self.__setattr__(hypatia_handle, SingleStar(hypatia_handle, star_names_dict, verbose=self.verbose))
+                    self.__setattr__(attr_name, SingleStar(main_id, simbad_doc=simbad_doc, verbose=self.verbose))
                 # get the default normalization
-                self.__getattribute__(hypatia_handle).add_abundance_catalog(short_catalog_name, catalog_dict)
+                self.__getattribute__(attr_name).add_abundance_catalog(short_catalog_name, catalog_dict)
 
     def get_exoplanets(self, refresh_exo_data: bool = False):
         if self.verbose:
             print('Loading and mapping all exoplanet data...')
-        xo = AllExoPlanets(refresh_data=refresh_exo_data, verbose=self.verbose,
-                           ref_star_names_from_scratch=refresh_exo_data)
-        for exo_host_name in xo.exo_host_names:
-            host_data = xo.__getattribute__(exo_host_name)
-            star_names_dict = host_data.star_names_dict
-            hypatia_handle = host_data.hypatia_handle
-            # check to see if there is already an entry for this reference name
-            if hypatia_handle not in self.star_names:
+        if refresh_exo_data:
+            refresh_nea_data(verbose=self.verbose)
+        for exo_host_doc in get_all_nea():
+            star_main_id = exo_host_doc['_id']
+            attr_name = exo_host_doc['attr_name']
+            if star_main_id not in self.star_names:
                 # add this reference name to the set of names
-                self.star_names.add(hypatia_handle)
+                self.star_names.add(star_main_id)
                 # create entry for the catalog information
-                self.__setattr__(hypatia_handle, SingleStar(hypatia_handle, star_names_dict, verbose=self.verbose))
+                self.__setattr__(attr_name, SingleStar(star_main_id,
+                                                       get_star_data(test_name=star_main_id,
+                                                                     test_origin="all_star_data"),
+                                                       verbose=self.verbose))
             # get the default normalization
-            self.__getattribute__(hypatia_handle).add_exoplanet_data(host_data)
+            self.__getattribute__(attr_name).add_exoplanet_data(exo_host_doc)
 
         if self.verbose:
             print("Exoplanet data acquired.\n")
-        return xo
 
     def get_targets(self, main_star_ids: list[str]):
         """
@@ -129,26 +131,21 @@ class AllStarData:
     def fast_update_gaia(self):
         gaia_lib = GaiaLib(verbose=self.verbose)
         dr_number_to_string_names = StarDict()
-        str_dr_numbers = [str(dr_number) for dr_number in gaia_lib.dr_numbers]
         for star_name in self.star_names:
             simbad_doc = get_star_data(star_name)
-            attr_name = simbad_doc['attr_name']
-            single_star = self.__getattribute__(attr_name)
-            star_names_dict = single_star.star_names_dict
-            available_star_name_types = set(star_names_dict.keys())
-            for dr_number_string in str_dr_numbers:
-                test_gaia_type_string = "gaia dr" + dr_number_string
-                gaia_ref_data = gaia_lib.__getattribute__('gaiadr' + str(dr_number_string) + "_ref")
-                if test_gaia_type_string in available_star_name_types:
-                    for star_id in star_names_dict[test_gaia_type_string]:
-                        # only update the ones that are not found in the reference data
-                        if gaia_ref_data.find(star_id) is None:
-                            simbad_string_name = f"Gaia DR{dr_number_string} {star_id}"
-                            dr_number_to_string_names[dr_number_string] = simbad_string_name
-        for dr_number in set(str_dr_numbers) & set(dr_number_to_string_names.keys()):
-            list_of_string_names = list(dr_number_to_string_names[dr_number])
-            number_of_names = len(list_of_string_names)
+            for dr_number in gaia_lib.dr_numbers:
+                test_gaia_type_string = f"gaia dr{dr_number}"
+                if test_gaia_type_string in simbad_doc.keys():
+                    found_gaia_name = simbad_doc[test_gaia_type_string]
+                    gaia_num = int(found_gaia_name.lower().replace(f'{test_gaia_type_string}', ""))
+                    if gaia_lib.__getattribute__(f'gaiadr{dr_number}_ref').find(gaia_num) is None:
+                        if dr_number not in dr_number_to_string_names.keys():
+                            dr_number_to_string_names[dr_number] = set()
+                        dr_number_to_string_names[dr_number].add(found_gaia_name)
+        for dr_number, string_names in dr_number_to_string_names.items():
+            number_of_names = len(string_names)
             finish_index = 0
+            list_of_string_names = list(string_names)
             while finish_index < number_of_names:
                 start_index = finish_index
                 finish_index = min(number_of_names, finish_index + self.batch_len)

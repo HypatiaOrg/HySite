@@ -49,10 +49,9 @@ def get_catalogs(from_scratch=False, catalogs_file_name=None, local_abundance_di
                                      verbose=verbose,
                                      local_abundance_dir=local_abundance_dir)
                         for key in catalog_names}
-        for catalog_key in catalog_dict.keys():
-            catalog_dict[catalog_key].update_star_names()
-
-            catalog_dict[catalog_key].un_normalize()
+        for cat_data in catalog_dict.values():
+            cat_data.update_star_names()
+            cat_data.un_normalize()
 
     else:
         catalog_dict = {key: pickle.load(open(os.path.join(cat_pickles_dir,
@@ -107,8 +106,9 @@ class Catalog:
         else:
             raise NameError("The star name type is not one of the expected names.")
         # this a legacy Hypatia system for reading in catalogs with a number of challenges.
+        self.raw_data.original_star_names = getattr(self.raw_data, attribute_name)
         converted_star_names = [calc_simbad_name(raw_name, key=self.star_names_type)
-                                for raw_name in getattr(self.raw_data, attribute_name)]
+                                for raw_name in self.raw_data.original_star_names]
         # the modern system for getting the main star name from the SIMBAD database.
         self.star_names = [get_main_id(simbad_formatted, test_origin=catalog_name)
                            for simbad_formatted in converted_star_names]
@@ -149,7 +149,7 @@ class Catalog:
         """
         self.raw_star_data = [
             {element_key: self.raw_data.__getattribute__(element_key)[catalog_index]
-             for element_key in self.element_ratio_keys | {"star_names"}
+             for element_key in self.element_ratio_keys | {"star_names", "original_star_names"}
              if self.raw_data.__getattribute__(element_key)[catalog_index] not in {99.99, ""}}
             for catalog_index in range(len(self.raw_data.star_names))
         ]
@@ -168,8 +168,8 @@ class Catalog:
         if self.verbose:
             print("Updating the", self.catalog_name, "star names from reference data")
         for index, catalog_entry in list(enumerate(self.raw_star_data)):
-            simbad_doc = get_star_data(catalog_entry["star_name"])
-            catalog_entry['hypatia_handle'] = simbad_doc['attr_name']
+            simbad_doc = get_star_data(catalog_entry["star_names"])
+            catalog_entry['main_id'] = simbad_doc['_id']
             catalog_entry["simbad_doc"] = simbad_doc
 
     def un_normalize(self):

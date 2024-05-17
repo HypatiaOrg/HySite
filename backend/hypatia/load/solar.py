@@ -111,9 +111,9 @@ def strip_ionization(test_string):
 
 
 def ratio_to_element(test_ratio):
-    if "NLTE" in test_ratio:
+    if "_NLTE" in test_ratio:
         NLTE_flag = True
-        test_ratio = test_ratio.replace("NLTE", "")
+        test_ratio = test_ratio.replace("_NLTE", "")
     else:
         NLTE_flag = False
     test_ratio = test_ratio.strip()
