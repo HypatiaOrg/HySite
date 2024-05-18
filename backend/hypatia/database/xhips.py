@@ -33,11 +33,17 @@ class Xhip:
         self.available_hip_names = set(self.ref_data.keys())
 
     def get_xhip_data(self, hip_name: str) -> ObjectParams or None:
-        hip_number = int(hip_name.lower().split("hip")[1].strip())
+        hip_number_str = hip_name.lower().split("hip")[1].strip()
+        if hip_number_str[-1].lower() == 'a':
+            hip_number_str = hip_number_str[:-1].strip()
+        try:
+            hip_number = int(hip_number_str)
+        except ValueError:
+            return None
         if hip_number in self.available_hip_names:
-            xhip_params_dict_before_rename = {param: xhip.ref_data[hip_number][param]
+            xhip_params_dict_before_rename = {param: self.ref_data[hip_number][param]
                                               for param in self.xhip_params
-                                              if param in xhip.ref_data[hip_number].keys()}
+                                              if param in self.ref_data[hip_number].keys()}
             xhip_params_dict = ObjectParams()
             rename_keys = set(self.rename_dict.keys())
             for param_name in xhip_params_dict_before_rename:

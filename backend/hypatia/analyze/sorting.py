@@ -81,11 +81,6 @@ class NatCat:
         self.stats = self.star_data.stats
         self.star_data.find_available_attributes()
 
-    def __iter__(self):
-        for star_name in sorted(self.star_data.star_names):
-            attr_name = get_star_data(test_name=star_name, test_origin="NatCat.__iter__()")['attr_name']
-            yield self.star_data.__getattribute__(attr_name)
-
     def catalog_data(self):
         if self.verbose:
             print('\nLoading and mapping the stellar abundance data...')
@@ -145,7 +140,7 @@ class NatCat:
         if get_pastel_params:
             if self.pastel.pastel_ave is None:
                 self.pastel.load()
-            for single_star in self:
+            for single_star in self.star_data:
                 pastel_record = self.pastel.get_record_from_aliases(aliases=single_star.simbad_doc['aliases'])
                 if pastel_record is not None:
                     single_star.pastel_params(pastel_record)
@@ -154,7 +149,7 @@ class NatCat:
 
         # Stellar Parameters from the Tess Input Catalog
         if get_tic_params:
-            for single_star in self:
+            for single_star in self.star_data:
                 requested_tic = get_hy_tic_data(single_star.star_reference_name)
                 if requested_tic is not None:
                     single_star.params.update_params(requested_tic, overwrite_existing=False)
@@ -165,7 +160,7 @@ class NatCat:
         if get_hipparcos_params:
             if self.xhip.ref_data is None:
                 self.xhip.load()
-            for single_star in self:
+            for single_star in self.star_data:
                 if "hip" in single_star.simbad_doc.keys():
                     hip_name = single_star.simbad_doc["hip"]
                     xhip_params_dict = self.xhip.get_xhip_data(hip_name=hip_name)
@@ -175,8 +170,8 @@ class NatCat:
                 print("  X-Hipparcos stellar parameters acquired.")
 
         # calculated parameters
-        for reference_star_name in self.star_data.star_names:
-            self.star_data.__getattribute__(reference_star_name).params.calculated_params()
+        for single_star in self.star_data:
+            single_star.params.calculated_params()
         if self.verbose:
             print("Stellar parameters acquired, reference is up-to-data, and calculations completed\n")
 

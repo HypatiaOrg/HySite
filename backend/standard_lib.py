@@ -431,7 +431,6 @@ if __name__ == "__main__":
                                                                       fast_update_gaia=True,
                                                                       from_pickle=False)
 
-
     # output_star_data.xy_plot(x_thing='dist', y_thing='Fe', color="darkorchid", show=False, save=True)
     stats = output_star_data.stats
     # output_star_data.flat_database_output()

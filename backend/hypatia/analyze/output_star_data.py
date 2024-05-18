@@ -1,9 +1,11 @@
 import copy
 import pickle
+
 from hypatia.config import pickle_out
-from hypatia.database.catalogs.solar import SolarNorm
 from hypatia.analyze.filters import core_filter
+from hypatia.database.simbad.ops import get_star_data
 from hypatia.analyze.all_star_data import AllStarData
+from hypatia.database.catalogs.solar import SolarNorm
 from hypatia.plots.element_rad_plot import make_element_distance_plots
 
 
@@ -12,6 +14,8 @@ def load_pickled_output():
 
 
 class OutputStarData(AllStarData):
+    distance_bin_default = [0.0, 30.0, 60.0, 150.0]
+
     def receive_data(self, star_data):
         self.__dict__.update(copy.deepcopy(star_data.__dict__))
 
@@ -38,19 +42,24 @@ class OutputStarData(AllStarData):
         new_output.receive_data(star_data=self)
         # add in all the SingleStarData that is in other but not in the instance
         for star_name in other.star_names - self.star_names:
-            new_output.__setattr__(star_name, copy.deepcopy(other.__getattribute__(star_name)))
-            new_output.star_names.add(star_name)
+            simbad_doc = get_star_data(star_name, test_origin="OutputStarData")
+            attr_name = simbad_doc['attr_name']
+            main_id = simbad_doc['_id']
+            new_output.__setattr__(attr_name, copy.deepcopy(other.__getattribute__(attr_name)))
+            new_output.star_names.add(main_id)
         # For the star names that overlap, add all the available data types that are missing.
         for star_name in other.star_names & self.star_names:
-            other_star_data = other.__getattribute__(star_name)
-            self_star_data = self.__getattribute__(star_name)
+            simbad_doc = get_star_data(star_name, test_origin="OutputStarData")
+            attr_name = simbad_doc['attr_name']
+            other_star_data = other.__getattribute__(attr_name)
+            self_star_data = self.__getattribute__(attr_name)
             # add missing data_types
             for data_type in other_star_data.available_data_types - self_star_data.available_data_types:
-                new_output.__getattribute__(star_name)\
+                new_output.__getattribute__(attr_name)\
                     .__setattr__(data_type, copy.deepcopy(other_star_data.__getattribute__(data_type)))
-                new_output.__getattribute__(star_name).available_data_types.add(data_type)
+                new_output.__getattribute__(attr_name).available_data_types.add(data_type)
                 if data_type not in self.non_abundance_data_types:
-                    new_output.__getattribute__(star_name).available_abundance_catalogs.add(data_type)
+                    new_output.__getattribute__(attr_name).available_abundance_catalogs.add(data_type)
         return new_output
 
     def filter_by_available_data_type(self, and_logic_for_multiples, target_types, return_only_targets=False,
@@ -64,30 +73,30 @@ class OutputStarData(AllStarData):
             else:
                 logic_str = "using 'Or' logic."
             print("Filtering in for", target_types, logic_str)
-        for star_name in list(self.star_names):
-            available_data_types = self.__getattribute__(star_name).available_data_types
+        for single_star in self:
+            available_data_types = single_star.available_data_types
             target_found_flag = core_filter(and_logic_for_multiples, target_types, available_data_types)
             if not (target_found_flag and not keep_compliment):
                 stars_removed += 1
-                self.__delattr__(star_name)
-                self.star_names.remove(star_name)
+                self.__delattr__(single_star.attr_name)
+                self.star_names.remove(single_star.star_reference_name)
             elif return_only_targets:
                 if keep_compliment:
                     for type_to_remove in target_types:
                         data_types_removed += 1
-                        self.__getattribute__(star_name).__delattr__(type_to_remove)
-                        self.__getattribute__(star_name).available_data_types.remove(type_to_remove)
+                        single_star.__delattr__(type_to_remove)
+                        single_star.available_data_types.remove(type_to_remove)
                         try:
-                            self.__getattribute__(star_name).available_abundance_catalogs.remove(type_to_remove)
+                            single_star.available_abundance_catalogs.remove(type_to_remove)
                         except KeyError:
                             pass
                 else:
                     for type_to_remove in available_data_types - target_types:
                         data_types_removed += 1
-                        self.__getattribute__(star_name).__delattr__(type_to_remove)
-                        self.__getattribute__(star_name).available_data_types.remove(type_to_remove)
+                        single_star.__delattr__(type_to_remove)
+                        single_star.available_data_types.remove(type_to_remove)
                         try:
-                            self.__getattribute__(star_name).available_abundance_catalogs.remove(type_to_remove)
+                            single_star.available_abundance_catalogs.remove(type_to_remove)
                         except KeyError:
                             pass
         if self.verbose:
@@ -99,12 +108,12 @@ class OutputStarData(AllStarData):
         stars_removed = 0
         if self.verbose:
             print("Filtering for Hypatia stars with at least", minimum_cat_count, "catalogs.")
-        for star_name in list(self.star_names):
-            available_data_types = self.__getattribute__(star_name).available_abundance_catalogs
+        for single_star in self:
+            available_data_types = single_star.available_abundance_catalogs
             if not (len(available_data_types) >= minimum_cat_count and not keep_compliment):
                 stars_removed += 1
-                self.__delattr__(star_name)
-                self.star_names.remove(star_name)
+                self.__delattr__(single_star.attr_name)
+                self.star_names.remove(single_star.star_reference_name)
         if self.verbose:
             print("  Stars removed:", stars_removed)
             if self.star_names == set():
@@ -119,13 +128,13 @@ class OutputStarData(AllStarData):
             else:
                 logic_str = "using 'Or' logic."
             print("Filtering based on each stellar object's parameters for", target_types, logic_str)
-        for star_name in list(self.star_names):
-            available_object_parameters = self.__getattribute__(star_name).params.available_params
+        for single_star in self:
+            available_object_parameters = single_star.params.available_params
             target_found_flag = core_filter(and_logic_for_multiples, target_types, available_object_parameters)
             if not (target_found_flag and not keep_compliment):
                 stars_removed += 1
-                self.__delattr__(star_name)
-                self.star_names.remove(star_name)
+                self.__delattr__(single_star.attr_name)
+                self.star_names.remove(single_star.star_reference_name)
         if self.verbose:
             print("  Stars removed:", stars_removed)
             if self.star_names == set():
@@ -140,13 +149,13 @@ class OutputStarData(AllStarData):
             else:
                 logic_str = "using 'Or' logic."
             print("Filtering on each stellar object's available name types", target_types, logic_str)
-        for star_name in list(self.star_names):
-            available_star_name_types = set(self.__getattribute__(star_name).star_names_dict.keys())
+        for single_star in self:
+            available_star_name_types = set(single_star.star_names_dict.keys())
             target_found_flag = core_filter(and_logic_for_multiples, target_types, available_star_name_types)
             if not (target_found_flag and not keep_compliment):
                 stars_removed += 1
-                self.__delattr__(star_name)
-                self.star_names.remove(star_name)
+                self.__delattr__(single_star.attr_name)
+                self.star_names.remove(single_star.star_reference_name)
         if self.verbose:
             print("  Stars removed:", stars_removed)
             if self.star_names == set():
@@ -164,15 +173,15 @@ class OutputStarData(AllStarData):
             if self.verbose:
                 print("Match filtering for object parameters for the parameter:")
                 print(" ", target, "target values of", match_values, ".")
-            for star_name in list(self.star_names):
+            for single_star in self:
                 if target == "sptype":
-                    value = self.__getattribute__(star_name).params.spyype.value[0]
+                    value = single_star.params.spyype.value[0]
                 else:
-                    value = self.__getattribute__(star_name).params.__getattribute__(target).value
+                    value = single_star.params.__getattribute__(target).value
                 if not (value in match_values and not keep_compliment):
                     stars_removed += 1
-                    self.__delattr__(star_name)
-                    self.star_names.remove(star_name)
+                    self.__delattr__(single_star.attr_name)
+                    self.star_names.remove(single_star.star_reference_name)
         if self.verbose:
             print("  Stars removed:", stars_removed)
             if self.star_names == set():
@@ -190,10 +199,9 @@ class OutputStarData(AllStarData):
             if self.verbose:
                 print("Bound filtering in the stellar object parameters for the parameter:")
                 print(" ", target, "for a lower bound of", lower_bound, "and an upper bound of", upper_bound, ".")
-            for star_name in list(self.star_names):
+            for single_star in self:
                 below_upper = True
-                this_star = self.__getattribute__(star_name)
-                these_params = this_star.params
+                these_params = single_star.params
                 this_single_param = these_params.__getattribute__(target)
                 if upper_bound is not None:
                     if this_single_param.value >= upper_bound:
@@ -204,8 +212,8 @@ class OutputStarData(AllStarData):
                         above_lower = False
                 if not (above_lower and below_upper and not keep_compliment):
                     stars_removed += 1
-                    self.__delattr__(star_name)
-                    self.star_names.remove(star_name)
+                    self.__delattr__(single_star.attr_name)
+                    self.star_names.remove(single_star.star_reference_name)
         if self.verbose:
             print("  Stars removed:", stars_removed)
             if self.star_names == set():
@@ -221,29 +229,28 @@ class OutputStarData(AllStarData):
             else:
                 logic_str = "using 'Or' logic."
             print("Filtering by the elements:", target_types, logic_str)
-        for star_name in list(self.star_names):
+        for single_star in self:
             an_element_found_this_star = False
             elements_not_found_this_star = target_types
-            for short_catalog_name in list(self.__getattribute__(star_name).available_abundance_catalogs):
+            for short_catalog_name in list(single_star.available_abundance_catalogs):
                 an_element_found_this_catalog = False
-                elements_this_catalog = self.__getattribute__(star_name).\
-                    __getattribute__(short_catalog_name).available_abundances
+                elements_this_catalog = single_star.__getattribute__(short_catalog_name).available_abundances
                 elements_not_found_this_star = elements_not_found_this_star - elements_this_catalog
                 if elements_this_catalog & target_types != set():
                     an_element_found_this_catalog = True
                     an_element_found_this_star = True
                 if not an_element_found_this_catalog:
                     catalogs_removed += 1
-                    self.__getattribute__(star_name).__delattr__(short_catalog_name)
-                    self.__getattribute__(star_name).available_abundance_catalogs.remove(short_catalog_name)
+                    single_star.__delattr__(short_catalog_name)
+                    single_star.available_abundance_catalogs.remove(short_catalog_name)
                     try:
-                        self.__getattribute__(star_name).available_data_types.remove(short_catalog_name)
+                        single_star.available_data_types.remove(short_catalog_name)
                     except KeyError:
                         pass
             if not an_element_found_this_star or (and_logic_for_multiples and elements_not_found_this_star != set()):
                 stars_removed += 1
-                self.__delattr__(star_name)
-                self.star_names.remove(star_name)
+                self.__delattr__(single_star.attr_name)
+                self.star_names.remove(single_star.star_reference_name)
         if self.verbose:
             print("  Stars removed:", stars_removed, "  Catalogs removed:", catalogs_removed)
             if self.star_names == set():
@@ -256,10 +263,9 @@ class OutputStarData(AllStarData):
         elements = {element for element, upper, lower in targets}
         if self.verbose:
             print("Bound filtering by elements (element, lower bound, upper bound):", targets)
-        for star_name in list(self.star_names):
+        for single_star in self:
             bounds_satisfied_at_least_one_catalog = False
             elements_not_found_this_star = set(elements)
-            single_star = self.__getattribute__(star_name)
             for short_catalog_name in list(single_star.available_abundance_catalogs):
                 single_catalog = single_star.__getattribute__(short_catalog_name)
                 elements_this_catalog = single_catalog.available_abundances
@@ -283,13 +289,13 @@ class OutputStarData(AllStarData):
                     single_star.__delattr__(short_catalog_name)
                     single_star.available_abundance_catalogs.remove(short_catalog_name)
                     try:
-                        self.__getattribute__(star_name).available_data_types.remove(short_catalog_name)
+                        single_star.available_data_types.remove(short_catalog_name)
                     except KeyError:
                         pass
             if not bounds_satisfied_at_least_one_catalog:
                 stars_removed += 1
-                self.__delattr__(star_name)
-                self.star_names.remove(star_name)
+                self.__delattr__(single_star.attr_name)
+                self.star_names.remove(single_star.star_reference_name)
         if self.verbose:
             print("  Stars removed:", stars_removed, "  Catalogs removed:", catalogs_removed)
             if self.star_names == set():
@@ -306,22 +312,21 @@ class OutputStarData(AllStarData):
         stars_removed = 0
         if self.verbose:
             print("Filtering out catalogs that do not have iron and at least one other non-iron element.")
-        for star_name in list(self.star_names):
+        for single_star in self:
             min_requirements_this_star = False
-            single_star = self.__getattribute__(star_name)
             for short_catalog_name in list(single_star.available_abundance_catalogs):
                 elements_this_catalog = single_star.__getattribute__(short_catalog_name).available_abundances
                 if self.iron_set & elements_this_catalog != set() and elements_this_catalog - self.iron_set != set():
                     min_requirements_this_star = True
                 else:
                     catalogs_removed += 1
-                    self.__getattribute__(star_name).__delattr__(short_catalog_name)
-                    self.__getattribute__(star_name).available_abundance_catalogs.remove(short_catalog_name)
-                    self.__getattribute__(star_name).available_data_types.remove(short_catalog_name)
+                    single_star.__delattr__(short_catalog_name)
+                    single_star.available_abundance_catalogs.remove(short_catalog_name)
+                    single_star.available_data_types.remove(short_catalog_name)
             if not min_requirements_this_star:
                 stars_removed += 1
-                self.__delattr__(star_name)
-                self.star_names.remove(star_name)
+                self.__delattr__(single_star.attr_name)
+                self.star_names.remove(single_star.star_reference_name)
         if self.verbose:
             print("  Stars removed:", stars_removed, "  Catalogs removed:", catalogs_removed)
             if self.star_names == set():
@@ -332,11 +337,11 @@ class OutputStarData(AllStarData):
         stars_removed = 0
         if self.verbose:
             print("Removing NLTE elements.")
-        for star_name in list(self.star_names):
+        for single_star in self:
             an_element_found_this_star = False
-            for short_catalog_name in list(self.__getattribute__(star_name).available_abundance_catalogs):
+            for short_catalog_name in list(single_star.available_abundance_catalogs):
                 an_element_found_this_catalog = False
-                this_catalog = self.__getattribute__(star_name).__getattribute__(short_catalog_name)
+                this_catalog = single_star.__getattribute__(short_catalog_name)
                 elements_this_catalog = this_catalog.available_abundances
                 nlte_abundances = {abundance for abundance in elements_this_catalog if 'nlte' in abundance.lower()}
                 for nlte_abundance in nlte_abundances:
@@ -348,16 +353,16 @@ class OutputStarData(AllStarData):
                     an_element_found_this_star = True
                 else:
                     catalogs_removed += 1
-                    self.__getattribute__(star_name).__delattr__(short_catalog_name)
-                    self.__getattribute__(star_name).available_abundance_catalogs.remove(short_catalog_name)
+                    single_star.__delattr__(short_catalog_name)
+                    single_star.available_abundance_catalogs.remove(short_catalog_name)
                     try:
-                        self.__getattribute__(star_name).available_data_types.remove(short_catalog_name)
+                        single_star.available_data_types.remove(short_catalog_name)
                     except KeyError:
                         pass
             if not an_element_found_this_star:
                 stars_removed += 1
-                self.__delattr__(star_name)
-                self.star_names.remove(star_name)
+                self.__delattr__(single_star.attr_name)
+                self.star_names.remove(single_star.star_reference_name)
         if self.verbose:
             print("  Stars removed:", stars_removed, "  Catalogs removed:", catalogs_removed)
             if self.star_names == set():
@@ -522,29 +527,31 @@ class OutputStarData(AllStarData):
         solar_norm_dict = sn()
         if self.verbose:
             print("Normalizing abundance data using the", norm_key, " solar normalization for all data.")
-        for star_name in list(self.star_names):
+        for single_star in self:
             at_least_one_element_for_this_star_flag = False
-            for catalog_short_name in list(self.__getattribute__(star_name).available_abundance_catalogs):
-                self.__getattribute__(star_name).__getattribute__(catalog_short_name)\
+            for catalog_short_name in list(single_star.available_abundance_catalogs):
+                single_star.__getattribute__(catalog_short_name)\
                     .normalize(solar_norm_dict, norm_key)
-                if self.__getattribute__(star_name).__getattribute__(catalog_short_name).available_abundances == set():
+                if single_star.__getattribute__(catalog_short_name).available_abundances == set():
                     # remove this catalog if this is no data
-                    self.__getattribute__(star_name).__delattr__(catalog_short_name)
-                    self.__getattribute__(star_name).available_abundance_catalogs.remove(catalog_short_name)
+                    single_star.__delattr__(catalog_short_name)
+                    single_star.available_abundance_catalogs.remove(catalog_short_name)
                 else:
                     at_least_one_element_for_this_star_flag = True
             if not at_least_one_element_for_this_star_flag:
                 # remove this star if this is no data
-                self.__delattr__(star_name)
-                self.star_names.remove(star_name)
+                self.__delattr__(single_star.attr_name)
+                self.star_names.remove(single_star.star_reference_name)
         self.data_norm = norm_key
         self.data_is_absolute = False
         if self.verbose:
             print("  Normalization complete.\n")
 
     def get_element_ratio_and_distance(self, element_set=None,
-                                       distance_list=[0.0, 30.0, 60.0, 150.0], xlimits_list=None, ylimits_list=None,
+                                       distance_list=None, xlimits_list=None, ylimits_list=None,
                                        has_exoplanet=None, use_median=True):
+        if distance_list is None:
+            distance_list = self.distance_bin_default
         if self.stats is None:
             self.do_stats()
         if element_set is None:
@@ -571,21 +578,22 @@ class OutputStarData(AllStarData):
                 temp_output_star_data.filter(target_elements=[element],
                                              parameter_bound_filter=[('dist', lower_bound, upper_bound)],
                                              has_exoplanet=has_exoplanet)
-
                 temp_output_star_data.reduce_elements()
                 for star_name in temp_output_star_data.star_names:
-                    reduced_data_this_star = temp_output_star_data.__getattribute__(star_name).reduced_abundances
+                    simbad_doc = get_star_data(star_name, test_origin="OutputStarData")
+                    attr_name = simbad_doc['attr_name']
+                    reduced_data_this_star = temp_output_star_data.__getattribute__(attr_name).reduced_abundances
                     if use_median:
-                        festool = reduced_data_this_star.Fe.median
-                        y_data.append(reduced_data_this_star.__getattribute__(element).median - festool)
-                        x_data.append(festool)
+                        iron_value = reduced_data_this_star.Fe.median
+                        y_data.append(reduced_data_this_star.__getattribute__(element).median - iron_value)
+                        x_data.append(iron_value)
                     else:
-                        festool = reduced_data_this_star.Fe.mean
-                        y_data.append(reduced_data_this_star.__getattribute__(element).mean - festool)
-                        x_data.append(festool)
+                        iron_value = reduced_data_this_star.Fe.mean
+                        y_data.append(reduced_data_this_star.__getattribute__(element).mean - iron_value)
+                        x_data.append(iron_value)
                 data_list.append((x_data, y_data))
-            make_element_distance_plots(distance_abundance_data=data_list, xlimits=xlimits_list, ylimits=ylimits_list, label_list=label_list,
-                                        xlabel=x_label, ylabel=y_label, figname=figname,
+            make_element_distance_plots(distance_abundance_data=data_list, xlimits=xlimits_list, ylimits=ylimits_list,
+                                        label_list=label_list, xlabel=x_label, ylabel=y_label, figname=figname,
                                         save_figure=True, do_eps=False, do_pdf=True, do_png=False)
         if self.verbose:
             print("  ...Element Ratio and Distance Plots completed \n")

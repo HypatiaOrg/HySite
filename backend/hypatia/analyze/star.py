@@ -1,10 +1,12 @@
 from hypatia.analyze.abund_cat import CatalogData
 from hypatia.analyze.stats import ReducedAbundances
 from hypatia.analyze.params import SingleStarParams
+from hypatia.database.simbad.db import indexed_name_types
 from hypatia.data_structures.object_params import ObjectParams, SingleParam
 
 all_gaia_refs_ranked = ['Gaia DR3 Gaia Collaboration et al. (2016b) and Gaia Collaboration et al. (2022k)',
                         'Bailer-Jones et al. (2018)', 'Gaia Data Release 2', 'Gaia Data Release 1', ]
+star_name_types = set(indexed_name_types)
 
 
 def ref_rank_gaia(single_param: SingleParam):
@@ -22,6 +24,8 @@ class SingleStar:
         self.star_reference_name = star_reference_name
         self.simbad_doc = simbad_doc
         self.star_names = set(self.simbad_doc['aliases'])
+        self.attr_name = self.simbad_doc['attr_name']
+        self.available_star_name_types = set(self.simbad_doc.keys()) & star_name_types
         self.params = SingleStarParams()
         self.available_data_types = set()
         self.available_abundance_catalogs = set()

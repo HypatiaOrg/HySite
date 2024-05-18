@@ -1,11 +1,13 @@
 class CatalogData:
+    non_element_keys = {"star_name", "norm_key", "long_name", "original_star_name", "main_id"}
+
     def __init__(self, catalog_dict):
         self.original_catalog_star_name = catalog_dict["original_star_name"]
         self.main_star_id = catalog_dict["main_id"]
         self.original_catalog_norm = catalog_dict["norm_key"]
         self.catalog_long_name = catalog_dict["long_name"]
         self.available_abundances = set()
-        for element in set(catalog_dict.keys()) - {"star_name", "norm_key", "long_name"}:
+        for element in set(catalog_dict.keys()) - self.non_element_keys:
             self.__setattr__(element, catalog_dict[element])
             self.available_abundances.add(element)
         self.normalization = None
