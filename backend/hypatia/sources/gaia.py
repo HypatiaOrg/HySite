@@ -9,8 +9,8 @@ from astropy.coordinates import SkyCoord, Distance
 
 from hypatia.config import ref_dir
 from hypatia.tools.table_read import row_dict
-from hypatia.database.simbad.ops import get_star_data
-from hypatia.data_structures.object_params import ObjectParams, set_single_param
+from hypatia.sources.simbad.ops import get_star_data
+from hypatia.object_params import ObjectParams, set_single_param
 
 
 deg_per_mas = 1.0 / (1000.0 * 60.0 * 60.0)

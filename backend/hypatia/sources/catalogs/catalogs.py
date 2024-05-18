@@ -4,12 +4,12 @@ import shutil
 import datetime
 from warnings import warn
 
-from hypatia.database.elements import element_rank
+from hypatia.sources.elements import element_rank
 from hypatia.tools.table_read import ClassyReader
 from hypatia.tools.star_names import calc_simbad_name
-from hypatia.database.simbad.ops import get_star_data, get_main_id
+from hypatia.sources.simbad.ops import get_star_data, get_main_id
 from hypatia.config import abundance_dir, ref_dir, cat_pickles_dir
-from hypatia.database.catalogs.solar import SolarNorm, ratio_to_element, un_norm
+from hypatia.sources.catalogs.solar import SolarNorm, ratio_to_element, un_norm
 
 
 indicates_mixed_name_types = {"Star", "star", "Stars", "starname", "Starname", "Name", "ID", "Object", "HDBD"}
@@ -112,7 +112,7 @@ class Catalog:
         self.raw_data.original_star_names = getattr(self.raw_data, attribute_name)
         converted_star_names = [calc_simbad_name(raw_name, key=self.star_names_type)
                                 for raw_name in self.raw_data.original_star_names]
-        # the modern system for getting the main star name from the SIMBAD database.
+        # the modern system for getting the main star name from the SIMBAD sources.
         self.star_names = [get_main_id(simbad_formatted, test_origin=catalog_name)
                            for simbad_formatted in converted_star_names]
         # add the star names to the raw_data object
@@ -166,7 +166,7 @@ class Catalog:
 
     def update_star_names(self):
         """
-        Get all the star's names, using the SIMBAD database
+        Get all the star's names, using the SIMBAD sources
         """
         if self.verbose:
             print("Updating the", self.catalog_name, "star names from reference data")

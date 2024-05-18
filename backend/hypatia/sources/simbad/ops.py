@@ -1,8 +1,8 @@
 import time
 
 from hypatia.tools.exceptions import StarNameNotFound
-from hypatia.database.simbad.query import query_simbad_star
-from hypatia.database.simbad.db import StarCollection, indexed_name_types
+from hypatia.sources.simbad.query import query_simbad_star
+from hypatia.sources.simbad.db import StarCollection, indexed_name_types
 
 
 no_simbad_reset_time_seconds = 60 * 60 * 24 * 365.24  # 1 year
@@ -12,7 +12,7 @@ star_collection = StarCollection(collection_name="stars")
 
 
 def get_attr_name(name: str) -> str:
-    """Converts a star name into a name that can be used as a database table name or as a Python attribute name."""
+    """Converts a star name into a name that can be used as a sources table name or as a Python attribute name."""
     test_name = name.strip().lower().replace(" ", "_")
     while "__" in test_name:
         test_name = test_name.replace("__", "_")
@@ -42,7 +42,7 @@ def set_default_main_id(simbad_main_id: str) -> str:
     """
     Add the SIMBAD main_id to the cache, however if the lowercase version of the main_id is already in the cache,
     then, we return the main_id that was found last time, which might have a different capitalization
-    from the SIMBAD database.
+    from the SIMBAD sources.
     """
     return cache_names.setdefault(simbad_main_id.lower(), simbad_main_id)
 
@@ -88,7 +88,7 @@ def get_simbad_main_id(test_name: str) -> str | None:
 
 
 def no_simbad_add_name(name: str, origin: str, aliases: list[str] = None) -> None:
-    # asemble the record to add to the database
+    # asemble the record to add to the sources
     if aliases is None:
         aliases = set()
     else:
@@ -97,7 +97,7 @@ def no_simbad_add_name(name: str, origin: str, aliases: list[str] = None) -> Non
         aliases.add(name)
     star_names_list = list(aliases)
     if not star_names_list:
-        raise ValueError("No names were provided to add to the no-SIMBAD database.")
+        raise ValueError("No names were provided to add to the no-SIMBAD sources.")
     if not name:
         name = star_names_list[0]
     star_record = {
@@ -108,7 +108,7 @@ def no_simbad_add_name(name: str, origin: str, aliases: list[str] = None) -> Non
         **parse_indexed_name(star_names_list),
         "aliases": star_names_list,
     }
-    # add the main_id to the that database table
+    # add the main_id to the that sources table
     star_collection.add_one(doc=star_record)
 
 
@@ -144,38 +144,38 @@ def ask_simbad(test_name: str, original_name: str = None) -> str or None:
     if simbad_main_id_found is None:
         # no star data was found from SIMBAD
         return None
-    # we need to update the cache and the database with the new to skip this step next time
+    # we need to update the cache and the sources with the new to skip this step next time
     update_names = {test_name}
     if original_name is not None:
         update_names.add(original_name)
     # is this a new record or an update?
     simbad_main_id_existing = get_simbad_main_id(simbad_main_id_found)
     if simbad_main_id_existing is None:
-        # create a cache and database records for this star
+        # create a cache and sources records for this star
         # check for capitalization differences in the main_id
         simbad_main_id = set_default_main_id(simbad_main_id_found)
         # uniquify the star names, and this will update the cache
         star_names = uniquify_star_names(star_names_list + list(update_names), simbad_main_id)
         star_record = format_simbad_star_record(simbad_main_id, star_data, star_names)
-        # update the database with the new data
+        # update the sources with the new data
         star_collection.add_one(doc=star_record)
         # update the cache with the new data
         set_cache_data(simbad_main_id=simbad_main_id, star_record=star_record, star_name_aliases=set(star_names))
         # return the main_id
         return simbad_main_id
-    # get the existing record from the cache/database
+    # get the existing record from the cache/sources
     star_record_existing = get_star_data_by_main_id(simbad_main_id_existing)
-    # update the cache and the database with the new data
+    # update the cache and the sources with the new data
     simbad_main_id = simbad_main_id_existing
     # uniquify the star names, and this will update the cache
     star_names = uniquify_star_names(star_record_existing['aliases'] + star_names_list + list(update_names),
                                      simbad_main_id)
     star_record = format_simbad_star_record(simbad_main_id, star_data, star_names)
-    # update the database with the new data
+    # update the sources with the new data
     # this will replace the existing record with the new one in the cache
     star_record_existing.update(star_record)
     set_cache_data(simbad_main_id=simbad_main_id, star_record=star_record, star_name_aliases=set(star_names))
-    # add the main_id to the that database table
+    # add the main_id to the that sources table
     star_collection.update(main_id=simbad_main_id, doc=star_record)
     return simbad_main_id
 
@@ -209,11 +209,11 @@ def interactive_name_menu(test_name: str = '', test_origin: str = 'unknown',  ma
             if simbad_main_id is not None:
                 return simbad_main_id
             print(f"This star's test_name: {test_name} origin: {test_origin}")
-        print(" is not in the database tables and it was not found on SIMBAD.")
+        print(" is not in the sources tables and it was not found on SIMBAD.")
         print("Please select an option (or use control-c to exit):")
         print(" 1. Enter a new name to try to query for SIMBAD (default).")
         print(" 2. Enter 'no-simbad' or '2'")
-        print("    to add star name to the no-SIMBAD database.")
+        print("    to add star name to the no-SIMBAD sources.")
         user_response = input("Enter your choice: ").strip()
         count += 1
 
@@ -223,21 +223,21 @@ def get_main_id(test_name: str, test_origin: str = "unknown", allow_interaction:
     test_name_lower = test_name.lower()
     if test_name_lower in cache_names:
         return cache_names[test_name_lower]
-    # check if the name is in the database.
+    # check if the name is in the sources.
     names_doc = star_collection.find_name_match(test_name)
     if names_doc is not None:
         main_id = names_doc["_id"]
         # is this star a known no-SIMBAD star?
         if names_doc['origin'] != "simbad":
-            # This star has been in the no-SIMBAD database before
+            # This star has been in the no-SIMBAD sources before
             if names_doc['timestamp'] + no_simbad_reset_time_seconds < time.time():
-                # case this star has been in the no-SIMBAD database for too long, let us see id it is in SIMBAD now.
+                # case this star has been in the no-SIMBAD sources for too long, let us see id it is in SIMBAD now.
                 main_id_possible = ask_simbad(test_name)
                 if main_id_possible is None:
                     # No Simbad entry was found, we update the timestamp for when this name was last checked.
                     star_collection.update_timestamp(update_id=main_id)
                 else:
-                    # We found the star in SIMBAD, let us remove it from the no-SIMBAD database.
+                    # We found the star in SIMBAD, let us remove it from the no-SIMBAD sources.
                     star_collection.remove_by_id(main_id)
                     # note the cache is already updated in ask_simbad
                     return main_id_possible
@@ -251,7 +251,7 @@ def get_main_id(test_name: str, test_origin: str = "unknown", allow_interaction:
     # We will try to query SIMBAD for this star
     simbad_main_id = ask_simbad(test_name)
     if simbad_main_id is None:
-        raise StarNameNotFound(f"The star name '{test_name}' {test_origin} was not found in the database.")
+        raise StarNameNotFound(f"The star name '{test_name}' {test_origin} was not found in the sources.")
     return simbad_main_id
 
 

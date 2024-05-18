@@ -35,7 +35,7 @@ asterisk_name_types = {'v*', "*", "**", 'em*', "Name"}
 
 StarName = namedtuple("StarName", "type id")
 
-# for sorting.py
+# for nat_cat.py
 star_name_preference = ["hip", 'gaia dr3', 'gaia dr2', 'gaia dr1', "hd", 'bd', "2mass", "tyc"]
 star_name_preference.extend([star_name for star_name in sorted(star_name_types)
                              if star_name not in star_name_preference[:]])

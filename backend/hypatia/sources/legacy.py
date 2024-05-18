@@ -10,7 +10,7 @@ import pandas as pd
 
 from hypatia.config import star_data_output_dir
 
-from hypatia.database.sqlite import get_db, test_database_dir, hdf5_data_dir
+from hypatia.sources.sqlite import get_db, test_database_dir, hdf5_data_dir
 
 ordered_outputs = ["absolute", "anders89", "asplund05", "asplund09",
                    "grevesse98", "lodders09", "original", "grevesse07"]

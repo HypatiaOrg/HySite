@@ -2,8 +2,8 @@
 Nat's Test Space
 
 The current code below takes the input file (no spaces between commas, often a "planets_" file from NEA)
-and creates a mini-database by matching only to those stars while still retaining all of the tools and
-stats of the main Hypatia database. To execute, run this file in the terminal. Might need to move this to
+and creates a mini-sources by matching only to those stars while still retaining all of the tools and
+stats of the main Hypatia sources. To execute, run this file in the terminal. Might need to move this to
 standard_lib at some point.
 """
 import os
@@ -11,12 +11,12 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from hypatia.analyze.stats import autolabel
+from hypatia.assemble.stats import autolabel
 from hypatia.config import working_dir
-from hypatia.database.elements import element_rank
+from hypatia.sources.elements import element_rank
 
-from hypatia.analyze.sorting import NatCat, load_catalog_query
-from hypatia.analyze.output_star_data import load_pickled_output
+from hypatia.assemble.nat_cat import NatCat, load_catalog_query
+from hypatia.assemble.star.output import load_pickled_output
 
 
 def mdwarf_output(from_scratch=True, short_name_list='mdwarf_subset_catalog_file.csv', norm_key=None,

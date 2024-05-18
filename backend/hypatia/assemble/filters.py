@@ -1,5 +1,5 @@
-from hypatia.database.catalogs.solar import strip_ionization
-from hypatia.database.elements import all_elements
+from hypatia.sources.elements import all_elements
+from hypatia.sources.catalogs.solar import strip_ionization
 
 
 def get_element_keys(star_dict, init_catalogs):

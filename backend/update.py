@@ -1,6 +1,6 @@
 from standard_lib import standard_output
-from hypatia.database.sqlite import delete_test_database
-from hypatia.database.legacy import ordered_outputs, update_one_norm
+from hypatia.sources.sqlite import delete_test_database
+from hypatia.sources.legacy import ordered_outputs, update_one_norm
 
 
 def legacy_update(skip_output: bool = False, test_mode: bool = True, output_list=ordered_outputs):

@@ -5,7 +5,7 @@ from statistics import mean, stdev
 from hypatia.tools.table_read import get_table_data
 from hypatia.tools.star_names import star_name_format
 from hypatia.config import ref_dir, output_products_dir
-from hypatia.data_structures.object_params import ObjectParams, SingleParam
+from hypatia.object_params import ObjectParams, SingleParam
 
 
 # When updating a new Pastel file, change the filename on Line 35 and the delimiter on Line 55.

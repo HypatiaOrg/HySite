@@ -1,7 +1,7 @@
 import numpy as np
 
+from hypatia.object_params import SingleParam, ObjectParams
 from hypatia.tools.coordinates import spherical_astronomy_to_cartesian
-from hypatia.data_structures.object_params import SingleParam, ObjectParams
 
 
 class SingleStarParams:

@@ -4,11 +4,11 @@ import math
 import numpy as np
 
 from hypatia.config import ref_dir, base_dir
-from hypatia.database.catalogs.cat_file_ops import CatOps
-from hypatia.database.elements import element_rank
+from hypatia.sources.catalogs.ops import CatOps
+from hypatia.sources.elements import element_rank
 from hypatia.plots.scatter_hist_hist_plot import histPlot
-from hypatia.analyze.sorting import NatCat, load_catalog_query
-from hypatia.analyze.output_star_data import load_pickled_output
+from hypatia.assemble.nat_cat import NatCat, load_catalog_query
+from hypatia.assemble.star.output import load_pickled_output
 
 
 def save_or_load(load=True, a_catalog_query=None):
@@ -426,7 +426,7 @@ if __name__ == "__main__":
                                                                       norm_key="lodders09",
                                                                       fast_update_gaia=True, from_pickle=False)
     elif run_normally:
-        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=False,
+        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=True,
                                                                       norm_key="lodders09",
                                                                       fast_update_gaia=True,
                                                                       from_pickle=False)

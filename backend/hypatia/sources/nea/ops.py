@@ -1,8 +1,8 @@
-from hypatia.database.nea.db import ExoPlanetCollection
+from hypatia.sources.nea.db import ExoPlanetCollection
 from hypatia.tools.exceptions import StarNameNotFound
-from hypatia.database.nea.query import query_nea, set_data_by_host, hypatia_host_name_rank_order
-from hypatia.database.simbad.ops import (get_main_id, interactive_name_menu, star_collection, no_simbad_add_name,
-                                         get_attr_name)
+from hypatia.sources.nea.query import query_nea, set_data_by_host, hypatia_host_name_rank_order
+from hypatia.sources.simbad.ops import (get_main_id, interactive_name_menu, star_collection, no_simbad_add_name,
+                                        get_attr_name)
 
 
 nea_ref = "NASA Exoplanet Archive"
@@ -10,8 +10,8 @@ nea_collection = ExoPlanetCollection(collection_name="nea")
 known_micro_names = {"kmt", "ogle", "moa", 'k2'}
 system_designations = {'a', 'b', 'c', 'ab', 'ac', 'bc'}
 incorrect_nea_names = {'Gaia DR2 4794830231453653888'}
-# Gaia DR2 4794830231453653888 is incorrectly associated with HD 41004B in the NEA database,
-# but this GAIA name is for HD 41004A, which also has an entry in the NEA database.
+# Gaia DR2 4794830231453653888 is incorrectly associated with HD 41004B in the NEA sources,
+# but this GAIA name is for HD 41004A, which also has an entry in the NEA sources.
 
 
 def get_nea_data(test_name: str) -> dict or None:
@@ -70,7 +70,7 @@ def format_for_mongo(host_data: dict) -> dict:
             # if one name was not found, then we will update all the names to try in the aliases
             star_collection.update_aliases(main_id=found_id, new_aliases=names_to_try)
         else:
-            # automatically add the name to the database without a SIMBAD name or a prompt
+            # automatically add the name to the sources without a SIMBAD name or a prompt
             no_simbad_add_name(name=nea_name, aliases=names_to_try, origin="nea")
             found_id = get_main_id(test_name=nea_name, test_origin="nea", allow_interaction=False)
     return {"_id": found_id, 'attr_name': get_attr_name(found_id), 'planet_letters': list(host_data['planets'].keys()), **host_data}
@@ -84,7 +84,7 @@ def refresh_nea_data(verbose: bool = False):
 
 
 def get_all_nea() -> list[dict[str, any]]:
-    """Get all the data from the Hypatia NEA database in MongoDB"""
+    """Get all the data from the Hypatia NEA sources in MongoDB"""
     return list(nea_collection.find_all())
 
 

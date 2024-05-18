@@ -1,5 +1,5 @@
 """
-New catalog insertion into the Hypatia database.
+New catalog insertion into the Hypatia sources.
 
 Data Formatting Instructions
 In the new files to be inserted into the hypatia catalog are required to be formatted in the following ways.
@@ -87,10 +87,10 @@ import os
 import sys
 import shutil
 from hypatia.config import working_dir
-from hypatia.database.catalogs.solar import SolarNorm
-from hypatia.analyze.sorting import NatCat
-from hypatia.database.catalogs.cat_file_ops import CatOps
-from hypatia.database.catalogs.catalogs import get_catalogs
+from hypatia.sources.catalogs.solar import SolarNorm
+from hypatia.assemble.nat_cat import NatCat
+from hypatia.sources.catalogs.ops import CatOps
+from hypatia.sources.catalogs.catalogs import get_catalogs
 
 # File locations
 new_abundances_dir = os.path.join(working_dir, 'load', "abundance_data", "new_data")

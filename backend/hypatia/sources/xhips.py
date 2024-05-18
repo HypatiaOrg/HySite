@@ -2,7 +2,7 @@ import os
 
 from hypatia.config import ref_dir
 from hypatia.tools.table_read import row_dict
-from hypatia.data_structures.object_params import ObjectParams, SingleParam
+from hypatia.object_params import ObjectParams, SingleParam
 
 
 class Xhip:

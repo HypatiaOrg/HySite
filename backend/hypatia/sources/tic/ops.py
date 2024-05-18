@@ -1,9 +1,9 @@
 import numpy as np
 
-from hypatia.database.tic.query import query_tic_data
-from hypatia.database.simbad.ops import get_star_data
-from hypatia.database.tic.db import TICCollection, primary_values
-from hypatia.data_structures.object_params import ObjectParams, SingleParam
+from hypatia.sources.tic.query import query_tic_data
+from hypatia.sources.simbad.ops import get_star_data
+from hypatia.sources.tic.db import TICCollection, primary_values
+from hypatia.object_params import ObjectParams, SingleParam
 
 
 tic_reference = "TESS Input Catalog"
@@ -30,16 +30,16 @@ def get_tic_data(star_name: str) -> dict or None:
         if tic_doc['is_tic']:
             return tic_doc
         else:
-            # The star is not in the TIC database queried before
+            # The star is not in the TIC sources queried before
             return None
-    """ The Data was not found in the local database, can we find it in the TIC database?"""
-    # get the allowed star names from the TIC database
+    """ The Data was not found in the local sources, can we find it in the TIC sources?"""
+    # get the allowed star names from the TIC sources
     for name_type in name_preference:
         if name_type in simbad_doc.keys():
             allowed_star_name = simbad_doc[name_type]
             break
     else:
-        # None of the star's names can be used to query the TIC database, we cannot proceed
+        # None of the star's names can be used to query the TIC sources, we cannot proceed
         return None
     tic_dict = query_tic_data(allowed_star_name)
     if tic_dict is None:
@@ -47,7 +47,7 @@ def get_tic_data(star_name: str) -> dict or None:
         tic_collection.set_null_record(main_star_id)
         print(f"  No TIC data found for main_star_id: {main_star_id}")
         return None
-    # parse the TIC data and add it to the local database.
+    # parse the TIC data and add it to the local sources.
     found_params = set(tic_dict.keys()) & tic_data_wanted
     data_params = {field_name: float(tic_dict[field_name][0]) for field_name in found_params}
     for key, value in list(data_params.items()):
@@ -74,8 +74,8 @@ def get_tic_data(star_name: str) -> dict or None:
     # add the units to the data record
     tic_collection.set_record(main_star_id, data_record)
     tic_cache[main_star_id] = tic_collection.find_by_id(main_star_id)
-    print(f"  TIC data added to the hypatia database for main_star_id: {main_star_id}")
-    # try again to get the newly updated star data from the local database
+    print(f"  TIC data added to the hypatia sources for main_star_id: {main_star_id}")
+    # try again to get the newly updated star data from the local sources
     return get_tic_data(star_name=star_name)
 
 

@@ -2,7 +2,7 @@ import time
 
 import pymongo
 
-from hypatia.database.collect import BaseCollection
+from hypatia.sources.collect import BaseCollection
 
 
 indexed_name_types = ["hip", 'hd', 'tyc', 'gaia dr1', 'gaia dr2', 'gaia dr3', 'bd', '2mass', 'koi', 'kepler', 'wds']

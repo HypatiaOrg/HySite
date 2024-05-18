@@ -2,7 +2,7 @@ import astroquery.mast
 
 
 def query_tic_data(allowed_star_name: str):
-    # preform the TIC database Query
+    # preform the TIC sources Query
     try:
         print(f'  Querying TIC for {allowed_star_name}')
         raw_tic_data = astroquery.mast.Catalogs.query_object(allowed_star_name, catalog="TIC", radius=0.0001)

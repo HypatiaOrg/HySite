@@ -1,6 +1,6 @@
 import pymongo
 
-from hypatia.database.collect import BaseCollection
+from hypatia.sources.collect import BaseCollection
 
 
 nea_single_value = {

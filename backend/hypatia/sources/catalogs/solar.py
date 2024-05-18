@@ -2,7 +2,7 @@ import os
 
 from hypatia.config import ref_dir
 from hypatia.tools.table_read import row_dict
-from hypatia.database.elements import element_dict, element_rank
+from hypatia.sources.elements import element_dict, element_rank
 
 element_abrevs = set(element_dict.keys())
 

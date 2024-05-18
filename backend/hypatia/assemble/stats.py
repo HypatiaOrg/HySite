@@ -4,9 +4,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from hypatia.config import working_dir
-from hypatia.database.elements import element_rank
-from hypatia.database.simbad.ops import get_star_data
-from hypatia.database.simbad.db import indexed_name_types
+from hypatia.sources.elements import element_rank
+from hypatia.sources.simbad.ops import get_star_data
+from hypatia.sources.simbad.db import indexed_name_types
 
 
 def autolabel(rects):

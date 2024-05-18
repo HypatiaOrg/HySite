@@ -1,6 +1,6 @@
 import time
 
-from hypatia.database.collect import BaseCollection
+from hypatia.sources.collect import BaseCollection
 
 # Tess Input Catalog
 primary_values = ["Teff", "logg", "mass", "rad"]

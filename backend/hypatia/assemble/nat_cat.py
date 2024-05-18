@@ -1,17 +1,17 @@
 import os
 import pickle
 
-from hypatia.database.pastel import Pastel
-from hypatia.database.xhips import Xhip
-from hypatia.database.catalogs.solar import SolarNorm
-from hypatia.database.gaia import GaiaLib
+from hypatia.sources.xhips import Xhip
+from hypatia.sources.gaia import GaiaLib
+from hypatia.sources.pastel import Pastel
+from hypatia.object_params import SingleParam
 from hypatia.tools.table_read import row_dict
-from hypatia.database.catalogs.catalogs import get_catalogs
-from hypatia.database.tic.ops import get_hy_tic_data
-from hypatia.analyze.all_star_data import AllStarData
-from hypatia.analyze.output_star_data import OutputStarData
-from hypatia.data_structures.object_params import SingleParam
-from hypatia.database.simbad.ops import get_main_id, get_star_data
+from hypatia.assemble.star.all import AllStarData
+from hypatia.sources.tic.ops import get_hy_tic_data
+from hypatia.sources.catalogs.solar import SolarNorm
+from hypatia.assemble.star.output import OutputStarData
+from hypatia.sources.catalogs.catalogs import get_catalogs
+from hypatia.sources.simbad.ops import get_main_id, get_star_data
 from hypatia.config import working_dir, ref_dir, abundance_dir, hacked, pickle_nat
 
 

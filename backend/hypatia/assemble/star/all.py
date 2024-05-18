@@ -3,16 +3,16 @@ import datetime
 
 import numpy as np
 
-from hypatia.database.gaia import GaiaLib
-from hypatia.analyze.star import SingleStar
+from hypatia.sources.gaia import GaiaLib
 from hypatia.config import star_data_output_dir
-from hypatia.database.elements import element_rank
-from hypatia.analyze.stats import StarDataStats
+from hypatia.sources.elements import element_rank
+from hypatia.assemble.stats import StarDataStats
 from hypatia.plots.histograms import simple_hist
 from hypatia.plots.quick_plots import quick_plotter
-from hypatia.database.nea.ops import get_all_nea, refresh_nea_data
-from hypatia.database.simbad.ops import get_star_data, get_main_id
-from hypatia.data_structures.object_params import StarDict, SingleParam
+from hypatia.assemble.star.single import SingleStar
+from hypatia.sources.nea.ops import get_all_nea, refresh_nea_data
+from hypatia.sources.simbad.ops import get_star_data, get_main_id
+from hypatia.object_params import StarDict, SingleParam
 
 
 def params_check(params_dict, hypatia_handle):

@@ -1,8 +1,9 @@
-from hypatia.analyze.abund_cat import CatalogData
-from hypatia.analyze.stats import ReducedAbundances
-from hypatia.analyze.params import SingleStarParams
-from hypatia.database.simbad.db import indexed_name_types
-from hypatia.data_structures.object_params import ObjectParams, SingleParam
+from hypatia.assemble.abund_cat import CatalogData
+from hypatia.assemble.stats import ReducedAbundances
+from hypatia.sources.simbad.db import indexed_name_types
+from hypatia.assemble.star.params import SingleStarParams
+
+from hypatia.object_params import ObjectParams, SingleParam
 
 all_gaia_refs_ranked = ['Gaia DR3 Gaia Collaboration et al. (2016b) and Gaia Collaboration et al. (2022k)',
                         'Bailer-Jones et al. (2018)', 'Gaia Data Release 2', 'Gaia Data Release 1', ]
