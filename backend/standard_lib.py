@@ -420,16 +420,18 @@ if __name__ == "__main__":
                                                                   fast_update_gaia=True, from_pickle=False)
     elif only_target_list:
         example_target_list = os.path.join(ref_dir, 'ARIEL_Edwards22_Table4_TOIpotential.txt')
-        #example_target_list2 = ['HIP 36366', 'HIP 55846', 'HD 103095', 'HIP 33226']
+        # example_target_list2 = ['HIP 36366', 'HIP 55846', 'HD 103095', 'HIP 33226']
         nat_cat, output_star_data, target_star_data = standard_output(from_scratch=True,
                                                                       target_list=example_target_list,
                                                                       norm_key="lodders09",
                                                                       fast_update_gaia=True, from_pickle=False)
     elif run_normally:
-        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=True,
+        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=False,
                                                                       norm_key="lodders09",
                                                                       fast_update_gaia=True,
                                                                       from_pickle=False)
+    else:
+        raise ValueError("No mode selected, set run_normally, run_all_norms, or only_target_list to True")
 
     # output_star_data.xy_plot(x_thing='dist', y_thing='Fe', color="darkorchid", show=False, save=True)
     stats = output_star_data.stats

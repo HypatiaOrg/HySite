@@ -1,18 +1,19 @@
 import os
+import hashlib
 import datetime
 
 import numpy as np
 
 from hypatia.sources.gaia import GaiaLib
 from hypatia.config import star_data_output_dir
-from hypatia.sources.elements import element_rank
 from hypatia.assemble.stats import StarDataStats
 from hypatia.plots.histograms import simple_hist
+from hypatia.sources.elements import element_rank
 from hypatia.plots.quick_plots import quick_plotter
 from hypatia.assemble.star.single import SingleStar
+from hypatia.object_params import StarDict, SingleParam
 from hypatia.sources.nea.ops import get_all_nea, refresh_nea_data
 from hypatia.sources.simbad.ops import get_star_data, get_main_id
-from hypatia.object_params import StarDict, SingleParam
 
 
 def params_check(params_dict, hypatia_handle):
@@ -240,12 +241,20 @@ class AllStarData:
             simbad_doc = single_star.simbad_doc
             star_name_aliases = simbad_doc['aliases']
             attr_name = simbad_doc['attr_name']
-            star_write_lines = []
             # A params formatting check add by Caleb Jan 2022
             params_this_star = single_star.params.available_params
             params_dict = {param: single_star.params.__getattribute__(param) for param in params_this_star}
             params_check(params_dict=params_dict, hypatia_handle=single_star.star_reference_name)
             # Main output name types.
+            star_id = None
+            if 'hip' in simbad_doc.keys():
+                try:
+                    star_id = int(simbad_doc['hip'][3:])
+                except ValueError:
+                    pass
+            if star_id is None:
+                star_id = int(hashlib.md5(single_star.star_reference_name.encode()).hexdigest(), 16)
+            star_write_lines = [f'Star: {star_id}']
             for name_type in self.name_types_for_output:
                 name_line = name_type + " = "
                 lower_case_name_type = name_type.lower()
@@ -265,13 +274,7 @@ class AllStarData:
                         name_line += star_number
                 star_write_lines.append(name_line)
             # all the other available names
-            other_name_line = "Other names: "
-            for known_star_name in star_name_aliases:
-                other_name_line += f"{known_star_name}, "
-            star_write_lines.append(other_name_line[:-2])
-
-            if len(star_write_lines) > 0:
-                star_write_lines[0] = "Star: " + star_write_lines[0]
+            star_write_lines.append("Other names: " + "|".join(star_name_aliases))
             # distance
             dist_line = 'dist (pc) = '
             if "dist" in params_this_star:
@@ -345,7 +348,7 @@ class AllStarData:
                 star_write_lines.append(f"Number of planets = {len(all_planets)}")
                 # exoplanet parameters
                 for planet_letter, planet_params in all_planets.items():
-                    output_line = f"[{planet_letter}]"
+                    output_line = f"[{planet_letter}] "
                     for output_str, planet_param, unit in self.planet_output:
                         if planet_param in planet_params.keys():
                             param_data = planet_params[planet_param]
@@ -370,7 +373,7 @@ class AllStarData:
                     element_lower = element.strip().lower()
                     if element_lower in self.hydrogen_element_lower or element_lower[-1] != 'h':
                         an_element_line += "H"
-                    an_element_line += f" {element_value:1.3} [{single_catalog.catalog_long_name}]"
+                    an_element_line += f" {element_value:1.3f} [{single_catalog.catalog_long_name}]"
                     star_write_lines.append(an_element_line)
             # there is a blank line between stars
             star_write_lines.append("")

@@ -9,8 +9,7 @@ from datetime import datetime
 import pandas as pd
 
 from hypatia.config import star_data_output_dir
-
-from hypatia.sources.sqlite import get_db, test_database_dir, hdf5_data_dir
+from hypatia.legacy.sqlite import get_db, test_database_dir, hdf5_data_dir
 
 ordered_outputs = ["absolute", "anders89", "asplund05", "asplund09",
                    "grevesse98", "lodders09", "original", "grevesse07"]
@@ -316,13 +315,13 @@ def upload_star_data(HYP_DATA_DIR: str, filePath: str, solarnorm: int, test_mode
                 if curLine[0] == 'Other':
                     if len(curLine) > 2:
                         val = " ".join(curLine[2:])
+                        newData['f_all_names'] += ", " + val.replace("|", ", ")
+                        other_names = val.split("|")
                         newData['f_other_names'] = val
-                        newData['f_all_names'] += ", " + val
                         if 'f_preferred_name' not in newData:
                             # find the WDS name first
-                            other_names = val.split(",")
                             for name in other_names:
-                                if name.strip().startswith("WDS"):
+                                if name.lower().strip().startswith("wds"):
                                     newData['f_preferred_name'] = name.strip()
                                     break
                             else:
@@ -540,7 +539,7 @@ def upload_star_data(HYP_DATA_DIR: str, filePath: str, solarnorm: int, test_mode
                     version = ''
                     element = curLine[0]
 
-                    if (curLine[1] == '(NLTE)'):
+                    if curLine[1] == '(NLTE)':
                         curLine.pop(1)
                         newNLTE.append(1)
                     else:

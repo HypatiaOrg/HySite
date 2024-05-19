@@ -5,6 +5,7 @@ import dotenv
 star_names_dir = os.path.dirname(os.path.realpath(__file__))
 base_dir = os.path.dirname(star_names_dir)
 repo_dir = os.path.dirname(base_dir)
+projects_dir = os.path.dirname(repo_dir)
 
 working_dir = os.path.join(base_dir, "hypatia")
 hydata_dir = os.path.join(working_dir, 'HyData')
@@ -111,8 +112,8 @@ MONGO_PASSWORD = os.environ.get("MONGO_PASSWORD", "password")
 connection_string = f'mongodb://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_HOST}:27017'
 
 # Legacy SQLite and HDF5 data directories
-hdf5_data_dir = os.path.join(repo_dir, "WebServer", "web2py", "applications", "hypatia", "hypdata")
-sqlite_data_dir = os.path.join(repo_dir, "WebServer", "web2py", "applications", "hypatia", "databases")
+hdf5_data_dir = os.path.join(projects_dir, "WebServer", "web2py", "applications", "hypatia", "hypdata")
+sqlite_data_dir = os.path.join(projects_dir, "WebServer", "web2py", "applications", "hypatia", "databases")
 test_database_dir = os.path.join(output_products_dir, "database_test")
 if not os.path.exists(test_database_dir):
     os.makedirs(test_database_dir)
