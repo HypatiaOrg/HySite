@@ -63,7 +63,8 @@ def emulate_legacy(do_exo=True, from_scratch=True, short_name_list=None):
     return nat_cat, output_star_data
 
 
-def standard_output(from_scratch=True, short_name_list=None, norm_key=None, target_list=None,
+def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=None, norm_keys: list[str] = None,
+                    target_list=None,
                     fast_update_gaia=False, from_pickle=False):
     target_output = None
     params = ["dist", "logg", 'Teff', "SpType", 'st_mass', 'st_rad', "disk"]
@@ -80,7 +81,7 @@ def standard_output(from_scratch=True, short_name_list=None, norm_key=None, targ
         nat_cat = NatCat(params_list_for_stats=params,
                          star_types_for_stats=star_name_type,
                          catalogs_from_scratch=from_scratch, verbose=True, catalogs_verbose=True,
-                         get_abundance_data=True, get_exo_data=True, refresh_exo_data=from_scratch,
+                         get_abundance_data=True, get_exo_data=True, refresh_exo_data=refresh_exo_data,
                          target_list=target_list,
                          fast_update_gaia=fast_update_gaia,
                          catalogs_file_name=catalogs_file_name)
@@ -116,11 +117,10 @@ def standard_output(from_scratch=True, short_name_list=None, norm_key=None, targ
                                 remove_nlte_abundances=True,
                                 keep_complement=False,
                                 is_target=None)
-        if not (norm_key is None or norm_key.lower() == 'absolute'):
-            output_star_data.normalize(norm_key=norm_key)
+        output_star_data.normalize(norm_keys=norm_keys)
         output_star_data.filter(element_bound_filter=None)  # filter after normalization, and logic
         output_star_data.output_file(output_dir=None, exo_mode=True)
-        output_star_data.do_stats(solar_norm_dict=nat_cat.solar_norm_dict, params_set=nat_cat.params_list_for_stats,
+        output_star_data.do_stats(params_set=nat_cat.params_list_for_stats,
                                   star_name_types=nat_cat.star_types_for_stats)
         output_star_data.reduce_elements()
         output_star_data.find_available_attributes()
@@ -128,7 +128,7 @@ def standard_output(from_scratch=True, short_name_list=None, norm_key=None, targ
     return nat_cat, output_star_data, target_output
 
 
-def multi_output(from_scratch=True, short_name_list=None, norm_key=None, fast_update_gaia=False, from_pickle=False):
+def multi_output(from_scratch=True, short_name_list=None, norm_key=None, fast_update_gaia=False):
     params = ["dist", "logg", 'Teff', "SpType", 'st_mass', 'st_rad', "disk"]
     star_name_type = ['gaia- dr2', "gaia dr1", "hip", 'hd', "wds"]
     if short_name_list is None:
@@ -171,7 +171,7 @@ def multi_output(from_scratch=True, short_name_list=None, norm_key=None, fast_up
         output_star_data1.normalize(norm_key=norm_key)
     output_star_data1.filter(element_bound_filter=None)  # filter after normalization, and logic
     output_star_data1.output_file(output_dir=None, exo_mode=True)
-    output_star_data1.do_stats(solar_norm_dict=nat_cat.solar_norm_dict, params_set=nat_cat.params_list_for_stats,
+    output_star_data1.do_stats(params_set=nat_cat.params_list_for_stats,
                                star_name_types=nat_cat.star_types_for_stats)
     output_star_data1.reduce_elements()
     output_star_data1.find_available_attributes()
@@ -204,14 +204,16 @@ def multi_output(from_scratch=True, short_name_list=None, norm_key=None, fast_up
         output_star_data2.normalize(norm_key=norm_key)
     output_star_data2.filter(element_bound_filter=[("Fe", -0.1, 0.1)])  # filter after normalization, and logic
     output_star_data2.output_file(output_dir=None, exo_mode=True)
-    output_star_data2.do_stats(solar_norm_dict=nat_cat.solar_norm_dict, params_set=nat_cat.params_list_for_stats,
+    output_star_data2.do_stats(params_set=nat_cat.params_list_for_stats,
                                star_name_types=nat_cat.star_types_for_stats)
     output_star_data2.reduce_elements()
     output_star_data2.find_available_attributes()
     return nat_cat, output_star_data1, output_star_data2
 
 
-def element_plot(output_star_data, divide_by="Fe", numerators=["Si", "Fe", "Mg"]):
+def element_plot(output_star_data, divide_by: str = "Fe", numerators: list[str] = None):
+    if numerators is None:
+        numerators = ["Si", "Fe", "Mg"]
     element_list = numerators[:]
     numerators.remove(divide_by)
     star_names_list = list(sorted(output_star_data.star_names))
@@ -363,6 +365,7 @@ def calc_molar_fractions(elemlist, solarvals, errvals, **kwargs):
              xxlabel=Xnum + "/" + Xdenom, yylabel=Ynum + "/" + Ydenom,
              figname="scatter_hist_hist/" + Xnum + Xdenom + "vs" + Ynum + Ydenom)
 
+
 def create_flat_file(elemList, propertyList, filename):
     """
     Examples of the input (these are used by Amilcar for planetPrediction):
@@ -375,7 +378,7 @@ def create_flat_file(elemList, propertyList, filename):
     website output for the properties since the "f_" prefix was done by Dan.
     """
     with open(os.path.join(base_dir, filename), "w") as combined_data_file:
-        header="star_name,"+",".join(elemList)+","+",".join(propertyList)+"\n"
+        header = "star_name," + ",".join(elemList) + "," + ",".join(propertyList) + "\n"
         combined_data_file.write(header)
         star_names_list = list(sorted(output_star_data.star_names))
         for star_name in star_names_list:
@@ -394,44 +397,40 @@ def create_flat_file(elemList, propertyList, filename):
                     # Note that some stars have x, y, z pos parameters, others have pos (embedded),
                     # and others have both. The below will miss the ones with only pos (embedded).
                     if property == "x_pos":
-                        properties.append(str(round(single_star.params.pos[0][0],3)))
+                        properties.append(str(round(single_star.params.pos[0][0], 3)))
                     elif property == "y_pos":
-                        properties.append(str(round(single_star.params.pos[0][1],3)))
+                        properties.append(str(round(single_star.params.pos[0][1], 3)))
                     elif property == "z_pos":
-                        properties.append(str(round(single_star.params.pos[0][2],3)))
+                        properties.append(str(round(single_star.params.pos[0][2], 3)))
                     else:
                         properties.append(str(single_star.params.__getattribute__(property).value))
                 else:
                     properties.append('nan')
             all_params.update(single_star.params.available_params)
-            combined_data_file.write(","+",".join(properties) + "\n")
+            combined_data_file.write("," + ",".join(properties) + "\n")
 
 
 if __name__ == "__main__":
-    run_normally = True
-    run_all_norms = False
     only_target_list = False
 
     all_params = set()
-    if run_all_norms:
-        for norm in ["lodders09", "asplund09","grevesse07","asplund05", "grevesse98", "anders89", "original", "absolute"]:
-            nat_cat, output_star_data, target_star_data = standard_output(from_scratch=True,
-                                                                  norm_key=norm,
-                                                                  fast_update_gaia=True, from_pickle=False)
-    elif only_target_list:
+    norm_keys = ["lodders09", "asplund09", "grevesse07", "asplund05", "grevesse98", "anders89", "original"]
+    refresh_exo_data = False
+    from_scratch = False
+    from_pickle = False
+    if only_target_list:
         example_target_list = os.path.join(ref_dir, 'ARIEL_Edwards22_Table4_TOIpotential.txt')
         # example_target_list2 = ['HIP 36366', 'HIP 55846', 'HD 103095', 'HIP 33226']
-        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=True,
+        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=from_scratch,
                                                                       target_list=example_target_list,
-                                                                      norm_key="lodders09",
-                                                                      fast_update_gaia=True, from_pickle=False)
-    elif run_normally:
-        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=False,
-                                                                      norm_key="lodders09",
-                                                                      fast_update_gaia=True,
+                                                                      norm_keys=norm_keys,
+                                                                      refresh_exo_data=refresh_exo_data,
                                                                       from_pickle=False)
     else:
-        raise ValueError("No mode selected, set run_normally, run_all_norms, or only_target_list to True")
+        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=from_scratch,
+                                                                      norm_keys=norm_keys,
+                                                                      refresh_exo_data=refresh_exo_data,
+                                                                      from_pickle=False)
 
     # output_star_data.xy_plot(x_thing='dist', y_thing='Fe', color="darkorchid", show=False, save=True)
     stats = output_star_data.stats

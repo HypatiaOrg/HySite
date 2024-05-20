@@ -56,7 +56,10 @@ planets_props = {
     "bsonType": "object",
     "minItems": 1,
     "description": "must be an object with planet letters as keys",
-    "properties": {letter: planet_bson for letter in possible_planet_letters},
+    "additionalProperties": False,
+    "patternProperties": {
+        ".+": planet_bson,
+    },
 }
 
 

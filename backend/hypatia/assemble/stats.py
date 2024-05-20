@@ -7,6 +7,7 @@ from hypatia.config import working_dir
 from hypatia.sources.elements import element_rank
 from hypatia.sources.simbad.ops import get_star_data
 from hypatia.sources.simbad.db import indexed_name_types
+from hypatia.sources.catalogs.solar import solar_norm_dict
 
 
 def autolabel(rects):
@@ -106,9 +107,7 @@ class CountPerBin:
 
 
 class StarDataStats:
-    def __init__(self, star_data, solar_norm_dict=None, params_set=None, star_name_types=None):
-        if solar_norm_dict is None:
-            solar_norm_dict = {}
+    def __init__(self, star_data, params_set=None, star_name_types=None):
         if params_set is None:
             params_set = set()
         else:
@@ -133,20 +132,9 @@ class StarDataStats:
             self.__setattr__("star_type_" + str(star_name_type + "_count_per_element"),
                              CountPerBin(thing_counted="star_name type: " + str(star_name_type),
                              bin="elemental abundance"))
-        # normalization stats
-        if solar_norm_dict is None:
-            self.norm_keys = set()
-        else:
-            self.norm_keys = set(solar_norm_dict.keys())
-        self.star_count_per_norm = CountPerBin(thing_counted="stars", bin='solar normalization')
         self.norm_count_per_element = {}
         self.norm_count_per_star = {}
-        for solar_norm in self.norm_keys:
-            self.norm_count_per_element["norm_" + str(solar_norm) + "_count_per_element"] =\
-                CountPerBin(thing_counted='solar normalization ' + str(solar_norm), bin='elemental abundance')
-            self.norm_count_per_star["norm_" + str(solar_norm) + "_star_count"] = 0
-        self.element_in_norm_dict = {solar_norm: set(solar_norm_dict[solar_norm].keys())
-                                     for solar_norm in self.norm_keys}  # - {"catalog", "#ref"}
+        # - {"catalog", "#ref"}
         for star_name in star_data.star_names:
             simbad_doc = get_star_data(star_name, test_origin="StarDataStats")
             single_star = star_data.__getattribute__(simbad_doc['attr_name'])
@@ -174,20 +162,13 @@ class StarDataStats:
             for star_name_type in name_type_overlap:
                 self.__getattribute__("star_type_" + str(star_name_type + "_count_per_element"))\
                     .count_bins(abundances_this_star)
-            # normalization stats
-            for solar_norm in self.norm_keys:
-                elements_in_norm_and_full_data_set = self.element_in_norm_dict[solar_norm] & abundances_this_star
-                if elements_in_norm_and_full_data_set != set():
-                    self.norm_count_per_star["norm_" + str(solar_norm) + "_star_count"] += 1
-                    self.norm_count_per_element["norm_" + str(solar_norm) + "_count_per_element"]\
-                        .count_bins(elements_in_norm_and_full_data_set)
 
 
 class ReducedAbundances:
     def __init__(self):
         self.available_abundances = set()
 
-    def add_abundance(self, abundance_value, element_name, catalog):
+    def add_abundance(self, abundance_value, element_name, norm_key, catalog):
         if element_name not in self.available_abundances:
             self.__setattr__(element_name, ElementStats(element_name))
             self.available_abundances.add(element_name)

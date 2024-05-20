@@ -80,9 +80,7 @@ def mdwarf_output(from_scratch=True, short_name_list='mdwarf_subset_catalog_file
             output_star_data.normalize(norm_key=norm_key)
         output_star_data.filter(element_bound_filter=None)  # filter after normalization, and logic
         output_star_data.output_file(output_dir=None, exo_mode=True)
-        output_star_data.do_stats(solar_norm_dict=nat_cat.solar_norm_dict,
-                                  params_set=nat_cat.params_list_for_stats,
-                                  star_name_types=nat_cat.star_types_for_stats)
+        output_star_data.do_stats(params_set=nat_cat.params_list_for_stats, star_name_types=nat_cat.star_types_for_stats)
         output_star_data.reduce_elements()
         output_star_data.find_available_attributes()
         output_star_data.pickle_myself()

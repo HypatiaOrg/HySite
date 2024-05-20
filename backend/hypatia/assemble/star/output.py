@@ -5,7 +5,6 @@ from hypatia.config import pickle_out
 from hypatia.assemble.filters import core_filter
 from hypatia.assemble.star.all import AllStarData
 from hypatia.sources.simbad.ops import get_star_data
-from hypatia.sources.catalogs.solar import SolarNorm
 from hypatia.plots.element_rad_plot import make_element_distance_plots
 
 
@@ -511,11 +510,12 @@ class OutputStarData(AllStarData):
         if self.verbose:
             print("Filtering complete.\n")
 
-    def normalize(self, norm_key="original"):
+    def normalize(self, norm_keys: list[str] = None):
         """
         Set the solar normalization for all the data in this class.
 
-        :param norm_key: str - If norm_key='original', then a special procedure is
+        :param norm_keys: list[str]
+                        If norm_key='original', then a special procedure
                                is preformed to make individual catalogs revert back
                                to their original normalization. Otherwise the same
                                normalization is applied across all catalogs. This results,
@@ -523,29 +523,18 @@ class OutputStarData(AllStarData):
                                as "absolute".
         :return:
         """
-        sn = SolarNorm()
-        solar_norm_dict = sn()
-        if self.verbose:
-            print("Normalizing abundance data using the", norm_key, " solar normalization for all data.")
-        for single_star in self:
-            at_least_one_element_for_this_star_flag = False
-            for catalog_short_name in list(single_star.available_abundance_catalogs):
-                single_star.__getattribute__(catalog_short_name)\
-                    .normalize(solar_norm_dict, norm_key)
-                if single_star.__getattribute__(catalog_short_name).available_abundances == set():
-                    # remove this catalog if this is no data
-                    single_star.__delattr__(catalog_short_name)
-                    single_star.available_abundance_catalogs.remove(catalog_short_name)
-                else:
-                    at_least_one_element_for_this_star_flag = True
-            if not at_least_one_element_for_this_star_flag:
-                # remove this star if this is no data
-                self.__delattr__(single_star.attr_name)
-                self.star_names.remove(single_star.star_reference_name)
-        self.data_norm = norm_key
-        self.data_is_absolute = False
-        if self.verbose:
-            print("  Normalization complete.\n")
+        if norm_keys is None:
+            norm_keys = ['original']
+        for norm_key in norm_keys:
+            if self.verbose:
+                print(f"Normalizing abundance data using the {norm_key} solar normalization for all data.")
+            for single_star in self:
+                for catalog_short_name in list(single_star.available_abundance_catalogs):
+                    this_catalog = single_star.__getattribute__(catalog_short_name)
+                    this_catalog.normalize(norm_key)
+            self.data_norms.add(norm_key)
+            if self.verbose:
+                print("  Normalization complete.\n")
 
     def get_element_ratio_and_distance(self, element_set=None,
                                        distance_list=None, xlimits_list=None, ylimits_list=None,

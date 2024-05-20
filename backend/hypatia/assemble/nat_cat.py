@@ -20,7 +20,7 @@ def load_catalog_query():
 
 
 class NatCat:
-    tic_batch_update_rate = 20
+
 
     def __init__(self, params_list_for_stats=None, star_types_for_stats=None,
                  catalogs_from_scratch=False, verbose=False, catalogs_verbose=True,
@@ -193,7 +193,7 @@ class NatCat:
     def stats_for_star_data(self, star_data=None):
         if star_data is None:
             star_data = self.star_data
-        star_data.do_stats(solar_norm_dict=self.solar_norm_dict, params_set=self.params_list_for_stats,
+        star_data.do_stats(params_set=self.params_list_for_stats,
                            star_name_types=self.star_types_for_stats)
 
     def make_output_star_data(self, star_data=None,
@@ -210,12 +210,12 @@ class NatCat:
                               remove_nlte_abundances=False,
                               keep_complement=False,
                               is_target=None,
-                              norm_key=None,
+                              norm_keys: list[str] = None,
                               write_out=False, output_dir=None, exo_mode=False,
                               star_data_stats=True,
                               reduce_abundances=True):
         """
-        :param norm_key: All solar normalizations can be called via the names in "solar_norm_ref" file. Note
+        :param norm_keys: list[s]: All solar normalizations can be called via the names in "solar_norm_ref" file. Note
         that the normalization that is the original Grevesse98 is now called grev98-th_thii_del_peloso05b, since it
         was appended to with Th and ThII from del Peloso05b. The other two ways to normalize the data are either by
         leaving the data as absolute, in which case norm_key=None, or using the original normalization, which is
@@ -239,12 +239,12 @@ class NatCat:
                                 remove_nlte_abundances=remove_nlte_abundances,
                                 keep_complement=keep_complement,
                                 is_target=is_target)
-        if norm_key is not None:
-            output_star_data.normalize(norm_key=norm_key)
+        if norm_keys is not None:
+            output_star_data.normalize(norm_keys=norm_keys)
         if write_out:
             output_star_data.output_file(output_dir=output_dir, exo_mode=exo_mode)
         if star_data_stats:
-            output_star_data.do_stats(solar_norm_dict=self.solar_norm_dict, params_set=self.params_list_for_stats,
+            output_star_data.do_stats(params_set=self.params_list_for_stats,
                                       star_name_types=self.star_types_for_stats)
         if reduce_abundances:
             output_star_data.reduce_elements()

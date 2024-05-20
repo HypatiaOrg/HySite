@@ -1,3 +1,22 @@
+import numpy as np
+
+from hypatia.sources.catalogs.solar import solar_norm_dict
+
+
+class SingleNorm:
+    def __init__(self, norm_key: str, norm_data: dict[str, float]):
+        self.norm_key = norm_key
+        self.available_abundances = set(norm_data.keys())
+        for element, value in norm_data.items():
+            self.__setattr__(element, value)
+
+    def __getitem__(self, item):
+        return self.__getattribute__(item)
+
+    def __contains__(self, item):
+        return item in self.available_abundances
+
+
 class CatalogData:
     non_element_keys = {"star_name", "norm_key", "long_name", "original_star_name", "main_id"}
 
@@ -10,25 +29,17 @@ class CatalogData:
         for element in set(catalog_dict.keys()) - self.non_element_keys:
             self.__setattr__(element, catalog_dict[element])
             self.available_abundances.add(element)
-        self.normalization = None
-        self.elements_that_can_not_be_normalized = None
+        self.normalizations = set()
 
-    def normalize(self, norm_dict, norm_key):
-        if self.normalization is not None:
-            raise UnboundLocalError("The data is not allowed to be normalized twice, this is because some data is " +
-                                    "removed during a normalization. Reinitialize to do this normalization.")
-        self.elements_that_can_not_be_normalized = set()
+    def normalize(self, norm_key):
         if norm_key == "original":
-            self.normalization = (self.original_catalog_norm, norm_dict[self.original_catalog_norm])
+            norm_to_use = self.original_catalog_norm
         else:
-            self.normalization = (norm_key, norm_dict[norm_key])
-        normalization_element_keys = set(self.normalization[1].keys())
-        overlapping_elements = self.available_abundances & normalization_element_keys
-        for element in overlapping_elements:
-            # the normalization, it is a bit anti-climatic.
-            self.__setattr__(element, self.__getattribute__(element) - self.normalization[1][element])
-        # deal with the elements that could not be normalized.
-        for not_normalized_element in self.available_abundances - normalization_element_keys:
-            self.__delattr__(not_normalized_element)
-            self.available_abundances.remove(not_normalized_element)
-            self.elements_that_can_not_be_normalized.add(not_normalized_element)
+            norm_to_use = norm_key
+        elements_dict = solar_norm_dict[norm_to_use]
+        overlapping_elements = self.available_abundances & set(elements_dict.keys())
+        if overlapping_elements:
+            norm_data = {element: np.around(self.__getattribute__(element) - elements_dict[element], decimals=3)
+                         for element in overlapping_elements}
+            self.__setattr__(norm_key, SingleNorm(norm_key, norm_data))
+            self.normalizations.add(norm_key)

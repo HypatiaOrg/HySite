@@ -47,8 +47,7 @@ class AllStarData:
         self.star_aliases = {}
         self.reverse_aliases = {}
 
-        self.data_norm = None
-        self.data_is_absolute = True
+        self.data_norms = set()
 
         self.stats = None
 
@@ -166,8 +165,8 @@ class AllStarData:
                 gaia_lib.batch_update(simbad_formatted_names_list=list_of_string_names[start_index:finish_index],
                                       dr_number=dr_number)
 
-    def do_stats(self, solar_norm_dict=None, params_set=None, star_name_types=None):
-        self.stats = StarDataStats(star_data=self, solar_norm_dict=solar_norm_dict,
+    def do_stats(self, params_set=None, star_name_types=None):
+        self.stats = StarDataStats(star_data=self,
                                    params_set=params_set, star_name_types=star_name_types)
 
     def reduce_elements(self):
@@ -216,174 +215,174 @@ class AllStarData:
 
         plfile.close()
 
-    def output_file(self, output_dir=None, exo_mode=False):
-        if output_dir is None:
-            output_dir = star_data_output_dir
-        file_name = os.path.join(output_dir, "hypatia_")
-        if self.data_is_absolute:
-            data_source_str = "from output_star_data.\n"
-        else:
-            data_source_str = "from star_data.\n"
-        # Get today's date to mark the filename
-        now = datetime.datetime.now()
-        file_name += F"{'%04i' % now.year}_{'%02i' % now.month}_{'%02i' % now.day}_"
-        if exo_mode:
-            file_name += "exo_"
-        if self.data_is_absolute:
-            file_name += "absolute.txt"
-        else:
-            file_name += "norm" + self.data_norm[0].upper() + self.data_norm[1:].lower().replace(" ", "") + ".txt"
-        if self.verbose:
-            print("Writing the output file:", file_name)
-            print("  " + data_source_str)
-        output_dict = {}
-        for single_star in self:
-            simbad_doc = single_star.simbad_doc
-            star_name_aliases = simbad_doc['aliases']
-            attr_name = simbad_doc['attr_name']
-            # A params formatting check add by Caleb Jan 2022
-            params_this_star = single_star.params.available_params
-            params_dict = {param: single_star.params.__getattribute__(param) for param in params_this_star}
-            params_check(params_dict=params_dict, hypatia_handle=single_star.star_reference_name)
-            # Main output name types.
-            star_id = None
-            if 'hip' in simbad_doc.keys():
-                try:
-                    star_id = int(simbad_doc['hip'][3:])
-                except ValueError:
-                    pass
-            if star_id is None:
-                star_id = int(hashlib.md5(single_star.star_reference_name.encode()).hexdigest(), 16)
-            star_write_lines = [f'Star: {star_id}']
-            for name_type in self.name_types_for_output:
-                name_line = name_type + " = "
-                lower_case_name_type = name_type.lower()
-                if lower_case_name_type in simbad_doc.keys():
-                    star_name = simbad_doc[lower_case_name_type]
-                    if "2MASS" == name_type:
-                        _, star_number = star_name.split("J", 1)
-                        name_line += star_number
-                    elif 'bd' == name_type:
-                        name_line += "B" + star_name[2:]
-                    elif 'Gaia DR2' == name_type:
-                        name_line += star_name.replace("Gaia DR2 ", "")
+    def output_file(self, output_dir=None, exo_mode=False, do_absolute: bool = False):
+        for norm_key in self.data_norms:
+            if output_dir is None:
+                output_dir = star_data_output_dir
+            file_name = os.path.join(output_dir, "hypatia_")
+            if do_absolute:
+                data_source_str = "from output_star_data.\n"
+            else:
+                data_source_str = "from star_data.\n"
+            # Get today's date to mark the filename
+            now = datetime.datetime.now()
+            file_name += F"{'%04i' % now.year}_{'%02i' % now.month}_{'%02i' % now.day}_"
+            if exo_mode:
+                file_name += "exo_"
+            if do_absolute:
+                file_name += "absolute.txt"
+            else:
+                file_name += f"norm_{norm_key}.txt"
+            if self.verbose:
+                print("Writing the output file:", file_name)
+                print("  " + data_source_str)
+            output_dict = {}
+            for single_star in self:
+                simbad_doc = single_star.simbad_doc
+                star_name_aliases = simbad_doc['aliases']
+                attr_name = simbad_doc['attr_name']
+                # A params formatting check add by Caleb Jan 2022
+                params_this_star = single_star.params.available_params
+                params_dict = {param: single_star.params.__getattribute__(param) for param in params_this_star}
+                params_check(params_dict=params_dict, hypatia_handle=single_star.star_reference_name)
+                # Main output name types.
+                star_id = None
+                if 'hip' in simbad_doc.keys():
+                    try:
+                        star_id = int(simbad_doc['hip'][3:])
+                    except ValueError:
+                        pass
+                if star_id is None:
+                    star_id = int(hashlib.md5(single_star.star_reference_name.encode()).hexdigest(), 16)
+                star_write_lines = [f'Star: {star_id}']
+                for name_type in self.name_types_for_output:
+                    name_line = name_type + " = "
+                    lower_case_name_type = name_type.lower()
+                    if lower_case_name_type in simbad_doc.keys():
+                        star_name = simbad_doc[lower_case_name_type]
+                        if "2MASS" == name_type:
+                            _, star_number = star_name.split("J", 1)
+                            name_line += star_number
+                        elif 'bd' == name_type:
+                            name_line += "B" + star_name[2:]
+                        elif 'Gaia DR2' == name_type:
+                            name_line += star_name.replace("Gaia DR2 ", "")
+                        else:
+                            _, star_number = star_name.split(" ", 1)
+                            if "hd" == name_type:
+                                star_number = star_number.lstrip("0")
+                            name_line += star_number
+                    star_write_lines.append(name_line)
+                # all the other available names
+                star_write_lines.append("Other names: " + "|".join(star_name_aliases))
+                # distance
+                dist_line = 'dist (pc) = '
+                if "dist" in params_this_star:
+                    dist_line += str("%1.3f" % np.round(self.__getattribute__(attr_name).params.dist.value, decimals=3))
+                star_write_lines.append(dist_line)
+                # stellar_parameters
+                for output_str, hypatia_param in [("RA", "raj2000"), ("Dec", "decj2000"),
+                                                  ("RA proper motion", "pm_ra"), ("Dec proper motion", "pm_dec")]:
+                    if hypatia_param in params_this_star:
+                        value = str(single_star.params.__getattribute__(hypatia_param).value)
                     else:
-                        _, star_number = star_name.split(" ", 1)
-                        if "hd" == name_type:
-                            star_number = star_number.lstrip("0")
-                        name_line += star_number
-                star_write_lines.append(name_line)
-            # all the other available names
-            star_write_lines.append("Other names: " + "|".join(star_name_aliases))
-            # distance
-            dist_line = 'dist (pc) = '
-            if "dist" in params_this_star:
-                dist_line += str("%1.3f" % np.round(self.__getattribute__(attr_name).params.dist.value, decimals=3))
-            star_write_lines.append(dist_line)
-            # stellar_parameters
-            for output_str, hypatia_param in [("RA", "raj2000"), ("Dec", "decj2000"),
-                                              ("RA proper motion", "pm_ra"), ("Dec proper motion", "pm_dec")]:
-                if hypatia_param in params_this_star:
-                    value = str(single_star.params.__getattribute__(hypatia_param).value)
-                else:
-                    value = ""
-                star_write_lines.append(output_str + " = " + value)
-            # The position parameter:
-            position_line = "Position = "
-            if "pos" in params_this_star:
-                x, y, z = single_star.params.pos.value
-                position_line += F"[{'%1.3f' % np.around(x, decimals=3)}, {'%1.3f' % np.around(y, decimals=3)}, {'%1.3f' % np.around(z, decimals=3)}]"
-            star_write_lines.append(position_line)
-            # The UVW parameter
-            uvw_line = "UVW = ("
-            for a_letter in ["u_vel", "v_vel", "w_vel"]:
-                if a_letter in params_this_star:
-                    uvw_line += str('%4.2f' % single_star.params.__getattribute__(a_letter).value)
-                else:
-                    uvw_line += "9999.00"
-                if a_letter == "W_vel":
-                    uvw_line += ")"
-                else:
-                    uvw_line += ", "
-            star_write_lines.append(uvw_line)
-            # disk component
-            disk_component_line = "Disk component: "
-            if "disk" in params_this_star:
-                disk_component_line += str(single_star.params.disk.value)
-            star_write_lines.append(disk_component_line)
-            # more stellar parameters
-            for output_str, hypatia_type in [("Spec Type", "sptype"), ("Teff", "teff"), ("logg", "logg"),
-                                             ("Vmag", "vmag"), ("Bmag", "bmag"), ("B-V", "bv")]:
-                output_line = output_str + " = "
-                if hypatia_type in params_this_star:
-                    value = single_star.params.__getattribute__(hypatia_type).value
-                    if type(value) == float:
-                        output_line += F"{'%1.3f' % np.around(value, decimals=3)}"
-                    elif type(value) == int:
+                        value = ""
+                    star_write_lines.append(output_str + " = " + value)
+                # The position parameter:
+                position_line = "Position = "
+                if "pos" in params_this_star:
+                    x, y, z = single_star.params.pos.value
+                    position_line += F"[{'%1.3f' % np.around(x, decimals=3)}, {'%1.3f' % np.around(y, decimals=3)}, {'%1.3f' % np.around(z, decimals=3)}]"
+                star_write_lines.append(position_line)
+                # The UVW parameter
+                uvw_line = "UVW = ("
+                for a_letter in ["u_vel", "v_vel", "w_vel"]:
+                    if a_letter in params_this_star:
+                        uvw_line += str('%4.2f' % single_star.params.__getattribute__(a_letter).value)
+                    else:
+                        uvw_line += "9999.00"
+                    if a_letter == "W_vel":
+                        uvw_line += ")"
+                    else:
+                        uvw_line += ", "
+                star_write_lines.append(uvw_line)
+                # disk component
+                disk_component_line = "Disk component: "
+                if "disk" in params_this_star:
+                    disk_component_line += str(single_star.params.disk.value)
+                star_write_lines.append(disk_component_line)
+                # more stellar parameters
+                for output_str, hypatia_type in [("Spec Type", "sptype"), ("Teff", "teff"), ("logg", "logg"),
+                                                 ("Vmag", "vmag"), ("Bmag", "bmag"), ("B-V", "bv")]:
+                    output_line = output_str + " = "
+                    if hypatia_type in params_this_star:
+                        value = single_star.params.__getattribute__(hypatia_type).value
+                        if type(value) == float:
+                            output_line += F"{'%1.3f' % np.around(value, decimals=3)}"
+                        elif type(value) == int:
+                            output_line += str(value)
+                        else:
+                            output_line += value
+                    star_write_lines.append(output_line)
+                # stellar parameters
+                for output_str, hypatia_type in [("mass (M_S)", 'mass'), ("radius (R_S)", 'rad')]:
+                    output_line = output_str + " = "
+                    if hypatia_type in params_this_star:
+                        value = single_star.params.__getattribute__(hypatia_type).value
                         output_line += str(value)
-                    else:
-                        output_line += value
-                star_write_lines.append(output_line)
-            # stellar parameters
-            for output_str, hypatia_type in [("mass (M_S)", 'mass'), ("radius (R_S)", 'rad')]:
-                output_line = output_str + " = "
-                if hypatia_type in params_this_star:
-                    value = single_star.params.__getattribute__(hypatia_type).value
-                    output_line += str(value)
-                    error1_hypatia_type = hypatia_type + 'err1'
-                    error2_hypatia_type = hypatia_type + 'err2'
-                    if error1_hypatia_type in params_this_star or error2_hypatia_type in params_this_star:
-                        output_line += " +- {"
-                        if error1_hypatia_type in params_this_star:
-                            output_line += str(single_star.params.__getattribute__(error1_hypatia_type).value)
-                        output_line += ","
-                        if error2_hypatia_type in params_this_star:
-                            output_line += str(single_star.params.__getattribute__(error2_hypatia_type).value)
-                        output_line += "}"
-                star_write_lines.append(output_line)
-            # Exoplanets data
-            if exo_mode and "exo" in single_star.available_data_types:
-                # number of planets
-                all_planets = single_star.exo['planets']
-                star_write_lines.append(f"Number of planets = {len(all_planets)}")
-                # exoplanet parameters
-                for planet_letter, planet_params in all_planets.items():
-                    output_line = f"[{planet_letter}] "
-                    for output_str, planet_param, unit in self.planet_output:
-                        if planet_param in planet_params.keys():
-                            param_data = planet_params[planet_param]
-                            output_line += f"{output_str} {param_data['value']}"
+                        error1_hypatia_type = hypatia_type + 'err1'
+                        error2_hypatia_type = hypatia_type + 'err2'
+                        if error1_hypatia_type in params_this_star or error2_hypatia_type in params_this_star:
                             output_line += " +- {"
-                            if 'err_low' in param_data.keys():
-                                output_line += str(param_data['err_low'])
+                            if error1_hypatia_type in params_this_star:
+                                output_line += str(single_star.params.__getattribute__(error1_hypatia_type).value)
                             output_line += ","
-                            if "err_high" in param_data.keys():
-                                output_line += str(param_data['err_high'])
+                            if error2_hypatia_type in params_this_star:
+                                output_line += str(single_star.params.__getattribute__(error2_hypatia_type).value)
                             output_line += "}"
-                        output_line += unit + ", "
-                    star_write_lines.append(output_line[:-2])
-            # The elemental values
-            for catalog in single_star.available_abundance_catalogs:
-                single_catalog = single_star.__getattribute__(catalog)
-                ordered_element_list = sorted(single_catalog.available_abundances, key=element_rank)
-                for element in ordered_element_list:
-                    element_value = np.around(single_catalog.__getattribute__(element), decimals=3)
-                    an_element_line = element
-                    # if not self.data_is_absolute:
-                    element_lower = element.strip().lower()
-                    if element_lower in self.hydrogen_element_lower or element_lower[-1] != 'h':
-                        an_element_line += "H"
-                    an_element_line += f" {element_value:1.3f} [{single_catalog.catalog_long_name}]"
-                    star_write_lines.append(an_element_line)
-            # there is a blank line between stars
-            star_write_lines.append("")
-            output_dict[attr_name] = star_write_lines
-        if not os.path.isdir(os.path.dirname(file_name)):
-            os.mkdir(os.path.dirname(file_name))
-        # open the file to be written
-        with open(file_name, 'w') as f:
-            # put the preferred star name types at the top of the file.
-            [[f.write(a_line + "\n") for a_line in write_lines] for write_lines in output_dict.values()]
+                    star_write_lines.append(output_line)
+                # Exoplanets data
+                if exo_mode and "exo" in single_star.available_data_types:
+                    # number of planets
+                    all_planets = single_star.exo['planets']
+                    star_write_lines.append(f"Number of planets = {len(all_planets)}")
+                    # exoplanet parameters
+                    for planet_letter, planet_params in all_planets.items():
+                        output_line = f"[{planet_letter}] "
+                        for output_str, planet_param, unit in self.planet_output:
+                            if planet_param in planet_params.keys():
+                                param_data = planet_params[planet_param]
+                                output_line += f"{output_str} {param_data['value']}"
+                                output_line += " +- {"
+                                if 'err_low' in param_data.keys():
+                                    output_line += str(param_data['err_low'])
+                                output_line += ","
+                                if "err_high" in param_data.keys():
+                                    output_line += str(param_data['err_high'])
+                                output_line += "}"
+                            output_line += unit + ", "
+                        star_write_lines.append(output_line[:-2])
+                # The elemental values
+                for catalog in single_star.available_abundance_catalogs:
+                    single_catalog = single_star.__getattribute__(catalog)
+                    ordered_element_list = sorted(single_catalog.available_abundances, key=element_rank)
+                    for element in ordered_element_list:
+                        element_value = np.around(single_catalog.__getattribute__(element), decimals=3)
+                        an_element_line = element
+                        element_lower = element.strip().lower()
+                        if element_lower in self.hydrogen_element_lower or element_lower[-1] != 'h':
+                            an_element_line += "H"
+                        an_element_line += f" {element_value:1.3f} [{single_catalog.catalog_long_name}]"
+                        star_write_lines.append(an_element_line)
+                # there is a blank line between stars
+                star_write_lines.append("")
+                output_dict[attr_name] = star_write_lines
+            if not os.path.isdir(os.path.dirname(file_name)):
+                os.mkdir(os.path.dirname(file_name))
+            # open the file to be written
+            with open(file_name, 'w') as f:
+                # put the preferred star name types at the top of the file.
+                [[f.write(a_line + "\n") for a_line in write_lines] for write_lines in output_dict.values()]
 
     def get_single_star_data(self, star_name):
         main_star_id = get_main_id(star_name)

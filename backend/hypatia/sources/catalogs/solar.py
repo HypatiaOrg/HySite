@@ -217,6 +217,8 @@ class SolarNorm:
             f.write(body)
 
 
+sn = SolarNorm()
+solar_norm_dict = sn()
+
 if __name__ == "__main__":
-    sn = SolarNorm()
     sn.write(os.path.join(ref_dir, "test_solar_norm.csv"))

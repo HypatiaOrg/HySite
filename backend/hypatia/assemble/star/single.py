@@ -57,10 +57,13 @@ class SingleStar:
         self.params.update_params(xhip_params_dict, overwrite_existing=False)
 
     def reduce(self):
-        for catalog in self.available_abundance_catalogs:
-            for element_name in self.__getattribute__(catalog).available_abundances:
-                abundance_value = self.__getattribute__(catalog).__getattribute__(element_name)
-                self.reduced_abundances.add_abundance(abundance_value, element_name, catalog)
+        for catalog in sorted(self.available_abundance_catalogs):
+            single_catalog = self.__getattribute__(catalog)
+            for norm_key in sorted(single_catalog.normalizations):
+                single_norm = single_catalog.__getattribute__(norm_key)
+                for element_name in single_norm.available_abundances:
+                    abundance_record = single_norm.__getattribute__(element_name)
+                    self.reduced_abundances.add_abundance(abundance_record, element_name, norm_key, catalog)
         self.reduced_abundances.calc()
 
     def find_thing(self, thing, type_of_thing):
