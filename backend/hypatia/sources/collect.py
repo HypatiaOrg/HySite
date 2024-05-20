@@ -81,7 +81,10 @@ class BaseCollection:
         return self.db.drop()
 
     def collection_add_index(self, index_name: str, ascending: bool = True, unique: bool = False):
-        self.collection.create_index([(index_name, 1 if ascending else -1)], unique=unique)
+        if unique:
+            self.collection.create_index([(index_name, 1 if ascending else -1)], unique=unique)
+        else:
+            self.collection.create_index([(index_name, 1 if ascending else -1)])
 
     def collection_compound_index(self, index_dict: dict[str, int], unique: bool = False):
         self.collection.create_index(list(index_dict.items()), unique=unique)

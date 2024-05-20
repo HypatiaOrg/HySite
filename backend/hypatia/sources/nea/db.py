@@ -1,5 +1,3 @@
-import pymongo
-
 from hypatia.sources.collect import BaseCollection
 
 
@@ -53,19 +51,42 @@ planet_bson = {
     "additionalProperties": False,
 }
 
-all_possible_planets = {letter: planet_bson for letter in possible_planet_letters}
+
+planets_props = {
+    "bsonType": "object",
+    "minItems": 1,
+    "description": "must be an object with planet letters as keys",
+    "properties": {letter: planet_bson for letter in possible_planet_letters},
+}
+
+
+nea_data = {
+    "nea_name": {
+        "bsonType": "string",
+        "description": "must be a string and is required and unique"
+    },
+    "dist": nea_single_value,
+    "mass": nea_single_value,
+    "radius": nea_single_value,
+    "planet_letters": {
+        "bsonType": "array",
+        "minItems": 1,
+        "description": "must be an array letters for each known planet",
+        "items": {
+            "bsonType": "string",
+            "description": "must be a string planet letter",
+        },
+    },
+    "planets": planets_props,
+}
 
 validator = {
     "$jsonSchema": {
         "bsonType": "object",
         "title": "The validator schema for the StarName class",
-        "required": ["_id", "nea_name", "attr_name", "planet_letters", "planets"],
+        "required": ["_id", "attr_name", "nea_name", "planet_letters", "planets"],
         "properties": {
             "_id": {
-                "bsonType": "string",
-                "description": "must be a string and is required and unique"
-            },
-            "nea_name": {
                 "bsonType": "string",
                 "description": "must be a string and is required and unique"
             },
@@ -89,24 +110,7 @@ validator = {
                 "bsonType": "string",
                 "description": "must be a string and is not required"
             },
-            "dist": nea_single_value,
-            "mass": nea_single_value,
-            "radius": nea_single_value,
-            "planet_letters": {
-                "bsonType": "array",
-                "minItems": 1,
-                "description": "must be an array letters for each known planet",
-                "items": {
-                    "bsonType": "string",
-                    "description": "must be a string planet letter",
-                },
-            },
-            "planets": {
-                "bsonType": "object",
-                "minItems": 1,
-                "description": "must be an object with planet letters as keys",
-                "properties": all_possible_planets,
-            },
+            **nea_data,
         },
         "additionalProperties": False,
     }
