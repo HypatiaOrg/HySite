@@ -190,10 +190,6 @@ class AllStarData:
         for star_name in list(self.star_names):
             star_line = []
             star_line.append(self.__getattribute__(star_name).star_reference_name)
-            if "pos" in self.__getattribute__(star_name).params.available_params:
-                star_line.append(self.__getattribute__(star_name).params.pos)
-            else:
-                star_line.append((0, 0, 0))
             if "exo" in self.__getattribute__(star_name).available_data_types:
                 star_line.extend((1, len(self.__getattribute__(star_name).exo.planet_letters)))
                 pmasses = []
@@ -290,8 +286,10 @@ class AllStarData:
                     star_write_lines.append(output_str + " = " + value)
                 # The position parameter:
                 position_line = "Position = "
-                if "pos" in params_this_star:
-                    x, y, z = single_star.params.pos.value
+                if "x_pos" in params_this_star and "y_pos" in params_this_star and "z_pos" in params_this_star:
+                    x = single_star.params.x_pos.value
+                    y = single_star.params.y_pos.value
+                    z = single_star.params.z_pos.value
                     position_line += F"[{'%1.3f' % np.around(x, decimals=3)}, {'%1.3f' % np.around(y, decimals=3)}, {'%1.3f' % np.around(z, decimals=3)}]"
                 star_write_lines.append(position_line)
                 # The UVW parameter

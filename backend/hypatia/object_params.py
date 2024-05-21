@@ -57,6 +57,10 @@ class SingleParam(NamedTuple):
     ref: Optional[str] = None
     units: Optional[str] = None
 
+    def to_record(self):
+        return {key: self.__getattribute__(key) for key in ['value', 'ref', 'err_low', 'err_high']
+                if self.__getattribute__(key) is not None}
+
 
 def set_single_param(param_dict=None, value=None, err_low=None, err_high=None, units=None, ref=None):
     if param_dict is not None:

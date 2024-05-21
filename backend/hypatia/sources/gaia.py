@@ -130,7 +130,8 @@ class GaiaLib:
                 else:
                     lower_error = None
                 if lower_error is not None or upper_error is not None:
-                    params_dicts['dist']['err'] = (lower_error, upper_error)
+                    params_dicts['dist']['err_low'] = lower_error
+                    params_dicts['dist']['err_high'] = upper_error
             elif "distance_gspphot" in gaia_params_dict_keys:
                 params_dicts['dist'] = {}
                 param_names_found.add('dist')
@@ -146,7 +147,8 @@ class GaiaLib:
                 else:
                     lower_error = None
                 if lower_error is not None or upper_error is not None:
-                    params_dicts['dist']['err'] = (lower_error, upper_error)
+                    params_dicts['dist']['err_low'] = lower_error
+                    params_dicts['dist']['err_high'] = upper_error
 
             if "teff_val" in gaia_params_dict_keys:
                 params_dicts['teff'] = {}
@@ -179,14 +181,16 @@ class GaiaLib:
                 else:
                     lower_error = None
                 if lower_error is not None or upper_error is not None:
-                    params_dicts['teff']['err'] = (lower_error, upper_error)
+                    params_dicts['teff']['err_low'] = lower_error
+                    params_dicts['teff']['err_high'] = upper_error
             for param_key in gaia_params_dict_keys - self.special_case_params:
                 if "_error" in param_key:
                     param_name = param_key.replace("_error", "")
                     if param_name not in param_names_found:
                         params_dicts[param_name] = {}
                         param_names_found.add(param_name)
-                    params_dicts[param_name]['err'] = gaia_params_dict[param_key]
+                    params_dicts[param_name]['err_low'] = params_dicts[param_name]['err_high'] \
+                        = gaia_params_dict[param_key]
                 else:
                     if param_key not in param_names_found:
                         params_dicts[param_key] = {}

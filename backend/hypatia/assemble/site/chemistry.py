@@ -10,6 +10,8 @@ def get_plusminus_error_from_file() -> dict:
         return toml.load(f)
 
 
-if __name__ == '__main__':
-    # This is the variable name used in the web2py framework
-    COL_REP_PLUSMINUS_ERROR = get_plusminus_error_from_file()
+plusminus_error = {key.lower(): float(value) for key, value in get_plusminus_error_from_file().items()}
+
+
+def get_representative_error(element_name: str) -> float:
+    return plusminus_error.get(element_name.lower(), 0.001)

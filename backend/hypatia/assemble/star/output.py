@@ -2,6 +2,7 @@ import copy
 import pickle
 
 from hypatia.config import pickle_out
+from hypatia.assemble.star.db import HypatiaDB
 from hypatia.assemble.filters import core_filter
 from hypatia.assemble.star.all import AllStarData
 from hypatia.sources.simbad.ops import get_star_data
@@ -567,7 +568,6 @@ class OutputStarData(AllStarData):
                 temp_output_star_data.filter(target_elements=[element],
                                              parameter_bound_filter=[('dist', lower_bound, upper_bound)],
                                              has_exoplanet=has_exoplanet)
-                temp_output_star_data.reduce_elements()
                 for star_name in temp_output_star_data.star_names:
                     simbad_doc = get_star_data(star_name, test_origin="OutputStarData")
                     attr_name = simbad_doc['attr_name']
@@ -586,3 +586,9 @@ class OutputStarData(AllStarData):
                                         save_figure=True, do_eps=False, do_pdf=True, do_png=False)
         if self.verbose:
             print("  ...Element Ratio and Distance Plots completed \n")
+
+    def export_to_mongo(self):
+        hypatia_db = HypatiaDB(db_name='public', collection_name='hypatiaDB')
+        hypatia_db.reset()
+        for single_star in self:
+            hypatia_db.add_star(single_star)

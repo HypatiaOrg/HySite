@@ -10,6 +10,9 @@ from hypatia.object_params import StarDict, SingleParam
 allowed_params_path = os.path.join(site_dir, 'allowed_params.csv')
 
 
+three_space_params = {'pos'}
+
+
 def read_units_file():
     param_data = row_dict(filename=allowed_params_path, key='param_handle', delimiter=",",
                           null_value='NULL', inner_key_remove=True)
@@ -24,13 +27,13 @@ def params_value_format(value, decimals):
     return formatted_value
 
 
-def params_err_format(err, sig_figs):
+def params_err_format(err: float, sig_figs: int) -> float:
     if sig_figs < 2:
         decimals = 1
     else:
         decimals = sig_figs - 1
     format_string = f'1.{decimals}e'
-    return err.__format__(format_string)
+    return float(err.__format__(format_string))
 
 
 class ParamsCheck:
@@ -39,8 +42,11 @@ class ParamsCheck:
 
     def __init__(self):
         # read in the csv file data
-        with open(unit_filepath, 'r') as f:
-            raw_lines = [line.strip() for line in f.readlines()]
+        if os.path.exists(allowed_params_path):
+            with open(allowed_params_path, 'r') as f:
+                raw_lines = [line.strip() for line in f.readlines()]
+        else:
+            raw_lines = []
         self.header = [column_name.strip().lower() for column_name in raw_lines[0].split(',')]
         body = raw_lines[1:]
         self.params_data = {}
@@ -70,10 +76,10 @@ class ParamsCheck:
             self.params_data[params_handle] = row_data
             # record the parameter order
             self.params_order.append(params_handle)
-        # get the set of allow parameters
+        # get the set of allowed parameters
         self.allowed_params = {param_handle for param_handle in self.params_data.keys()
                                if param_handle not in self.disallowed_params}
-        # dictionary of allowed handles to expected units
+        # dictionary of allowed handles to their expected units
         self.expected_units = {param_handle: units for param_handle, units
                                in self.expected_units_gen()}
 
@@ -127,7 +133,7 @@ class ParamsCheck:
                                     F"disallowed parameter names: {self.disallowed_params}.")
                 else:
                     raise TypeError(F"Unit Check Fail. param_handle:{param_handle} not found in the file:\n" +
-                                    F"{unit_filepath}\nwhich as the param_handles: {self.params_data.keys()}")
+                                    F"{allowed_params_path}\nwhich as the param_handles: {self.params_data.keys()}")
         # all checks passed
         return
 
@@ -174,7 +180,7 @@ class ParamsCheck:
                             F"allowed parameter names: {self.allowed_params}.")
 
 
-params_check = ParamsCheck()
+# params_check = ParamsCheck()
 
 
 class UnitsObjectParams(StarDict):

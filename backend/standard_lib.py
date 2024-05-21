@@ -30,42 +30,9 @@ def save_or_load(load=True, a_catalog_query=None):
         a_catalog_query.pickle_myself()
 
 
-def emulate_legacy(do_exo=True, from_scratch=True, short_name_list=None):
-    params = ["dist", "logg"]
-    star_name_type = ['gaia dr2', "gaia dr1", "hip", "hd"]
-    if short_name_list is None:
-        catalogs_file_name = None
-    else:
-        catalogs_file_name = 'subset_catalog_file.csv'
-        co = CatOps(cat_file=os.path.join(ref_dir, "catalog_file.csv"), load=True, verbose=True)
-        co.make_subset_file(short_name_list=short_name_list, subset_local_cat_file=catalogs_file_name)
-    nat_cat = NatCat(params_list_for_stats=params,
-                     star_types_for_stats=star_name_type,
-                     catalogs_from_scratch=from_scratch, verbose=True,
-                     get_abundance_data=True, get_exo_data=do_exo, refresh_exo_data=False,
-                     catalogs_file_name=catalogs_file_name)
-    output_star_data = nat_cat.make_output_star_data(star_data=None,
-                                                     target_catalogs=None, or_logic_for_catalogs=True,
-                                                     target_star_name_types=["hip"], and_logic_for_star_names=True,
-                                                     target_params=None, and_logic_for_params=True,
-                                                     target_elements=None, or_logic_for_element=True,
-                                                     min_catalog_count=1,
-                                                     parameter_bound_filter=[('dist', 0.0, 150.0)],
-                                                     parameter_match_filter=[("SpType", {"F", "G", "K", "M"})],
-                                                     has_exoplanet=None,
-                                                     at_least_fe_and_another=True,
-                                                     remove_nlte_abundances=False,
-                                                     keep_complement=False,
-                                                     norm_key="lodders09",
-                                                     write_out=True, output_dir=None, exo_mode=do_exo,
-                                                     star_data_stats=True,
-                                                     reduce_abundances=True)
-    return nat_cat, output_star_data
-
-
 def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=None, norm_keys: list[str] = None,
                     target_list=None,
-                    fast_update_gaia=False, from_pickle=False):
+                    fast_update_gaia=False, from_pickled_cat: bool = False, from_pickled_output: bool = False):
     target_output = None
     params = ["dist", "logg", 'Teff', "SpType", 'st_mass', 'st_rad', "disk"]
     star_name_type = ['gaia dr2', "gaia dr1", "hip", 'hd', "wds"]
@@ -74,9 +41,8 @@ def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=N
     else:
         catalogs_file_name = 'subset_catalog_file.csv'
 
-    if from_pickle:
+    if from_pickled_cat:
         nat_cat = load_catalog_query()
-        output_star_data = load_pickled_output()
     else:
         nat_cat = NatCat(params_list_for_stats=params,
                          star_types_for_stats=star_name_type,
@@ -86,6 +52,9 @@ def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=N
                          fast_update_gaia=fast_update_gaia,
                          catalogs_file_name=catalogs_file_name)
         nat_cat.pickle_myself()
+    if from_pickled_output:
+        output_star_data = load_pickled_output()
+    else:
 
         dist_output = nat_cat.make_output_star_data(min_catalog_count=1,
                                                     parameter_bound_filter=[('dist', 0, 500), ("Teff", 2300.0, 7500.)],
@@ -119,11 +88,12 @@ def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=N
                                 is_target=None)
         output_star_data.normalize(norm_keys=norm_keys)
         output_star_data.filter(element_bound_filter=None)  # filter after normalization, and logic
-        output_star_data.output_file(output_dir=None, exo_mode=True)
+        # output_star_data.output_file(output_dir=None, exo_mode=True)
         output_star_data.do_stats(params_set=nat_cat.params_list_for_stats,
                                   star_name_types=nat_cat.star_types_for_stats)
         output_star_data.reduce_elements()
         output_star_data.find_available_attributes()
+        output_star_data.export_to_mongo()
         output_star_data.pickle_myself()
     return nat_cat, output_star_data, target_output
 
@@ -417,7 +387,7 @@ if __name__ == "__main__":
     norm_keys = ["lodders09", "asplund09", "grevesse07", "asplund05", "grevesse98", "anders89", "original"]
     refresh_exo_data = False
     from_scratch = False
-    from_pickle = False
+    from_pickled_cat = False
     if only_target_list:
         example_target_list = os.path.join(ref_dir, 'ARIEL_Edwards22_Table4_TOIpotential.txt')
         # example_target_list2 = ['HIP 36366', 'HIP 55846', 'HD 103095', 'HIP 33226']
@@ -425,12 +395,12 @@ if __name__ == "__main__":
                                                                       target_list=example_target_list,
                                                                       norm_keys=norm_keys,
                                                                       refresh_exo_data=refresh_exo_data,
-                                                                      from_pickle=False)
+                                                                      from_pickled_cat=from_pickled_cat)
     else:
         nat_cat, output_star_data, target_star_data = standard_output(from_scratch=from_scratch,
                                                                       norm_keys=norm_keys,
                                                                       refresh_exo_data=refresh_exo_data,
-                                                                      from_pickle=False)
+                                                                      from_pickled_cat=from_pickled_cat)
 
     # output_star_data.xy_plot(x_thing='dist', y_thing='Fe', color="darkorchid", show=False, save=True)
     stats = output_star_data.stats

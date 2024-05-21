@@ -30,8 +30,7 @@ class SingleStar:
         self.params = SingleStarParams()
         self.available_data_types = set()
         self.available_abundance_catalogs = set()
-        self.catalog_to_norm_key = {}
-        self.reduced_abundances = ReducedAbundances()
+        self.reduced_abundances = {'absolute': ReducedAbundances()}
         self.exo = None
 
     def add_abundance_catalog(self, short_catalog_name, catalog_dict):
@@ -57,14 +56,30 @@ class SingleStar:
         self.params.update_params(xhip_params_dict, overwrite_existing=False)
 
     def reduce(self):
-        for catalog in sorted(self.available_abundance_catalogs):
-            single_catalog = self.__getattribute__(catalog)
+        # absolute abundances
+        for catalog_name in sorted(self.available_abundance_catalogs):
+            single_catalog = self.__getattribute__(catalog_name)
+            for element_name in single_catalog.available_abundances:
+                abundance_record = single_catalog.__getattribute__(element_name)
+                self.reduced_abundances['absolute'].add_abundance(abundance_record=abundance_record,
+                                                                  element_name=element_name,
+                                                                  catalog=catalog_name)
+
+        # normalized abundances
+        for catalog_name in sorted(self.available_abundance_catalogs):
+            single_catalog = self.__getattribute__(catalog_name)
             for norm_key in sorted(single_catalog.normalizations):
                 single_norm = single_catalog.__getattribute__(norm_key)
                 for element_name in single_norm.available_abundances:
+                    if norm_key not in self.reduced_abundances.keys():
+                        # only make if there is data to put in it
+                        self.reduced_abundances[norm_key] = ReducedAbundances()
                     abundance_record = single_norm.__getattribute__(element_name)
-                    self.reduced_abundances.add_abundance(abundance_record, element_name, norm_key, catalog)
-        self.reduced_abundances.calc()
+                    self.reduced_abundances[norm_key].add_abundance(abundance_record=abundance_record,
+                                                                    element_name=element_name,
+                                                                    catalog=catalog_name)
+        for reduced_abundance in self.reduced_abundances.values():
+            reduced_abundance.calc()
 
     def find_thing(self, thing, type_of_thing):
         values = []
