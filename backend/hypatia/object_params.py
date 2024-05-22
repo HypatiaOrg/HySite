@@ -1,5 +1,56 @@
+import os
+import tomllib
 from collections import UserDict
 from typing import NamedTuple, Union, Optional
+
+import numpy as np
+
+from hypatia.config import site_dir
+
+
+params_and_units_file = os.path.join(site_dir, 'params_units.toml')
+
+
+def get_params_and_units_from_file() -> dict:
+    with open(params_and_units_file, 'rb') as f:
+        return tomllib.load(f)
+
+
+expected_params_dict = get_params_and_units_from_file()
+expected_params = set(expected_params_dict.keys())
+
+
+def params_value_format(value, decimals):
+    try:
+        formatted_value = float(np.round(value, decimals=decimals))
+    except TypeError:
+        formatted_value = value
+    return formatted_value
+
+
+def params_err_format_string(err: float, sig_figs: int) -> str:
+    if sig_figs < 2:
+        minors = 1
+    else:
+        minors = sig_figs - 1
+    format_string = f'1.{minors}e'
+    return err.__format__(format_string)
+
+
+def params_err_format(err: float, sig_figs: int) -> float:
+    return float(params_err_format_string(err, sig_figs))
+
+
+def format_by_err(value: float, err_low: float, err_high: float, sig_figs: int = 3):
+    err_low_str = params_err_format_string(err_low, sig_figs)
+    err_low_exp = int(err_low_str.split('e')[1])
+    err_high_str = params_err_format_string(err_high, sig_figs)
+    err_high_exp = int(err_high_str.split('e')[1])
+    decimals = sig_figs - min(err_low_exp, err_high_exp) - 1
+    value = np.around(value, decimals=decimals)
+    err_low = np.around(err_low, decimals=decimals)
+    err_high = np.around(err_high, decimals=decimals)
+    return value, err_low, err_high
 
 
 class StarDict(UserDict):
@@ -46,7 +97,7 @@ class ObjectParams(StarDict):
         for param_name in params_dict.keys():
             new_param_dict["value"] = params_dict[param_name]
             new_param_dict['ref'] = ref_str
-            self.data[str(param_name)] = set_single_param(new_param_dict)
+            self.data[str(param_name)] = SingleParam(**new_param_dict)
 
 
 class SingleParam(NamedTuple):
@@ -57,27 +108,35 @@ class SingleParam(NamedTuple):
     ref: Optional[str] = None
     units: Optional[str] = None
 
-    def to_record(self):
-        return {key: self.__getattribute__(key) for key in ['value', 'ref', 'err_low', 'err_high']
-                if self.__getattribute__(key) is not None}
-
-
-def set_single_param(param_dict=None, value=None, err_low=None, err_high=None, units=None, ref=None):
-    if param_dict is not None:
-        keys = set(param_dict.keys())
-        if "value" in keys:
-            internal_param_dict = {}
-            for param_key in SingleParam._fields:
-                if param_key in keys:
-                    internal_param_dict[param_key] = param_dict[param_key]
-                else:
-                    internal_param_dict[param_key] = None
-            return SingleParam(value=internal_param_dict["value"],
-                               err_low=internal_param_dict['err_low'],
-                               err_high=internal_param_dict['err_high'],
-                               units=internal_param_dict['units'],
-                               ref=internal_param_dict['ref'])
-    elif value is not None:
-        return SingleParam(value=value, err_low=err_low, err_high=err_high, units=units, ref=ref)
-    raise ValueError("A key named 'value' is needed to set a parameter")
-
+    def to_record(self, param_str: str):
+        value = self.value
+        ref = self.ref
+        err_low = self.err_low
+        err_high = self.err_high
+        units = self.units
+        if param_str not in expected_params:
+            raise ValueError(f"Parameter {param_str}, ref:{ref} is not in the expected parameters list")
+        # do type checking for the input to Match the expected Database fields and the units
+        expected_units = expected_params_dict[param_str].get('units', None)
+        if expected_units == 'string':
+            return {key: self.__getattribute__(key) for key in ['value', 'ref']
+                    if self.__getattribute__(key) is not None}
+        elif expected_units == "":
+            pass
+        elif expected_units != units:
+            raise ValueError(f"Expected units for {param_str}, ref:{ref} are {expected_units}, not {self.units}")
+        if isinstance(value, int):
+            if isinstance(err_low, float) or isinstance(err_high, float):
+                value = float(value)
+                if err_low is not None:
+                    err_low = float(err_low)
+                if err_high is not None:
+                    err_high = float(self.err_high)
+        if isinstance(value, float):
+            if err_low is not None:
+                err_low = float(err_low)
+            if err_high is not None:
+                err_high = float(err_high)
+        return {key: attr_val for key, attr_val
+                in [('value', value), ('ref', ref), ('err_low', err_low), ('err_high', err_high)]
+                if attr_val is not None}

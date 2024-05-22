@@ -7,8 +7,14 @@ from hypatia.object_params import ObjectParams, SingleParam
 
 class Xhip:
     xhip_params = {"RAJ2000", "DECJ2000", "Plx", "e_Plx", "pmRA", "pmDE", "GLon", "Glat", "Dist", "X",
-                   "Y", "Z", "SpType", "RV", "U", "V", "W", "Bmag", "Vmag", "TWOMASS", "Lum", "rSpType", "BV"}
-    rename_dict = {"X": "X_pos", "Y": "Y_pos", "Z": "Z_pos", "U": "U_vel", "V": "V_vel", "W": "W_vel"}
+                   "Y", "Z", "SpType", "RV", "U", "V", "W", "Bmag", "Vmag", "Lum", "rSpType", "BV"}
+    rename_dict = {"X": "x_pos", "Y": "y_pos", "Z": "z_pos", "U": "u_vel", "V": "v_vel", "W": "w_vel",
+                   'RV': 'radial_velocity', 'Plx': 'parallax', 'e_Plx': 'parallax_err',
+                   "pmRA": "pm_ra", "pmDE": "pm_dec",}
+    xhip_units = {"RAJ2000": "deg", "DECJ2000": "deg", "Plx": "mas", "e_Plx": "mas", "pmRA": "mas/yr",
+                  "pmDE": "mas/yr", "GLon": "deg", "Glat": "deg", "Dist": "[pc]", "X": "[pc]", "Y": "[pc]",
+                  "Z": "[pc]", "SpType": "string", "RV": "km/s", "U": "km/s", "V": "km/s", "W": "km/s", "Bmag": "mag",
+                  "Vmag": "mag", "Lum": "L_sun", "rSpType": "string", "BV": "mag"}
 
     def __init__(self, auto_load=False):
         self.xhip_file_name = os.path.join(ref_dir, "xhip.csv")
@@ -18,10 +24,12 @@ class Xhip:
         if auto_load:
             self.load()
 
-    def load(self):
+    def load(self, verbose: bool = False):
         """
         X Hip - it has two types of null values 99.99 and ''
         """
+        if verbose:
+            print("    Loading XHip data")
         raw_data = row_dict(self.xhip_file_name, key='HIP', delimiter=",", null_value=99.99)
         if "comments" in raw_data.keys():
             self.comments = raw_data['comments']
@@ -31,6 +39,8 @@ class Xhip:
         if self.comments is not None:
             self.ref_data["comments"] = self.comments
         self.available_hip_names = set(self.ref_data.keys())
+        if verbose:
+            print("    XHip data loaded")
 
     def get_xhip_data(self, hip_name: str) -> ObjectParams or None:
         hip_number_str = hip_name.lower().split("hip")[1].strip()
@@ -46,8 +56,19 @@ class Xhip:
                                               if param in self.ref_data[hip_number].keys()}
             xhip_params_dict = ObjectParams()
             rename_keys = set(self.rename_dict.keys())
+            parallax_err = None
+            if 'e_Plx' in xhip_params_dict_before_rename.keys():
+                parallax_err = xhip_params_dict_before_rename['e_Plx']
+                del xhip_params_dict_before_rename['e_Plx']
             for param_name in xhip_params_dict_before_rename:
-                single_param = SingleParam(value=xhip_params_dict_before_rename[param_name], ref='xhip')
+                err_low = None
+                err_high = None
+                if 'Plx' == param_name:
+                    if parallax_err is not None:
+                        err_high = abs(parallax_err)
+                        err_low = -err_high
+                single_param = SingleParam(value=xhip_params_dict_before_rename[param_name], ref='xhip',
+                                           units=self.xhip_units[param_name], err_low=err_low, err_high=err_high)
                 if param_name in rename_keys:
                     xhip_params_dict[self.rename_dict[param_name]] = single_param
                 else:

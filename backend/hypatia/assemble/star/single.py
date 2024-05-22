@@ -45,8 +45,8 @@ class SingleStar:
     def gaia_params(self, gaia_params_dicts):
         for param in sorted(gaia_params_dicts.keys()):
             singles_params_list = sorted(gaia_params_dicts[param], key=ref_rank_gaia)
-            self.params.update_param(param_name=param, single_param=singles_params_list[0],
-                                     overwrite_existing=True)
+            for single_param in singles_params_list:
+                self.params.update_param(param_name=param, single_param=single_param, overwrite_existing=False)
 
     def pastel_params(self, pastel_record):
         # Update so that existing parameter keys-value pairs are prioritized over new values.

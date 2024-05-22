@@ -32,7 +32,7 @@ def save_or_load(load=True, a_catalog_query=None):
 
 def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=None, norm_keys: list[str] = None,
                     target_list=None,
-                    fast_update_gaia=False, from_pickled_cat: bool = False, from_pickled_output: bool = False):
+                    fast_update_gaia=True, from_pickled_cat: bool = False, from_pickled_output: bool = False):
     target_output = None
     params = ["dist", "logg", 'Teff', "SpType", 'st_mass', 'st_rad', "disk"]
     star_name_type = ['gaia dr2', "gaia dr1", "hip", 'hd', "wds"]

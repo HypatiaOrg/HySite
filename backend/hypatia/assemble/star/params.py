@@ -28,38 +28,9 @@ class SingleStarParams:
 
     def to_record(self):
         return {param_name: {
-            'curated': self.__getattribute__(param_name).to_record(),
-            'all': [single_param.to_record() for single_param in self.all_params[param_name]]
+            'curated': self.__getattribute__(param_name).to_record(param_name),
+            'all': [single_param.to_record(param_name) for single_param in self.all_params[param_name]]
         } for param_name in self.available_params}
-
-    def dict_key_rename(self, best_name, backup_name, new_name):
-        if new_name == best_name:
-            if new_name == backup_name:
-                # Nothing to do here, everything is already named correctly
-                pass
-            elif backup_name in self.available_params:
-                # remove the unneeded backup name
-                self.__delattr__(backup_name)
-                self.available_params.remove(backup_name)
-        elif best_name in self.available_params:
-            # the best name is found, so we must rename it to the new name
-            self.update_param(new_name, self.__getattribute__(best_name), overwrite_existing=True)
-            # remove the old name best_name
-            self.__delattr__(best_name)
-            self.available_params.remove(best_name)
-            if new_name != backup_name and backup_name in self.available_params:
-                # the backup name is also found, so we will remove it as well
-                self.__delattr__(backup_name)
-                self.available_params.remove(backup_name)
-        elif best_name == backup_name:
-            # Nothing to do here, everything is already named correctly
-            pass
-        elif backup_name in self.available_params:
-            # only the backup name is found, so we must rename it to the new name
-            self.update_param(new_name, self.__getattribute__(backup_name), overwrite_existing=True)
-            # remove the old name best_name
-            self.__delattr__(backup_name)
-            self.available_params.remove(backup_name)
 
     def calculated_params(self):
         """
@@ -80,7 +51,9 @@ class SingleStarParams:
             if 0.0 < self.parallax.value:
                 if dist is None:
                     dist = 1.0 / (float(self.parallax.value * 0.001))
-                    dist_single_param = SingleParam(value=dist, ref='Hypatia Calc from Gaia parallax')
+                    dist_single_param = SingleParam(value=dist,
+                                                    ref=f'Hypatia Calc from parallax:{self.parallax.ref}',
+                                                    units='[pc]')
                     self.update_param("dist", dist_single_param)
                     self.available_params.add("dist")
             else:
@@ -90,21 +63,11 @@ class SingleStarParams:
         if ra is None and dec is None and "raj2000" in self.available_params and "decj2000" in self.available_params:
             ra = self.raj2000.value
             dec = self.decj2000.value
-        if "plx" in self.available_params:
-            if 0.0 < self.plx.value:
-                if dist is None:
-                    dist = 1.0 / (float(self.plx.value) * 0.001)
-                    dist_single_param = SingleParam(value=dist, ref='Hypatia Calc from xHip parallax')
-                    self.update_param("dist", dist_single_param)
-                    self.available_params.add("dist")
-            else:
-                self.__delattr__('plx')
-                self.available_params.remove("plx")
         # set the distance and position values
         if dist is not None and ra is not None and dec is not None:
                 x_pos, y_pos, z_pos = spherical_astronomy_to_cartesian((ra, dec, dist))
                 for pos_name, pos_value in zip(['x_pos', 'y_pos', 'z_pos'], [x_pos, y_pos, z_pos]):
-                    pos_single_param = SingleParam(value=pos_value, ref='Hypatia Calc')
+                    pos_single_param = SingleParam(value=pos_value, ref='Hypatia Calc', units='[pc]')
                     self.update_param(pos_name, pos_single_param, overwrite_existing=True)
                     self.available_params.add(pos_name)
 
@@ -129,16 +92,6 @@ class SingleStarParams:
                 disk_value = 'thin'
         else:
             disk_value = "N/A"
-        disk_single_param = SingleParam(value=disk_value, ref='Hypatia Calc')
+        disk_single_param = SingleParam(value=disk_value, ref='Hypatia Calc', units='string')
         self.update_param('disk', disk_single_param, overwrite_existing=True)
         self.available_params.add("disk")
-
-        """
-        Clean up
-        """
-        self.dict_key_rename(best_name="ra_epochj2000", backup_name="raj2000", new_name="raj2000")
-        self.dict_key_rename(best_name="dec_epochj2000", backup_name="decj2000", new_name="decj2000")
-        self.dict_key_rename(best_name="parallax", backup_name="plx", new_name="parallax")
-        self.dict_key_rename(best_name="parallax_error", backup_name="e_plx", new_name="parallax_error")
-        self.dict_key_rename(best_name="pmra", backup_name="pmra", new_name="pm_ra")
-        self.dict_key_rename(best_name="pmdec", backup_name="pmde", new_name="pm_dec")

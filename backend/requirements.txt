@@ -1,5 +1,4 @@
 # Toml is part of the part of the Python standard libray after python 3.11
-toml
 # absolutely required for core functions
 numpy
 matplotlib

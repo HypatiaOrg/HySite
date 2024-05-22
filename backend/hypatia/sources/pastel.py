@@ -12,7 +12,7 @@ from hypatia.object_params import ObjectParams, SingleParam
 # The file needs to have ID, Bmag, Vmag, Jmag, Hmag, Ksmag, Teff, logg, Author, and bibcode which can come from Vizier.
 class Pastel:
     pastel_dict_names = {"hip", "2mass", 'bd', "hd", "tyc", "cd", "*", "g", "hat", "koi", "k2", "kepler", "v*"}
-    requested_pastel_params = {"logg", "logg_std", "teff", "teff_std", "bmag", "bmag_std", "vmag", "vmag_std", "author"}
+    requested_pastel_params = {"logg", "teff", "bmag", "vmag"}
 
     def __init__(self, auto_load=False, from_scratch=False):
         self.pastel_file_name = os.path.join(ref_dir, "Pastel20.psv")
@@ -24,12 +24,14 @@ class Pastel:
         if auto_load:
             self.load(from_scratch=from_scratch)
 
-    def load(self, from_scratch=False):
+    def load(self, verbose: bool = False, from_scratch=False):
         """
         Pastel - There can be several entries per star_name so we need to average those entries. An additional
         is that some entries in this catalog are null, denoted by an empty string '', so weed to filter those out
         and not include them in the averaging.
         """
+        if verbose:
+            print("    Loading Pastel data")
         if from_scratch or not os.path.exists(self.pastel_processed_pickle_file):
             self.pastel_ave = {}
             # these names cover the majority of unique names in Pastel
@@ -88,6 +90,8 @@ class Pastel:
         else:
             pastel_data = pickle.load(open(self.pastel_processed_pickle_file, "rb"))
             (self.pastel_ave, self.pastel_raw, self.pastel_star_names) = pastel_data
+        if verbose:
+            print("    Pastel data Loaded")
 
     def get_record_from_aliases(self, aliases: list[str]) -> dict | None:
         found_names = {}

@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 
 from hypatia.config import working_dir
 from hypatia.sources.elements import element_rank
+from hypatia.object_params import params_err_format
 from hypatia.sources.simbad.ops import get_star_data
 from hypatia.sources.simbad.db import indexed_name_types
-from hypatia.assemble.site.params import params_err_format
 from hypatia.assemble.site.chemistry import get_representative_error
 
 

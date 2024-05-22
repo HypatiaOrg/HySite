@@ -1,13 +1,13 @@
 import os
-import toml
+import tomllib
 from hypatia.config import site_dir
 
 element_plusminus_error_file = os.path.join(site_dir, 'element_plusminus_err.toml')
 
 
 def get_plusminus_error_from_file() -> dict:
-    with open(element_plusminus_error_file, 'r') as f:
-        return toml.load(f)
+    with open(element_plusminus_error_file, 'rb') as f:
+        return tomllib.load(f)
 
 
 plusminus_error = {key.lower(): float(value) for key, value in get_plusminus_error_from_file().items()}
