@@ -1,6 +1,6 @@
 import time
 
-from hypatia.sources.collect import BaseCollection
+from hypatia.collect import BaseStarCollection
 
 # Tess Input Catalog
 primary_values = ["Teff", "logg", "mass", "rad"]
@@ -25,7 +25,7 @@ for primary_value in primary_values:
 primary_values = set(primary_values)
 
 
-class TICCollection(BaseCollection):
+class TICStarCollection(BaseStarCollection):
     validator = {
         "$jsonSchema": {
             "bsonType": "object",

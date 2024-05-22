@@ -137,6 +137,8 @@ class SingleParam(NamedTuple):
                 err_low = float(err_low)
             if err_high is not None:
                 err_high = float(err_high)
+            if float(err_low) is not None and float(err_high) is not None:
+                value, err_low, err_high = format_by_err(value, err_low, err_high)
         return {key: attr_val for key, attr_val
                 in [('value', value), ('ref', ref), ('err_low', err_low), ('err_high', err_high)]
                 if attr_val is not None}

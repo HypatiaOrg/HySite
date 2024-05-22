@@ -1,4 +1,4 @@
-from hypatia.sources.collect import BaseCollection
+from hypatia.collect import BaseStarCollection
 
 
 nea_single_value = {
@@ -120,7 +120,7 @@ validator = {
 }
 
 
-class ExoPlanetCollection(BaseCollection):
+class ExoPlanetStarCollection(BaseStarCollection):
     validator = validator
 
     def create_indexes(self):

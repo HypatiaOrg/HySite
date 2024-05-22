@@ -25,10 +25,9 @@ class BaseCollection:
     }
     collation = {'locale': 'en', 'strength': 2}
 
-    def __init__(self, collection_name: str, db_name: str = 'metadata', name_col: str = "_id", verbose: bool = True):
+    def __init__(self, collection_name: str, db_name: str = 'metadata', verbose: bool = True):
         self.collection_name = collection_name
         self.db_name = db_name
-        self.name_col = name_col
         self.verbose = verbose
         self.db = self.client[db_name]
         self.collection = self.db[collection_name]
@@ -37,7 +36,7 @@ class BaseCollection:
         self.test_connection()
 
     def create_indexes(self):
-        self.collection_add_index(self.name_col, unique=True)
+        pass
 
     def reset(self):
         self.drop_collection()
@@ -106,6 +105,15 @@ class BaseCollection:
 
     def remove_by_id(self, remove_id: str) -> pymongo.results.DeleteResult:
         return self.collection.delete_one({"_id": remove_id})
+
+
+class BaseStarCollection(BaseCollection):
+    def __init__(self, collection_name: str, db_name: str = 'metadata', name_col: str = "_id", verbose: bool = True):
+        super().__init__(collection_name, db_name, verbose)
+        self.name_col = name_col
+
+    def create_indexes(self):
+        self.collection_add_index(self.name_col, unique=True)
 
     def update_timestamp(self, update_id: str) -> pymongo.results.UpdateResult:
         return self.collection.update({"_id": update_id}, {"$set": {"timestamp": time.time()}})

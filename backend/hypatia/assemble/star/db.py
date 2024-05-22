@@ -1,7 +1,7 @@
 import time
 
 from hypatia.sources.nea.db import nea_data
-from hypatia.sources.collect import BaseCollection
+from hypatia.collect import BaseStarCollection
 from hypatia.assemble.star.single import SingleStar
 from hypatia.sources.simbad.query import simbad_coord_to_deg
 
@@ -135,7 +135,7 @@ abundance_normalizations = {
 }
 
 
-class HypatiaDB(BaseCollection):
+class HypatiaDB(BaseStarCollection):
     validator = {
         "$jsonSchema": {
             "bsonType": "object",

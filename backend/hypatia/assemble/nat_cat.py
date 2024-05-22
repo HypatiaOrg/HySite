@@ -163,8 +163,8 @@ class NatCat:
 
         # hacked parameters to add at the last minute (from config.py)
         for string_name in hacked.keys():
-            param, value = hacked[string_name]
-            hacked_single_param = SingleParam(value=value, ref='from config.py, the "hacked" variable')
+            param, value, units, ref = hacked[string_name]
+            hacked_single_param = SingleParam(value=value, units=units, ref=ref)
             simbad_doc = get_star_data(test_name=string_name, test_origin="hacked")
             main_star_id = simbad_doc["_id"]
             if main_star_id in self.star_data.star_names:

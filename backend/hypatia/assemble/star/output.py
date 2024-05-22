@@ -6,6 +6,7 @@ from hypatia.assemble.star.db import HypatiaDB
 from hypatia.assemble.filters import core_filter
 from hypatia.assemble.star.all import AllStarData
 from hypatia.sources.simbad.ops import get_star_data
+from hypatia.assemble.site.summary import upload_summary
 from hypatia.plots.element_rad_plot import make_element_distance_plots
 
 
@@ -592,3 +593,4 @@ class OutputStarData(AllStarData):
         hypatia_db.reset()
         for single_star in self:
             hypatia_db.add_star(single_star)
+        upload_summary()

@@ -1,4 +1,4 @@
-from hypatia.sources.nea.db import ExoPlanetCollection
+from hypatia.sources.nea.db import ExoPlanetStarCollection
 from hypatia.tools.exceptions import StarNameNotFound
 from hypatia.sources.nea.query import query_nea, set_data_by_host, hypatia_host_name_rank_order
 from hypatia.sources.simbad.ops import (get_main_id, interactive_name_menu, star_collection, no_simbad_add_name,
@@ -6,7 +6,7 @@ from hypatia.sources.simbad.ops import (get_main_id, interactive_name_menu, star
 
 
 nea_ref = "NASA Exoplanet Archive"
-nea_collection = ExoPlanetCollection(collection_name="nea")
+nea_collection = ExoPlanetStarCollection(collection_name="nea")
 known_micro_names = {"kmt", "ogle", "moa", 'k2'}
 system_designations = {'a', 'b', 'c', 'ab', 'ac', 'bc'}
 incorrect_nea_names = {'Gaia DR2 4794830231453653888'}

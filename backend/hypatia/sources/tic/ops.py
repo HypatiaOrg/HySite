@@ -2,7 +2,7 @@ import numpy as np
 
 from hypatia.sources.tic.query import query_tic_data
 from hypatia.sources.simbad.ops import get_star_data
-from hypatia.sources.tic.db import TICCollection, primary_values
+from hypatia.sources.tic.db import TICStarCollection, primary_values
 from hypatia.object_params import ObjectParams, SingleParam
 
 
@@ -16,7 +16,7 @@ params_with_units = set(units_dict.keys())
 name_preference = ["gaia dr2", "2mass", "tyc", "hip"]
 allowed_names = {name_type for name_type in name_preference}
 
-tic_collection = TICCollection(collection_name="tic", name_col="_id")
+tic_collection = TICStarCollection(collection_name="tic", name_col="_id")
 tic_cache = {tic_doc['_id']: tic_doc for tic_doc in tic_collection.find_all()}
 
 

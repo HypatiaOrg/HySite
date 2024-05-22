@@ -20,7 +20,9 @@ pickle_nat = os.path.join(output_products_dir, "pickle_nat.pkl")
 pickle_out = os.path.join(output_products_dir, "pickle_output_star_data.pkl")
 
 # hacked stellar parameters, these will override any values from reference data.
-hacked = {"Kepler-84": ('dist', 1443.26796)}
+hacked = {
+    "Kepler-84": ('dist', 1443.26796, '[pc]', 'Hypatia Override for Kepler-84'),
+}
 
 
 """
