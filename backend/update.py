@@ -3,20 +3,22 @@ from hypatia.legacy.sqlite import delete_test_database
 from hypatia.legacy.db import ordered_outputs, update_one_norm
 
 
-def legacy_update(skip_output: bool = False, test_mode: bool = True, output_list=ordered_outputs):
+def legacy_update(test_mode: bool = True, output_list: list[str] = None, mongo_upload: bool = False):
+    if output_list is None:
+        output_list = list(ordered_outputs)
+    abs_list = []
+    if "absolute" in output_list:
+        output_list.remove("absolute")
+        abs_list.append("absolute")
+    full_list = abs_list + output_list
     delete_test_database(test_mode=test_mode, remove_compositions=True)
-    from_scratch = False
-    for norm in output_list:
-        if not skip_output:
-            nat_cat, output_star_data, target_star_data = standard_output(from_scratch=from_scratch,
-                                                                          norm_key=norm,
-                                                                          fast_update_gaia=True,
-                                                                          from_pickle=False)
-        from_scratch = False
-        update_one_norm(norm=norm, test_mode=test_mode)
+    output = standard_output(do_legacy=True, from_scratch=False, refresh_exo_data=False,
+                             norm_keys=list(output_list), mongo_upload=mongo_upload)
+    print('full_list:', full_list)
+    for norm_key in full_list:
+        update_one_norm(norm_key, test_mode=test_mode)
+    return output
 
 
 if __name__ == '__main__':
-    # the catalogue running order is:
-    # ["absolute", "anders89", "asplund05", "asplund09", "grevesse98", "lodders09", "original", "grevesse07"]
-    legacy_update(skip_output=False, test_mode=False)
+    nat_cat, output_star_data, target_star_data = legacy_update(test_mode=False)

@@ -4,11 +4,10 @@ import math
 import numpy as np
 
 from hypatia.config import ref_dir, base_dir
-from hypatia.sources.catalogs.ops import CatOps
 from hypatia.sources.elements import element_rank
 from hypatia.plots.scatter_hist_hist_plot import histPlot
-from hypatia.assemble.nat_cat import NatCat, load_catalog_query
-from hypatia.assemble.star.output import load_pickled_output
+from hypatia.pipeline.nat_cat import NatCat, load_catalog_query
+from hypatia.pipeline.star.output import load_pickled_output
 
 
 def save_or_load(load=True, a_catalog_query=None):
@@ -32,7 +31,8 @@ def save_or_load(load=True, a_catalog_query=None):
 
 def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=None, norm_keys: list[str] = None,
                     target_list=None,
-                    fast_update_gaia=True, from_pickled_cat: bool = False, from_pickled_output: bool = False):
+                    fast_update_gaia=True, from_pickled_cat: bool = False, from_pickled_output: bool = False,
+                    do_legacy: bool = False, mongo_upload: bool = True):
     target_output = None
     params = ["dist", "logg", 'Teff', "SpType", 'st_mass', 'st_rad', "disk"]
     star_name_type = ['gaia dr2', "gaia dr1", "hip", 'hd', "wds"]
@@ -69,7 +69,7 @@ def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=N
         if target_list is None:
             output_star_data = dist_output + exo_output
         else:
-            # sort by is the data a target star
+            # select only the data that is belongs to the list of target stars
             target_output = nat_cat.make_output_star_data(is_target=True)
             output_star_data = target_output
         # optional 2nd filtering step
@@ -88,12 +88,17 @@ def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=N
                                 is_target=None)
         output_star_data.normalize(norm_keys=norm_keys)
         output_star_data.filter(element_bound_filter=None)  # filter after normalization, and logic
-        # output_star_data.output_file(output_dir=None, exo_mode=True)
+        if do_legacy:
+            # Output the absolute values
+            output_star_data.output_file(output_dir=None, exo_mode=True, do_absolute=True)
+            # Output the all normalizations, one for each norm_key
+            output_star_data.output_file(output_dir=None, exo_mode=True)
         output_star_data.do_stats(params_set=nat_cat.params_list_for_stats,
                                   star_name_types=nat_cat.star_types_for_stats)
-        output_star_data.reduce_elements()
-        output_star_data.find_available_attributes()
-        output_star_data.export_to_mongo()
+        if mongo_upload:
+            output_star_data.reduce_elements()
+            output_star_data.find_available_attributes()
+            output_star_data.export_to_mongo()
         output_star_data.pickle_myself()
     return nat_cat, output_star_data, target_output
 

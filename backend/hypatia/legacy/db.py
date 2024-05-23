@@ -749,9 +749,9 @@ def update_one_norm(norm: str, test_mode: bool = False):
     if norm == "absolute":
         filename = f'hypatia_{today_date}_exo_absolute.txt'
     elif norm == "original":
-        filename = f'hypatia_{today_date}_exo_normOriginal.txt'
+        filename = f'hypatia_{today_date}_exo_norm_original.txt'
     else:
-        filename = f'hypatia_{today_date}_exo_norm{norm}.txt'
+        filename = f'hypatia_{today_date}_exo_norm_{norm}.txt'
     upload_star_data(
         HYP_DATA_DIR=compositions_dir,
         filePath=os.path.join(star_data_output_dir, filename),

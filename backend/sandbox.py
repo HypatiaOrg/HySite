@@ -11,12 +11,12 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from hypatia.assemble.stats import autolabel
+from hypatia.pipeline.star.stats import autolabel
 from hypatia.config import working_dir
 from hypatia.sources.elements import element_rank
 
-from hypatia.assemble.nat_cat import NatCat, load_catalog_query
-from hypatia.assemble.star.output import load_pickled_output
+from hypatia.pipeline.nat_cat import NatCat, load_catalog_query
+from hypatia.pipeline.star.output import load_pickled_output
 
 
 def mdwarf_output(from_scratch=True, short_name_list='mdwarf_subset_catalog_file.csv', norm_key=None,

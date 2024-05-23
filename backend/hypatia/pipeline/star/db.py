@@ -2,7 +2,7 @@ import time
 
 from hypatia.sources.nea.db import nea_data
 from hypatia.collect import BaseStarCollection
-from hypatia.assemble.star.single import SingleStar
+from hypatia.pipeline.star.single import SingleStar
 from hypatia.sources.simbad.query import simbad_coord_to_deg
 
 

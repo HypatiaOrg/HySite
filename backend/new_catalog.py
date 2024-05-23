@@ -88,7 +88,7 @@ import sys
 import shutil
 from hypatia.config import working_dir
 from hypatia.sources.catalogs.solar import SolarNorm
-from hypatia.assemble.nat_cat import NatCat
+from hypatia.pipeline.nat_cat import NatCat
 from hypatia.sources.catalogs.ops import CatOps
 from hypatia.sources.catalogs.catalogs import get_catalogs
 

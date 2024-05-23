@@ -6,11 +6,11 @@ import numpy as np
 
 from hypatia.sources.gaia import GaiaLib
 from hypatia.config import star_data_output_dir
-from hypatia.assemble.stats import StarDataStats
+from hypatia.pipeline.star.stats import StarDataStats
 from hypatia.plots.histograms import simple_hist
 from hypatia.sources.elements import element_rank
 from hypatia.plots.quick_plots import quick_plotter
-from hypatia.assemble.star.single import SingleStar
+from hypatia.pipeline.star.single import SingleStar
 from hypatia.object_params import StarDict, SingleParam
 from hypatia.sources.nea.ops import get_all_nea, refresh_nea_data
 from hypatia.sources.simbad.ops import get_star_data, get_main_id
@@ -212,7 +212,13 @@ class AllStarData:
         plfile.close()
 
     def output_file(self, output_dir=None, exo_mode=False, do_absolute: bool = False):
+        abs_output = False
         for norm_key in self.data_norms:
+            if do_absolute:
+                if abs_output:
+                    continue
+                else:
+                    norm_key = "absolute"
             if output_dir is None:
                 output_dir = star_data_output_dir
             file_name = os.path.join(output_dir, "hypatia_")
@@ -381,6 +387,8 @@ class AllStarData:
             with open(file_name, 'w') as f:
                 # put the preferred star name types at the top of the file.
                 [[f.write(a_line + "\n") for a_line in write_lines] for write_lines in output_dict.values()]
+            if do_absolute:
+                abs_output = True
 
     def get_single_star_data(self, star_name):
         main_star_id = get_main_id(star_name)

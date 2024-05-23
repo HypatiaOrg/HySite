@@ -2,11 +2,11 @@ import copy
 import pickle
 
 from hypatia.config import pickle_out
-from hypatia.assemble.star.db import HypatiaDB
-from hypatia.assemble.filters import core_filter
-from hypatia.assemble.star.all import AllStarData
+from hypatia.pipeline.star.db import HypatiaDB
+from hypatia.pipeline.params.filters import core_filter
+from hypatia.pipeline.star.all import AllStarData
 from hypatia.sources.simbad.ops import get_star_data
-from hypatia.assemble.site.summary import upload_summary
+from hypatia.pipeline.site.summary import upload_summary
 from hypatia.plots.element_rad_plot import make_element_distance_plots
 
 
