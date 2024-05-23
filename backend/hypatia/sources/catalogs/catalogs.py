@@ -4,7 +4,7 @@ import shutil
 import datetime
 from warnings import warn
 
-from hypatia.sources.elements import element_rank
+from hypatia.elements import element_rank
 from hypatia.tools.table_read import ClassyReader
 from hypatia.tools.star_names import calc_simbad_name
 from hypatia.sources.simbad.ops import get_star_data, get_main_id

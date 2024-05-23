@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 from hypatia.pipeline.star.stats import autolabel
 from hypatia.config import working_dir
-from hypatia.sources.elements import element_rank
+from hypatia.elements import element_rank
 
 from hypatia.pipeline.nat_cat import NatCat, load_catalog_query
 from hypatia.pipeline.star.output import load_pickled_output

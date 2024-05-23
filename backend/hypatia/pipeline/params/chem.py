@@ -1,7 +1,7 @@
 import numpy as np
 
 from hypatia.object_params import params_err_format
-from hypatia.pipeline.site.chemistry import get_representative_error
+from hypatia.elements import get_representative_error
 
 
 class ElementStats:

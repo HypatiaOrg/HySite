@@ -1,8 +1,6 @@
 import numpy as np
 
-from hypatia.object_params import params_err_format
 from hypatia.object_params import SingleParam, ObjectParams
-from hypatia.pipeline.site.chemistry import get_representative_error
 from hypatia.tools.coordinates import spherical_astronomy_to_cartesian
 
 

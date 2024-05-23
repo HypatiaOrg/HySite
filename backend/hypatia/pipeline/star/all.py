@@ -8,7 +8,7 @@ from hypatia.sources.gaia import GaiaLib
 from hypatia.config import star_data_output_dir
 from hypatia.pipeline.star.stats import StarDataStats
 from hypatia.plots.histograms import simple_hist
-from hypatia.sources.elements import element_rank
+from hypatia.elements import element_rank
 from hypatia.plots.quick_plots import quick_plotter
 from hypatia.pipeline.star.single import SingleStar
 from hypatia.object_params import StarDict, SingleParam

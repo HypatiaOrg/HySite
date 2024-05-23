@@ -10,13 +10,10 @@ def legacy_update(test_mode: bool = True, output_list: list[str] = None, mongo_u
     if "absolute" in output_list:
         output_list.remove("absolute")
         abs_list.append("absolute")
-    full_list = abs_list + output_list
     delete_test_database(test_mode=test_mode, remove_compositions=True)
     output = standard_output(do_legacy=True, from_scratch=False, refresh_exo_data=False,
-                             norm_keys=list(output_list), mongo_upload=mongo_upload)
-    print('full_list:', full_list)
-    for norm_key in full_list:
-        update_one_norm(norm_key, test_mode=test_mode)
+                             norm_keys=output_list, mongo_upload=mongo_upload)
+    [update_one_norm(norm_key, test_mode=test_mode) for norm_key in abs_list + output_list]
     return output
 
 
