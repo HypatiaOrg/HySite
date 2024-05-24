@@ -1,5 +1,6 @@
 import time
 
+from hypatia.elements import element_rank
 from hypatia.sources.nea.db import nea_data
 from hypatia.collect import BaseStarCollection
 from hypatia.pipeline.star.single import SingleStar
@@ -248,12 +249,14 @@ class HypatiaDB(BaseStarCollection):
         catalogs_this_star = single_star.available_abundance_catalogs
         if len(catalogs_this_star) > 0:
             reduced_abundances = single_star.reduced_abundances
-            abundance_output = {norm: {element_name: {data_key: reduced_abundances[norm][element_name][data_key]
-                                                      for data_key
-                                                      in reduced_abundances[norm][element_name].__dict__.keys()
-                                                      if data_key in single_abundance_keys
-                                                      and reduced_abundances[norm][element_name][data_key] is not None}
-                                       for element_name in reduced_abundances[norm].available_abundances}
+            abundance_output = {norm: {str(element_name): {data_key: reduced_abundances[norm][element_name][data_key]
+                                                           for data_key
+                                                           in reduced_abundances[norm][element_name].__dict__.keys()
+                                                           if data_key in single_abundance_keys
+                                                           and reduced_abundances[norm][element_name][data_key]
+                                                           is not None}
+                                       for element_name in sorted(reduced_abundances[norm].available_abundances,
+                                                                  key=element_rank)}
                                 for norm in reduced_abundances.keys()}
             absolute = abundance_output.pop('absolute')
             normalizations = abundance_output

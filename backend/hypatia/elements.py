@@ -6,11 +6,12 @@ from hypatia.config import ref_dir, site_dir
 from hypatia.tools.table_read import row_dict
 
 
-elements_found = set()
+plusminus_error_default = 0.001
 elements_that_end_in_h = {'bh', 'rh', 'th', 'h'}
 # elements_that_end_in_i = {'li', 'si', 'ti', 'ni', 'bi'}
 expected_ion_states = ["IV", "III", 'II']
 float_params = {"ionization_energy_ev", 'average_mass_amu'}
+elements_found = set()
 # from the chemical data CSV file
 element_csv = {key: {field_name: float(value) if field_name in float_params else value
                      for field_name, value in el_dict.items()}
@@ -22,22 +23,18 @@ with open(element_plusminus_error_file, 'rb') as f:
     plusminus_error = {key.lower(): float(value) for key, value in tomllib.load(f).items()}
 
 
-def get_representative_error(element_name: str) -> float:
-    return plusminus_error.get(element_name.lower(), 0.001)
+def under_score_clean_up(a_string: str) -> str:
+    while "__" in a_string:
+        a_string = a_string.replace("__", "_")
+    return a_string
 
 
 summary_dict = {}
 for el_name, el_dict in element_csv.items():
     el_name_lower = el_name.lower()
     # make a shallow copy of the element dictionary as a part of this data export
-    el_data = {**el_dict, "abbreviation": el_name, "plusminus": get_representative_error(el_name)}
+    el_data = {**el_dict, "abbreviation": el_name, "plusminus": plusminus_error.get(el_name_lower, plusminus_error_default)}
     summary_dict[el_name_lower] = el_data
-
-
-def under_score_clean_up(a_string: str) -> str:
-    while "__" in a_string:
-        a_string = a_string.replace("__", "_")
-    return a_string
 
 
 class ElementID(NamedTuple):
@@ -92,7 +89,7 @@ class ElementID(NamedTuple):
         return new_record
 
     def __repr__(self):
-        return f"ElementRecord({self})"
+        return f"ElementID({self})"
 
 
 def element_rank(element_record: ElementID) -> float:
@@ -111,3 +108,7 @@ def element_rank(element_record: ElementID) -> float:
         elif ion_state == "iii":
             rank += 0.000111
     return rank
+
+
+def get_representative_error(element_id: ElementID) -> float:
+    return plusminus_error.get(element_id.name_lower, plusminus_error_default)

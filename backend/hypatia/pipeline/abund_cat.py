@@ -1,19 +1,20 @@
 import numpy as np
 
-from hypatia.sources.catalogs.solar import solar_norm_dict
+from hypatia.elements import ElementID
+from hypatia.sources.catalogs.solar_norm import solar_norm_dict
 
 
 class SingleNorm:
-    def __init__(self, norm_key: str, norm_data: dict[str, float]):
+    def __init__(self, norm_key: str, norm_data: dict[ElementID, float]):
         self.norm_key = norm_key
         self.available_abundances = set(norm_data.keys())
         for element, value in norm_data.items():
-            self.__setattr__(element, value)
+            self.__setattr__(str(element), value)
 
-    def __getitem__(self, item):
-        return self.__getattribute__(item)
+    def __getitem__(self, item: ElementID):
+        return self.__getattribute__(str(item))
 
-    def __contains__(self, item):
+    def __contains__(self, item: ElementID):
         return item in self.available_abundances
 
 

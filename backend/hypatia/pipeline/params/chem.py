@@ -7,10 +7,7 @@ from hypatia.elements import get_representative_error, ElementID
 class ElementStats:
     def __init__(self, element_name: ElementID | str):
         self.name = element_name
-        if isinstance(element_name, ElementID):
-            self.element_id = element_name
-        else:
-            self.element_id = ElementID.from_str(element_name)
+        self.element_id = element_name
         self.value_list = []
         self.catalog_list = []
         self.catalogs = {}
@@ -39,7 +36,7 @@ class ElementStats:
             if self.len > 2:
                 self.std = params_err_format(np.std(self.value_list), sig_figs=3)
         if self.plusminus is None or self.plusminus == 0.0:
-            self.plusminus = get_representative_error(element_name=self.name)
+            self.plusminus = get_representative_error(element_id=self.element_id)
 
     def __len__(self):
         return len(self.value_list)
@@ -53,13 +50,13 @@ class ReducedAbundances:
         self.available_abundances = set()
 
     def __getitem__(self, item):
-        return self.__getattribute__(item)
+        return self.__getattribute__(str(item))
 
     def add_abundance(self, abundance_record, element_name, catalog):
         if element_name not in self.available_abundances:
-            self.__setattr__(element_name, ElementStats(element_name))
+            self.__setattr__(str(element_name), ElementStats(element_name))
             self.available_abundances.add(element_name)
-        self.__getattribute__(element_name).add_value(abundance_record, catalog)
+        self.__getattribute__(str(element_name)).add_value(abundance_record, catalog)
 
     def calc(self):
-        [self.__getattribute__(element_name).calc_stats() for element_name in self.available_abundances]
+        [self.__getattribute__(str(element_name)).calc_stats() for element_name in self.available_abundances]

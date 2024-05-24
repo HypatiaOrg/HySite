@@ -8,7 +8,7 @@ from hypatia.object_params import SingleParam
 from hypatia.tools.table_read import row_dict
 from hypatia.pipeline.star.all import AllStarData
 from hypatia.sources.tic.ops import get_hy_tic_data
-from hypatia.sources.catalogs.solar import SolarNorm
+from hypatia.sources.catalogs.solar_norm import SolarNorm
 from hypatia.pipeline.star.output import OutputStarData
 from hypatia.sources.catalogs.catalogs import get_catalogs
 from hypatia.sources.simbad.ops import get_main_id, get_star_data

@@ -67,9 +67,9 @@ formatted row is "adamow14,Adamow et al. (2014),adamow14"
 The dex scale of the abundance data.
 The data itself is expected to be in dex notation, a logarithmic scale. The abundance data for an element,
 for example carbon "C", is often normalized to amount of hydrogen in a star. This example is taken from documentation in
-hypatia.load.solar.py. Below we see an example of what the dex notation means for stars normalized to hydrogen.
+hypatia.load.solar_norm.py. Below we see an example of what the dex notation means for stars normalized to hydrogen.
 Other examples are found for "Fe" ratios abundance ratios and Absolute abundance notation and normalization
-are found in hypatia.load.solar.py.
+are found in hypatia.load.solar_norm.py.
 
     We take the relative value of an element X to Hydrogen (H) of a star compared to the solar abundance of the same
     ratio. Note the this calculation takes place in Log base 10 space, and returns values in log space, so simple
@@ -89,7 +89,7 @@ import shutil
 
 from hypatia.pipeline.nat_cat import NatCat
 from hypatia.sources.catalogs.ops import CatOps
-from hypatia.sources.catalogs.solar import SolarNorm
+from hypatia.sources.catalogs.solar_norm import SolarNorm
 from hypatia.config import abundance_dir, ref_dir
 from hypatia.sources.catalogs.catalogs import get_catalogs
 

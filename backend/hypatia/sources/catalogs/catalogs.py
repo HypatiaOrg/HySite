@@ -10,10 +10,10 @@ from hypatia.tools.star_names import calc_simbad_name
 from hypatia.tools.exceptions import ElementNameErrorInCatalog
 from hypatia.sources.simbad.ops import get_star_data, get_main_id
 from hypatia.config import abundance_dir, ref_dir, cat_pickles_dir
-from hypatia.sources.catalogs.solar import SolarNorm, ratio_to_element, un_norm
+from hypatia.sources.catalogs.solar_norm import (solar_norm_dict, ratio_to_element, iron_id, iron_ii_id,
+                                                 un_norm_x_over_fe, un_norm_x_over_h, un_norm_abs_x)
 
 
-fe_ii = ElementID.from_str("Fe_II")
 indicates_mixed_name_types = {"Star", "star", "Stars", "starname", "Starname", "Name", "ID", "Object", "HDBD"}
 indicates_single_name_types = {"TYC", "HD", "HIP", "HR", "TrES", "CoRoT", "XO", "HAT", "WASP"}
 
@@ -95,7 +95,7 @@ class Catalog:
         # use ClassyReader, add attributes of the file (i.e., the element columns) to the raw_data attribute
         self.raw_data = ClassyReader(self.file_path, delimiter=self.delimiter)
         # set a single normalization dictionary for the catalog
-        self.norm_dict = SolarNorm()(norm_key=self.norm_key)
+        self.norm_dict = solar_norm_dict[self.norm_key]
 
         """ Parse star names"""
         # determine the star name data-type and convert the star names to the SIMBAD format
@@ -148,10 +148,10 @@ class Catalog:
 
         self.element_keys = set(self.element_to_ratio_name.keys())
         self.element_ratio_keys = {self.element_to_ratio_name[key] for key in self.element_to_ratio_name}
-        if fe_ii in self.element_keys:
+        if iron_ii_id in self.element_keys:
             warn(f"The Fe_II element in {self.catalog_name} is not allowed in the catalog data.")
-            self.element_keys.remove(fe_ii)
-            del self.element_to_ratio_name[fe_ii]
+            self.element_keys.remove(iron_ii_id)
+            del self.element_to_ratio_name[iron_ii_id]
         """
             Creates a unique dictionary for each star in the catalog such that the element data can be
             more easily accessed (not by index) -- ultimately this preps it for CatalogQuery.
@@ -188,29 +188,53 @@ class Catalog:
             self.main_star_names.append(simbad_doc['_id'])
             self.star_docs.append(simbad_doc)
 
+    def remove_elements(self, lost_element: ElementID, reason):
+        self.element_ratio_keys.remove(self.element_to_ratio_name[lost_element])
+        self.element_keys.remove(lost_element)
+        warn(f"Element: {lost_element} was removed from the catalog: {self.catalog_name} because {reason}")
+
     def un_normalize(self):
         # check to see if the normalization will cover all the elements in this catalog.
         if self.norm_dict is not None:
-            norm_keys = set(self.norm_dict.keys())
-            extra_elements = self.element_keys - norm_keys - self.absolute_elements
-            if extra_elements != set():
-                print("There are elements in the catalog: " + str(self.catalog_name) + "\n"
-                      + "that are not in normalization reference: " + str(self.norm_key) + "\n"
-                      + "Namely the elements: " + str(extra_elements) + " .\n"
-                      + "   These elements are being omitted from the data output.\n")
-                for lost_element in extra_elements:
-                    self.element_ratio_keys.remove(self.element_to_ratio_name[lost_element])
-                    self.element_keys.remove(lost_element)
+            for main_star_id, original_star_name, star_dict \
+                    in zip(self.main_star_names, self.original_star_names, self.raw_star_data):
+                # get the keys that are not elements, such as star_name and comments
+                element_dict = {element_id: star_dict[element_id]
+                                for element_id in self.element_keys & set(star_dict.keys())}
 
-        for main_star_id, original_star_name, star_dict \
-                in zip(self.main_star_names, self.original_star_names, self.raw_star_data):
-            # get the keys that are not elements, such as star_name and comments
-            element_dict = {element_id: star_dict[element_id]
-                            for element_id in self.element_keys & set(star_dict.keys())}
-            # the heart of the un-normalization (un_norm in solar.py)
-            un_norm_dict = un_norm(element_dict, self.norm_dict, self.element_id_to_un_norm_func)
-            # rewrite the dict to include the non-element keys like star names.
-            self.abs_star_data.append(un_norm_dict)
+                # the heart of the un-normalization process
+                un_norm_dict = {}
+                key_set = set(element_dict.keys())
+                for element_id in key_set:
+                    un_norm_func_name = self.element_id_to_un_norm_func[element_id]
+                    element_value = element_dict[element_id]
+                    if un_norm_func_name == "un_norm_abs_x":
+                        if element_id in self.norm_dict.keys():
+                            un_norm_dict[element_id] = un_norm_abs_x(element_value)
+                    else:
+                        # these elements require a solar value to un-normalize
+                        solar_value = None
+                        if element_id in self.norm_dict.keys():
+                            solar_value = self.norm_dict[element_id]
+                        elif element_id.name_lower:
+                            default_element = ElementID(name_lower=element_id.name_lower,
+                                                        ion_state=element_id.ion_state, is_nlte=False)
+                            if default_element in self.norm_dict.keys():
+                                solar_value = self.norm_dict[default_element]
+                        if solar_value is None:
+                            self.remove_elements(element_id, "no solar value available")
+                            continue
+                        if un_norm_func_name == "un_norm_x_over_h":
+                            un_norm_dict[element_id] = un_norm_x_over_h(relative_x_over_h=element_value,
+                                                                        solar_x=solar_value)
+                        elif un_norm_func_name == "un_norm_x_over_fe":
+                            un_norm_dict[element_id] = un_norm_x_over_fe(relative_x_over_fe=element_value,
+                                                                         relative_fe_over_h=element_dict[iron_id],
+                                                                         solar_x=solar_value)
+                        else:
+                            raise KeyError(f"Un-normalization function: {un_norm_func_name} not recognized.")
+                # rewrite the dict to include the non-element keys like star names.
+                self.abs_star_data.append(un_norm_dict)
 
     def find_double_listed(self):
         self.update_star_names()

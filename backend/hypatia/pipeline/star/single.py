@@ -60,11 +60,10 @@ class SingleStar:
         for catalog_name in sorted(self.available_abundance_catalogs):
             single_catalog = self.__getattribute__(catalog_name)
             for element_name in single_catalog.available_abundances:
-                abundance_record = single_catalog.__getattribute__(element_name)
+                abundance_record = single_catalog.__getattribute__(str(element_name))
                 self.reduced_abundances['absolute'].add_abundance(abundance_record=abundance_record,
                                                                   element_name=element_name,
                                                                   catalog=catalog_name)
-
         # normalized abundances
         for catalog_name in sorted(self.available_abundance_catalogs):
             single_catalog = self.__getattribute__(catalog_name)
@@ -74,7 +73,7 @@ class SingleStar:
                     if norm_key not in self.reduced_abundances.keys():
                         # only make if there is data to put in it
                         self.reduced_abundances[norm_key] = ReducedAbundances()
-                    abundance_record = single_norm.__getattribute__(element_name)
+                    abundance_record = single_norm.__getattribute__(str(element_name))
                     self.reduced_abundances[norm_key].add_abundance(abundance_record=abundance_record,
                                                                     element_name=element_name,
                                                                     catalog=catalog_name)

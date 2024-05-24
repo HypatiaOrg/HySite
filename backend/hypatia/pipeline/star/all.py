@@ -5,13 +5,14 @@ import datetime
 import numpy as np
 
 from hypatia.sources.gaia import GaiaLib
+from hypatia.elements import element_rank
 from hypatia.config import star_data_output_dir
 from hypatia.plots.histograms import simple_hist
 from hypatia.plots.quick_plots import quick_plotter
 from hypatia.pipeline.star.single import SingleStar
-from hypatia.elements import element_rank, ElementID
 from hypatia.pipeline.star.stats import StarDataStats
 from hypatia.object_params import StarDict, SingleParam
+from hypatia.sources.catalogs.solar_norm import iron_id, iron_set
 from hypatia.sources.nea.ops import get_all_nea, refresh_nea_data
 from hypatia.sources.simbad.ops import get_star_data, get_main_id
 
@@ -57,8 +58,8 @@ class AllStarData:
         self.available_abundances = None
 
         self.non_abundance_data_types = {'exo'}
-        self.iron_el = ElementID.from_str("Fe")
-        self.iron_set = {self.iron_el, ElementID.from_str("Fe_II")}
+        self.iron_el = iron_id
+        self.iron_set = iron_set
 
         self.targets_requested = self.targets_found = self.targets_not_found = None
 
@@ -372,9 +373,12 @@ class AllStarData:
                     single_catalog = single_star.__getattribute__(catalog)
                     ordered_element_list = sorted(single_catalog.available_abundances, key=element_rank)
                     for element in ordered_element_list:
-                        element_value = np.around(single_catalog.__getattribute__(element), decimals=3)
-                        an_element_line = element
-                        element_lower = element.strip().lower()
+                        if element.is_nlte:
+                            continue
+                        element_str = str(element)
+                        element_value = np.around(single_catalog.__getattribute__(element_str), decimals=3)
+                        an_element_line = element_str.replace("_", "")
+                        element_lower = element_str.strip().lower()
                         if element_lower in self.hydrogen_element_lower or element_lower[-1] != 'h':
                             an_element_line += "H"
                         an_element_line += f" {element_value:1.3f} [{single_catalog.catalog_long_name}]"

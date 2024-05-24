@@ -393,6 +393,7 @@ if __name__ == "__main__":
     test_refresh_exo_data = False
     test_from_scratch = True
     test_from_pickled_cat = False
+    do_legacy = False
     if only_target_list:
         example_target_list = os.path.join(ref_dir, 'ARIEL_Edwards22_Table4_TOIpotential.txt')
         # example_target_list2 = ['HIP 36366', 'HIP 55846', 'HD 103095', 'HIP 33226']
@@ -400,12 +401,14 @@ if __name__ == "__main__":
                                                                       target_list=example_target_list,
                                                                       norm_keys=test_norm_keys,
                                                                       refresh_exo_data=test_refresh_exo_data,
-                                                                      from_pickled_cat=test_from_pickled_cat)
+                                                                      from_pickled_cat=test_from_pickled_cat,
+                                                                      do_legacy=do_legacy)
     else:
         nat_cat, output_star_data, target_star_data = standard_output(from_scratch=test_from_scratch,
                                                                       norm_keys=test_norm_keys,
                                                                       refresh_exo_data=test_refresh_exo_data,
-                                                                      from_pickled_cat=test_from_pickled_cat)
+                                                                      from_pickled_cat=test_from_pickled_cat,
+                                                                      do_legacy=do_legacy)
 
     # output_star_data.xy_plot(x_thing='dist', y_thing='Fe', color="darkorchid", show=False, save=True)
     stats = output_star_data.stats
