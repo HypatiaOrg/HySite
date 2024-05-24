@@ -112,8 +112,14 @@ class Catalog:
             raise NameError("The star name type is not one of the expected names.")
         # this a legacy Hypatia system for reading in catalogs with a number of challenges.
         self.raw_data.original_star_names = getattr(self.raw_data, attribute_name)
-        converted_star_names = [calc_simbad_name(raw_name, key=self.star_names_type)
-                                for raw_name in self.raw_data.original_star_names]
+        converted_star_names = []
+        for raw_name in self.raw_data.original_star_names:
+            try:
+                found_simbad_name = calc_simbad_name(raw_name, key=self.star_names_type)
+            except ValueError:
+                converted_star_names.append(raw_name)
+            else:
+                converted_star_names.append(found_simbad_name)
         # the modern system for getting the main star name from the SIMBAD sources.
         self.star_names = [get_main_id(simbad_formatted, test_origin=catalog_name)
                            for simbad_formatted in converted_star_names]
