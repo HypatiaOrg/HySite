@@ -60,19 +60,31 @@ class Xhip:
             if 'e_Plx' in xhip_params_dict_before_rename.keys():
                 parallax_err = xhip_params_dict_before_rename['e_Plx']
                 del xhip_params_dict_before_rename['e_Plx']
+            base_ref = f"XHip Catalog (HIP {hip_number})"
             for param_name in xhip_params_dict_before_rename:
                 err_low = None
                 err_high = None
-                if 'Plx' == param_name:
+                ref = base_ref
+                if "rSpType" == param_name:
+                    # This is the reference for the spectral type
+                    continue
+                elif 'Plx' == param_name:
                     if parallax_err is not None:
                         err_high = abs(parallax_err)
                         err_low = -err_high
-                single_param = SingleParam(value=xhip_params_dict_before_rename[param_name], ref='xhip',
-                                           units=self.xhip_units[param_name], err_low=err_low, err_high=err_high)
+                elif param_name == 'SpType' and 'rSpType' in xhip_params_dict_before_rename.keys():
+                    ref += f": {xhip_params_dict_before_rename['rSpType']}"
                 if param_name in rename_keys:
-                    xhip_params_dict[self.rename_dict[param_name]] = single_param
+                    param_key = self.rename_dict[param_name]
                 else:
-                    xhip_params_dict[param_name] = single_param
+                    param_key = param_name
+                xhip_params_dict[param_key] = SingleParam.strict_format(
+                    param_name=param_key,
+                    value=xhip_params_dict_before_rename[param_name],
+                    ref=ref,
+                    units=self.xhip_units[param_name],
+                    err_low=err_low,
+                    err_high=err_high)
             # Update in this way so that existing parameter keys-value pairs are prioritized over new values.
             return xhip_params_dict
         return None

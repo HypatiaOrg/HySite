@@ -83,7 +83,7 @@ def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=N
                                 parameter_bound_filter=None,
                                 parameter_match_filter=None,
                                 at_least_fe_and_another=True,
-                                remove_nlte_abundances=True,
+                                remove_nlte_abundances=False,
                                 keep_complement=False,
                                 is_target=None)
         output_star_data.normalize(norm_keys=norm_keys)

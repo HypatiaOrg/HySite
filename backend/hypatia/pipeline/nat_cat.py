@@ -45,7 +45,7 @@ class NatCat:
         # reference data
         self.normalization_ref = row_dict(os.path.join(ref_dir, "solar_norm_ref.csv"), key='catalog')
         self.xhip = Xhip()
-        self.pastel = Pastel()
+        self.pastel = Pastel(verbose=self.verbose)
 
         # initialization and preferences
         self.params_list_for_stats = [param.lower() for param in params_list_for_stats]
@@ -138,8 +138,8 @@ class NatCat:
                 single_star.gaia_params(gaia_params_dict)
             if get_pastel_params:
                 # Star Parameters from the Pastel Catalog (effective temperature and Log values for surface gravity)
-                if self.pastel.pastel_ave is None:
-                    self.pastel.load(verbose=self.verbose)
+                if self.pastel.data is None:
+                    self.pastel.load()
                 pastel_record = self.pastel.get_record_from_aliases(aliases=single_star.simbad_doc['aliases'])
                 if pastel_record is not None:
                     single_star.pastel_params(pastel_record)

@@ -234,11 +234,13 @@ class Catalog:
                             un_norm_dict[element_id] = un_norm_x_over_h(relative_x_over_h=element_value,
                                                                         solar_x=solar_value)
                         elif un_norm_func_name == "un_norm_x_over_fe":
+                            if iron_id not in key_set:
+                                raise KeyError(f"Element: {element_id} in catalog: {self.catalog_name} star:{original_star_name} requires [Fe/H] to un-normalize.")
                             un_norm_dict[element_id] = un_norm_x_over_fe(relative_x_over_fe=element_value,
                                                                          relative_fe_over_h=element_dict[iron_id],
                                                                          solar_x=solar_value)
                         else:
-                            raise KeyError(f"Un-normalization function: {un_norm_func_name} not recognized.")
+                            raise KeyError(f"Un-normalization function: {un_norm_func_name} not recognized for {self.catalog_name} star:{original_star_name}")
                 # rewrite the dict to include the non-element keys like star names.
                 self.abs_star_data.append(un_norm_dict)
 

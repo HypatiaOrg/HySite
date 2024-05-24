@@ -1,5 +1,7 @@
-from hypatia.sources.nea.db import ExoPlanetStarCollection
+from hypatia.object_params import SingleParam
 from hypatia.tools.exceptions import StarNameNotFound
+from hypatia.sources.nea.db import ExoPlanetStarCollection
+
 from hypatia.sources.nea.query import query_nea, set_data_by_host, hypatia_host_name_rank_order
 from hypatia.sources.simbad.ops import (get_main_id, interactive_name_menu, star_collection, no_simbad_add_name,
                                         get_attr_name)

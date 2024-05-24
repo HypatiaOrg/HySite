@@ -95,7 +95,7 @@ def get_hy_tic_data(star_name: str) -> dict or None:
                 field_data['err_low'] = field_data['err']
                 field_data['err_high'] = field_data['err']
                 del field_data['err']
-            object_params[field_name] = SingleParam(**field_data)
+            object_params[field_name] = SingleParam.strict_format(param_name=field_name, **field_data)
         return object_params
     return None
 

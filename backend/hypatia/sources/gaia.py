@@ -264,12 +264,13 @@ class GaiaLib:
                 if 'err' in dict_this_param.keys():
                     dict_this_param["err_low"], dict_this_param["err_high"] = dict_this_param["err"]
                     del dict_this_param["err"]
-                this_param_single_param = SingleParam(**dict_this_param)
-                new_object_params[param_name] = this_param_single_param
-        for rename_param in list(rename_params.keys()):
-            if rename_param in new_object_params.keys():
-                new_object_params[rename_params[rename_param]] = new_object_params[rename_param]
-                del new_object_params[rename_param]
+                param_name_lower = param_name.lower()
+                if param_name_lower in rename_params.keys():
+                    final_param_name = rename_params[param_name_lower]
+                else:
+                    final_param_name = param_name_lower
+                new_object_params[final_param_name] = SingleParam.strict_format(param_name=final_param_name,
+                                                                                **dict_this_param)
         return new_object_params
 
     def get_object_params(self, star_name: str):

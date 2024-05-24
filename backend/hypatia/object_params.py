@@ -100,13 +100,71 @@ class ObjectParams(StarDict):
             self.data[str(param_name)] = SingleParam(**new_param_dict)
 
 
+values_types = int | float | str
+
+
+def single_param_strict_check(param_name: str, value: values_types, ref: str, units: str,
+                              err_low: values_types = None, err_high: values_types = None) -> dict[str, values_types]:
+    param_name = str(param_name).lower().strip()
+    if param_name not in expected_params:
+        raise ValueError(f"Strict Checking: Parameter {param_name}, ref:{ref} is not in the expected parameters list")
+    if value is None:
+        raise ValueError(f"Strict Checking: Value for {param_name}, ref:{ref} is None")
+    if ref is None:
+        raise ValueError(f"Strict Checking: Reference for {param_name}, value:{value} is None")
+    if units is None:
+        raise ValueError(f"Strict Checking: Units for {param_name}, value:{value}, ref:{ref} is None, " +
+                         "but it can be set as an empty string in the reference file.")
+    # do type checking for the input to Match the expected Database fields and the units
+    expected_values_this_param = expected_params_dict.get(param_name, None)
+    if expected_values_this_param is None:
+        raise KeyError(f"Strict Checking: No entry for {param_name}, ref:{ref} are not found in the reference file")
+    expected_units = expected_params_dict[param_name].get('units', None)
+    if expected_units is None:
+        raise KeyError(f"Strict Checking: Expected units for {param_name}, is not found the reference file")
+    if expected_units == 'string':
+        return {'value': value, 'ref': ref, 'units': 'string'}
+    elif expected_units == "":
+        # unless parameters like Log(G) can be ignored in this check
+        pass
+    elif expected_units != units:
+        raise ValueError(f"Expected units for {param_name}, ref:{ref} are {expected_units}, not {units}")
+    if isinstance(value, int):
+        if isinstance(err_low, float) or isinstance(err_high, float):
+            value = float(value)
+            if err_low is not None:
+                err_low = float(err_low)
+            if err_high is not None:
+                err_high = float(err_high)
+    if isinstance(value, float):
+        if err_low is not None:
+            err_low = float(err_low)
+        if err_high is not None:
+            err_high = float(err_high)
+        if err_low is not None and err_high is not None:
+            value, err_low, err_high = format_by_err(value, err_low, err_high)
+    if err_low is None or err_high is None:
+        # when there are no error values, we can round bases on the expected number of decimals
+        # if that is provided in the reference file
+        decimals_for_rounding = expected_params_dict[param_name].get('decimals', None)
+        if decimals_for_rounding is not None:
+            value = params_value_format(value, decimals_for_rounding)
+        return {'value': value, 'ref': ref, 'units': units}
+    return {'value': value, 'ref': ref, 'units': units, 'err_low': err_low, 'err_high': err_high}
+
+
 class SingleParam(NamedTuple):
     """ Represents all the attributes for a single parameter value."""
-    value: Union[float, int, str]
-    err_low: Optional[Union[float, int, str, tuple]] = None
-    err_high: Optional[Union[float, int, str, tuple]] = None
-    ref: Optional[str] = None
-    units: Optional[str] = None
+    value: values_types
+    ref: str
+    units: str
+    err_low: values_types = None
+    err_high: values_types = None
+
+    @classmethod
+    def strict_format(cls, param_name: str, value: values_types, ref: str, units: str,
+                      err_low: values_types = None, err_high: values_types = None):
+        return cls(**single_param_strict_check(param_name, value, ref, units, err_low, err_high))
 
     def to_record(self, param_str: str):
         value = self.value
@@ -114,31 +172,8 @@ class SingleParam(NamedTuple):
         err_low = self.err_low
         err_high = self.err_high
         units = self.units
-        if param_str not in expected_params:
-            raise ValueError(f"Parameter {param_str}, ref:{ref} is not in the expected parameters list")
-        # do type checking for the input to Match the expected Database fields and the units
-        expected_units = expected_params_dict[param_str].get('units', None)
-        if expected_units == 'string':
-            return {key: self.__getattribute__(key) for key in ['value', 'ref']
-                    if self.__getattribute__(key) is not None}
-        elif expected_units == "":
-            pass
-        elif expected_units != units:
-            raise ValueError(f"Expected units for {param_str}, ref:{ref} are {expected_units}, not {self.units}")
-        if isinstance(value, int):
-            if isinstance(err_low, float) or isinstance(err_high, float):
-                value = float(value)
-                if err_low is not None:
-                    err_low = float(err_low)
-                if err_high is not None:
-                    err_high = float(self.err_high)
-        if isinstance(value, float):
-            if err_low is not None:
-                err_low = float(err_low)
-            if err_high is not None:
-                err_high = float(err_high)
-            if err_low is not None and err_high is not None:
-                value, err_low, err_high = format_by_err(value, err_low, err_high)
-        return {key: attr_val for key, attr_val
-                in [('value', value), ('ref', ref), ('err_low', err_low), ('err_high', err_high)]
-                if attr_val is not None}
+        rec = single_param_strict_check(param_str, value, ref, units, err_low, err_high)
+        if "units" in rec.keys():
+            del rec["units"]
+        return rec
+
