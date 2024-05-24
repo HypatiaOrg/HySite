@@ -31,7 +31,7 @@ class CountPerBin:
         self.available_bins = set()
 
     def count_bins(self, bins):
-        for one_bin in bins:
+        for one_bin in [str(one_bin) for one_bin in bins]:
             if one_bin in self.available_bins:
                 self.__setattr__(one_bin, self.__getattribute__(one_bin) + 1)
             else:

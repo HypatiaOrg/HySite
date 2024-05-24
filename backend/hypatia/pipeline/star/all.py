@@ -6,11 +6,11 @@ import numpy as np
 
 from hypatia.sources.gaia import GaiaLib
 from hypatia.config import star_data_output_dir
-from hypatia.pipeline.star.stats import StarDataStats
 from hypatia.plots.histograms import simple_hist
-from hypatia.elements import element_rank
 from hypatia.plots.quick_plots import quick_plotter
 from hypatia.pipeline.star.single import SingleStar
+from hypatia.elements import element_rank, ElementID
+from hypatia.pipeline.star.stats import StarDataStats
 from hypatia.object_params import StarDict, SingleParam
 from hypatia.sources.nea.ops import get_all_nea, refresh_nea_data
 from hypatia.sources.simbad.ops import get_star_data, get_main_id
@@ -23,8 +23,8 @@ def params_check(params_dict, hypatia_handle):
             raise KeyError(f'{star_name_str} The parameter Key {params_key} is not lowercase as required.')
         single_param = params_dict[params_key]
         if not isinstance(single_param, SingleParam):
-            raise ValueError(f'{star_name_str} The parameter {params_key} is a SingleParam object, it is a {single_param} which is ' +
-                              'not allowed.')
+            raise ValueError(f'{star_name_str} The parameter {params_key} is a SingleParam object, ' +
+                             f'it is a {single_param} which is not allowed.')
 
 
 class AllStarData:
@@ -57,7 +57,8 @@ class AllStarData:
         self.available_abundances = None
 
         self.non_abundance_data_types = {'exo'}
-        self.iron_set = {"Fe", "FeII"}
+        self.iron_el = ElementID.from_str("Fe")
+        self.iron_set = {self.iron_el, ElementID.from_str("Fe_II")}
 
         self.targets_requested = self.targets_found = self.targets_not_found = None
 
@@ -68,13 +69,13 @@ class AllStarData:
 
     def get_abundances(self, all_catalogs):
         for short_catalog_name in sorted(all_catalogs.keys()):
-            for single_star in all_catalogs[short_catalog_name].abs_star_data:
-                simbad_doc = single_star['simbad_doc']
-                main_id = single_star["main_id"]
-                catalog_dict = {key: single_star[key] for key in set(single_star.keys()) - self.non_abundance_keys}
+            cat_data = all_catalogs[short_catalog_name]
+            for catalog_dict, simbad_doc, main_id, original_star_name \
+                    in zip(cat_data.abs_star_data, cat_data.star_docs,
+                           cat_data.main_star_names, cat_data.original_star_names):
                 catalog_dict["norm_key"] = all_catalogs[short_catalog_name].norm_key
                 catalog_dict["long_name"] = all_catalogs[short_catalog_name].long_name
-                catalog_dict['original_star_name'] = single_star['original_star_names']
+                catalog_dict['original_star_name'] = original_star_name
                 catalog_dict['main_id'] = main_id
                 # check to see if there is already an entry for this reference name
                 attr_name = simbad_doc['attr_name']

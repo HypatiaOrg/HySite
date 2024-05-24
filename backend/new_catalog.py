@@ -86,18 +86,18 @@ are found in hypatia.load.solar.py.
 import os
 import sys
 import shutil
-from hypatia.config import working_dir
-from hypatia.sources.catalogs.solar import SolarNorm
+
 from hypatia.pipeline.nat_cat import NatCat
 from hypatia.sources.catalogs.ops import CatOps
+from hypatia.sources.catalogs.solar import SolarNorm
+from hypatia.config import abundance_dir, ref_dir
 from hypatia.sources.catalogs.catalogs import get_catalogs
 
 # File locations
-new_abundances_dir = os.path.join(working_dir, 'load', "abundance_data", "new_data")
+new_abundances_dir = os.path.join(abundance_dir, "new_data")
 new_catalogs_file_name = os.path.join(new_abundances_dir, "new_catalogs_file.csv")
-ref_dir = os.path.join(working_dir, 'load', "reference_data")
-main_catalog_file = os.path.join(working_dir, "load", "reference_data", "catalog_file.csv")
-main_abundance_dir = os.path.join(working_dir, 'load', "abundance_data")
+
+main_catalog_file = os.path.join(ref_dir, "catalog_file.csv")
 
 
 def load_catalogs(verbose=True):
@@ -125,7 +125,7 @@ def unique_abundances(verbose=True):
         single_cat = catalog_dict[short_name]
         single_cat.find_double_listed()
         if len(single_cat.unique_star_groups) > 1:
-            single_cat.write_catalog(target='unique', update_catalog_list=True)
+            single_cat.write_catalog(output_dir=new_abundances_dir, target='unique', update_catalog_list=True)
     if verbose:
         print("catalogs have been checked, and when necessary split, to have each catalog file \n" +
               "have only one entry per unique star.\n")
@@ -164,9 +164,9 @@ def insert_new_catalogs(verbose=True, user_prompt=True):
             elif os.path.lexists(os.path.join(new_abundances_dir, short + ".tsv")):
                 extension = ".tsv"
             shutil.move(os.path.join(new_abundances_dir, short + extension),
-                        os.path.join(main_abundance_dir, short + extension))
+                        os.path.join(abundance_dir, short + extension))
             # add the new files to the git repository
-            os.system("git add " + os.path.join(main_abundance_dir, short + extension))
+            os.system("git add " + os.path.join(abundance_dir, short + extension))
             # move the original files and add them to the git repository as well
             base_name, *_ = short.split('_')
             base_extension = None
@@ -176,8 +176,8 @@ def insert_new_catalogs(verbose=True, user_prompt=True):
                 base_extension = ".tsv"
             if base_extension is not None:
                 shutil.move(os.path.join(new_abundances_dir, base_name + base_extension),
-                            os.path.join(main_abundance_dir, base_name + base_extension))
-                os.system("git add " + os.path.join(main_abundance_dir, base_name + base_extension))
+                            os.path.join(abundance_dir, base_name + base_extension))
+                os.system("git add " + os.path.join(abundance_dir, base_name + base_extension))
         # delete some of the files that were fist processes as "raw" and then processed to "unique"
         [os.remove(os.path.join(new_abundances_dir, f)) for f in os.listdir(new_abundances_dir)
          if os.path.isfile(os.path.join(new_abundances_dir, f)) and '_raw_' in f]

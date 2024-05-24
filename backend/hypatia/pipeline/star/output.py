@@ -27,14 +27,15 @@ class OutputStarData(AllStarData):
         if self.verbose:
             print("  pickling complete.")
 
-    def receive_from_single_star_data(self, hypatia_handles, single_star_dicts, star_data=None):
+    def receive_from_single_star_data(self, main_star_ids: list[str], single_star_dicts, star_data=None):
         if star_data is not None:
             self.receive_data(star_data)
-        for hypatia_handle in self.star_names:
-            self.__delattr__(hypatia_handle)
-        self.star_names = hypatia_handles
-        for hypatia_handle in self.star_names:
-            self.__setattr__(hypatia_handle, copy.deepcopy(single_star_dicts[hypatia_handle]))
+        for single_star in self:
+            self.__delattr__(single_star.attr_name)
+        self.star_names = main_star_ids
+        for main_id in self.star_names:
+            single_star_data = single_star_dicts[main_id]
+            self.__setattr__(single_star_data.attr_name, copy.deepcopy(single_star_data))
 
     def __add__(self, other):
         # get the data from this instance of OutputStarData
@@ -317,7 +318,7 @@ class OutputStarData(AllStarData):
             min_requirements_this_star = False
             for short_catalog_name in list(single_star.available_abundance_catalogs):
                 elements_this_catalog = single_star.__getattribute__(short_catalog_name).available_abundances
-                if self.iron_set & elements_this_catalog != set() and elements_this_catalog - self.iron_set != set():
+                if self.iron_el in elements_this_catalog and elements_this_catalog - self.iron_set != set():
                     min_requirements_this_star = True
                 else:
                     catalogs_removed += 1
@@ -344,9 +345,9 @@ class OutputStarData(AllStarData):
                 an_element_found_this_catalog = False
                 this_catalog = single_star.__getattribute__(short_catalog_name)
                 elements_this_catalog = this_catalog.available_abundances
-                nlte_abundances = {abundance for abundance in elements_this_catalog if 'nlte' in abundance.lower()}
+                nlte_abundances = {abundance for abundance in elements_this_catalog if abundance.is_nlte}
                 for nlte_abundance in nlte_abundances:
-                    this_catalog.__delattr__(nlte_abundance)
+                    this_catalog.__delattr__(str(nlte_abundance))
                     this_catalog.available_abundances.remove(nlte_abundance)
                 if set() != elements_this_catalog - nlte_abundances:
                     an_element_found_this_catalog = True
@@ -377,7 +378,7 @@ class OutputStarData(AllStarData):
             single_star = self.__getattribute__(hypatia_handle)
             if matching_truth_value != single_star.is_target:
                 stars_removed += 1
-                self.__delattr__(hypatia_handle)
+                self.__delattr__(single_star.attr_name)
                 self.star_names.remove(hypatia_handle)
         if self.verbose:
             print("  Stars removed:", stars_removed)

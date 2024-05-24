@@ -26,32 +26,25 @@ def ratio_to_element(test_ratio: str) -> tuple[ElementID, str]:
     return element_record, un_norm_func_name
 
 
-def un_norm(element_dict, norm_dict):
+iron_id = ElementID.from_str("Fe")
+
+
+def un_norm(element_dict, norm_dict, element_id_to_un_norm_func):
     un_norm_dict = {}
     key_set = set(element_dict.keys())
-    for test_ratio in key_set:
-        element_string, un_norm_func_name = ratio_to_element(test_ratio)
+    for element_id in key_set:
+        un_norm_func_name = element_id_to_un_norm_func[element_id]
         if un_norm_func_name == "un_norm_x_over_fe":
-            if "FeH" in key_set:
-                iron_ratio_string = "FeH"
-            elif "FeIH" in key_set:
-                iron_ratio_string = "FeIH"
-            elif "AFe" in key_set:
-                element_dict["FeH"] = element_dict["AFe"] - norm_dict["Fe"]
-                iron_ratio_string = "FeH"
-            else:
-                raise NameError("The required Fe/H ratio (or AFe and solar norm value for Fe) is not found,\n" +
-                                "using the keys FeH or FeIH.")
-            if element_string in norm_dict.keys():
-                un_norm_dict[element_string] = un_norm_functions[un_norm_func_name](element_dict[test_ratio],
-                                                                                    element_dict[iron_ratio_string],
-                                                                                    norm_dict[element_string])
+            if element_id in norm_dict.keys():
+                un_norm_dict[element_id] = un_norm_functions[un_norm_func_name](element_dict[element_id],
+                                                                                element_dict[iron_id],
+                                                                                norm_dict[element_id])
         elif un_norm_func_name == "un_norm_x_over_h":
-            if element_string in norm_dict.keys():
-                un_norm_dict[element_string] = un_norm_functions[un_norm_func_name](element_dict[test_ratio],
-                                                                                    norm_dict[element_string])
+            if element_id in norm_dict.keys():
+                un_norm_dict[element_id] = un_norm_functions[un_norm_func_name](element_dict[element_id],
+                                                                                norm_dict[element_id])
         else:
-            un_norm_dict[element_string] = un_norm_functions[un_norm_func_name](element_dict[test_ratio])
+            un_norm_dict[element_id] = un_norm_functions[un_norm_func_name](element_dict[element_id])
     return un_norm_dict
 
 

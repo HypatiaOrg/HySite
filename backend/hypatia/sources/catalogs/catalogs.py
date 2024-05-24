@@ -2,6 +2,7 @@ import os
 import pickle
 import shutil
 import datetime
+from warnings import warn
 
 from hypatia.tools.table_read import ClassyReader
 from hypatia.elements import element_rank, ElementID
@@ -12,6 +13,7 @@ from hypatia.config import abundance_dir, ref_dir, cat_pickles_dir
 from hypatia.sources.catalogs.solar import SolarNorm, ratio_to_element, un_norm
 
 
+fe_ii = ElementID.from_str("Fe_II")
 indicates_mixed_name_types = {"Star", "star", "Stars", "starname", "Starname", "Name", "ID", "Object", "HDBD"}
 indicates_single_name_types = {"TYC", "HD", "HIP", "HR", "TrES", "CoRoT", "XO", "HAT", "WASP"}
 
@@ -122,6 +124,7 @@ class Catalog:
         # Maps the XH key to an element X
         self.element_to_ratio_name = {}
         self.absolute_elements = set()
+        self.element_id_to_un_norm_func = {}
         for key in self.raw_data.keys:
             if key in {"comments", attribute_name}:
                 # these are not element keys, so we skip them.
@@ -139,26 +142,35 @@ class Catalog:
                     delattr(self.raw_data, key)
                     key = formatted_key
                 if un_norm_func_name == 'un_norm_abs_x':
-                    self.absolute_elements.add(formatted_key)
-                self.element_to_ratio_name[formatted_key] = key
+                    self.absolute_elements.add(element_id)
+                self.element_to_ratio_name[element_id] = key
+                self.element_id_to_un_norm_func[element_id] = un_norm_func_name
 
         self.element_keys = set(self.element_to_ratio_name.keys())
         self.element_ratio_keys = {self.element_to_ratio_name[key] for key in self.element_to_ratio_name}
+        if fe_ii in self.element_keys:
+            warn(f"The Fe_II element in {self.catalog_name} is not allowed in the catalog data.")
+            self.element_keys.remove(fe_ii)
+            del self.element_to_ratio_name[fe_ii]
         """
             Creates a unique dictionary for each star in the catalog such that the element data can be
             more easily accessed (not by index) -- ultimately this preps it for CatalogQuery.
             Also, get rid of null values like 99.99 and "".
         """
         self.raw_star_data = [
-            {element_key: self.raw_data.__getattribute__(element_key)[catalog_index]
-             for element_key in self.element_ratio_keys | {"star_names", "original_star_names"}
+            {ElementID.from_str(element_key): self.raw_data.__getattribute__(element_key)[catalog_index]
+             for element_key in self.element_ratio_keys
              if self.raw_data.__getattribute__(element_key)[catalog_index] not in {99.99, ""}}
             for catalog_index in range(len(self.raw_data.star_names))
         ]
+        self.star_names = self.raw_data.star_names
+        self.original_star_names = self.raw_data.original_star_names
         if self.verbose:
             print("Loaded the data for the", self.catalog_name, "- star name type:", self.star_names_type)
 
         # Initialize the un-normalized data and data products from other methods.
+        self.main_star_names = None
+        self.star_docs = None
         self.abs_star_data = []
         self.unreferenced_stars = []
         self.unreferenced_stars_raw_index = []
@@ -167,12 +179,14 @@ class Catalog:
         """
         Get all the star's names, using the SIMBAD sources
         """
+        self.main_star_names = []
+        self.star_docs = []
         if self.verbose:
             print("Updating the", self.catalog_name, "star names from reference data")
-        for index, catalog_entry in list(enumerate(self.raw_star_data)):
-            simbad_doc = get_star_data(catalog_entry["star_names"])
-            catalog_entry['main_id'] = simbad_doc['_id']
-            catalog_entry["simbad_doc"] = simbad_doc
+        for element_data, star_name in zip(self.raw_star_data, self.star_names):
+            simbad_doc = get_star_data(star_name)
+            self.main_star_names.append(simbad_doc['_id'])
+            self.star_docs.append(simbad_doc)
 
     def un_normalize(self):
         # check to see if the normalization will cover all the elements in this catalog.
@@ -188,47 +202,45 @@ class Catalog:
                     self.element_ratio_keys.remove(self.element_to_ratio_name[lost_element])
                     self.element_keys.remove(lost_element)
 
-        for star_dict in self.raw_star_data:
+        for main_star_id, original_star_name, star_dict \
+                in zip(self.main_star_names, self.original_star_names, self.raw_star_data):
             # get the keys that are not elements, such as star_name and comments
-            other_keys = set(star_dict.keys()) - self.element_ratio_keys
-            element_dict = {element_ratio: star_dict[element_ratio]
-                            for element_ratio in self.element_ratio_keys & set(star_dict.keys())}
+            element_dict = {element_id: star_dict[element_id]
+                            for element_id in self.element_keys & set(star_dict.keys())}
             # the heart of the un-normalization (un_norm in solar.py)
-            un_norm_dict = un_norm(element_dict, self.norm_dict)
+            un_norm_dict = un_norm(element_dict, self.norm_dict, self.element_id_to_un_norm_func)
             # rewrite the dict to include the non-element keys like star names.
-            un_norm_dict.update({non_element_key: star_dict[non_element_key] for non_element_key in other_keys})
             self.abs_star_data.append(un_norm_dict)
 
     def find_double_listed(self):
         self.update_star_names()
         self.unique_star_groups = []
         self.main_star_ids_unique_groups = []
-        for single_star_dict in self.raw_star_data:
-            main_star_id = get_main_id(single_star_dict["star_name"])
+        for main_star_id, original_name, element_data in zip(self.main_star_names, self.original_star_names, self.raw_star_data):
             # find a group that the star is not in and add it to that group, make new groups as needed.
             for group_num, main_star_ids in list(enumerate(self.main_star_ids_unique_groups)):
                 if main_star_id not in main_star_ids:
                     main_star_ids.add(main_star_id)
-                    self.unique_star_groups[group_num].append(single_star_dict)
+                    self.unique_star_groups[group_num].append((main_star_id, original_name, element_data))
                     # we found a group for the star, so we can stop looking.
                     break
             else:
                 # what happen if the break statement above is not reached. 
                 self.main_star_ids_unique_groups.append({main_star_id})
-                self.unique_star_groups.append([single_star_dict])
+                self.unique_star_groups.append([(main_star_id, original_name, element_data)])
 
-    def write_catalog(self, target="raw", update_catalog_list=False, add_to_git=False, output_dir=None):
+    def write_catalog(self, output_dir: str, target="raw", update_catalog_list=False, add_to_git=False):
         if target.lower() in {"unnorm", "abs", 'absolute'}:
             target = "un_norm"
         now = datetime.datetime.now()
         date_string = f"{'%02i' % now.day}_{'%02i' % now.month}_{'%04i' % now.year}"
         if target == "raw":
-            star_lists = [self.raw_star_data]
+            star_lists = [zip(self.main_star_names, self.original_star_names, self.raw_star_data)]
             comments = [f"{date_string} Raw data (original solar normalization) output from the Catalog class in the " +
                         "Hypatia package."]
             new_short_name = "_raw_"
         elif target == "un_norm":
-            star_lists = [self.abs_star_data]
+            star_lists = [zip(self.main_star_names, self.original_star_names, self.abs_star_data)]
             comments = [f"{date_string} Absolute (un-normalized) data output from the Catalog class in the Hypatia " +
                         "package"]
             new_short_name = "_absolute_"
@@ -257,30 +269,20 @@ class Catalog:
                             file_name[len(self.catalog_name.replace(" ", "")) + 3:]
             else:
                 short_names_list.append(new_short_name)
-            header = "Star,"
             ordered_element_list = sorted(self.element_keys, key=element_rank)
             if target == "un_norm":
-                header_list = ["A" + element for element in ordered_element_list]
-                attr_list = ordered_element_list
+                header_list = [f"{element}_A" for element in ordered_element_list]
             else:
                 header_list = [self.element_to_ratio_name[element] for element in ordered_element_list]
-                attr_list = header_list
-            for ratio in header_list:
-                header += ratio + ","
+            header = ','.join(["simbad_id", 'original_name'] + header_list) + '\n'
             body = []
-            for star_dict in star_list:
-                star_name = star_dict["star_name"]
-                single_line = f"{star_name},"
-                for ratio in attr_list:
-                    if ratio in star_dict.keys():
-                        single_line += f"{star_dict[ratio]:2.3f},"
-                    else:
-                        single_line += ","
-                body.append(single_line[:-1] + "\n")
-            if output_dir is None:
-                full_file_and_path = os.path.join(os.path.dirname(self.filename), file_name)
-            else:
-                full_file_and_path = os.path.join(output_dir, file_name)
+            for main_star_id, original_name, element_data in star_list:
+                single_line = f"{main_star_id},original_name," + ','.join([str(element_data[element])
+                                                                           if element in element_data.keys()
+                                                                           else ""
+                                                                           for element in ordered_element_list])
+                body.append(single_line + "\n")
+            full_file_and_path = os.path.join(output_dir, file_name)
             with open(full_file_and_path, 'w') as f:
                 for comment in comments:
                     f.write("#" + comment + '\n')

@@ -98,11 +98,12 @@ class ElementID(NamedTuple):
 def element_rank(element_record: ElementID) -> float:
     """Use this key in a sorting list like : sorted(list[ElementRecord], key=element_rank)"""
     name_lower = element_record.name_lower
-    ion_state = element_record.ion_state.lower()
+    ion_state = element_record.ion_state
     rank = float(summary_dict[name_lower]["atomic_number"])
     if element_record.is_nlte:
         rank += 0.001
     if ion_state is not None:
+        ion_state = ion_state.lower()
         if ion_state == "i":
             rank += 0.0001
         elif ion_state == "ii":

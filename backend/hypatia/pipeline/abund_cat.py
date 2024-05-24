@@ -26,9 +26,9 @@ class CatalogData:
         self.original_catalog_norm = catalog_dict["norm_key"]
         self.catalog_long_name = catalog_dict["long_name"]
         self.available_abundances = set()
-        for element in set(catalog_dict.keys()) - self.non_element_keys:
-            self.__setattr__(element, catalog_dict[element])
-            self.available_abundances.add(element)
+        for element_id in set(catalog_dict.keys()) - self.non_element_keys:
+            self.__setattr__(str(element_id), catalog_dict[element_id])
+            self.available_abundances.add(element_id)
         self.normalizations = set()
 
     def normalize(self, norm_key):
@@ -39,7 +39,7 @@ class CatalogData:
         elements_dict = solar_norm_dict[norm_to_use]
         overlapping_elements = self.available_abundances & set(elements_dict.keys())
         if overlapping_elements:
-            norm_data = {element: np.around(self.__getattribute__(element) - elements_dict[element], decimals=3)
+            norm_data = {element: np.around(self.__getattribute__(str(element)) - elements_dict[element], decimals=3)
                          for element in overlapping_elements}
             self.__setattr__(norm_key, SingleNorm(norm_key, norm_data))
             self.normalizations.add(norm_key)
