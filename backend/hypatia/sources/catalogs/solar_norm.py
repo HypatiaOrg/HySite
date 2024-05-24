@@ -6,6 +6,7 @@ from hypatia.elements import summary_dict, element_rank, ElementID
 
 iron_id = ElementID.from_str("Fe")
 iron_ii_id = ElementID.from_str("Fe_II")
+iron_nlte_id = ElementID.from_str("NLTE_Fe")
 iron_set = {iron_id, iron_ii_id}
 element_abrevs = set(summary_dict.keys())
 

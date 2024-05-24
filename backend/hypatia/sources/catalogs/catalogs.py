@@ -10,7 +10,7 @@ from hypatia.tools.star_names import calc_simbad_name
 from hypatia.tools.exceptions import ElementNameErrorInCatalog
 from hypatia.sources.simbad.ops import get_star_data, get_main_id
 from hypatia.config import abundance_dir, ref_dir, cat_pickles_dir
-from hypatia.sources.catalogs.solar_norm import (solar_norm_dict, ratio_to_element, iron_id, iron_ii_id,
+from hypatia.sources.catalogs.solar_norm import (solar_norm_dict, ratio_to_element, iron_id, iron_ii_id, iron_nlte_id,
                                                  un_norm_x_over_fe, un_norm_x_over_h, un_norm_abs_x)
 
 
@@ -234,10 +234,14 @@ class Catalog:
                             un_norm_dict[element_id] = un_norm_x_over_h(relative_x_over_h=element_value,
                                                                         solar_x=solar_value)
                         elif un_norm_func_name == "un_norm_x_over_fe":
-                            if iron_id not in key_set:
+                            if element_id.is_nlte and iron_nlte_id in key_set:
+                                iron_value = element_dict[iron_nlte_id]
+                            elif iron_id not in key_set:
                                 raise KeyError(f"Element: {element_id} in catalog: {self.catalog_name} star:{original_star_name} requires [Fe/H] to un-normalize.")
+                            else:
+                                iron_value = element_dict[iron_id]
                             un_norm_dict[element_id] = un_norm_x_over_fe(relative_x_over_fe=element_value,
-                                                                         relative_fe_over_h=element_dict[iron_id],
+                                                                         relative_fe_over_h=iron_value,
                                                                          solar_x=solar_value)
                         else:
                             raise KeyError(f"Un-normalization function: {un_norm_func_name} not recognized for {self.catalog_name} star:{original_star_name}")
