@@ -323,12 +323,10 @@ class AllStarData:
                     output_line = output_str + " = "
                     if hypatia_type in params_this_star:
                         value = single_star.params.__getattribute__(hypatia_type).value
-                        if type(value) == float:
+                        if isinstance(value, float):
                             output_line += F"{'%1.3f' % np.around(value, decimals=3)}"
-                        elif type(value) == int:
-                            output_line += str(value)
                         else:
-                            output_line += value
+                            output_line += str(value)
                     star_write_lines.append(output_line)
                 # stellar parameters
                 for output_str, hypatia_type in [("mass (M_S)", 'mass'), ("radius (R_S)", 'rad')]:
@@ -371,12 +369,16 @@ class AllStarData:
                 # The elemental values
                 for catalog in single_star.available_abundance_catalogs:
                     single_catalog = single_star.__getattribute__(catalog)
-                    ordered_element_list = sorted(single_catalog.available_abundances, key=element_rank)
+                    if norm_key == "absolute":
+                        cat_location = single_catalog
+                    else:
+                        cat_location = single_catalog.__getattribute__(norm_key)
+                    ordered_element_list = sorted(cat_location.available_abundances, key=element_rank)
                     for element in ordered_element_list:
                         if element.is_nlte:
                             continue
                         element_str = str(element)
-                        element_value = np.around(single_catalog.__getattribute__(element_str), decimals=3)
+                        element_value = np.around(cat_location.__getattribute__(element_str), decimals=3)
                         an_element_line = element_str.replace("_", "")
                         element_lower = element_str.strip().lower()
                         if element_lower in self.hydrogen_element_lower or element_lower[-1] != 'h':
