@@ -1,6 +1,7 @@
+from hypatia.elements import element_rank
 from hypatia.collect import BaseCollection
-from hypatia.elements import website_chemical_summary
 from hypatia.object_params import expected_params_dict
+from hypatia.elements import summary_dict, elements_found
 
 
 class SummaryCollection(BaseCollection):
@@ -34,7 +35,7 @@ class SummaryCollection(BaseCollection):
                         },
                     },
                 },
-                "chemical": {
+                "chemical_ref": {
                     "bsonType": "object",
                     "description": "must be an object and contains the units and fields data",
                     'additionalProperties': False,
@@ -78,6 +79,14 @@ class SummaryCollection(BaseCollection):
                         },
                     },
                 },
+                'chemicals_found': {
+                    "bsonType": "array",
+                    "description": "must be an array of strings",
+                    "items": {
+                        "bsonType": "string",
+                        "description": "must be a string for the element abbreviation"
+                    },
+                },
             },
         },
     }
@@ -89,7 +98,8 @@ def upload_summary():
     doc = {
         "_id": "summary_hypatiacatalog",
         'units_and_fields': expected_params_dict,
-        'chemical_ref': website_chemical_summary(),
+        'chemical_ref': summary_dict,
+        'chemicals_found': [str(el) for el in  sorted(elements_found, key=element_rank)]
     }
     summary_db.add_one(doc)
 

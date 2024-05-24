@@ -6,7 +6,7 @@ from hypatia.pipeline.star.db import HypatiaDB
 from hypatia.pipeline.params.filters import core_filter
 from hypatia.pipeline.star.all import AllStarData
 from hypatia.sources.simbad.ops import get_star_data
-from hypatia.pipeline.site.summary import upload_summary
+from hypatia.pipeline.summary import upload_summary
 from hypatia.plots.element_rad_plot import make_element_distance_plots
 
 

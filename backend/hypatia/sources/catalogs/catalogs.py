@@ -2,11 +2,11 @@ import os
 import pickle
 import shutil
 import datetime
-from warnings import warn
 
-from hypatia.elements import element_rank
 from hypatia.tools.table_read import ClassyReader
+from hypatia.elements import element_rank, ElementID
 from hypatia.tools.star_names import calc_simbad_name
+from hypatia.tools.exceptions import ElementNameErrorInCatalog
 from hypatia.sources.simbad.ops import get_star_data, get_main_id
 from hypatia.config import abundance_dir, ref_dir, cat_pickles_dir
 from hypatia.sources.catalogs.solar import SolarNorm, ratio_to_element, un_norm
@@ -127,21 +127,20 @@ class Catalog:
                 # these are not element keys, so we skip them.
                 continue
             try:
-                element_name, un_norm_func_name = ratio_to_element(key)
-            except KeyError:
-                warn(f"Key: {key} in catalog: {self.catalog_name} is not a recognized element key.")
+                element_id, un_norm_func_name = ratio_to_element(key)
+            except KeyError as e:
+                print(e)
+                raise ElementNameErrorInCatalog(f"Key: {key} in catalog: {self.catalog_name} is not a recognized element key.")
             else:
-                if key.lower().endswith('nlte'):
-                    element_name = key[:-4].strip().strip("_")
-                    formatted_key = f'{element_name}_NLTE'
-                    if formatted_key != key:
-                        setattr(self.raw_data, formatted_key, self.raw_data.__getattribute__(key))
-                        self.raw_data.__setattr__(formatted_key, self.raw_data.__getattribute__(key))
-                        delattr(self.raw_data, key)
-                        key = formatted_key
+                formatted_key = f'{element_id}'
+                if formatted_key != key:
+                    setattr(self.raw_data, formatted_key, self.raw_data.__getattribute__(key))
+                    self.raw_data.__setattr__(formatted_key, self.raw_data.__getattribute__(key))
+                    delattr(self.raw_data, key)
+                    key = formatted_key
                 if un_norm_func_name == 'un_norm_abs_x':
-                    self.absolute_elements.add(element_name)
-                self.element_to_ratio_name[element_name] = key
+                    self.absolute_elements.add(formatted_key)
+                self.element_to_ratio_name[formatted_key] = key
 
         self.element_keys = set(self.element_to_ratio_name.keys())
         self.element_ratio_keys = {self.element_to_ratio_name[key] for key in self.element_to_ratio_name}

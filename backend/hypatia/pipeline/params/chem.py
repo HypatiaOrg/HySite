@@ -1,12 +1,16 @@
 import numpy as np
 
 from hypatia.object_params import params_err_format
-from hypatia.elements import get_representative_error
+from hypatia.elements import get_representative_error, ElementID
 
 
 class ElementStats:
-    def __init__(self, element_name):
+    def __init__(self, element_name: ElementID | str):
         self.name = element_name
+        if isinstance(element_name, ElementID):
+            self.element_id = element_name
+        else:
+            self.element_id = ElementID.from_str(element_name)
         self.value_list = []
         self.catalog_list = []
         self.catalogs = {}

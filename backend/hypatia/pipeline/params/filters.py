@@ -1,5 +1,4 @@
-from hypatia.elements import all_elements
-from hypatia.sources.catalogs.solar import strip_ionization
+from hypatia.elements import elements_found
 
 
 def get_element_keys(star_dict, init_catalogs):
@@ -7,7 +6,7 @@ def get_element_keys(star_dict, init_catalogs):
     elements_this_star = set()
     for catalog_name in catalog_names:
         for possible_element in star_dict[catalog_name].keys():
-            if strip_ionization(possible_element) in all_elements:
+            if possible_element in elements_found:
                 elements_this_star.add(possible_element)
     return elements_this_star
 
@@ -15,16 +14,10 @@ def get_element_keys(star_dict, init_catalogs):
 def core_filter(and_logic_for_lists, target_types, types_this_star):
     if and_logic_for_lists:
         # all the star types are found for this star
-        if set() == target_types - types_this_star:
-            return True
-        else:
-            return False
+        return set() == target_types - types_this_star
     else:
-        # at least one of the start type are found for this star
-        if set() != target_types & types_this_star:
-            return True
-        else:
-            return False
+        # at least one of the star types is found for this star
+        return set() != target_types & types_this_star
 
 
 def min_cat_count(min_cat, star_data, complement_data, init_catalogs, verbose=False):

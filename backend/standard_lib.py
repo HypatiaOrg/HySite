@@ -389,23 +389,23 @@ if __name__ == "__main__":
     only_target_list = False
 
     all_params = set()
-    norm_keys = ["lodders09", "asplund09", "grevesse07", "asplund05", "grevesse98", "anders89", "original"]
-    refresh_exo_data = False
-    from_scratch = False
-    from_pickled_cat = False
+    test_norm_keys = ["lodders09", "asplund09", "grevesse07", "asplund05", "grevesse98", "anders89", "original"]
+    test_refresh_exo_data = False
+    test_from_scratch = True
+    test_from_pickled_cat = False
     if only_target_list:
         example_target_list = os.path.join(ref_dir, 'ARIEL_Edwards22_Table4_TOIpotential.txt')
         # example_target_list2 = ['HIP 36366', 'HIP 55846', 'HD 103095', 'HIP 33226']
-        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=from_scratch,
+        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=test_from_scratch,
                                                                       target_list=example_target_list,
-                                                                      norm_keys=norm_keys,
-                                                                      refresh_exo_data=refresh_exo_data,
-                                                                      from_pickled_cat=from_pickled_cat)
+                                                                      norm_keys=test_norm_keys,
+                                                                      refresh_exo_data=test_refresh_exo_data,
+                                                                      from_pickled_cat=test_from_pickled_cat)
     else:
-        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=from_scratch,
-                                                                      norm_keys=norm_keys,
-                                                                      refresh_exo_data=refresh_exo_data,
-                                                                      from_pickled_cat=from_pickled_cat)
+        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=test_from_scratch,
+                                                                      norm_keys=test_norm_keys,
+                                                                      refresh_exo_data=test_refresh_exo_data,
+                                                                      from_pickled_cat=test_from_pickled_cat)
 
     # output_star_data.xy_plot(x_thing='dist', y_thing='Fe', color="darkorchid", show=False, save=True)
     stats = output_star_data.stats
