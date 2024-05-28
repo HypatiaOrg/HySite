@@ -1,7 +1,8 @@
 import os
 import tomllib
+from typing import NamedTuple
+from operator import attrgetter
 from collections import UserDict
-from typing import NamedTuple, Union, Optional
 
 import numpy as np
 
@@ -18,6 +19,9 @@ def get_params_and_units_from_file() -> dict:
 
 expected_params_dict = get_params_and_units_from_file()
 expected_params = set(expected_params_dict.keys())
+for param, param_dict in expected_params_dict.items():
+    if 'units' not in param_dict.keys():
+        raise KeyError(f" The 'units' field is required, but is not found for the parameter {param} in the reference file: {params_and_units_file}")
 
 
 def params_value_format(value, decimals):
@@ -92,12 +96,13 @@ class ObjectParams(StarDict):
             else:
                 raise ValueError("SingleParam or set is required")
 
-    def update_single_ref_source(self, ref_str, params_dict):
-        new_param_dict = {}
-        for param_name in params_dict.keys():
-            new_param_dict["value"] = params_dict[param_name]
-            new_param_dict['ref'] = ref_str
-            self.data[str(param_name)] = SingleParam(**new_param_dict)
+    def to_record(self):
+        record_json = {}
+        for param_name, values_set in self.data.items():
+            if len(values_set) != 1:
+                raise ValueError(f"Expected a single value for {param_name} is required for record export, but got {len(values_set)}, this not allowed as it count lead to an ambiguous export, consider using SingleStarParams() to export a multiple values for a single parameter.")
+            record_json[param_name] = list(values_set)[0].to_record(param_name)
+        return record_json
 
 
 values_types = int | float | str

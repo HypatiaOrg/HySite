@@ -21,9 +21,6 @@ nea_single_value = {
     },
 }
 
-
-possible_planet_letters = ['b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
-                           't', 'u', 'v', 'w', 'x', 'y', 'z']
 planet_bson = {
     "bsonType": "object",
     "description": "must be a object that describes a planet",
@@ -70,7 +67,7 @@ nea_data = {
     },
     "dist": nea_single_value,
     "mass": nea_single_value,
-    "radius": nea_single_value,
+    "rad": nea_single_value,
     "planet_letters": {
         "bsonType": "array",
         "minItems": 1,
@@ -130,5 +127,3 @@ class ExoPlanetStarCollection(BaseStarCollection):
         self.collection_add_index(index_name='hd', ascending=True, unique=False)
         self.collection_add_index(index_name='hip', ascending=True, unique=False)
         self.collection_add_index(index_name='planet_letters', ascending=True, unique=False)
-
-

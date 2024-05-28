@@ -1,10 +1,9 @@
 import time
 
 from hypatia.elements import element_rank
-from hypatia.sources.nea.db import nea_data
 from hypatia.collect import BaseStarCollection
-from hypatia.pipeline.star.single import SingleStar
 from hypatia.sources.simbad.query import simbad_coord_to_deg
+from hypatia.pipeline.star.single import SingleStar, ObjectParams
 
 
 single_star_param_double = {
@@ -72,6 +71,17 @@ single_star_param_str = {
     },
 }
 single_params = [single_star_param_double, single_star_param_int, single_star_param_str]
+
+
+nea_stellar_or_planetary_params = {
+    "bsonType": "object",
+    "description": "An object with all the per-star data for a single star",
+    "additionalProperties": False,
+    "patternProperties": {
+        ".+": {"oneOf": single_params},
+    },
+}
+
 single_abundance = {
     "mean": {
         "bsonType": "double",
@@ -132,6 +142,52 @@ abundance_normalizations = {
     "additionalProperties": False,
     "patternProperties": {
         ".+": chemical_abundances,
+    },
+}
+
+
+planet_bson = {
+    "bsonType": "object",
+    "description": "must be a object that describes a planet",
+    "required": ['pl_name', 'letter'],
+    "properties": {
+        "pl_name": {
+            "bsonType": "string",
+            "description": "must be a string and is required"
+        },
+        "letter": {
+            "bsonType": "string",
+            "description": "must be a string and is required"
+        },
+        "planetary": nea_stellar_or_planetary_params,
+    },
+    "additionalProperties": False,
+}
+
+
+nea_data = {
+    "nea_name": {
+        "bsonType": "string",
+        "description": "must be a string and is required and unique"
+    },
+    "stellar": nea_stellar_or_planetary_params,
+    "planet_letters": {
+        "bsonType": "array",
+        "minItems": 1,
+        "description": "must be an array letters for each known planet",
+        "items": {
+            "bsonType": "string",
+            "description": "must be a string planet letter",
+        },
+    },
+    "planets": {
+        "bsonType": "object",
+        "minItems": 1,
+        "description": "must be an object with planet letters as keys",
+        "additionalProperties": False,
+        "patternProperties": {
+            ".+": planet_bson,
+        },
     },
 }
 
@@ -229,8 +285,16 @@ class HypatiaDB(BaseStarCollection):
         if exo is None:
             nea = None
         else:
-            # do I need stellar parameters here? From the nea.
             nea = {key: exo[key] for key in nea_data.keys() if key in exo.keys()}
+            if "stellar" in exo.keys():
+                nea['stellar'] = exo['stellar'].to_record()
+            if "planets" in exo.keys():
+                nea['planets'] = {}
+                for letter, pl_data in exo['planets'].items():
+                    nea['planets'][letter] = {
+                        name: value.to_record() if isinstance(value, ObjectParams) else value
+                        for name, value in pl_data.items()}
+
         # get the stellar parameters
         stellar = single_star.params.to_record()
         # use the primary coordinates if they exist

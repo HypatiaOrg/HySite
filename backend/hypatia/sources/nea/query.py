@@ -71,7 +71,7 @@ nea_to_hypatia_fields = {
     "gaia_id": "gaia dr2",
     "sy_dist": "dist",
     "st_mass": "mass",
-    "st_rad": "radius",
+    "st_rad": "rad",
     "pl_letter": "letter",
     "pl_name": "pl_name",
     "discoverymethod": "discovery_method",
@@ -82,6 +82,9 @@ nea_to_hypatia_fields = {
     "pl_bmassj": "pl_mass",
     "pl_radj": "pl_radius",
 }
+
+non_parameter_fields = {'_id', 'nea_name', "attr_name", 'hip', 'hd', 'tic', 'gaia dr2',
+                        'planet_letters', 'planets', 'letter', 'pl_name'}
 
 
 hypatia_host_level_params = {nea_to_hypatia_fields[key] for key in nea_host_level_params}

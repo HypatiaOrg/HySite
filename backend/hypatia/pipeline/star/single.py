@@ -1,3 +1,5 @@
+from operator import attrgetter
+
 from hypatia.pipeline.abund_cat import CatalogData
 from hypatia.sources.simbad.db import indexed_name_types
 from hypatia.pipeline.params.star import SingleStarParams
@@ -51,6 +53,14 @@ class SingleStar:
     def pastel_params(self, pastel_record):
         # Update so that existing parameter keys-value pairs are prioritized over new values.
         self.params.update_params(pastel_record, overwrite_existing=False)
+
+    def exo_params(self):
+        if "exo" in self.available_data_types:
+            exo_stellar_data = self.exo.get('stellar', None)
+            if exo_stellar_data is not None:
+                for param, values_set in exo_stellar_data.items():
+                    for single_param in sorted(values_set, key=attrgetter('ref'), reverse=True):
+                        self.params.update_param(param_name=param, single_param=single_param, overwrite_existing=False)
 
     def xhip_params(self, xhip_params_dict: ObjectParams):
         self.params.update_params(xhip_params_dict, overwrite_existing=False)

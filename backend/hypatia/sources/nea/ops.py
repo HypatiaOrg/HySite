@@ -1,8 +1,7 @@
-from hypatia.object_params import SingleParam
 from hypatia.tools.exceptions import StarNameNotFound
 from hypatia.sources.nea.db import ExoPlanetStarCollection
-
-from hypatia.sources.nea.query import query_nea, set_data_by_host, hypatia_host_name_rank_order
+from hypatia.object_params import SingleParam, expected_params_dict, ObjectParams
+from hypatia.sources.nea.query import query_nea, set_data_by_host, hypatia_host_name_rank_order, non_parameter_fields
 from hypatia.sources.simbad.ops import (get_main_id, interactive_name_menu, star_collection, no_simbad_add_name,
                                         get_attr_name)
 
@@ -75,7 +74,38 @@ def format_for_mongo(host_data: dict) -> dict:
             # automatically add the name to the sources without a SIMBAD name or a prompt
             no_simbad_add_name(name=nea_name, aliases=names_to_try, origin="nea")
             found_id = get_main_id(test_name=nea_name, test_origin="nea", allow_interaction=False)
-    return {"_id": found_id, 'attr_name': get_attr_name(found_id), 'planet_letters': list(host_data['planets'].keys()), **host_data}
+    mongo_format = {"_id": found_id, 'attr_name': get_attr_name(found_id),
+                    'planet_letters': list(host_data['planets'].keys()), **host_data}
+    # test that the formating will work when this data is returned from the database, but do not use the returned data
+    format_to_hypatia(mongo_format)
+    return mongo_format
+
+
+def format_to_hypatia(mongo_format: dict, is_planetary: bool = False) -> dict:
+    # do parameter and unit assignment
+    hypatia_format = {}
+    for param, nea_values in mongo_format.items():
+        if param == 'planets':
+            planet_data = {planet_letter: format_to_hypatia(planet_values, is_planetary=True)
+                           for planet_letter, planet_values in nea_values.items()}
+            hypatia_format['planets'] = planet_data
+        elif param in non_parameter_fields:
+            hypatia_format[param] = nea_values
+        elif param in expected_params_dict.keys():
+            if is_planetary:
+                object_params = hypatia_format.setdefault('planetary', ObjectParams())
+            else:
+                object_params = hypatia_format.setdefault('stellar', ObjectParams())
+            units = expected_params_dict[param]['units']
+            if units == 'string':
+                object_params[param] = SingleParam.strict_format(param_name=param, value=nea_values,
+                                                                 ref=nea_ref, units=units)
+            else:
+                object_params[param] = SingleParam.strict_format(param_name=param, **nea_values,
+                                                                 ref=nea_ref, units=units)
+        else:
+            raise KeyError(f"Unexpected parameter: {param} in host data: {mongo_format} from NEA. Does this parameter need to be added to the allowed parameters file?")
+    return hypatia_format
 
 
 def refresh_nea_data(verbose: bool = False):
@@ -87,7 +117,7 @@ def refresh_nea_data(verbose: bool = False):
 
 def get_all_nea() -> list[dict[str, any]]:
     """Get all the data from the Hypatia NEA sources in MongoDB"""
-    return list(nea_collection.find_all())
+    return [format_to_hypatia(mongo_format) for mongo_format in nea_collection.find_all()]
 
 
 if __name__ == '__main__':

@@ -351,21 +351,24 @@ class AllStarData:
                     all_planets = single_star.exo['planets']
                     star_write_lines.append(f"Number of planets = {len(all_planets)}")
                     # exoplanet parameters
-                    for planet_letter, planet_params in all_planets.items():
+                    for planet_letter, planet_record in all_planets.items():
                         output_line = f"[{planet_letter}] "
-                        for output_str, planet_param, unit in self.planet_output:
-                            if planet_param in planet_params.keys():
-                                param_data = planet_params[planet_param]
-                                output_line += f"{output_str} {param_data['value']}"
-                                output_line += " +- {"
-                                if 'err_low' in param_data.keys():
-                                    output_line += str(param_data['err_low'])
-                                output_line += ","
-                                if "err_high" in param_data.keys():
-                                    output_line += str(param_data['err_high'])
-                                output_line += "}"
-                            output_line += unit + ", "
-                        star_write_lines.append(output_line[:-2])
+                        planet_params = planet_record.get('planetary', None)
+                        if planet_params is not None:
+                            planet_params_rec = planet_params.to_record()
+                            for output_str, planet_param, unit in self.planet_output:
+                                if planet_param in planet_params_rec.keys():
+                                    param_data = planet_params_rec[planet_param]
+                                    output_line += f"{output_str} {param_data['value']}"
+                                    output_line += " +- {"
+                                    if 'err_low' in param_data.keys():
+                                        output_line += str(param_data['err_low'])
+                                    output_line += ","
+                                    if "err_high" in param_data.keys():
+                                        output_line += str(param_data['err_high'])
+                                    output_line += "}"
+                                output_line += unit + ", "
+                            star_write_lines.append(output_line[:-2])
                 # The elemental values
                 for catalog in single_star.available_abundance_catalogs:
                     single_catalog = single_star.__getattribute__(catalog)

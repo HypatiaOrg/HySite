@@ -125,7 +125,8 @@ class NatCat:
             print(F'      Targets found: {"%3i" % len(self.targets_found)} : {sorted(self.targets_found)}')
             print(F'  Targets not found: {"%3i" % len(self.targets_not_found)} : {sorted(self.targets_not_found)}\n')
 
-    def get_params(self, get_gaia_params=True, get_pastel_params=True, get_tic_params=True, get_hipparcos_params=True):
+    def get_params(self, get_gaia_params: bool = True, get_pastel_params: bool = True, get_exo_params: bool = True,
+                   get_tic_params: bool = True, get_hipparcos_params: bool = True):
         if self.verbose:
             print("Acquiring stellar parameter data...")
         gaia_lib = None
@@ -143,6 +144,8 @@ class NatCat:
                 pastel_record = self.pastel.get_record_from_aliases(aliases=single_star.simbad_doc['aliases'])
                 if pastel_record is not None:
                     single_star.pastel_params(pastel_record)
+            if get_exo_params:
+                single_star.exo_params()
             if get_tic_params:
                 # Stellar Parameters from the Tess Input Catalog
                 requested_tic = None
