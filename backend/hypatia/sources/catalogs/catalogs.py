@@ -215,8 +215,7 @@ class Catalog:
                     un_norm_func_name = self.element_id_to_un_norm_func[element_id]
                     element_value = element_dict[element_id]
                     if un_norm_func_name == "un_norm_abs_x":
-                        if element_id in self.norm_dict.keys():
-                            un_norm_dict[element_id] = un_norm_abs_x(element_value)
+                         un_norm_dict[element_id] = un_norm_abs_x(element_value)
                     else:
                         # these elements require a solar value to un-normalize
                         solar_value = None
