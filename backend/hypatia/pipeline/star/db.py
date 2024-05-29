@@ -1,7 +1,7 @@
 import time
 
-from hypatia.elements import element_rank, ElementID
 from hypatia.collect import BaseStarCollection
+from hypatia.elements import element_rank, ElementID
 from hypatia.sources.simbad.query import simbad_coord_to_deg
 from hypatia.pipeline.star.single import SingleStar, ObjectParams
 
@@ -190,6 +190,12 @@ nea_data = {
         },
     },
 }
+
+
+def get_normalization_field(norm_key: str):
+    if norm_key == 'absolute':
+        return 'absolute'
+    return f'normalizations.{norm_key}'
 
 
 class HypatiaDB(BaseStarCollection):
@@ -390,10 +396,48 @@ class HypatiaDB(BaseStarCollection):
         self.add_one(doc=doc)
         print(f'Added {simbad_doc["_id"]} to the database')
 
-    def count_abundance_measurements(self):
-        pass
+    def get_abundance_count(self, norm_key: str = 'absolute', by_element: bool = False, count_stars: bool = False)\
+            -> dict[str, int]:
+        norm_field = get_normalization_field(norm_key)
+        if count_stars and not by_element:
+            # query is a shortcut, to count stars we can use built-in tools to count documents.
+            return {f"{norm_key}": self.collection.count_documents({norm_field: {'$exists': True}})}
+        group_id_target = "$chem_array.k" if by_element else f"{norm_key}"
+        sum_target = 1 if count_stars else {'$size': {'$objectToArray': "$chem_array.v.catalogs"}}
+        json_pipeline = [
+            {'$project': {'chem_array': {'$objectToArray': f'${norm_field}'}}},
+            {'$unwind': "$chem_array"},
+            {'$group': {'_id': f"{group_id_target}", 'total': {'$sum': sum_target}}},
+        ]
+        return {doc['_id']: int(doc['total']) for doc in sorted(self.collection.aggregate(json_pipeline),
+                                                                key=lambda x: element_rank(ElementID.from_str(x['_id']))
+                                                                if by_element
+                                                                else lambda x: x['_id'])}
+
+
+def make_iter_zip(u_norms: list, u_s_counts: list, u_by_element_counts: list):
+    norm_len = len(u_norms)
+    s_count_len = len(u_s_counts)
+    by_el_len = len(u_by_element_counts)
+
+    all_norms = u_norms * s_count_len * by_el_len
+    half_s_counts = []
+    for star_value in u_s_counts:
+        half_s_counts.extend(norm_len * [star_value])
+    all_s_counts = half_s_counts * by_el_len
+    all_by_el_counts = []
+    for element_val in u_by_element_counts:
+        all_by_el_counts.extend(norm_len * s_count_len * [element_val])
+    return zip(all_norms, all_s_counts, all_by_el_counts)
 
 
 if __name__ == '__main__':
     hypatiaDB = HypatiaDB(db_name='public', collection_name='hypatiaDB')
-    hypatiaDB.reset()  # WARNING: This will delete all data in the collection
+    # hypatiaDB.reset()  # WARNING: This will delete all data in the collection
+    u_norms = ["absolute", 'lodders09', 'original']
+    u_s_counts = [False, True]
+    u_by_element_counts = [False, True]
+    for index_count, (norm, do_s_count, do_by_el_count) in list(enumerate(make_iter_zip(u_norms, u_s_counts, u_by_element_counts))):
+        test_return = hypatiaDB.get_abundance_count(norm_key=norm, by_element=do_s_count, count_stars=do_by_el_count)
+        print(f'{index_count + 1:2}.) Using {norm} norm, counting {"stars" if do_s_count else "abundance measurements"} as a fucntions of {"chemical elements" if do_by_el_count else "The entire database"} ')
+        print(f'      {test_return}\n')
