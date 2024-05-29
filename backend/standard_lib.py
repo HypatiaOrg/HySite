@@ -391,7 +391,7 @@ if __name__ == "__main__":
     all_params = set()
     test_norm_keys = ["lodders09", "asplund09", "grevesse07", "asplund05", "grevesse98", "anders89", "original"]
     test_refresh_exo_data = False
-    test_from_scratch = True
+    test_from_scratch = False
     test_from_pickled_cat = False
     do_legacy = False
     if only_target_list:

@@ -1,6 +1,6 @@
 import time
 
-from hypatia.elements import element_rank
+from hypatia.elements import element_rank, ElementID
 from hypatia.collect import BaseStarCollection
 from hypatia.sources.simbad.query import simbad_coord_to_deg
 from hypatia.pipeline.star.single import SingleStar, ObjectParams
@@ -193,6 +193,10 @@ nea_data = {
 
 
 class HypatiaDB(BaseStarCollection):
+    added_elements = set()
+    added_elements_nlte = set()
+    added_catalogs = set()
+    added_normalizations = set()
     validator = {
         "$jsonSchema": {
             "bsonType": "object",
@@ -264,6 +268,14 @@ class HypatiaDB(BaseStarCollection):
                 },
                 'absolute': chemical_abundances,
                 'normalizations': abundance_normalizations,
+                'nlte': {
+                    "required": ["absolute"],
+                    "description": "The validator schema for NLTE elements ",
+                    'properties': {
+                        'absolute': chemical_abundances,
+                        'normalizations': abundance_normalizations,
+                    },
+                },
             },
         },
     }
@@ -312,8 +324,9 @@ class HypatiaDB(BaseStarCollection):
         # acquire absolute abundances
         catalogs_this_star = single_star.available_abundance_catalogs
         if len(catalogs_this_star) > 0:
+            self.added_catalogs.update(catalogs_this_star)
             reduced_abundances = single_star.reduced_abundances
-            abundance_output = {norm: {str(element_name): {data_key: reduced_abundances[norm][element_name][data_key]
+            abundance_output = {norm: {element_name: {data_key: reduced_abundances[norm][element_name][data_key]
                                                            for data_key
                                                            in reduced_abundances[norm][element_name].__dict__.keys()
                                                            if data_key in single_abundance_keys
@@ -322,11 +335,35 @@ class HypatiaDB(BaseStarCollection):
                                        for element_name in sorted(reduced_abundances[norm].available_abundances,
                                                                   key=element_rank)}
                                 for norm in reduced_abundances.keys()}
-            absolute = abundance_output.pop('absolute')
-            normalizations = abundance_output
+            equilibrium = {}
+            non_equilibrium = {}
+            for norm_key, element_data in abundance_output.items():
+                self.added_normalizations.add(norm_key)
+                for element_id, element_record in element_data.items():
+                    if element_id.is_nlte:
+                        self.added_elements_nlte.add(element_id)
+                        simple_name = str(ElementID(name_lower=element_id.name_lower, ion_state=element_id.ion_state,
+                                                    is_nlte=False))
+                        non_equilibrium.setdefault(norm_key, {})[simple_name] = element_record
+                    else:
+                        self.added_elements.add(element_id)
+                        equilibrium.setdefault(norm_key, {})[str(element_id)] = element_record
+            if equilibrium:
+                absolute = equilibrium.pop('absolute')
+                normalizations = equilibrium
+            else:
+                absolute = None
+                normalizations = None
+            if non_equilibrium:
+                nlte_abundances = {"absolute": non_equilibrium.pop('absolute')}
+                if non_equilibrium:
+                    nlte_abundances["normalizations"] = non_equilibrium
+            else:
+                nlte_abundances = None
         else:
             absolute = None
             normalizations = None
+            nlte_abundances = None
         # construct the document with non-None elements
         doc = {
             "_id": simbad_doc['_id'],
@@ -348,8 +385,13 @@ class HypatiaDB(BaseStarCollection):
             doc['absolute'] = absolute
         if normalizations:
             doc['normalizations'] = normalizations
+        if nlte_abundances:
+            doc['nlte'] = nlte_abundances
         self.add_one(doc=doc)
         print(f'Added {simbad_doc["_id"]} to the database')
+
+    def count_abundance_measurements(self):
+        pass
 
 
 if __name__ == '__main__':

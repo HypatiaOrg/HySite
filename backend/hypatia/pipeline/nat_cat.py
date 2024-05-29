@@ -53,7 +53,7 @@ class NatCat:
 
         self.text_file_dir = os.path.join(working_dir, "load", 'data_products')
 
-        # variable that are populated in methods within this class
+        # variables that are populated in methods
         self.catalog_dict = None
         self.output_norm = None
 
@@ -132,11 +132,6 @@ class NatCat:
         gaia_lib = None
         for single_star in self.star_data:
             main_star_id = single_star.star_reference_name
-            if get_gaia_params:
-                if gaia_lib is None:
-                    gaia_lib = GaiaLib(verbose=self.verbose)
-                _attr_name, gaia_params_dict = gaia_lib.get_object_params(main_star_id)
-                single_star.gaia_params(gaia_params_dict)
             if get_pastel_params:
                 # Star Parameters from the Pastel Catalog (effective temperature and Log values for surface gravity)
                 if self.pastel.data is None:
@@ -144,6 +139,11 @@ class NatCat:
                 pastel_record = self.pastel.get_record_from_aliases(aliases=single_star.simbad_doc['aliases'])
                 if pastel_record is not None:
                     single_star.pastel_params(pastel_record)
+            if get_gaia_params:
+                if gaia_lib is None:
+                    gaia_lib = GaiaLib(verbose=self.verbose)
+                _attr_name, gaia_params_dict = gaia_lib.get_object_params(main_star_id)
+                single_star.gaia_params(gaia_params_dict)
             if get_exo_params:
                 single_star.exo_params()
             if get_tic_params:

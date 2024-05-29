@@ -594,4 +594,8 @@ class OutputStarData(AllStarData):
         hypatia_db.reset()
         for single_star in self:
             hypatia_db.add_star(single_star)
-        upload_summary()
+        found_elements = hypatia_db.added_elements
+        found_element_nlte = hypatia_db.added_elements_nlte
+        found_catalogs = hypatia_db.added_catalogs
+        found_normalizations = hypatia_db.added_normalizations
+        upload_summary(found_elements, found_element_nlte, found_catalogs, found_normalizations)

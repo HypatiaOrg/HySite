@@ -1,4 +1,4 @@
-from hypatia.elements import element_rank
+from hypatia.elements import element_rank, ElementID
 from hypatia.collect import BaseCollection
 from hypatia.object_params import expected_params_dict
 from hypatia.elements import summary_dict, elements_found
@@ -79,7 +79,7 @@ class SummaryCollection(BaseCollection):
                         },
                     },
                 },
-                'chemicals_found': {
+                'chemicals_read': {
                     "bsonType": "array",
                     "description": "must be an array of strings",
                     "items": {
@@ -87,19 +87,65 @@ class SummaryCollection(BaseCollection):
                         "description": "must be a string for the element abbreviation"
                     },
                 },
+                'chemicals_uploaded': {
+                    "bsonType": "array",
+                    "description": "must be an array of strings",
+                    "items": {
+                        "bsonType": "string",
+                        "description": "must be a string for the element abbreviation"
+                    },
+                },
+                'nlte_uploaded': {
+                    "bsonType": "array",
+                    "description": "must be an array of strings",
+                    "items": {
+                        "bsonType": "string",
+                        "description": "must be a string for the element abbreviation"
+                    },
+                },
+                'catalogs': {
+                    "bsonType": "array",
+                    "description": "must be an array of strings",
+                    "items": {
+                        "bsonType": "string",
+                        "description": "must be a string for the catalog name"
+                    },
+                },
+                'normalizations': {
+                    "bsonType": "array",
+                    "description": "must be an array of strings",
+                    "items": {
+                        "bsonType": "string",
+                        "description": "must be a string for the normalization name"
+                    },
+                },
             },
         },
     }
 
 
-def upload_summary():
+def upload_summary(found_elements: set[ElementID] = None, found_element_nlte: set[ElementID] = None,
+                   found_catalogs: set[str] = None, found_normalizations: set[str] = None):
+    if found_elements is None:
+        found_elements = set()
+    if found_element_nlte is None:
+        found_element_nlte = set()
+    if found_catalogs is None:
+        found_catalogs = set()
+    if found_normalizations is None:
+        found_normalizations = set()
     summary_db = SummaryCollection(db_name='public', collection_name='summary')
     summary_db.reset()
     doc = {
         "_id": "summary_hypatiacatalog",
         'units_and_fields': expected_params_dict,
         'chemical_ref': summary_dict,
-        'chemicals_found': [str(el) for el in  sorted(elements_found, key=element_rank)]
+        'chemicals_read': [str(el) for el in sorted(elements_found, key=element_rank)],
+        'chemicals_uploaded': [str(el) for el in sorted(found_elements, key=element_rank)],
+        'nlte_uploaded': [str(ElementID(name_lower=el.name_lower, ion_state=el.ion_state, is_nlte=False))
+                          for el in sorted(found_element_nlte, key=element_rank)],
+        'catalogs': sorted(found_catalogs),
+        'normalizations': sorted(found_normalizations),
     }
     summary_db.add_one(doc)
 
