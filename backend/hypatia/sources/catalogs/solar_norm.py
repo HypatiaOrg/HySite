@@ -111,16 +111,19 @@ def ratio_to_element(test_ratio: str) -> tuple[ElementID, str]:
 
 
 class SolarNorm:
-    ref_column = "#ref"
+    ref_columns = {'author', 'year'}
 
     def __init__(self, file_path=None):
         if file_path is None:
             file_path = os.path.join(ref_dir, "solar_norm_ref.csv")
         self.file_path = file_path
+        raw_file = row_dict(self.file_path, key="catalog", delimiter=",", null_value="")
+        self.comments = raw_file.pop("comments")
         self.sol_abund = {cat_name: {ElementID.from_str(element_string=el_str): float(el_val)
-                                     for el_str, el_val in cat_data.items() if el_str != self.ref_column}
-                          for cat_name, cat_data in
-                          row_dict(self.file_path, key="catalog", delimiter=",", null_value="").items()}
+                                     for el_str, el_val in cat_data.items() if el_str not in self.ref_columns}
+                          for cat_name, cat_data in raw_file.items()}
+        self.ref_data = {cat_name: {ref_type: cat_data[ref_type] for ref_type in self.ref_columns}
+                         for cat_name, cat_data in raw_file.items()}
 
     def __call__(self, norm_key=None):
         if norm_key is None:
@@ -140,10 +143,10 @@ class SolarNorm:
         norm_keys = self.sol_abund.keys()
         element_keys = set()
         [element_keys.add(element) for norm_key in norm_keys for element in self.sol_abund[norm_key].keys()
-         if element != self.ref_column]
+         if element not in self.ref_columns]
         sorted_element_records = sorted([ElementID.from_str(element_string=el_str) for el_str in element_keys],
                                         key=element_rank)
-        sorted_element_keys = ['catalog'] + [str(el_rec) for el_rec in sorted_element_records] + [self.ref_column]
+        sorted_element_keys = ['catalog'] + [str(el_rec) for el_rec in sorted_element_records] + list(sorted(self.ref_columns))
         header = ','.join(sorted_element_keys)
         body = ''
         for norm_key in sorted(norm_keys):
@@ -158,6 +161,19 @@ class SolarNorm:
         with open(write_file, 'w') as f:
             f.write(header)
             f.write(body)
+
+    def to_record(self, norm_keys: list[str] = None) -> dict[str, dict[str, str | int | dict[str, float]]]:
+        if norm_keys is None:
+            norm_keys = list(self.sol_abund.keys())
+        if 'original' in norm_keys:
+            norm_keys.remove('original')
+        if 'absolute' in norm_keys:
+            norm_keys.remove('absolute')
+        return {norm_key: {**self.ref_data[norm_key], 'values': {str(el_id): solar_norm_dict[norm_key][el_id]
+                                                                 for el_id in sorted(self.sol_abund[norm_key].keys(),
+                                                                                     key=element_rank)},
+                           'notes': f'This key provides data that is normalized to the Sun using values from {self.ref_data[norm_key]['author']}'}
+                for norm_key in norm_keys}
 
 
 sn = SolarNorm()

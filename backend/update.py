@@ -18,4 +18,4 @@ def legacy_update(test_mode: bool = True, output_list: list[str] = None, mongo_u
 
 
 if __name__ == '__main__':
-    nat_cat, output_star_data, target_star_data = legacy_update(test_mode=False)
+    nat_cat, output_star_data, target_star_data = legacy_update(test_mode=False, mongo_upload=True)

@@ -14,7 +14,7 @@ import os
 from pathlib import Path
 from warnings import warn
 
-import dotenv
+from hypatia.config import test_database_dir
 
 
 def str_is_true(s: str) -> bool:
@@ -25,11 +25,6 @@ def str_is_true(s: str) -> bool:
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 print('BASE_DIR', BASE_DIR)
-
-repo_dir = BASE_DIR.parent
-env_path = os.path.join(repo_dir, '.env')
-if os.path.exists(env_path):
-    dotenv.load_dotenv(env_path)
 
 
 # Quick-start development settings - unsuitable for production
@@ -80,7 +75,7 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'core', 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -96,20 +91,10 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-MONGO_HOST = os.environ.get("MONGO_HOST", "hypatiacatalog.com")
-MONGO_USERNAME = os.environ.get("MONGO_USERNAME", "username")
-MONGO_PASSWORD = os.environ.get("MONGO_PASSWORD", "password")
-connection_string = f'mongodb://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_HOST}:27017'
 DATABASES = {
     'default': {
-        'ENGINE': 'djongo',
-        'NAME': 'metadata',
-        'ENFORCE_SCHEMA': False,
-        'CLIENT': {
-            'host': connection_string,
-        }
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(test_database_dir, 'usersdb.sqlite3'),
     }
 }
 
@@ -149,6 +134,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "core", "static"),
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field

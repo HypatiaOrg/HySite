@@ -1,5 +1,6 @@
-from hypatia.elements import element_rank, ElementID
 from hypatia.collect import BaseCollection
+from hypatia.sources.catalogs.solar_norm import sn
+from hypatia.elements import element_rank, ElementID
 from hypatia.object_params import expected_params_dict
 from hypatia.elements import summary_dict, elements_found
 
@@ -112,16 +113,55 @@ class SummaryCollection(BaseCollection):
                     },
                 },
                 'normalizations': {
-                    "bsonType": "array",
-                    "description": "must be an array of strings",
-                    "items": {
-                        "bsonType": "string",
-                        "description": "must be a string for the normalization name"
+                    "bsonType": "object",
+                    "description": "must be an Object with norm_keys at the property",
+                    "additionalProperties": False,
+                    "patternProperties": {
+                        '.+': {
+                            "bsonType": "object",
+                            "description": "must be an Object holding data for a single normalization.",
+                            'additionalProperties': False,
+                            "required": ['author', "notes"],
+                            "properties": {
+                                'notes': {
+                                    "bsonType": "string",
+                                    "description": "Required, must be a string for the notes about the normalization"
+                                },
+                                'author': {
+                                    "bsonType": "string",
+                                    "description": "must be a string for the author of the normalization"
+                                },
+                                'year': {
+                                    "bsonType": "int",
+                                    "description": "must be a int for the year of the normalization"
+                                },
+                                'version': {
+                                    "bsonType": "string",
+                                    "description": "must be a string for the version of the normalization"
+                                },
+                                'values': {
+                                    "bsonType": "object",
+                                    "description": "must be an object with element_strings that give a solar normalization value",
+                                    'additionalProperties': False,
+                                    'patternProperties': {
+                                        ".+": {
+                                            "bsonType": "double",
+                                            "description": "must be a number for the solar normalization value"
+                                        },
+                                    },
+                                },
+                            },
+                        },
                     },
                 },
             },
         },
     }
+
+    def get_summary(self, id_name: str = None):
+        if id_name is None:
+            id_name = 'summary_hypatiacatalog'
+        return self.collection.find_one({'_id': id_name})
 
 
 def upload_summary(found_elements: set[ElementID] = None, found_element_nlte: set[ElementID] = None,
@@ -136,6 +176,11 @@ def upload_summary(found_elements: set[ElementID] = None, found_element_nlte: se
         found_normalizations = set()
     summary_db = SummaryCollection(db_name='public', collection_name='summary')
     summary_db.reset()
+
+    normalizations = sn.to_record(norm_keys=found_normalizations) | \
+        {'absolute': {'author': 'Absolute', 'notes': 'This key provides data that is in absolute scale and is not normalized to the Sun.'},
+         'original': {'author': 'Original', 'notes': 'This key provides the originally published normalization, but omits data that was originally published as absolute. '}}
+
     doc = {
         "_id": "summary_hypatiacatalog",
         'units_and_fields': expected_params_dict,
@@ -145,10 +190,10 @@ def upload_summary(found_elements: set[ElementID] = None, found_element_nlte: se
         'nlte_uploaded': [str(ElementID(name_lower=el.name_lower, ion_state=el.ion_state, is_nlte=False))
                           for el in sorted(found_element_nlte, key=element_rank)],
         'catalogs': sorted(found_catalogs),
-        'normalizations': sorted(found_normalizations),
+        'normalizations': normalizations,
     }
     summary_db.add_one(doc)
 
 
 if __name__ == '__main__':
-    upload_summary()
+    upload_summary(found_normalizations={'lodders09'})

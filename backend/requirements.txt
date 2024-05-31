@@ -6,11 +6,9 @@ astropy
 astroquery
 pandas
 tables
-pymongo==3.12.3
+pymongo
 mongoengine
 python-dotenv
 # Required for the web interface
-django>=5.0.3
+django
 djongo
-# Caleb Wheeler's data harvesting repositoryastropy
-# astroquery
