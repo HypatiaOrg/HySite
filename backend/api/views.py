@@ -25,3 +25,14 @@ class AvailableElements(View):
 class AvailableCatalogs(View):
     def get(self, request):
         return JsonResponse(available_catalogs_v2, safe=False)
+
+
+class Star(View):
+    def get(self, request):
+        query_dict_names = request.GET.getlist('name', None)
+        if query_dict_names:
+            names = query_dict_names
+        else:
+            names = list(request.GET.keys())
+        print(names)
+        return JsonResponse({"received names": names}, safe=False)
