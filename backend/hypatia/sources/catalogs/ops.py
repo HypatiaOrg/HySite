@@ -1,13 +1,37 @@
 import os
 import shutil
-from hypatia.config import ref_dir, abundance_dir
+
+from hypatia.tools.table_read import row_dict
+from hypatia.config import ref_dir, abundance_dir, default_catalog_file
+
+
+def make_cat_record(short: str, long: str, norm: str):
+    _, year_slice = long.rsplit("(", 1)
+    year_str = ''
+    for char in year_slice:
+        if char.isdigit():
+            year_str += char
+        elif year_str:
+            break
+    if year_str:
+        year = int(year_str)
+    else:
+        raise ValueError(f"Year not found in the long name: {long}")
+    return {'author': long, 'year': year, 'id': short, 'original_norm_id': norm}
+
+
+def export_to_records(catalog_input_file: str = default_catalog_file, requested_catalogs: list[str] = None):
+    row_data = row_dict(catalog_input_file, delimiter=",", inner_key_remove=False, key="short")
+    if requested_catalogs is None:
+        requested_catalogs = row_data.keys()
+    return {catalog_name: make_cat_record(**row_data[catalog_name]) for catalog_name in requested_catalogs}
 
 
 class CatOps:
     def __init__(self, cat_file=None, load=True, verbose=True):
         self.verbose = verbose
         if cat_file is None:
-            self.cat_file = os.path.join(ref_dir, "catalog_file.csv")
+            self.cat_file = default_catalog_file
         else:
             self.cat_file = cat_file
         self.cat_dict = None
@@ -122,6 +146,7 @@ class CatOps:
 
 
 if __name__ == "__main__":
-    cat_object = CatOps(verbose=True)
-    cat_object.standardize()
-    cat_object.make_subset_file(short_name_list=["luck 15"])
+    # cat_object = CatOps(verbose=True)
+    # cat_object.standardize()
+    # cat_object.make_subset_file(short_name_list=["luck 15"])
+    test_records = export_to_records()

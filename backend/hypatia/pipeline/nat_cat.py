@@ -12,7 +12,7 @@ from hypatia.sources.catalogs.solar_norm import SolarNorm
 from hypatia.pipeline.star.output import OutputStarData
 from hypatia.sources.catalogs.catalogs import get_catalogs
 from hypatia.sources.simbad.ops import get_main_id, get_star_data
-from hypatia.config import working_dir, ref_dir, abundance_dir, hacked, pickle_nat
+from hypatia.config import working_dir, ref_dir, abundance_dir, hacked, pickle_nat, default_catalog_file
 
 
 def load_catalog_query():
@@ -20,7 +20,6 @@ def load_catalog_query():
 
 
 class NatCat:
-
 
     def __init__(self, params_list_for_stats=None, star_types_for_stats=None,
                  catalogs_from_scratch=False, verbose=False, catalogs_verbose=True,
@@ -33,7 +32,10 @@ class NatCat:
         self.catalogs_from_scratch = catalogs_from_scratch
 
         self.refresh_exo_data = refresh_exo_data
-        self.catalogs_file_name = catalogs_file_name
+        if catalogs_file_name is None:
+            self.catalogs_file_name = default_catalog_file
+        else:
+            self.catalogs_file_name = catalogs_file_name
         self.abundance_data_path = abundance_data_path
 
         # populated some default values

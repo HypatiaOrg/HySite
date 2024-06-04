@@ -1,8 +1,10 @@
 from hypatia.collect import BaseCollection
+from hypatia.config import default_catalog_file
 from hypatia.sources.catalogs.solar_norm import sn
 from hypatia.elements import element_rank, ElementID
 from hypatia.object_params import expected_params_dict
 from hypatia.elements import summary_dict, elements_found
+from hypatia.sources.catalogs.ops import export_to_records
 
 
 class SummaryCollection(BaseCollection):
@@ -105,11 +107,34 @@ class SummaryCollection(BaseCollection):
                     },
                 },
                 'catalogs': {
-                    "bsonType": "array",
-                    "description": "must be an array of strings",
-                    "items": {
-                        "bsonType": "string",
-                        "description": "must be a string for the catalog name"
+                    "bsonType": "object",
+                    "description": "must be an objects with keys that are the catalog short names and objects that describe the catalog",
+                    'additionalProperties': False,
+                    'patternProperties': {
+                        '.+': {
+                            "bsonType": "object",
+                            "description": "must be an object that describes a catalog",
+                            "required": ['author', 'year', 'id', 'original_norm_id'],
+                            "additionalProperties": False,
+                            "properties": {
+                                'author': {
+                                    "bsonType": "string",
+                                    "description": "must be a string for the author of the catalog"
+                                },
+                                'year': {
+                                    "bsonType": "int",
+                                    "description": "must be a int for the year of the catalog"
+                                },
+                                'id': {
+                                    "bsonType": "string",
+                                    "description": "must be a string for the short name of the catalog"
+                                },
+                                'original_norm_id': {
+                                    "bsonType": "string",
+                                    "description": "must be a string for the original norm id of the catalog"
+                                },
+                            },
+                        },
                     },
                 },
                 'normalizations': {
@@ -165,7 +190,7 @@ class SummaryCollection(BaseCollection):
 
 
 def upload_summary(found_elements: set[ElementID] = None, found_element_nlte: set[ElementID] = None,
-                   found_catalogs: set[str] = None, found_normalizations: set[str] = None):
+                   catalogs_file_name: str = default_catalog_file, found_catalogs: set[str] = None, found_normalizations: set[str] = None):
     if found_elements is None:
         found_elements = set()
     if found_element_nlte is None:
@@ -176,6 +201,9 @@ def upload_summary(found_elements: set[ElementID] = None, found_element_nlte: se
         found_normalizations = set()
     summary_db = SummaryCollection(db_name='public', collection_name='summary')
     summary_db.reset()
+
+    catalog_data = export_to_records(catalog_input_file=catalogs_file_name,
+                                     requested_catalogs=sorted(found_catalogs) if found_catalogs else None)
 
     normalizations = sn.to_record(norm_keys=found_normalizations) | \
         {'absolute': {'author': 'Absolute', 'notes': 'This key provides data that is in absolute scale and is not normalized to the Sun.'},
@@ -189,7 +217,7 @@ def upload_summary(found_elements: set[ElementID] = None, found_element_nlte: se
         'chemicals_uploaded': [str(el) for el in sorted(found_elements, key=element_rank)],
         'nlte_uploaded': [str(ElementID(name_lower=el.name_lower, ion_state=el.ion_state, is_nlte=False))
                           for el in sorted(found_element_nlte, key=element_rank)],
-        'catalogs': sorted(found_catalogs),
+        'catalogs': catalog_data,
         'normalizations': normalizations,
     }
     summary_db.add_one(doc)

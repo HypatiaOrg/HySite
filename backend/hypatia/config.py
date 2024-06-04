@@ -15,6 +15,8 @@ site_dir = os.path.join(hydata_dir, 'site_data')
 output_products_dir = os.path.join(base_dir, "output")
 star_data_output_dir = os.path.join(output_products_dir, "star_data_output")
 plot_dir = os.path.join(output_products_dir, "plots")
+
+default_catalog_file = os.path.join(ref_dir, "catalog_file.csv")
 cat_pickles_dir = os.path.join(output_products_dir, "catalog_pickles")
 pickle_nat = os.path.join(output_products_dir, "pickle_nat.pkl")
 pickle_out = os.path.join(output_products_dir, "pickle_output_star_data.pkl")

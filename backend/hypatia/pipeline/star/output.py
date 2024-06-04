@@ -1,12 +1,13 @@
 import copy
 import pickle
 
-from hypatia.config import pickle_out
+
 from hypatia.pipeline.star.db import HypatiaDB
-from hypatia.pipeline.params.filters import core_filter
 from hypatia.pipeline.star.all import AllStarData
-from hypatia.sources.simbad.ops import get_star_data
 from hypatia.pipeline.summary import upload_summary
+from hypatia.sources.simbad.ops import get_star_data
+from hypatia.pipeline.params.filters import core_filter
+from hypatia.config import pickle_out, default_catalog_file
 from hypatia.plots.element_rad_plot import make_element_distance_plots
 
 
@@ -589,7 +590,7 @@ class OutputStarData(AllStarData):
         if self.verbose:
             print("  ...Element Ratio and Distance Plots completed \n")
 
-    def export_to_mongo(self):
+    def export_to_mongo(self, catalogs_file_name: str = default_catalog_file):
         hypatia_db = HypatiaDB(db_name='public', collection_name='hypatiaDB')
         hypatia_db.reset()
         for single_star in self:
@@ -598,4 +599,7 @@ class OutputStarData(AllStarData):
         found_element_nlte = hypatia_db.added_elements_nlte
         found_catalogs = hypatia_db.added_catalogs
         found_normalizations = hypatia_db.added_normalizations
-        upload_summary(found_elements, found_element_nlte, found_catalogs, found_normalizations)
+
+        upload_summary(found_elements=found_elements, found_element_nlte=found_element_nlte,
+                       catalogs_file_name=catalogs_file_name, found_catalogs=found_catalogs,
+                       found_normalizations=found_normalizations)

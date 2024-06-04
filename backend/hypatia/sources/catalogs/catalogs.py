@@ -9,7 +9,7 @@ from hypatia.elements import element_rank, ElementID
 from hypatia.tools.star_names import calc_simbad_name
 from hypatia.tools.exceptions import ElementNameErrorInCatalog
 from hypatia.sources.simbad.ops import get_star_data, get_main_id
-from hypatia.config import abundance_dir, ref_dir, cat_pickles_dir
+from hypatia.config import abundance_dir, default_catalog_file, cat_pickles_dir
 from hypatia.sources.catalogs.solar_norm import (solar_norm_dict, ratio_to_element, iron_id, iron_ii_id, iron_nlte_id,
                                                  un_norm_x_over_fe, un_norm_x_over_h, un_norm_abs_x)
 
@@ -27,7 +27,7 @@ def get_catalogs(from_scratch=False, catalogs_file_name=None, local_abundance_di
     """
 
     if catalogs_file_name is None or catalogs_file_name == "catalog_file.csv":
-        full_catalog_file_name = os.path.join(ref_dir, "catalog_file.csv")
+        full_catalog_file_name = default_catalog_file
     else:
         full_catalog_file_name = catalogs_file_name
     if local_abundance_dir is None:
