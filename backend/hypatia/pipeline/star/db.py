@@ -2,6 +2,7 @@ import time
 
 from hypatia.collect import BaseStarCollection
 from hypatia.elements import element_rank, ElementID
+from hypatia.sources.simbad.db import validator_star_doc, indexed_name_types
 from hypatia.sources.simbad.query import simbad_coord_to_deg
 from hypatia.pipeline.star.single import SingleStar, ObjectParams
 
@@ -234,6 +235,7 @@ class HypatiaDB(BaseStarCollection):
                     "bsonType": "string",
                     "description": "must be a string and is not required"
                 },
+                'names': validator_star_doc,
                 "aliases": {
                     "bsonType": "array",
                     "minItems": 1,
@@ -284,6 +286,33 @@ class HypatiaDB(BaseStarCollection):
                 },
             },
         },
+    }
+
+    v2_null_star_record = {
+        "status": "not-found",
+        "hip": None,
+        "hd": None,
+        "bd": None,
+        "spec": None,
+        "vmag": None,
+        "bv": None,
+        "dist": None,
+        "ra": None,
+        "dec": None,
+        "x": None,
+        "y": None,
+        "z": None,
+        "disk": None,
+        "u": None,
+        "v": None,
+        "w": None,
+        "teff": None,
+        "logg": None,
+        "2MASS": None,
+        "ra_proper_motion": None,
+        "dec_proper_motion": None,
+        "bmag": None,
+        "planets": None,
     }
 
     def create_indexes(self):
@@ -375,7 +404,8 @@ class HypatiaDB(BaseStarCollection):
             "_id": simbad_doc['_id'],
             "attr_name": simbad_doc['attr_name'],
             "timestamp": time.time(),
-            "aliases": simbad_doc['aliases'],
+            "aliases": sorted({star_name.replace(' ', '').lower() for star_name in simbad_doc['aliases']}),
+            'names': simbad_doc,
         }
         if ra is not None:
             doc['ra'] = ra
@@ -413,6 +443,98 @@ class HypatiaDB(BaseStarCollection):
                                                                 key=lambda x: element_rank(ElementID.from_str(x['_id']))
                                                                 if by_element
                                                                 else lambda x: x['_id'])}
+
+    def find_name_match(self, name: str) -> dict | None:
+        return self.collection.find_one({'aliases': {"$in": [name]}})
+
+    def get_ids_for_name_type(self, name_type: str) -> list[str]:
+        if name_type not in indexed_name_types:
+            raise ValueError(f"{name_type} is not a valid name type.")
+        return self.collection.find({f'names.{name_type}': {"$exists": True}}).distinct('_id')
+
+    def star_data_v2(self, star_names: list[str]) -> list[dict]:
+        db_formatted_names_dict = {name: name.replace(' ', '').lower() for name in star_names}
+        db_formatted_names = sorted(set(db_formatted_names_dict.values()))
+        json_pipeline = [
+            {'$match': {
+                'aliases': {
+                    '$in': db_formatted_names,
+                }
+            }},
+            {'$project': {
+                '_id': 0,
+                'name': '$_id',
+                'hip': '$names.hip',
+                'hd': '$names.hd',
+                'bd': '$names.bd',
+                '2mass': '$names.2mass',
+                'tyc': '$names.tyc',
+                'other_names': '$names.aliases',
+                'spec': '$stellar.sptype.curated.value',
+                'vmag': '$stellar.vmag.curated.value',
+                'bv': '$stellar.bv.curated.value',
+                'dist': '$stellar.dist.curated.value',
+                'ra': '$ra',
+                'dec': '$dec',
+                'x': '$stellar.x_pos.curated.value',
+                'y': '$stellar.y_pos.curated.value',
+                'z': '$stellar.z_pos.curated.value',
+                'disk': '$stellar.disk.curated.value',
+                'u': '$stellar.u_vel.curated.value',
+                'v': '$stellar.v_vel.curated.value',
+                'w': '$stellar.w_vel.curated.value',
+                'teff': '$stellar.teff.curated.value',
+                'logg': '$stellar.logg.curated.value',
+                'ra_proper_motion': '$stellar.pm_ra.curated.value',
+                'dec_proper_motion': '$stellar.pm_dec.curated.value',
+                'bmag': '$stellar.bmag.curated.value',
+                'planets': {
+                    "$map": {
+                        "input": {"$objectToArray": "$nea.planets"},
+                        "as": 'planet_dict',
+                        "in": {
+                            'name': '$$planet_dict.v.letter',
+                            'm_p': '$$planet_dict.v.planetary.pl_mass.value',
+                            'm_p_min_err': '$$planet_dict.v.planetary.pl_mass.err_low',
+                            'm_p_max_err': '$$planet_dict.v.planetary.pl_mass.err_high',
+                            'p': '$$planet_dict.v.planetary.period.value',
+                            'p_min_err': '$$planet_dict.v.planetary.period.err_low',
+                            'p_max_err': '$$planet_dict.v.planetary.period.err_high',
+                            'e': '$$planet_dict.v.planetary.eccentricity.value',
+                            'e_min_err': '$$planet_dict.v.planetary.eccentricity.err_low',
+                            'e_max_err': '$$planet_dict.v.planetary.eccentricity.err_high',
+                            'a': '$$planet_dict.v.planetary.semi_major_axis.value',
+                            'a_min_err': '$$planet_dict.v.planetary.semi_major_axis.err_low',
+                            'a_max_err': '$$planet_dict.v.planetary.semi_major_axis.err_high',
+                        },
+                    },
+                },
+                'match_name': {
+                    '$first': {
+                        '$filter': {
+                            'input': '$aliases',
+                            'as': 'alias',
+                            'cond': {'$in': ['$$alias', db_formatted_names]},
+                            'limit': 1,
+                        },
+                    },
+                },
+                "status": "found",
+            }},
+        ]
+        star_data = {}
+        for found_data in self.collection.aggregate(json_pipeline):
+            match_name = found_data.pop('match_name')
+            star_data[match_name] = found_data
+        return_data_list = []
+        for star_name in star_names:
+            db_formatted_name = db_formatted_names_dict[star_name]
+            star_data_record = self.v2_null_star_record.copy()
+            star_data_record['requested_name'] = star_name
+            if db_formatted_name in star_data.keys():
+                star_data_record.update(star_data[db_formatted_name])
+            return_data_list.append(star_data_record)
+        return return_data_list
 
 
 def make_iter_zip(u_norms: list, u_s_counts: list, u_by_element_counts: list):

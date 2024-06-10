@@ -10,57 +10,59 @@ index_props = {name_type: {"bsonType": ["string", "null"], "description": f"must
                for name_type in indexed_name_types}
 indexed_name_types = set(indexed_name_types)
 
-
-class StarStarCollection(BaseStarCollection):
-    validator = {
-        "$jsonSchema": {
-            "bsonType": "object",
-            "title": "The validator schema for the StarName class",
-            "required": ["_id", "attr_name", "origin", "timestamp", "aliases"],
-            "properties": {
-                "_id": {
-                    "bsonType": "string",
-                    "description": "must be a string and is required and unique"
-                },
-                "attr_name": {
-                    "bsonType": "string",
-                    "description": "must be a string and is required"
-                },
-                "origin": {
-                    "bsonType": "string",
-                    "description": "must be a string and is required"
-                },
-                "timestamp": {
-                    "bsonType": "double",
-                    "description": "must be a double and is required"
-                },
-                "ra": {
-                    "bsonType": "double",
-                    "description": "must be a double and is not required"
-                },
-                "dec": {
-                    "bsonType": "double",
-                    "description": "must be a double and is not required"
-                },
-                "hmsdms": {
-                    "bsonType": "string",
-                    "description": "must be a string and is not required"
-                },
-                **index_props,
-                "aliases": {
-                    "bsonType": "array",
-                    "minItems": 1,
-                    "uniqueItems": True,
-                    "description": "must be an array of string names that this star is known by",
-                    "items": {
-                        "bsonType": "string",
-                        "description": "must be a string star name",
-                    },
-
-                }
+validator_star_doc = {
+    "bsonType": "object",
+    "title": "The validator schema for the StarName class",
+    "required": ["_id", "attr_name", "origin", "timestamp", "aliases"],
+    "properties": {
+        "_id": {
+            "bsonType": "string",
+            "description": "must be a string and is required and unique"
+        },
+        "attr_name": {
+            "bsonType": "string",
+            "description": "must be a string and is required"
+        },
+        "origin": {
+            "bsonType": "string",
+            "description": "must be a string and is required"
+        },
+        "timestamp": {
+            "bsonType": "double",
+            "description": "must be a double and is required"
+        },
+        "ra": {
+            "bsonType": "double",
+            "description": "must be a double and is not required"
+        },
+        "dec": {
+            "bsonType": "double",
+            "description": "must be a double and is not required"
+        },
+        "hmsdms": {
+            "bsonType": "string",
+            "description": "must be a string and is not required"
+        },
+        **index_props,
+        "aliases": {
+            "bsonType": "array",
+            "minItems": 1,
+            "uniqueItems": True,
+            "description": "must be an array of string names that this star is known by",
+            "items": {
+                "bsonType": "string",
+                "description": "must be a string star name",
             },
-            "additionalProperties": False,
+
         }
+    },
+    "additionalProperties": False,
+}
+
+
+class StarCollection(BaseStarCollection):
+    validator = {
+        "$jsonSchema": validator_star_doc
     }
 
     def create_indexes(self):
@@ -82,6 +84,11 @@ class StarStarCollection(BaseStarCollection):
 
     def find_names_from_expression(self, regex: str) -> pymongo.cursor.Cursor:
         return self.collection.find({'aliases': {"$regex": f"{regex}", "$options": "i"}})
+
+    def get_ids_for_name_type(self, name_type: str) -> list[str]:
+        if name_type not in indexed_name_types:
+            raise ValueError(f"{name_type} is not a valid name type.")
+        return self.collection.find({name_type: {"$exists": True}}).distinct('_id')
 
     def update_aliases(self, main_id: str, new_aliases: list[str]) -> pymongo.results.UpdateResult:
         old_doc = self.collection.find_one({"_id": main_id})

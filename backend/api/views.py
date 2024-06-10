@@ -1,7 +1,7 @@
 from django.views import View
 from django.views.generic import TemplateView
-from django.http import JsonResponse
-from .mongo import normalizations_v2, available_elements_v2, available_catalogs_v2
+from django.http import JsonResponse, HttpResponse
+from .mongo import normalizations_v2, available_elements_v2, available_catalogs_v2, get_star_data_v2
 
 
 class HomeView(TemplateView):
@@ -31,8 +31,8 @@ class Star(View):
     def get(self, request):
         query_dict_names = request.GET.getlist('name', None)
         if query_dict_names:
-            names = query_dict_names
+            names_queried = query_dict_names
         else:
-            names = list(request.GET.keys())
-        print(names)
-        return JsonResponse({"received names": names}, safe=False)
+            names_queried = list(request.GET.keys())
+        # remove any spaces in the names to match the database format
+        return JsonResponse(get_star_data_v2(star_names=names_queried), safe=False)
