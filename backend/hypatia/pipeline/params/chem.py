@@ -12,7 +12,7 @@ class ElementStats:
         self.catalog_list = []
         self.catalogs = {}
         self.len = 0
-        self.mean = self.median = self.max = self.min = self.spread = self.plusminus = self.std = None
+        self.mean = self.median = self.max = self.min = self.spread = self.plusminus = self.std = self.median_catalogs = None
 
     def add_value(self, value: float, catalog: str):
         formatted_value = np.around(float(value), decimals=3)
@@ -26,6 +26,7 @@ class ElementStats:
             pass
         elif self.len < 2:
             self.mean = self.median = self.max = self.min = self.value_list[0]
+            self.median_catalogs = [self.catalog_list[0]]
         else:
             self.mean = np.around(np.mean(self.value_list), decimals=3)
             self.median = np.around(np.median(self.value_list), decimals=3)
@@ -33,6 +34,13 @@ class ElementStats:
             self.min = np.min(self.value_list)
             self.spread = np.around(self.max - self.min, decimals=3)
             self.plusminus = np.around(self.spread / 2.0, decimals=2)
+            value_list_sorted, catalog_list_sorted = zip(*sorted(zip(self.value_list, self.catalog_list)))
+            half_index, remainder = divmod(len(value_list_sorted), 2)
+            if remainder == 0:
+                median_slice = slice(half_index - 1, half_index + 1)
+            else:
+                median_slice = slice(half_index, half_index + 1)
+            self.median_catalogs = catalog_list_sorted[median_slice]
             if self.len > 2:
                 self.std = params_err_format(np.std(self.value_list), sig_figs=3)
         if self.plusminus is None or self.plusminus == 0.0:

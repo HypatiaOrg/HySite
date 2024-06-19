@@ -7,9 +7,14 @@ from hypatia.tools.table_read import row_dict
 
 
 plusminus_error_default = 0.001
-elements_that_end_in_h = {'bh', 'rh', 'th', 'h'}
-# elements_that_end_in_i = {'li', 'si', 'ti', 'ni', 'bi'}
-expected_ion_states = ["IV", "III", 'II']
+elements_that_end_in_h = {'bh', 'rh', 'th', 'nh', 'h'}
+ambiguous_ion_elements = {frozenset({'s', 'si'}), frozenset({'n', 'ni'}), frozenset({'b', 'bi'})}
+elements_that_end_in_i = {'li', 'si', 'ti', 'ni', 'bi', 'i'}
+single_letter_elements_with_same_first_letter = {'s', 'n', 'b', 'i'}
+
+expected_ion_states_upper = ["IV", "III", 'II']
+expected_ion_states = [state.lower() for state in expected_ion_states_upper]
+
 float_params = {"ionization_energy_ev", 'average_mass_amu'}
 elements_found = set()
 # from the chemical data CSV file
@@ -23,18 +28,102 @@ with open(element_plusminus_error_file, 'rb') as f:
     plusminus_error = {key.lower(): float(value) for key, value in tomllib.load(f).items()}
 
 
-def under_score_clean_up(a_string: str) -> str:
-    while "__" in a_string:
-        a_string = a_string.replace("__", "_")
-    return a_string
-
-
 summary_dict = {}
 for el_name, el_dict in element_csv.items():
     el_name_lower = el_name.lower()
     # make a shallow copy of the element dictionary as a part of this data export
     el_data = {**el_dict, "abbreviation": el_name, "plusminus": plusminus_error.get(el_name_lower, plusminus_error_default)}
     summary_dict[el_name_lower] = el_data
+
+
+def under_score_clean_up(a_string: str) -> str:
+    while "__" in a_string:
+        a_string = a_string.replace("__", "_")
+    return a_string.strip('_')
+
+
+def is_one_uppercase(string: str) -> bool:
+    for char in string:
+        if char.isupper():
+            return True
+    return False
+
+
+def ion_state_by_underscore(user_element_lower: str) -> str | None:
+    if "_" in user_element_lower:
+        for possible_ion_state in user_element_lower.split("_"):
+            if possible_ion_state in expected_ion_states:
+                return possible_ion_state
+    return None
+
+
+def format_found_ion_state(user_element: str, user_element_lower: str, ion_state: str) -> tuple[str, str]:
+    start_index = user_element_lower.find(ion_state)
+    return under_score_clean_up(user_element[:start_index] + user_element[start_index + len(ion_state):]), ion_state
+
+
+def find_possible_ion_states(user_element_lower: str) -> set[str]:
+    possible_ion_states = set()
+    for possible_ion_state in expected_ion_states:
+        if user_element_lower.endswith(possible_ion_state):
+            possible_ion_states.add(possible_ion_state)
+    return possible_ion_states
+
+
+def ion_state_unambiguous_case_insensitive(user_element_lower: str) -> str | None:
+    """It is expected that this is an ion state to detect, but this only will return the ion state if found."""
+    possible_element_names = set()
+    for element_name in summary_dict.keys():
+        if user_element_lower.startswith(element_name):
+            possible_element_names.add(element_name)
+    possible_element_names_len = len(possible_element_names)
+    if possible_element_names_len == 0:
+        raise ValueError(f"Element {user_element_lower} not found in the element dictionary.")
+    if possible_element_names_len > 2:
+        raise ValueError(f"Element {user_element_lower} has too many match, found {len(possible_element_names)} possible matches.")
+    if possible_element_names_len == 2:
+        if frozenset(possible_element_names) in ambiguous_ion_elements:
+            possible_ion_states = find_possible_ion_states(user_element_lower)
+            if any([a_state.startswith('i') for a_state in possible_ion_states]):
+                # this is an ambiguous case, so we will not return a value
+                return None
+        # use the longer element name
+        element_name = max(possible_element_names, key=len)
+    else:
+        element_name = possible_element_names.pop()
+    ion_state_sub_string = user_element_lower[len(element_name):]
+    possible_ion_states = find_possible_ion_states(ion_state_sub_string)
+    # use the only ion state found
+    if len(possible_ion_states) == 1:
+        return possible_ion_states.pop()
+    # this is an ambiguous case, so we will not return a value
+    return None
+
+
+def ion_state_parse(user_element: str) -> tuple[str, str | None]:
+    """
+    Parse the ion state from the user input string, there are a lot of special cases, so use this function as a
+    last try to parse the ion state from the user input string.
+    """
+    if len(user_element) < 2:
+        # ionization states require at least two or more characters
+        return user_element, None
+    user_element_lower = user_element.lower()
+    found_ion_state = ion_state_by_underscore(user_element_lower)
+    if found_ion_state is not None:
+        return format_found_ion_state(user_element, user_element_lower, found_ion_state)
+    # can it be parsed ignoring case?
+    found_ion_state = ion_state_unambiguous_case_insensitive(user_element_lower)
+    if found_ion_state is not None:
+        return format_found_ion_state(user_element, user_element_lower, found_ion_state)
+    # since there are no underscores in the user input string, we will try to find the ion state by the last uppercase
+    if user_element[-1].isupper():
+        # this is not a single letter element, so ending in an uppercase letter is a strong indicator of an ion state
+        for possible_ion_state_upper in expected_ion_states_upper:
+            if user_element.endswith(possible_ion_state_upper):
+                return format_found_ion_state(user_element, user_element_lower, possible_ion_state_upper.lower())
+    # This ion state was not a parsable or did not exist.
+    return user_element, None
 
 
 class ElementID(NamedTuple):
@@ -69,10 +158,10 @@ class ElementID(NamedTuple):
             element_string = element_string[4:].strip("_")
         # strip out the uppercase ionization state numerals
         for numeral_str in expected_ion_states:
-            if numeral_str in element_string:
-                ion_state = numeral_str.lower()
-                element_string = element_string.replace(numeral_str, '')
-                element_string_lower = element_string.lower().strip('_')
+            if element_string_lower.endswith(numeral_str):
+                # this triggers a special case detection system
+                element_string, ion_state = ion_state_parse(element_string)
+                element_string_lower = element_string.lower()
                 break
         else:
             ion_state = None

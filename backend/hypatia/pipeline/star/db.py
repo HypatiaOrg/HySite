@@ -1,4 +1,5 @@
 import time
+from itertools import product
 
 from hypatia.collect import BaseStarCollection
 from hypatia.elements import element_rank, ElementID
@@ -117,6 +118,14 @@ single_abundance = {
                 "bsonType": "double",
                 "description": "a float value for the abundance",
             },
+        },
+    },
+    'median_catalogs': {
+        "bsonType": "array",
+        "description": "The catalogs that contain the median value",
+        "items": {
+            "bsonType": "string",
+            "description": "The name of the catalog",
         },
     },
 }
@@ -288,32 +297,8 @@ class HypatiaDB(BaseStarCollection):
         },
     }
 
-    v2_null_star_record = {
-        "status": "not-found",
-        "hip": None,
-        "hd": None,
-        "bd": None,
-        "spec": None,
-        "vmag": None,
-        "bv": None,
-        "dist": None,
-        "ra": None,
-        "dec": None,
-        "x": None,
-        "y": None,
-        "z": None,
-        "disk": None,
-        "u": None,
-        "v": None,
-        "w": None,
-        "teff": None,
-        "logg": None,
-        "2MASS": None,
-        "ra_proper_motion": None,
-        "dec_proper_motion": None,
-        "bmag": None,
-        "planets": None,
-    }
+    def __len__(self):
+        return self.collection.count_documents({})
 
     def create_indexes(self):
         # self.collection_add_index(index_name='_id', ascending=True, unique=True)
@@ -452,15 +437,32 @@ class HypatiaDB(BaseStarCollection):
             raise ValueError(f"{name_type} is not a valid name type.")
         return self.collection.find({f'names.{name_type}': {"$exists": True}}).distinct('_id')
 
-    def star_data_v2(self, star_names: list[str]) -> list[dict]:
-        db_formatted_names_dict = {name: name.replace(' ', '').lower() for name in star_names}
-        db_formatted_names = sorted(set(db_formatted_names_dict.values()))
-        json_pipeline = [
-            {'$match': {
+    @staticmethod
+    def pipeline_add_starname_match(db_formatted_names: list[str]):
+        return {
+            '$match': {
                 'aliases': {
                     '$in': db_formatted_names,
                 }
-            }},
+            }
+        }
+
+    @staticmethod
+    def pipeline_match_name(db_formatted_names: list[str]):
+        return {
+            '$first': {
+                '$filter': {
+                    'input': '$aliases',
+                    'as': 'alias',
+                    'cond': {'$in': ['$$alias', db_formatted_names]},
+                    'limit': 1,
+                },
+            },
+        },
+
+    def star_data_v2(self, db_formatted_names: list[str]) -> list[dict]:
+        json_pipeline = [
+            self.pipeline_add_starname_match(db_formatted_names),
             {'$project': {
                 '_id': 0,
                 'name': '$_id',
@@ -509,57 +511,46 @@ class HypatiaDB(BaseStarCollection):
                         },
                     },
                 },
-                'match_name': {
-                    '$first': {
-                        '$filter': {
-                            'input': '$aliases',
-                            'as': 'alias',
-                            'cond': {'$in': ['$$alias', db_formatted_names]},
-                            'limit': 1,
-                        },
-                    },
-                },
+                'match_name': self.pipeline_match_name(db_formatted_names),
                 "status": "found",
             }},
         ]
-        star_data = {}
-        for found_data in self.collection.aggregate(json_pipeline):
-            match_name = found_data.pop('match_name')
-            star_data[match_name] = found_data
-        return_data_list = []
-        for star_name in star_names:
-            db_formatted_name = db_formatted_names_dict[star_name]
-            star_data_record = self.v2_null_star_record.copy()
-            star_data_record['requested_name'] = star_name
-            if db_formatted_name in star_data.keys():
-                star_data_record.update(star_data[db_formatted_name])
-            return_data_list.append(star_data_record)
-        return return_data_list
+        return self.collection.aggregate(json_pipeline)
 
-
-def make_iter_zip(u_norms: list, u_s_counts: list, u_by_element_counts: list):
-    norm_len = len(u_norms)
-    s_count_len = len(u_s_counts)
-    by_el_len = len(u_by_element_counts)
-
-    all_norms = u_norms * s_count_len * by_el_len
-    half_s_counts = []
-    for star_value in u_s_counts:
-        half_s_counts.extend(norm_len * [star_value])
-    all_s_counts = half_s_counts * by_el_len
-    all_by_el_counts = []
-    for element_val in u_by_element_counts:
-        all_by_el_counts.extend(norm_len * s_count_len * [element_val])
-    return zip(all_norms, all_s_counts, all_by_el_counts)
+    def abundance_data_v2(self, db_formatted_names: list[str],
+                          norm_keys: list[str],
+                          element_strings_unique: list[str],
+                          do_absolute: bool = False) -> dict:
+        requested_fields = {f'{norm_key}.{element_string}': f'$normalizations.{norm_key}.{element_string}'
+                            for (norm_key, element_string) in product(set(norm_keys), set(element_strings_unique))}
+        if do_absolute:
+            for element_string in element_strings_unique:
+                requested_fields[f'absolute.{element_string}'] = f'$absolute.{element_string}'
+        json_pipeline = [
+            self.pipeline_add_starname_match(db_formatted_names),
+            {'$project': {
+                '_id': 0,
+                'name': '$_id',
+                'match_name': self.pipeline_match_name(db_formatted_names)[0],
+                'all_names': '$names.aliases',
+                'nea_name': {
+                    '$ifNull': ['$nea.nea_name', "unknown"]
+                },
+                **requested_fields,
+            }},
+        ]
+        raw_results = list(self.collection.aggregate(json_pipeline))
+        return {doc['match_name']: doc for doc in raw_results}
 
 
 if __name__ == '__main__':
+    from itertools import product
     hypatiaDB = HypatiaDB(db_name='public', collection_name='hypatiaDB')
     # hypatiaDB.reset()  # WARNING: This will delete all data in the collection
     u_norms = ["absolute", 'lodders09', 'original']
     u_s_counts = [False, True]
     u_by_element_counts = [False, True]
-    for index_count, (norm, do_s_count, do_by_el_count) in list(enumerate(make_iter_zip(u_norms, u_s_counts, u_by_element_counts))):
+    for index_count, (norm, do_s_count, do_by_el_count) in list(enumerate(product(u_norms, u_s_counts, u_by_element_counts))):
         test_return = hypatiaDB.get_abundance_count(norm_key=norm, by_element=do_s_count, count_stars=do_by_el_count)
         print(f'{index_count + 1:2}.) Using {norm} norm, counting {"stars" if do_s_count else "abundance measurements"} as a fucntions of {"chemical elements" if do_by_el_count else "The entire database"} ')
         print(f'      {test_return}\n')
