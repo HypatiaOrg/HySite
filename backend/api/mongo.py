@@ -82,11 +82,19 @@ available_wds_stars = summary_doc['ids_with_wds_names']
 """functions to distribute data"""
 
 
-def get_norm_data(norm_key: str) -> dict | None:
+def get_norm_key(norm_key: str) -> str | None:
     norm_key = str(norm_key).lower()
     if norm_key in renamed_norms:
-        norm_key = renamed_norms[norm_key]
-    elif norm_key not in normalizations.keys():
+        return renamed_norms[norm_key]
+    elif norm_key in normalizations.keys():
+        return norm_key
+    else:
+        return None
+
+
+def get_norm_data(norm_key: str) -> dict | None:
+    norm_key = get_norm_key(norm_key)
+    if norm_key is None:
         return None
     return normalizations[norm_key]
 

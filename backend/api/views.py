@@ -2,7 +2,7 @@ from django.views import View
 from django.views.generic import TemplateView
 from django.http import JsonResponse, HttpResponse
 from .mongo import (normalizations_v2, available_elements_v2, available_catalogs_v2, get_star_data_v2,
-                    get_abundance_data_v2, element_parse_v2, get_norm_data, max_unique_star_names)
+                    get_abundance_data_v2, element_parse_v2, get_norm_key, max_unique_star_names)
 
 
 class HomeView(TemplateView):
@@ -44,15 +44,17 @@ class Composition(View):
         star_names_list = request.GET.getlist('name', None)
         elements_list = request.GET.getlist('element', None)
         solar_norms_list = request.GET.getlist('solarnorm', None)
-        if not all([star_names_list, elements_list, solar_norms_list]):
+        if not all([star_names_list, elements_list]):
             return HttpResponse(
                 'Invalid query parameters, expected three arrays (lists) of the same length named "name", "element", and "solarnorm" ',
                 status=400)
+        if not solar_norms_list:
+            solar_norms_list = ['lodders09'] * len(star_names_list)
         # The Legacy API required three equal length lists of star names, elements, and solar normalizations.
         elif not (len(star_names_list) == len(elements_list) == len(solar_norms_list)):
             return HttpResponse(
                 f'Invalid query parameters, expected three arrays (lists) of the same length named "name", "element", '
-                f'and "solarnorm" got lenghts {len(star_names_list)}, {len(elements_list)}, '
+                f'and "solarnorm" got lengths {len(star_names_list)}, {len(elements_list)}, '
                 f'and {len(solar_norms_list)}',
                 status=400)
         # since repeated values in the query are allowed, we need to make sure we only query unique values
@@ -72,7 +74,7 @@ class Composition(View):
                     f'the parsing result was {element_id}', status=400)
             element_ids_unique.add(element_id)
             # solar norms are minimally parsed and checked for validity
-            solarnorm_id = get_norm_data(solar_norm)
+            solarnorm_id = get_norm_key(solar_norm)
             if solarnorm_id is None:
                 return HttpResponse(
                     f'Failed to parse the received solar norm: {solar_norm}, '
@@ -82,7 +84,7 @@ class Composition(View):
             user_request_id = (star_name, element_str, solar_norm)
             db_result_id = (star_name_db_format, element_id, solarnorm_id)
             request_to_database_format[user_request_id] = db_result_id
-        if max_unique_star_names > len(star_names_db_unique):
+        if max_unique_star_names < len(star_names_db_unique):
             return HttpResponse(
                 f'Invalid query parameters, expected less than {max_unique_star_names} unique star names, got {len(star_names_list)}',
                 status=400)
