@@ -1,5 +1,5 @@
 services:
-    mongoDB:
+    mongo-db:
         image: mongo
         restart: "${RESTART_POLICY:-no}"
         healthcheck:
@@ -16,15 +16,29 @@ services:
             - type: bind
               source: ./mongo
               target: /data/db
-        ports:
-            # open a port on the localhost computer for using the API outside a docker container
-            - "27017:27017"
+        # open a port on the localhost computer for using the API outside a docker container
+        ports: ["27017:27017"]
         profiles: ["db"]
 
-    djangoAPI:
+    web-to-py:
+        image: ghcr.io/hypatiaorg/hyapp:LATEST
+        build:
+            context: ./web2py
+        pull_policy: always
+        restart: "${RESTART_POLICY:-no}"
+        volumes:
+            # The web2 py app needs to read and write files, it uses the file system as a database
+            # we must write file locally for them to persist between builds.
+            - ./web2py:/home/web2py/web2py:rw
+        # the first command to run when the container starts, start the gunicorn server
+        command: ["python", "anyserver.py", "-s", "gunicorn", "-i", "0.0.0.0", "-p", "8222"]
+        # ports: ["8222:8222"]
+        profiles: ["dual"]
+
+    django-api:
         build: ./backend
-        ports:
-            - "8000:8000"
+        restart: "${RESTART_POLICY:-no}"
+        # ports: ["8111:8111"]
         environment:
             DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY}"
             MONGO_USERNAME: "${MONGO_USERNAME}"
@@ -34,34 +48,15 @@ services:
         volumes:
             # django-static is written at build time by the SpExWebsite Dockerfile
             - "django-static:/app/static_root:rw"
-            - "./hypatia/HyData:/app/hypatia/HyData"
+        command: ["gunicorn", "core.wsgi", "--bind", "0.0.0.0:8111"]
     nginx:
         image: nginx:latest
         restart: "${RESTART_POLICY:-no}"
         ports:
-            - "80:80"
+            - "${LOCAL_PORT:-80}:80"
         volumes:
             - "./nginx/default.conf:/etc/nginx/conf.d/default.conf"
-            # the Keys for https encryption
-            - ssl_keys:/etc/letsencrypt
-            # One the Server is needed to verify the challenge to website ownership
-            - ssl_challenge:/var/www/certbot/.well-known:rw
             - "django-static:/django/static_root:ro"
-        depends_on:
-            djangoAPI:
-                condition: service_healthy
-
-    certbot:
-        image: certbot/certbot
-        volumes:
-            - ssl_keys:/etc/letsencrypt:rw
-            - ssl_challenge:/var/www/certbot/.well-known:rw
-        command: ["certonly", "--webroot", "--webroot-path=/var/www/certbot", "--email", "chw3k5@gmail.com", "--agree-tos", "--no-eff-email", "-d", "hypatiacatalog.com", "-d", "www.hypatiacatalog.com"]
-        depends_on:
-            - nginx
-        profiles: ["deploy"]
 
 volumes:
-    ssl_keys:
-    ssl_challenge:
     django-static:

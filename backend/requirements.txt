@@ -12,3 +12,4 @@ python-dotenv
 # Required for the web interface
 django
 djongo
+gunicorn

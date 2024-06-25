@@ -41,6 +41,7 @@ if DEBUG:
 ALLOWED_HOSTS = [
     'hypatiacatalog.com',
     'www.hypatiacatalog.com',
+    'new.hypatiacatalog.com',
 ]
 if DEBUG:
     ALLOWED_HOSTS.append("localhost")
@@ -131,14 +132,13 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.0/howto/static-files/
-
-STATIC_URL = 'static/'
+STATIC_URL = 'hypatia/api/static/'
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "core", "static"),
 ]
 
+STATIC_ROOT = os.path.join(BASE_DIR, "static_root")
 
 
 # Default primary key field type
