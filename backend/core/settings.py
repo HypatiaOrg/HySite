@@ -42,6 +42,7 @@ ALLOWED_HOSTS = [
     'hypatiacatalog.com',
     'www.hypatiacatalog.com',
     'new.hypatiacatalog.com',
+    'django-api',
 ]
 if DEBUG:
     ALLOWED_HOSTS.append("localhost")

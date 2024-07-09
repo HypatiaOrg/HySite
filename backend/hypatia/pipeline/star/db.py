@@ -1,5 +1,4 @@
 import time
-from itertools import product
 
 from hypatia.collect import BaseStarCollection
 from hypatia.elements import element_rank, ElementID
@@ -436,6 +435,9 @@ class HypatiaDB(BaseStarCollection):
         if name_type not in indexed_name_types:
             raise ValueError(f"{name_type} is not a valid name type.")
         return self.collection.find({f'names.{name_type}': {"$exists": True}}).distinct('_id')
+
+    def get_ids_for_nea(self) -> list[str]:
+        return self.collection.find({'nea': {"$exists": True}}).distinct('_id')
 
     @staticmethod
     def pipeline_add_starname_match(db_formatted_names: list[str]):

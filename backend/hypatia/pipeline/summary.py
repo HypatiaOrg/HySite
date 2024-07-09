@@ -187,6 +187,14 @@ class SummaryCollection(BaseCollection):
                         "description": "must be a string for the main identifier of a star that has a WDS name"
                     },
                 },
+                'ids_with_nea_names': {
+                    "bsonType": "array",
+                    "description": "must be an array of strings",
+                    "items": {
+                        "bsonType": "string",
+                        "description": "must be a string for the main identifier of a star that has a NEA name"
+                    },
+                },
             },
         },
     }
@@ -199,7 +207,8 @@ class SummaryCollection(BaseCollection):
 
 def upload_summary(found_elements: set[ElementID] = None, found_element_nlte: set[ElementID] = None,
                    catalogs_file_name: str = default_catalog_file, found_catalogs: set[str] = None,
-                   found_normalizations: set[str] = None, ids_with_wds_names: set[str] = None):
+                   found_normalizations: set[str] = None, ids_with_wds_names: set[str] = None,
+                   ids_with_nea_names: set[str] = None):
     if found_elements is None:
         found_elements = set()
     if found_element_nlte is None:
@@ -210,6 +219,8 @@ def upload_summary(found_elements: set[ElementID] = None, found_element_nlte: se
         found_normalizations = set()
     if ids_with_wds_names is None:
         ids_with_wds_names = set()
+    if ids_with_nea_names is None:
+        ids_with_nea_names = set()
     summary_db = SummaryCollection(db_name='public', collection_name='summary')
     summary_db.reset()
 
@@ -230,7 +241,8 @@ def upload_summary(found_elements: set[ElementID] = None, found_element_nlte: se
                           for el in sorted(found_element_nlte, key=element_rank)],
         'catalogs': catalog_data,
         'normalizations': normalizations,
-        'ids_with_wds_names': sorted(ids_with_wds_names)
+        'ids_with_wds_names': sorted(ids_with_wds_names),
+        'ids_with_nea_names': sorted(ids_with_nea_names),
     }
     summary_db.add_one(doc)
 

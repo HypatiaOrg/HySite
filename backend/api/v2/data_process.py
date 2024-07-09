@@ -1,5 +1,4 @@
-from hypatia.pipeline.star.db import HypatiaDB
-from hypatia.pipeline.summary import SummaryCollection
+from api.db import hypatia_db, summary_doc, normalizations, catalogs
 from hypatia.elements import ElementID, element_rank, elements_that_end_in_h
 
 
@@ -50,15 +49,6 @@ v2_null_star_record = {
 
 null_abundance_record = {'name': 'not-found'}
 
-"""Instances that can get data from the database."""
-summary_db = SummaryCollection(db_name='public', collection_name='summary')
-hypatia_db = HypatiaDB(db_name='public', collection_name='hypatiaDB')
-# star_collection = StarCollection(db_name='public', collection_name='stars')
-
-"""Use and unpack all database summary information."""
-summary_doc = summary_db.get_summary()
-# normalizations
-normalizations = summary_doc['normalizations']
 normalizations_v2 = [{'id': norm_key} | {prop: norm_data[prop] if prop in norm_data.keys() else None
                                          for prop in norm_props}
                      for norm_key, norm_data in normalizations.items()]
@@ -66,7 +56,6 @@ normalizations_v2 = [{'id': norm_key} | {prop: norm_data[prop] if prop in norm_d
 available_elements_v2 = summary_doc['chemicals_uploaded']
 
 # available catalogs
-catalogs = summary_doc['catalogs']
 available_catalogs_v2 = [cat_dict for cat_dict in catalogs.values()]
 
 # total number of stars in the database
@@ -78,10 +67,14 @@ max_unique_star_names = 10000 + total_stars
 # available WDS stars in the database
 available_wds_stars = summary_doc['ids_with_wds_names']
 
+# available NEA names in the database
+available_nea_names = summary_doc['ids_with_nea_names']
 
-"""functions to distribute data"""
+# total number of abundance values in the database
+total_abundance_count = hypatia_db.get_abundance_count(norm_key='absolute', by_element=False, count_stars=False)['absolute']
 
 
+# functions to distribute data
 def get_norm_key(norm_key: str) -> str | None:
     norm_key = str(norm_key).lower()
     if norm_key in renamed_norms:
@@ -235,6 +228,7 @@ if __name__ == '__main__':
 
     test_abundance = get_abundance_data_v2(
         star_names_db_unique={'hip12345', 'hip56789', 'hip113044', 'hip22453', '*6lyn'},
-        element_ids_unique={ElementID.from_str('Fe'), ElementID.from_str('Li'), ElementID.from_str('Ti'), ElementID.from_str('baii')},
+        element_ids_unique={ElementID.from_str('Fe'), ElementID.from_str('Li'),
+                            ElementID.from_str('Ti'), ElementID.from_str('baii')},
         solar_norms_unique={'lodders09', 'original', 'absolute', 'grevesse07'},
     )

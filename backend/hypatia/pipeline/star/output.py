@@ -601,6 +601,8 @@ class OutputStarData(AllStarData):
         found_catalogs = hypatia_db.added_catalogs
         found_normalizations = hypatia_db.added_normalizations
         ids_with_wds_names = set(hypatia_db.get_ids_for_name_type('wds'))
+        ids_with_nea_names = set(hypatia_db.get_ids_for_nea())
         upload_summary(found_elements=found_elements, found_element_nlte=found_element_nlte,
                        catalogs_file_name=catalogs_file_name, found_catalogs=found_catalogs,
-                       found_normalizations=found_normalizations, ids_with_wds_names=ids_with_wds_names)
+                       found_normalizations=found_normalizations,
+                       ids_with_wds_names=ids_with_wds_names, ids_with_nea_names=ids_with_nea_names)
