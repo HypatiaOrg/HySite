@@ -201,3 +201,9 @@ def element_rank(element_record: ElementID) -> float:
 
 def get_representative_error(element_id: ElementID) -> float:
     return plusminus_error.get(element_id.name_lower, plusminus_error_default)
+
+
+hydrogen_id = ElementID.from_str("H")
+iron_id = ElementID.from_str("Fe")
+iron_ii_id = ElementID.from_str("Fe_II")
+iron_nlte_id = ElementID.from_str("NLTE_Fe")

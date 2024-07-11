@@ -2,11 +2,9 @@ import os
 
 from hypatia.config import ref_dir
 from hypatia.tools.table_read import row_dict
-from hypatia.elements import summary_dict, element_rank, ElementID
+from hypatia.elements import summary_dict, element_rank, ElementID, iron_id, iron_ii_id
 
-iron_id = ElementID.from_str("Fe")
-iron_ii_id = ElementID.from_str("Fe_II")
-iron_nlte_id = ElementID.from_str("NLTE_Fe")
+
 iron_set = {iron_id, iron_ii_id}
 element_abrevs = set(summary_dict.keys())
 
@@ -172,7 +170,7 @@ class SolarNorm:
         return {norm_key: {**self.ref_data[norm_key], 'values': {str(el_id): solar_norm_dict[norm_key][el_id]
                                                                  for el_id in sorted(self.sol_abund[norm_key].keys(),
                                                                                      key=element_rank)},
-                           'notes': f'This key provides data that is normalized to the Sun using values from {self.ref_data[norm_key]['author']}'}
+                           'notes': f'This key provides data that is normalized to the Sun using values from {self.ref_data[norm_key]["author"]}'}
                 for norm_key in norm_keys}
 
 

@@ -1,7 +1,7 @@
 from django.urls import path
 
 from api.views import HomeView
-from api.web2py.views import Web2pyHome
+from api.web2py.views import Web2pyHome, Summary
 from api.v2.views import Data, Composition, Star, SolarNorm, AvailableElements, AvailableCatalogs
 
 urlpatterns = [
@@ -12,5 +12,6 @@ urlpatterns = [
     path('v2/element/', AvailableElements.as_view(), name='element'),
     path('v2/catalog/', AvailableCatalogs.as_view(), name='catalog'),
     path('web2py/home/', Web2pyHome.as_view(), name='web2py-home'),
+    path('web2py/summary/', Summary.as_view(), name='web2py-summary'),
     path('', HomeView.as_view(), name='index'),
 ]

@@ -1,7 +1,6 @@
 import os
 import tomllib
 from typing import NamedTuple
-from operator import attrgetter
 from collections import UserDict
 
 import numpy as np

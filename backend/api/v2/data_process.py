@@ -56,7 +56,16 @@ normalizations_v2 = [{'id': norm_key} | {prop: norm_data[prop] if prop in norm_d
 available_elements_v2 = summary_doc['chemicals_uploaded']
 
 # available catalogs
-available_catalogs_v2 = [cat_dict for cat_dict in catalogs.values()]
+available_catalogs_v2 = []
+repeat_count = {}
+for cat_dict in [cat_dict for cat_dict in catalogs.values()]:
+    author = cat_dict['author']
+    if author in repeat_count.keys():
+        cat_dict['author'] = f"{author} - Repeat Observations {repeat_count[author]}"
+        repeat_count[author] += 1
+    else:
+        repeat_count[author] = 1
+    available_catalogs_v2.append(cat_dict)
 
 # total number of stars in the database
 total_stars = len(hypatia_db)

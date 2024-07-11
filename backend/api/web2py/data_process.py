@@ -2,13 +2,20 @@ import re
 import random
 
 import numpy as np
-from roman import fromRoman, InvalidRomanNumeralError
 
+from api.db import summary_doc
+from hypatia.elements import ElementID, hydrogen_id
+from hypatia.legacy.data_formats import legacy_float, legacy_spectype
 from api.v2.data_process import (get_norm_key, get_norm_data, get_catalog_summary, total_stars, total_abundance_count,
-                                 available_wds_stars, available_nea_names, available_elements_v2, available_catalogs_v2)
+                                 available_wds_stars, available_nea_names, available_elements_v2, available_catalogs_v2,
+                                 normalizations_v2)
 
 
-planet_param_types = {"p", "m_p", "e", "a"}
+stellar_param_types_v2 = ['raj2000', 'decj2000', 'dist', 'x_pos', 'y_pos', 'z_pos', 'teff', 'logg',
+                          'sptype', 'vmag', 'bmag', 'bv', 'pm_ra', 'pm_dec', 'u_vel', 'v_vel', 'w_vel',
+                          'disk', 'mass', 'rad']
+planet_param_types_v2 = ["semi_major_axis", "eccentricity", "inclination", "pl_mass", "pl_radius"]
+ranked_string_params = {'sptype': 'sptype_num', 'disk': 'disk_num'}
 
 home_data = {
     'stars': total_stars,
@@ -19,71 +26,31 @@ home_data = {
     'abundances': total_abundance_count,
 }
 
+units_and_fields = summary_doc['units_and_fields']
+units_and_fields_v2 = {a_param: units_and_fields[a_param] for a_param
+                       in stellar_param_types_v2 + planet_param_types_v2 + list(ranked_string_params.values())}
 
-def legacy_int(x, invalid=None):
-    try:
-        return int(x)
-    except ValueError:
-        return invalid
-
-
-def legacy_float(x) -> float | None:
-    try:
-        return float(x)
-    except ValueError:
-        return None
+plot_norms = [{k: v for k, v in s_norm.items() if k != 'values'} for s_norm in normalizations_v2]
+chemical_ref = summary_doc['chemical_ref']
 
 
-def legacy_spectype(s):
-    if s is None:
-        return None
-    typechar = []
-    digits = []
-    romanNumerals = []
-    currDigit = ""
-    currRomanNumeral = ""
-    for char in s + " ":
-        if char == "F":
-            typechar.append(10)
-        elif char == "G":
-            typechar.append(20)
-        elif char == "K":
-            typechar.append(30)
-        elif char == "M":
-            typechar.append(40)
-
-        if char in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "."]:
-            currDigit += char
-        elif len(currDigit) > 0:
-            try:
-                test_num = float(currDigit)
-            except ValueError:
-                pass
-            else:
-                digits.append(test_num)
-            currDigit = ""
-
-        if char in ["I", "V", "X"]:
-            currRomanNumeral += char
-        elif len(currRomanNumeral) > 0:
-            try:
-                numeral = fromRoman(currRomanNumeral)
-            except InvalidRomanNumeralError:
-                pass
-            else:
-                romanNumerals.append(numeral)
-            currRomanNumeral = ""
-
-    firstType = 0
-    if len(typechar) > 0:
-        firstType = typechar[0]
-    firstDigit = 0
-    if len(digits) > 0:
-        firstDigit = digits[0]
-    firstRomanNumeral = 0
-    if len(romanNumerals) > 0:
-        firstRomanNumeral = float(romanNumerals[0])
-    return firstType + firstDigit + (firstRomanNumeral / 100)
+element_data = []
+for element_str_id in available_elements_v2:
+    element_id = ElementID.from_str(element_str_id)
+    ref_this_el = chemical_ref[element_id.name_lower]
+    if element_id.ion_state is None:
+        abbreviation = ref_this_el['abbreviation']
+        element_name = ref_this_el['element_name']
+    else:
+        upper_ion_state = element_id.ion_state.upper()
+        abbreviation = f"{ref_this_el['abbreviation']} ({element_id.ion_state.upper()})"
+        element_name = f"{ref_this_el['element_name']} ({element_id.ion_state.upper()})"
+    element_data.append({
+        'element_id': element_str_id,
+        'plusminus': ref_this_el['plusminus'],
+        'element_name': element_name,
+        'abbreviation': abbreviation,
+    })
 
 
 def check_filter(x, test_filter) -> bool:
@@ -99,16 +66,15 @@ def check_filter(x, test_filter) -> bool:
         return True
 
 
-def plot_query(graph_submit: bool, filter1_1: str, filter1_2: str, filter1_3: float | None, filter1_4: float | None,
+def plot_query(filter1_1: str, filter1_2: str, filter1_3: float | None, filter1_4: float | None,
                filter2_1: str, filter2_2: str, filter2_3: float | None, filter2_4: float | None,
                filter3_1: str, filter3_2: str, filter3_3: float | None, filter3_4: float | None,
-               xaxis1: str, xaxis2: str, yaxis1: str, yaxis2: str, zaxis1: str, zaxis2: str,
-               cat_action: str, star_action: str,
-               statistic: str, tablecols: list[str], tablesource: str,
-               xaxislog: bool, yaxislog: bool, zaxislog: bool, xaxisinv: bool, yaxisinv: bool, zaxisinv: bool,
                filter1_inv: bool, filter2_inv: bool, filter3_inv: bool,
-               solarnorm_id: str, normalize: bool, catalogs: list, mode: str)\
-        -> dict[str, any]:
+               mode: str, xaxis1: str, xaxis2: str, yaxis1: str, yaxis2: str, zaxis1: str, zaxis2: str,
+               cat_action: str, catalogs: list[str] | None,
+               star_action: str, star_list: list[str] | None,
+               solarnorm_id: str, normalize: bool
+               ) -> dict[str, any]:
     result = {}
 
     # define variables
@@ -150,19 +116,17 @@ def plot_query(graph_submit: bool, filter1_1: str, filter1_2: str, filter1_3: fl
 
     # parse the data types from the axis
     for axis_name, first_val, second_val in axes:
-        item_one_name = axis_name + "1"
-        item_two_name = axis_name + "2"
-        elements[item_one_name] = db(db.t_element.f_name == first_val + "H").select().first()
-        if elements[item_one_name]:
-            elements[item_one_name] = elements[item_one_name].id
-            if second_val != 'H':
-                elements[item_two_name] = db(db.t_element.f_name == second_val + "H").select().first()
-                if elements[item_two_name]:
-                    elements[item_two_name] = elements[item_two_name].id
+        if first_val in stellar_param_types:
+            stellarProps[axis_name] = first_val
         elif first_val in planet_param_types:
             planetProps[axis_name] = first_val
         else:
-            stellarProps[axis_name] = first_val
+            elements[axis_name + "1"] = ElementID.from_str(first_val)
+            denominator_element = ElementID.from_str(second_val)
+            if denominator_element != hydrogen_id:
+                elements[axis_name + "2"] = denominator_element
+
+
 
     # get compositions
     compositions = pd.read_hdf(os.path.join(HYP_DATA_DIR, "compositions.%s.h5" % solarnorm_id), "compositions")
@@ -176,34 +140,6 @@ def plot_query(graph_submit: bool, filter1_1: str, filter1_2: str, filter1_3: fl
 
     # include/exclude stars
     if star_list:
-        # convert all hds to hips
-        if star_source == "hd":
-            hdData = star_list.split(",")
-            hipData = []
-            stars = db(db.t_star.id > 0).select()
-            for hd in hdData:
-                star = stars.find(lambda s: s.f_hd_string == hd)
-                if star:
-                    hipData.append(star.first().f_hip)
-                else:
-                    star = stars.find(lambda s: hd in s.f_all_names)
-                    if star:
-                        hipData.append(star.first().f_hip)
-                # print(repr(hipData))
-        else:
-            # build the list of hips
-            hipDataWithNames = star_list.split(",")
-            hipData = []
-            stars = db(db.t_star.id > 0).select()
-            for hip in hipDataWithNames:
-                star = stars.find(lambda s: s.f_hipparcos == legacy_int(hip))
-                if star:
-                    hipData.append(star.first().f_hip)
-                else:
-                    star = stars.find(lambda s: hip in s.f_all_names)
-                    if star:
-                        hipData.append(star.first().f_hip)
-                # print(repr(hipData))
         if star_action == "exclude":
             compositions = compositions[~compositions.star_hip.isin(hipData)]
         else:
@@ -369,7 +305,6 @@ def plot_query(graph_submit: bool, filter1_1: str, filter1_2: str, filter1_3: fl
 
 def from_legacy(request):
     inputs = dict(request.vars)
-    graph_submit = request.vars.get('graph_submit', False)
     filter1_1 = inputs.get('filter1_1', 'none')
     filter1_2 = inputs.get('filter1_2', 'H')
     filter1_3 = legacy_float(inputs.get('filter1_3', None))
@@ -390,17 +325,6 @@ def from_legacy(request):
     zaxis2 = inputs.get('zaxis2', 'H')
     cat_action = inputs.get('cat_action', 'exclude')
     star_action = inputs.get('star_action', 'include')
-    statistic = inputs.get('statistic', 'median')
-    tablecols = inputs.get('tablecols', 'Fe,C,O,Mg,Si,S,Ca,Ti')
-    if isinstance(tablecols, str):
-        tablecols = tablecols.split(",")
-    tablesource = inputs.get('tablesource', 'graph')
-    xaxislog = bool(inputs.get('xaxislog', False))
-    yaxislog = bool(inputs.get('yaxislog', False))
-    zaxislog = bool(inputs.get('zaxislog', False))
-    xaxisinv = bool(inputs.get('xaxisinv', False))
-    yaxisinv = bool(inputs.get('yaxisinv', False))
-    zaxisinv = bool(inputs.get('zaxisinv', False))
     filter1_inv = bool(inputs.get('filter1_inv', False))
     filter2_inv = bool(inputs.get('filter2_inv', False))
     filter3_inv = bool(inputs.get('filter3_inv', False))
@@ -414,14 +338,10 @@ def from_legacy(request):
     mode = inputs.get('mode', None)
     if mode != "hist":
         mode = "scatter"
-    return plot_query(graph_submit=graph_submit,
-                      filter1_1=filter1_1, filter1_2=filter1_2, filter1_3=filter1_3, filter1_4=filter1_4,
+    return plot_query(filter1_1=filter1_1, filter1_2=filter1_2, filter1_3=filter1_3, filter1_4=filter1_4,
                       filter2_1=filter2_1, filter2_2=filter2_2, filter2_3=filter2_3, filter2_4=filter2_4,
                       filter3_1=filter3_1, filter3_2=filter3_2, filter3_3=filter3_3, filter3_4=filter3_4,
                       xaxis1=xaxis1, xaxis2=xaxis2, yaxis1=yaxis1, yaxis2=yaxis2, zaxis1=zaxis1, zaxis2=zaxis2,
                       cat_action=cat_action, star_action=star_action,
-                      statistic=statistic, tablecols=tablecols, tablesource=tablesource,
-                      xaxislog=xaxislog, yaxislog=yaxislog, zaxislog=zaxislog,
-                      xaxisinv=xaxisinv, yaxisinv=yaxisinv, zaxisinv=zaxisinv,
                       filter1_inv=filter1_inv, filter2_inv=filter2_inv, filter3_inv=filter3_inv,
                       solarnorm_id=solarnorm_id, normalize=normalize, catalogs=catalogs, mode=mode)

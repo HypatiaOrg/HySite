@@ -2,10 +2,12 @@ import copy
 import pickle
 
 
+from hypatia.object_params import SingleParam
 from hypatia.pipeline.star.db import HypatiaDB
 from hypatia.pipeline.star.all import AllStarData
 from hypatia.pipeline.summary import upload_summary
 from hypatia.sources.simbad.ops import get_star_data
+from hypatia.legacy.data_formats import legacy_spectype
 from hypatia.pipeline.params.filters import core_filter
 from hypatia.config import pickle_out, default_catalog_file
 from hypatia.plots.element_rad_plot import make_element_distance_plots
@@ -13,6 +15,8 @@ from hypatia.plots.element_rad_plot import make_element_distance_plots
 
 def load_pickled_output():
     return pickle.load(open(pickle_out, 'rb'))
+
+
 
 
 class OutputStarData(AllStarData):
@@ -594,6 +598,31 @@ class OutputStarData(AllStarData):
         hypatia_db = HypatiaDB(db_name='public', collection_name='hypatiaDB')
         hypatia_db.reset()
         for single_star in self:
+            available_params = single_star.params.available_params
+            if 'sptype' in available_params:
+                sptype_param = single_star.params.sptype
+                new_param = SingleParam.strict_format(param_name='sptype_num',
+                                                      value=legacy_spectype(single_star.params.sptype.value),
+                                                      ref=sptype_param.ref,
+                                                      units='')
+                single_star.params.update_param('sptype_num', new_param)
+            if 'disk' in available_params:
+                disk_param = single_star.params.disk
+                disk_num = None
+                if disk_param.value == 'thin':
+                    disk_num = 0
+                elif disk_param.value == 'thick':
+                    disk_num = 1
+                elif disk_param.value == 'N/A':
+                    pass
+                else:
+                    raise ValueError("Disk value not recognized.")
+                if disk_num is not None:
+                    new_param = SingleParam.strict_format(param_name='disk_num',
+                                                          value=disk_num,
+                                                          ref=disk_param.ref,
+                                                          units='')
+                    single_star.params.update_param('disk_num', new_param)
             hypatia_db.add_star(single_star)
         # add the summary and site-wide information
         found_elements = hypatia_db.added_elements

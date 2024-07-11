@@ -66,7 +66,8 @@ def format_for_mongo(host_data: dict) -> dict:
     else:
         # if no name was found, then we will try to interactively find the name
         if mirco_name_for_simbad is None:
-            print(f"This star's names ('{"', '".join(names_to_try)}') origin: nea")
+            names_str = str("', '".join(names_to_try))
+            print(f"This star's names ('{names_str}') origin: nea")
             found_id = interactive_name_menu(test_name="", test_origin="nea", aliases=names_to_try)
             # if one name was not found, then we will update all the names to try in the aliases
             star_collection.update_aliases(main_id=found_id, new_aliases=names_to_try)
