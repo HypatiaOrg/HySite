@@ -91,9 +91,3 @@ class Composition(View):
                              for (user_star_name, user_element_str, user_solar_norm), db_result_id
                              in request_to_database_format.items()],
                             safe=False)
-
-
-class Data(View):
-    def get(self, request):
-
-        return JsonResponse

@@ -1,10 +1,10 @@
 import time
 
 from hypatia.collect import BaseStarCollection
-from hypatia.elements import element_rank, ElementID
-from hypatia.sources.simbad.db import validator_star_doc, indexed_name_types
+from hypatia.elements import element_rank, ElementID, RatioID
 from hypatia.sources.simbad.query import simbad_coord_to_deg
 from hypatia.pipeline.star.single import SingleStar, ObjectParams
+from hypatia.sources.simbad.db import validator_star_doc, indexed_name_types
 
 
 single_star_param_double = {
@@ -201,6 +201,129 @@ nea_data = {
 }
 
 
+validator = {
+    "$jsonSchema": {
+        "bsonType": "object",
+        "title": "The validator schema for the StarName class",
+        "required": ["_id", "attr_name", "timestamp", "aliases"],
+        "description": "This is a Star level record for HypatiaCatalog.com the holds abundance and planetary data.",
+        "properties": {
+            "_id": {
+                "bsonType": "string",
+                "description": "must be a string and is required and unique"
+            },
+            "attr_name": {
+                "bsonType": "string",
+                "description": "must be a string and is required and unique"
+            },
+            "timestamp": {
+                "bsonType": "double",
+                "description": "must be a double and is required"
+            },
+            "ra": {
+                "bsonType": "double",
+                "description": "must be a double and is not required"
+            },
+            "dec": {
+                "bsonType": "double",
+                "description": "must be a double and is not required"
+            },
+            "hmsdms": {
+                "bsonType": "string",
+                "description": "must be a string and is not required"
+            },
+            'names': validator_star_doc,
+            "aliases": {
+                "bsonType": "array",
+                "minItems": 1,
+                "uniqueItems": True,
+                "description": "must be an array of string names that this star is known by",
+                "items": {
+                    "bsonType": "string",
+                    "description": "must be a string star name",
+                },
+            },
+            "stellar": {
+                "bsonType": "object",
+                "description": "An object with all the per-star data for a single star",
+                "additionalProperties": False,
+                "patternProperties": {
+                    ".+": {
+                        "bsonType": "object",
+                        "description": "A data object for a single stellar parameter, such as distance, mass, or radius",
+                        "required": ["curated", "all"],
+                        "additionalProperties": False,
+                        "properties": {
+                            "curated": {"oneOf": single_params},
+                            "all": {
+                                "bsonType": "array",
+                                "description": "The data records array for a single-star stellar-parameter",
+                                "minItems": 1,
+                                "items": {"oneOf": single_params},
+                            },
+                        },
+                    },
+                },
+            },
+            "nea": {
+                "bsonType": "object",
+                'description': 'The NASA Exoplanet Archive host-level data object',
+                'required': ['nea_name', "planet_letters", "planets"],
+                'properties': nea_data,
+            },
+            'absolute': chemical_abundances,
+            'normalizations': abundance_normalizations,
+            'nlte': {
+                "required": ["absolute"],
+                "description": "The validator schema for NLTE elements ",
+                'properties': {
+                    'absolute': chemical_abundances,
+                    'normalizations': abundance_normalizations,
+                },
+            },
+        },
+    },
+}
+
+
+def add_params_and_filters(match_filters: set[str] | None,
+                           value_filters: dict[str, tuple[float | None, float | None, bool]] | None,
+                           is_stellar: bool = True, base_path: str = None) -> list[dict]:
+    and_filters = []
+    if base_path is None:
+        if is_stellar:
+            base_path = f'stellar'
+        else:
+            base_path = 'nea.planets.v.planetary'
+    if match_filters:
+        for param_name_match in match_filters:
+            and_filters.append({f'stellar.{param_name_match}.curated.value': {'$ne': None}})
+    if value_filters:
+        for param_name, (min_value, max_value, exclude) in value_filters.items():
+            if base_path == '':
+                path = f'{param_name}.curated.value'
+            else:
+                path = f'{base_path}.{param_name}.curated.value'
+            if min_value is not None and max_value is not None:
+                if exclude:
+                    and_filters.append({'$or': [{path: {'$lt': min_value}},
+                                                {path: {'$gt': max_value}}]})
+                else:
+                    and_filters.append({path: {'$gte': min_value}})
+                    and_filters.append({path: {'$lte': max_value}})
+            elif min_value is not None:
+                if exclude:
+                    and_filters.append({path: {'$lt': min_value}})
+                else:
+                    and_filters.append({path: {'$gte': min_value}})
+            elif max_value is not None:
+                if exclude:
+                    and_filters.append({path: {'$gt': max_value}})
+                else:
+                    and_filters.append({path: {'$lte': max_value}})
+    return and_filters
+
+
 def get_normalization_field(norm_key: str):
     if norm_key == 'absolute':
         return 'absolute'
@@ -212,89 +335,7 @@ class HypatiaDB(BaseStarCollection):
     added_elements_nlte = set()
     added_catalogs = set()
     added_normalizations = set()
-    validator = {
-        "$jsonSchema": {
-            "bsonType": "object",
-            "title": "The validator schema for the StarName class",
-            "required": ["_id", "attr_name", "timestamp", "aliases"],
-            "description": "This is a Star level record for HypatiaCatalog.com the holds abundance and planetary data.",
-            "properties": {
-                "_id": {
-                    "bsonType": "string",
-                    "description": "must be a string and is required and unique"
-                },
-                "attr_name": {
-                    "bsonType": "string",
-                    "description": "must be a string and is required and unique"
-                },
-                "timestamp": {
-                    "bsonType": "double",
-                    "description": "must be a double and is required"
-                },
-                "ra": {
-                    "bsonType": "double",
-                    "description": "must be a double and is not required"
-                },
-                "dec": {
-                    "bsonType": "double",
-                    "description": "must be a double and is not required"
-                },
-                "hmsdms": {
-                    "bsonType": "string",
-                    "description": "must be a string and is not required"
-                },
-                'names': validator_star_doc,
-                "aliases": {
-                    "bsonType": "array",
-                    "minItems": 1,
-                    "uniqueItems": True,
-                    "description": "must be an array of string names that this star is known by",
-                    "items": {
-                        "bsonType": "string",
-                        "description": "must be a string star name",
-                    },
-                },
-                "stellar": {
-                    "bsonType": "object",
-                    "description": "An object with all the per-star data for a single star",
-                    "additionalProperties": False,
-                    "patternProperties": {
-                        ".+": {
-                            "bsonType": "object",
-                            "description": "A data object for a single stellar parameter, such as distance, mass, or radius",
-                            "required": ["curated", "all"],
-                            "additionalProperties": False,
-                            "properties": {
-                                "curated": {"oneOf": single_params},
-                                "all": {
-                                    "bsonType": "array",
-                                    "description": "The data records array for a single-star stellar-parameter",
-                                    "minItems": 1,
-                                    "items": {"oneOf": single_params},
-                                },
-                            },
-                        },
-                    },
-                },
-                "nea": {
-                    "bsonType": "object",
-                    'description': 'The NASA Exoplanet Archive host-level data object',
-                    'required': ['nea_name', "planet_letters", "planets"],
-                    'properties': nea_data,
-                },
-                'absolute': chemical_abundances,
-                'normalizations': abundance_normalizations,
-                'nlte': {
-                    "required": ["absolute"],
-                    "description": "The validator schema for NLTE elements ",
-                    'properties': {
-                        'absolute': chemical_abundances,
-                        'normalizations': abundance_normalizations,
-                    },
-                },
-            },
-        },
-    }
+    validator = validator
 
     def __len__(self):
         return self.collection.count_documents({})
@@ -440,11 +481,15 @@ class HypatiaDB(BaseStarCollection):
         return self.collection.find({'nea': {"$exists": True}}).distinct('_id')
 
     @staticmethod
-    def pipeline_add_starname_match(db_formatted_names: list[str]):
+    def pipeline_add_starname_match(db_formatted_names: list[str], exclude: bool = False) -> dict:
+        if exclude:
+            db_operator = '$nin'
+        else:
+            db_operator = '$in'
         return {
             '$match': {
                 'aliases': {
-                    '$in': db_formatted_names,
+                    f'{db_operator}': db_formatted_names,
                 }
             }
         }
@@ -543,6 +588,123 @@ class HypatiaDB(BaseStarCollection):
         ]
         raw_results = list(self.collection.aggregate(json_pipeline))
         return {doc['match_name']: doc for doc in raw_results}
+
+    def graph_data_v2(self, db_formatted_names: list[str] = None,
+                      db_formatted_names_exclude: bool = False,
+                      elements_returned: list[ElementID] = None,
+                      elements_match_filters: set[ElementID] = None,
+                      element_value_filters: dict[ElementID, tuple[float | None, float | None, bool]] = None,
+                      element_ratios_returned: list[RatioID] = None,
+                      element_ratios_value_filters: dict[RatioID, tuple[float | None, float | None, bool]] = None,
+                      stellar_params_returned: list[str] = None,
+                      stellar_params_match_filters: set[str] = None,
+                      stellar_params_value_filters: dict[str, tuple[float | None, float | None, bool]] = None,
+                      planet_params_returned: list[str] = None,
+                      planet_params_match_filters: set[str] = None,
+                      planet_params_value_filters: dict[str, tuple[float | None, float | None, bool]] = None,
+                      solarnorm_id: str = 'absolute',
+                      return_median: bool = True,
+                      catalogs: set[str] | None = None,
+                      catalog_exclude: bool = False,
+                      ) -> list:
+        if solarnorm_id == 'absolute':
+            norm_path = 'absolute'
+        else:
+            norm_path = f'normalizations.{solarnorm_id}'
+        if return_median:
+            el_value_path = 'median'
+        else:
+            el_value_path = 'mean'
+        is_planetary = any([planet_params_match_filters, planet_params_returned, planet_params_value_filters])
+        json_pipeline = []
+        # stage 1: match and range based filtering of per-star parameters
+        and_filters = []
+        if db_formatted_names:
+            and_filters.append({'aliases': {f"{'$nin' if db_formatted_names_exclude else '$in'}": db_formatted_names}})
+        if elements_match_filters:
+            for element_name in sorted(elements_match_filters, key=element_rank):
+                and_filters.append({f'{norm_path}.{element_name}': {'$ne': None}})
+        if element_value_filters and not catalogs:
+            # 'catalogs' triggers recalculation of values.
+            for element_name, (min_val, max_val, exclude) in element_value_filters.items():
+                if min_val is not None and max_val is not None:
+                    if exclude:
+                        and_filters.append({'$or': [{f'{norm_path}.{element_name}.{el_value_path}': {'$lt': min_val}},
+                                                    {f'{norm_path}.{element_name}.{el_value_path}': {'$gt': max_val}}]})
+                    else:
+                        and_filters.append({f'{norm_path}.{element_name}.{el_value_path}': {'$gte': min_val}})
+                        and_filters.append({f'{norm_path}.{element_name}.{el_value_path}': {'$lte': max_val}})
+        # add the stellar parameters filters
+        and_filters.extend(add_params_and_filters(match_filters=stellar_params_match_filters,
+                                                  value_filters=stellar_params_value_filters, is_stellar=True))
+        if is_planetary:
+            # only require that a star has at least one planet at this stage.
+            and_filters.append({f'nea': {'$ne': None}})
+        if and_filters:
+            # only add a pipline stage if there are filters to apply.
+            json_pipeline.append({'$match': {"$and": and_filters}})
+        # stage 2a: per-planetary data - requires unwinding for the multiple exoplanets from a single star
+        if is_planetary:
+            json_pipeline.append({'$unwind': {'path': {'$objectToArray': '$nea.planets'}}})
+            # stage 2b: per-planetary data match and range filtering
+            and_filters_planetary = add_params_and_filters(match_filters=planet_params_match_filters,
+                                                           value_filters=planet_params_value_filters, is_stellar=False)
+
+            if and_filters_planetary:
+                # only add a pipline stage if there are filters to apply.
+                json_pipeline.append({'$match': {'$and': and_filters_planetary}})
+
+        # stage 3a: calculation new field creation
+        add_fields = {}
+        if element_ratios_returned or element_ratios_value_filters:
+            for ratio_id in list(element_ratios_returned | element_ratios_value_filters.keys()):
+                ratio_str = f'{ratio_id.numerator}_{ratio_id.denominator}'
+                add_fields[ratio_str] = {
+                    '$round': [{
+                        '$subtract': [f'${norm_path}.{ratio_id.numerator}.{el_value_path}',
+                                      f'${norm_path}.{ratio_id.denominator}.{el_value_path}']},
+                        2
+                    ]
+                }
+        if catalogs:
+            pass
+        if add_fields:
+            json_pipeline.append({'$addFields': add_fields})
+
+        # stage 3b: new field match and range filtering
+        if element_ratios_value_filters:
+            and_filters_ratios = add_params_and_filters(
+                match_filters=None,
+                value_filters={f'{ratio_id.numerator}_{ratio_id.denominator}': filter_vals
+                               for ratio_id, filter_vals in element_ratios_value_filters.items()},
+                base_path='',
+            )
+            if and_filters_ratios:
+                json_pipeline.append({'$match': {'$and': and_filters_ratios}})
+
+        # stage 4: project the final data
+        return_doc = {
+            '_id': 0,
+            'name': '$_id',
+        }
+        if elements_returned:
+            for element_name in sorted(elements_returned, key=element_rank):
+                element_str = str(element_name)
+                return_doc[element_str] = f'${norm_path}.{element_str}.{el_value_path}'
+        if element_ratios_returned:
+            for ratio_id in element_ratios_returned:
+                return_doc[f'{ratio_id.numerator}_{ratio_id.denominator}'] = 1
+        if stellar_params_returned:
+            for param_name in stellar_params_returned:
+                return_doc[param_name] = f'$stellar.{param_name}.curated.value'
+        if planet_params_returned:
+            for param_name in planet_params_returned:
+                return_doc[param_name] = f'$nea.planets.v.planetary.{param_name}.value'
+        json_pipeline.append({'$project': return_doc})
+
+        # run the aggregation pipeline and return the results.
+        raw_results = list(self.collection.aggregate(json_pipeline))
+        return raw_results
 
 
 if __name__ == '__main__':

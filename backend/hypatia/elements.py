@@ -181,6 +181,32 @@ class ElementID(NamedTuple):
         return f"ElementID({self})"
 
 
+class RatioID(NamedTuple):
+    numerator: ElementID
+    denominator: ElementID
+
+    def __str__(self):
+        return f"[{self.numerator}/{self.denominator}]"
+
+    @classmethod
+    def from_str(cls, ratio_string: str = None, numerator_element: str = None, denominator_element: str = None):
+        if ratio_string is not None:
+            ratio_string = ratio_string.replace("[", "").replace("]", "")
+            ratio_elements = ratio_string.split("/")
+            if len(ratio_elements) != 2:
+                raise ValueError(f"Ratio string {ratio_string} does not have two elements.")
+            numerator_element = ratio_elements[0]
+            denominator_element = ratio_elements[1]
+        elif numerator_element is None:
+            raise ValueError("No ratio string or numerator element string provided.")
+        elif denominator_element is None:
+            denominator_element = "H"
+        return cls(numerator=ElementID.from_str(numerator_element), denominator=ElementID.from_str(denominator_element))
+
+    def __repr__(self):
+        return f"RatioID({self})"
+
+
 def element_rank(element_record: ElementID) -> float:
     """Use this key in a sorting list like : sorted(list[ElementRecord], key=element_rank)"""
     name_lower = element_record.name_lower

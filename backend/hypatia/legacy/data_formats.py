@@ -6,6 +6,8 @@ def legacy_float(x) -> float | None:
         return float(x)
     except ValueError:
         return None
+    except TypeError:
+        return None
 
 
 def legacy_spectype(s: str) -> float:
