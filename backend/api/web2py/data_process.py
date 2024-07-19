@@ -85,6 +85,14 @@ def is_list_str(test: str | None) -> list[str] | None:
     return [name.strip() for name in test.split(delimiter)]
 
 
+def is_none_str(test: str | None, default: str | None) -> str | None:
+    if isinstance(test, str):
+        test = test.lower()
+    if test in nones:
+        return default
+    return test
+
+
 class ParameterFilters:
     def __init__(self, axis_num: int | None,
                  name: str,
@@ -179,6 +187,10 @@ class FilterForQuery:
             # with no floats to restrict the ranges of values, all that is needed is a match filter
             self.add_match_filter(param_type=param_type, param_id=param_id, is_axis_type=False)
             return
+        if param_id == 'sptype':
+            param_id = 'sptype_num'
+        elif param_id == 'disk':
+            param_id = 'disk_num'
         # ensure the types are of the filter_low and filter_high are either float or None
         if filter_low is not None and filter_high is not None:
             filter_low = float(filter_low)
@@ -340,36 +352,36 @@ def graph_query(
 
 
 def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -> dict[str, any]:
-    filter1_1 = settings.get('filter1_1', 'none')
-    filter1_2 = settings.get('filter1_2', 'H')
+    filter1_1 = is_none_str(settings.get('filter1_1', None), default=None)
+    filter1_2 = is_none_str(settings.get('filter1_2', None), default='H')
     filter1_3 = is_float_str(settings.get('filter1_3', None))
     filter1_4 = is_float_str(settings.get('filter1_4', None))
-    filter2_1 = settings.get('filter2_1', 'none')
-    filter2_2 = settings.get('filter2_2', 'H')
+    filter2_1 = is_none_str(settings.get('filter2_1', None), default=None)
+    filter2_2 = is_none_str(settings.get('filter2_2', None), default='H')
     filter2_3 = is_float_str(settings.get('filter2_3', None))
     filter2_4 = is_float_str(settings.get('filter2_4', None))
-    filter3_1 = settings.get('filter3_1', 'none')
-    filter3_2 = settings.get('filter3_2', 'H')
+    filter3_1 = is_none_str(settings.get('filter3_1', None), default=None)
+    filter3_2 = is_none_str(settings.get('filter3_2', None), default='H')
     filter3_3 = is_float_str(settings.get('filter3_3', None))
     filter3_4 = is_float_str(settings.get('filter3_4', None))
-    xaxis1 = settings.get('xaxis1', 'Fe')
-    xaxis2 = settings.get('xaxis2', 'H')
-    yaxis1 = settings.get('yaxis1', 'Si')
-    yaxis2 = settings.get('yaxis2', 'H')
-    zaxis1 = settings.get('zaxis1', 'none')
-    zaxis2 = settings.get('zaxis2', 'H')
-    cat_action = settings.get('cat_action', 'exclude')
-    star_action = settings.get('star_action', 'include')
+    xaxis1 = is_none_str(settings.get('xaxis1', None), default='Fe')
+    xaxis2 = is_none_str(settings.get('xaxis2', None), default='H')
+    yaxis1 = is_none_str(settings.get('yaxis1', None), default='Si')
+    yaxis2 = is_none_str(settings.get('yaxis2', None), default='H')
+    zaxis1 = is_none_str(settings.get('zaxis1', None), default=None)
+    zaxis2 = is_none_str(settings.get('zaxis2', None), default='H')
+    cat_action = is_none_str(settings.get('cat_action', None), default='exclude')
+    star_action = is_none_str(settings.get('star_action', None), default='exclude')
     filter1_inv = is_true_str(settings.get('filter1_inv', 'false'))
     filter2_inv = is_true_str(settings.get('filter2_inv', 'false'))
     filter3_inv = is_true_str(settings.get('filter3_inv', 'false'))
-    solarnorm_id = get_norm_key(settings.get('solarnorm', 'lodders09'))
+    solarnorm_id = get_norm_key(is_none_str(settings.get('solarnorm', None), default='lodders09'))
     statistic = settings.get('statistic', None)
     return_nea_name = is_true_str(settings.get('return_nea_name', 'false'))
     if statistic is None:
         return_median = is_true_str(settings.get('return_median', 'true'))
     else:
-        return_median = str(statistic).lower() == 'median'
+        return_median = str(is_none_str(statistic, default='median')).lower() == 'median'
     normalize = is_true_str(settings.get('normalize', 'false'))
     if solarnorm_id is None:
         solarnorm_id = 'lodders09'
@@ -393,9 +405,9 @@ def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -
 
 if __name__ == '__main__':
     test_settings = {
-        'filter1_1': 'none',
+        'filter1_1': 'pl_mass',
         'filter1_2': 'H',
-        'filter1_3': None,
+        'filter1_3': '0.0001',
         'filter1_4': None,
         'filter2_1': 'none',
         'filter2_2': 'H',

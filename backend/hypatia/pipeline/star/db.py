@@ -290,20 +290,22 @@ def add_params_and_filters(match_filters: set[str] | None,
                            value_filters: dict[str, tuple[float | None, float | None, bool]] | None,
                            is_stellar: bool = True, base_path: str = None) -> list[dict]:
     and_filters = []
+    curated_path = ''
     if base_path is None:
         if is_stellar:
-            base_path = f'stellar'
+            base_path = 'stellar'
+            curated_path = 'curated.'
         else:
-            base_path = 'nea.planets.v.planetary'
+            base_path = 'planets_array.v.planetary'
     if match_filters:
         for param_name_match in match_filters:
-            and_filters.append({f'stellar.{param_name_match}.curated.value': {'$ne': None}})
+            and_filters.append({f'{base_path}.{param_name_match}{curated_path}.value': {'$ne': None}})
     if value_filters:
         for param_name, (min_value, max_value, exclude) in value_filters.items():
             if base_path == '':
-                path = f'{param_name}.curated.value'
+                path = f'{param_name}{curated_path}.value'
             else:
-                path = f'{base_path}.{param_name}.curated.value'
+                path = f'{base_path}.{param_name}{curated_path}.value'
             if min_value is not None and max_value is not None:
                 if exclude:
                     and_filters.append({'$or': [{path: {'$lt': min_value}},
@@ -461,7 +463,7 @@ class HypatiaDB(BaseStarCollection):
         sum_target = 1 if count_stars else {'$size': {'$objectToArray': "$chem_array.v.catalogs"}}
         json_pipeline = [
             {'$project': {'chem_array': {'$objectToArray': f'${norm_field}'}}},
-            {'$unwind': "$chem_array"},
+            {'$unwind': '$chem_array'},
             {'$group': {'_id': f"{group_id_target}", 'total': {'$sum': sum_target}}},
         ]
         return {doc['_id']: int(doc['total']) for doc in sorted(self.collection.aggregate(json_pipeline),
@@ -646,7 +648,8 @@ class HypatiaDB(BaseStarCollection):
             json_pipeline.append({'$match': {"$and": and_filters}})
         # stage 2a: per-planetary data - requires unwinding for the multiple exoplanets from a single star
         if is_planetary:
-            json_pipeline.append({'$unwind': {'path': {'$objectToArray': '$nea.planets'}}})
+            json_pipeline.append({'$addFields': {'planets_array': {'$objectToArray': '$nea.planets'}}})
+            json_pipeline.append({'$unwind': '$planets_array'})
             # stage 2b: per-planetary data match and range filtering
             and_filters_planetary = add_params_and_filters(match_filters=planet_params_match_filters,
                                                            value_filters=planet_params_value_filters, is_stellar=False)
@@ -663,9 +666,7 @@ class HypatiaDB(BaseStarCollection):
                 add_fields[ratio_str] = {
                     '$round': [{
                         '$subtract': [f'${norm_path}.{ratio_id.numerator}.{el_value_path}',
-                                      f'${norm_path}.{ratio_id.denominator}.{el_value_path}']},
-                        2
-                    ]
+                                      f'${norm_path}.{ratio_id.denominator}.{el_value_path}']}, 2]
                 }
         if return_nea_name:
             add_fields['nea_name'] = '$nea.nea_name'
@@ -704,7 +705,7 @@ class HypatiaDB(BaseStarCollection):
                 return_doc[param_name] = f'$stellar.{param_name}.curated.value'
         if planet_params_returned:
             for param_name in planet_params_returned:
-                return_doc[param_name] = f'$nea.planets.v.planetary.{param_name}.value'
+                return_doc[param_name] = f'$planets_array.v.planetary.{param_name}.value'
         json_pipeline.append({'$project': return_doc})
 
         # run the aggregation pipeline and return the results.
