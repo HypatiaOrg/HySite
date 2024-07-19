@@ -1,16 +1,7 @@
 from roman import fromRoman, InvalidRomanNumeralError
 
 
-def legacy_float(x) -> float | None:
-    try:
-        return float(x)
-    except ValueError:
-        return None
-    except TypeError:
-        return None
-
-
-def legacy_spectype(s: str) -> float:
+def spectral_type_to_float(s: str) -> float:
     typechar = []
     digits = []
     roman_numerals = []

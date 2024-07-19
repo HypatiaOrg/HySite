@@ -28,5 +28,4 @@ class Summary(View):
 
 class GraphView(View):
     def get(self, request):
-        dict(request.GET)
         return JsonResponse(graph_query_from_request(settings=request.GET))

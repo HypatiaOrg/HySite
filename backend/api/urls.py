@@ -2,10 +2,10 @@ from django.urls import path
 
 from api.views import HomeView
 from api.web2py.views import Web2pyHome, Summary, GraphView
-from api.v2.views import Composition, Star, SolarNorm, AvailableElements, AvailableCatalogs
+from api.v2.views import Data, Composition, Star, SolarNorm, AvailableElements, AvailableCatalogs
 
 urlpatterns = [
-    # path('v2/Data/', Data.as_view(), name='data'),
+    path('v2/Data/', Data.as_view(), name='data'),
     path('v2/composition/', Composition.as_view(), name='composition'),
     path('v2/star/', Star.as_view(), name='solar-norm'),
     path('v2/solarnorm/', SolarNorm.as_view(), name='solar-norm'),

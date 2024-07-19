@@ -1,10 +1,4 @@
-import re
-import random
-
-import numpy as np
-
 from api.db import summary_doc, hypatia_db
-from hypatia.legacy.data_formats import legacy_float
 from hypatia.elements import ElementID, RatioID, hydrogen_id
 from api.v2.data_process import (get_norm_key, get_norm_data, get_catalog_summary, total_stars, total_abundance_count,
                                  available_wds_stars, available_nea_names, available_elements_v2, available_catalogs_v2,
@@ -20,6 +14,7 @@ planet_param_types_v2_set = set(planet_param_types_v2)
 ranked_string_params = {'sptype': 'sptype_num', 'disk': 'disk_num'}
 nones = {None, 'none', ''}
 none_denominators = {None, 'none', '', 'h', 'H'}
+true_set = {"true", 1, 1.0, '1.0', '1', 't', 'yes', 'y', 'on', True}
 
 home_data = {
     'stars': total_stars,
@@ -57,17 +52,22 @@ for element_str_id in available_elements_v2:
     })
 
 
-def check_filter(x, test_filter) -> bool:
-    if test_filter[2]:
-        return not check_filter(x, (test_filter[0], test_filter[1], False))
-    if test_filter[0] is not None and filter[1] is not None:
-        return (test_filter[0] <= x) and (x <= test_filter[1])
-    elif test_filter[0] is not None:
-        return test_filter[0] <= x
-    elif test_filter[1] is not None:
-        return x <= test_filter[1]
-    else:
+def is_float_str(test: str | None) -> float | None:
+    try:
+        return float(test)
+    except ValueError:
+        return None
+    except TypeError:
+        return None
+
+
+
+
+
+def is_true_str(test: str) -> bool:
+    if test.lower() in true_set:
         return True
+    return False
 
 
 class ParameterFilters:
@@ -203,6 +203,7 @@ def graph_query(
         solarnorm_id: str = 'absolute', return_median: bool = True,
         mode: str = 'scatter',
         normalize_hist: bool = False,
+        from_api: bool = False
     ) -> dict[str, any]:
     filters_list = [
         (filter1_1, filter1_2, filter1_3, filter1_4, filter1_inv),
@@ -271,14 +272,27 @@ def graph_query(
             to_v2[db_field] = axis_str
             from_v2[axis_str] = db_field
     if mode == 'scatter':
-        return {
-            'values': [
-                {to_v2[key] if key in to_v2.keys() else key: value for key, value in db_return.items()}
-                for db_return in graph_data],
-            'solarnorm': get_norm_data(solarnorm_id),
-            'counts': len(graph_data),
-            'labels': labels,
-        }
+        if from_api:
+            return {
+                'values': [
+                    {to_v2[key] if key in to_v2.keys() else key: value for key, value in db_return.items()}
+                    for db_return in graph_data],
+                'solarnorm': get_norm_data(solarnorm_id),
+                'counts': len(graph_data),
+                'labels': labels,
+            }
+        else:
+            output_header = ['name'] + [f'{x_axis}axis' for x_axis in axis_mapping.keys()]
+            graph_keys = [from_v2[column_name] if column_name in from_v2.keys() else column_name
+                          for column_name in output_header]
+            return {
+                'outputs': {data_key: data_column for data_key, data_column in zip(
+                    output_header,
+                    [list(i) for i in zip(*[[data_row[data_key] for data_key in graph_keys]
+                                            for data_row in graph_data])],
+                )},
+                'labels': labels,
+            }
     else:
         # histogram
         # labels = {}
@@ -328,19 +342,19 @@ def graph_query(
         return {"x_data": x_data}
 
 
-def graph_query_from_request(settings: dict[str, any]) -> dict[str, any]:
+def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -> dict[str, any]:
     filter1_1 = settings.get('filter1_1', 'none')
     filter1_2 = settings.get('filter1_2', 'H')
-    filter1_3 = legacy_float(settings.get('filter1_3', None))
-    filter1_4 = legacy_float(settings.get('filter1_4', None))
+    filter1_3 = is_float_str(settings.get('filter1_3', None))
+    filter1_4 = is_float_str(settings.get('filter1_4', None))
     filter2_1 = settings.get('filter2_1', 'none')
     filter2_2 = settings.get('filter2_2', 'H')
-    filter2_3 = legacy_float(settings.get('filter2_3', None))
-    filter2_4 = legacy_float(settings.get('filter2_4', None))
+    filter2_3 = is_float_str(settings.get('filter2_3', None))
+    filter2_4 = is_float_str(settings.get('filter2_4', None))
     filter3_1 = settings.get('filter3_1', 'none')
     filter3_2 = settings.get('filter3_2', 'H')
-    filter3_3 = legacy_float(settings.get('filter3_3', None))
-    filter3_4 = legacy_float(settings.get('filter3_4', None))
+    filter3_3 = is_float_str(settings.get('filter3_3', None))
+    filter3_4 = is_float_str(settings.get('filter3_4', None))
     xaxis1 = settings.get('xaxis1', 'Fe')
     xaxis2 = settings.get('xaxis2', 'H')
     yaxis1 = settings.get('yaxis1', 'Si')
@@ -349,11 +363,11 @@ def graph_query_from_request(settings: dict[str, any]) -> dict[str, any]:
     zaxis2 = settings.get('zaxis2', 'H')
     cat_action = settings.get('cat_action', 'exclude')
     star_action = settings.get('star_action', 'include')
-    filter1_inv = bool(settings.get('filter1_inv', False))
-    filter2_inv = bool(settings.get('filter2_inv', False))
-    filter3_inv = bool(settings.get('filter3_inv', False))
+    filter1_inv = is_true_str(settings.get('filter1_inv', 'false'))
+    filter2_inv = is_true_str(settings.get('filter2_inv', 'false'))
+    filter3_inv = is_true_str(settings.get('filter3_inv', 'false'))
     solarnorm_id = get_norm_key(settings.get('solarnorm', 'lodders09'))
-    normalize = bool(settings.get('normalize', False))
+    normalize = is_true_str(settings.get('normalize', 'false'))
     if solarnorm_id is None:
         solarnorm_id = 'lodders09'
     catalogs = sorted({cat_data['id'] for cat_data
@@ -362,21 +376,32 @@ def graph_query_from_request(settings: dict[str, any]) -> dict[str, any]:
     mode = settings.get('mode', None)
     if mode != "hist":
         mode = "scatter"
+    star_list_raw = settings.get('star_list', '')
+    if star_list_raw:
+        if ';' not in star_list_raw and ',' in star_list_raw and 'wds' not in star_list_raw:
+            delimiter = ','
+        else:
+            delimiter = ';'
+        star_list = [star_name.strip() for star_name in star_list_raw.split(delimiter)]
+    else:
+        star_list = None
     return graph_query(filter1_1=filter1_1, filter1_2=filter1_2, filter1_3=filter1_3, filter1_4=filter1_4,
                        filter2_1=filter2_1, filter2_2=filter2_2, filter2_3=filter2_3, filter2_4=filter2_4,
                        filter3_1=filter3_1, filter3_2=filter3_2, filter3_3=filter3_3, filter3_4=filter3_4,
                        xaxis1=xaxis1, xaxis2=xaxis2, yaxis1=yaxis1, yaxis2=yaxis2, zaxis1=zaxis1, zaxis2=zaxis2,
-                       cat_action=cat_action, star_action=star_action,
+                       cat_action=cat_action, catalogs=set(catalogs),
+                       star_action=star_action, star_list=star_list,
                        filter1_inv=filter1_inv, filter2_inv=filter2_inv, filter3_inv=filter3_inv,
-                       solarnorm_id=solarnorm_id, catalogs=set(catalogs), mode=mode, normalize_hist=normalize)
+                       solarnorm_id=solarnorm_id, mode=mode, normalize_hist=normalize,
+                       from_api=from_api)
 
 
 if __name__ == '__main__':
     test_settings = {
-        'filter1_1': 'none',
+        'filter1_1': 'teff',
         'filter1_2': 'H',
-        'filter1_3': None,
-        'filter1_4': None,
+        'filter1_3': 100,
+        'filter1_4': 3000,
         'filter2_1': 'none',
         'filter2_2': 'H',
         'filter2_3': None,

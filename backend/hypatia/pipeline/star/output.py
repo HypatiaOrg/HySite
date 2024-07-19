@@ -1,22 +1,19 @@
 import copy
 import pickle
 
-
 from hypatia.object_params import SingleParam
 from hypatia.pipeline.star.db import HypatiaDB
 from hypatia.pipeline.star.all import AllStarData
 from hypatia.pipeline.summary import upload_summary
 from hypatia.sources.simbad.ops import get_star_data
-from hypatia.legacy.data_formats import legacy_spectype
 from hypatia.pipeline.params.filters import core_filter
 from hypatia.config import pickle_out, default_catalog_file
+from hypatia.legacy.data_formats import spectral_type_to_float
 from hypatia.plots.element_rad_plot import make_element_distance_plots
 
 
 def load_pickled_output():
     return pickle.load(open(pickle_out, 'rb'))
-
-
 
 
 class OutputStarData(AllStarData):
@@ -602,7 +599,7 @@ class OutputStarData(AllStarData):
             if 'sptype' in available_params:
                 sptype_param = single_star.params.sptype
                 new_param = SingleParam.strict_format(param_name='sptype_num',
-                                                      value=legacy_spectype(single_star.params.sptype.value),
+                                                      value=spectral_type_to_float(single_star.params.sptype.value),
                                                       ref=sptype_param.ref,
                                                       units='')
                 single_star.params.update_param('sptype_num', new_param)
