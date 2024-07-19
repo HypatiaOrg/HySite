@@ -71,6 +71,20 @@ def is_true_str(test: str) -> bool:
     return False
 
 
+def is_list_str(test: str | None) -> list[str] | None:
+    if test is None:
+        return None
+    if isinstance(test, str):
+        test = test.lower()
+    if test in nones:
+        return None
+    if ';' not in test and ',' in test and 'wds' not in test:
+        delimiter = ','
+    else:
+        delimiter = ';'
+    return [name.strip() for name in test.split(delimiter)]
+
+
 class ParameterFilters:
     def __init__(self, axis_num: int | None,
                  name: str,
@@ -365,15 +379,7 @@ def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -
     mode = settings.get('mode', None)
     if mode != 'hist':
         mode = 'scatter'
-    star_list_raw = settings.get('star_list', '')
-    if star_list_raw:
-        if ';' not in star_list_raw and ',' in star_list_raw and 'wds' not in star_list_raw:
-            delimiter = ','
-        else:
-            delimiter = ';'
-        star_list = [star_name.strip() for star_name in star_list_raw.split(delimiter)]
-    else:
-        star_list = None
+    star_list = is_list_str(settings.get('star_list', None))
     return graph_query(filter1_1=filter1_1, filter1_2=filter1_2, filter1_3=filter1_3, filter1_4=filter1_4,
                        filter2_1=filter2_1, filter2_2=filter2_2, filter2_3=filter2_3, filter2_4=filter2_4,
                        filter3_1=filter3_1, filter3_2=filter3_2, filter3_3=filter3_3, filter3_4=filter3_4,
