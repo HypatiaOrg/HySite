@@ -606,6 +606,7 @@ class HypatiaDB(BaseStarCollection):
                       return_median: bool = True,
                       catalogs: set[str] | None = None,
                       catalog_exclude: bool = False,
+                      return_has_exo: bool = False,
                       ) -> list:
         if solarnorm_id == 'absolute':
             norm_path = 'absolute'
@@ -639,7 +640,7 @@ class HypatiaDB(BaseStarCollection):
                                                   value_filters=stellar_params_value_filters, is_stellar=True))
         if is_planetary:
             # only require that a star has at least one planet at this stage.
-            and_filters.append({f'nea': {'$ne': None}})
+            and_filters.append({'nea': {'$ne': None}})
         if and_filters:
             # only add a pipline stage if there are filters to apply.
             json_pipeline.append({'$match': {"$and": and_filters}})
@@ -666,6 +667,8 @@ class HypatiaDB(BaseStarCollection):
                         2
                     ]
                 }
+        if return_has_exo:
+            add_fields['nea_name'] = '$nea.nea_name'
         if catalogs:
             pass
         if add_fields:
@@ -687,6 +690,8 @@ class HypatiaDB(BaseStarCollection):
             '_id': 0,
             'name': '$_id',
         }
+        if return_has_exo:
+            return_doc['nea_name'] = 1
         if elements_returned:
             for element_name in sorted(elements_returned, key=element_rank):
                 element_str = str(element_name)

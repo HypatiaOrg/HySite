@@ -1,3 +1,5 @@
+import numpy as np
+
 from api.db import summary_doc, hypatia_db
 from hypatia.elements import ElementID, RatioID, hydrogen_id
 from api.v2.data_process import (get_norm_key, get_norm_data, get_catalog_summary, total_stars, total_abundance_count,
@@ -61,11 +63,10 @@ def is_float_str(test: str | None) -> float | None:
         return None
 
 
-
-
-
 def is_true_str(test: str) -> bool:
-    if test.lower() in true_set:
+    if isinstance(test, str):
+        test = test.lower()
+    if test in true_set:
         return True
     return False
 
@@ -251,6 +252,7 @@ def graph_query(
         return_median=return_median,
         catalogs=catalogs,
         catalog_exclude=cat_action == "exclude",
+        return_has_exo=mode == 'hist',
     )
     labels = {}
     to_v2 = {}
@@ -295,51 +297,29 @@ def graph_query(
             }
     else:
         # histogram
-        # labels = {}
-
         db_field = from_v2['xaxis']
         # value_type, param_id = axis_mapping['x']
         x_data = [db_return[db_field] for db_return in graph_data]
-
-
-
-
-
-
-
-        # # counts stars with planets
-        # with_planet = []
-        # for i in range(len(outputs['xaxis'])):
-        #     getstarid = outputs['hip'][i]
-        #     try:
-        #         getstarid = re.sub("[^0-9]", "", getstarid)
-        #     except:
-        #         pass
-        #     starid = hashTable['starid-%s' % getstarid][0]
-        #     if ("planet-%s-b" % starid) in hashTable:
-        #         with_planet.append(outputs['xaxis'][i])
-        # # builds the histogram
-        # hist_all, edges = np.histogram(outputs['xaxis'], bins=20)
-        # hist_planet, edges = np.histogram(with_planet, bins=edges)
-        # # get maximum point on the histogram
-        # max_hist_all = float(max(hist_all))
-        # max_hist_planet = float(max(hist_planet))
-        # # normalize if necessary
-        # if normalize_hist:
-        #     hist_all = hist_all / max_hist_all
-        #     hist_planet = hist_planet / max_hist_planet
-        #     max_hist_all = 1
-        #     max_hist_planet = 1
-        #     labels['yaxis'] = "Relative Frequency"
-        #     fill_alpha = 0.5
-        #     line_alpha = 0.2
-        # else:
-        #     labels['yaxis'] = 'Number of Stellar Systems'
-        #     fill_alpha = 1
-        #     line_alpha = 1
-        # return {"all_hypatia": hist_all.tolist(), "exo_hosts": hist_planet.tolist(), "edges": edges.tolist(),
-        #           "labels": labels, "count": len(outputs['xaxis'])}
-        return {"x_data": x_data}
+        x_data_with_planet = [db_return[db_field] for db_return in graph_data if 'nea_name' in db_return.keys()]
+        # builds the histogram
+        hist_all, edges = np.histogram(x_data, bins=20)
+        hist_planet, edges = np.histogram(x_data_with_planet, bins=edges)
+        # get maximum point on the histogram
+        max_hist_all = float(max(hist_all))
+        max_hist_planet = float(max(hist_planet))
+        # normalize if necessary
+        if normalize_hist:
+            hist_all = hist_all / max_hist_all
+            hist_planet = hist_planet / max_hist_planet
+            labels['yaxis'] = 'Relative Frequency'
+        else:
+            labels['yaxis'] = 'Number of Stellar Systems'
+        if from_api:
+            return {'all_hypatia': hist_all.tolist(), 'exo_hosts': hist_planet.tolist(), 'edges': edges.tolist(),
+                    'labels': labels, 'count': len(x_data)}
+        else:
+            return {'hist_all': hist_all.tolist(), 'hist_planet': hist_planet.tolist(), 'edges': edges.tolist(),
+                    'labels': labels, 'x_data': x_data}
 
 
 def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -> dict[str, any]:
@@ -374,8 +354,8 @@ def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -
                       in [get_catalog_summary(raw_name) for raw_name in settings.get('catalogs', [])]
                       if cat_data is not None})
     mode = settings.get('mode', None)
-    if mode != "hist":
-        mode = "scatter"
+    if mode != 'hist':
+        mode = 'scatter'
     star_list_raw = settings.get('star_list', '')
     if star_list_raw:
         if ';' not in star_list_raw and ',' in star_list_raw and 'wds' not in star_list_raw:
@@ -398,10 +378,10 @@ def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -
 
 if __name__ == '__main__':
     test_settings = {
-        'filter1_1': 'teff',
+        'filter1_1': 'none',
         'filter1_2': 'H',
-        'filter1_3': 100,
-        'filter1_4': 3000,
+        'filter1_3': None,
+        'filter1_4': None,
         'filter2_1': 'none',
         'filter2_2': 'H',
         'filter2_3': None,
@@ -423,6 +403,6 @@ if __name__ == '__main__':
         'filter3_inv': False,
         'solarnorm': 'lodders09',
         'catalogs': [],
-        'mode': 'scatter',
+        'mode': 'hist',
     }
-    graph_data = graph_query_from_request(settings=test_settings)
+    test_graph_data = graph_query_from_request(settings=test_settings)
