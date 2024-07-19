@@ -96,4 +96,4 @@ class Composition(View):
 
 class Data(View):
     def get(self, request):
-        return JsonResponse(graph_query_from_request(settings=request.GET), from_api=True)
+        return JsonResponse(graph_query_from_request(settings=request.GET, from_api=True))

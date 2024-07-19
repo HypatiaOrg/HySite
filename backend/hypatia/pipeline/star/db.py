@@ -606,7 +606,7 @@ class HypatiaDB(BaseStarCollection):
                       return_median: bool = True,
                       catalogs: set[str] | None = None,
                       catalog_exclude: bool = False,
-                      return_has_exo: bool = False,
+                      return_nea_name: bool = False,
                       ) -> list:
         if solarnorm_id == 'absolute':
             norm_path = 'absolute'
@@ -667,7 +667,7 @@ class HypatiaDB(BaseStarCollection):
                         2
                     ]
                 }
-        if return_has_exo:
+        if return_nea_name:
             add_fields['nea_name'] = '$nea.nea_name'
         if catalogs:
             pass
@@ -690,7 +690,7 @@ class HypatiaDB(BaseStarCollection):
             '_id': 0,
             'name': '$_id',
         }
-        if return_has_exo:
+        if return_nea_name:
             return_doc['nea_name'] = 1
         if elements_returned:
             for element_name in sorted(elements_returned, key=element_rank):

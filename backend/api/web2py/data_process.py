@@ -204,7 +204,8 @@ def graph_query(
         solarnorm_id: str = 'absolute', return_median: bool = True,
         mode: str = 'scatter',
         normalize_hist: bool = False,
-        from_api: bool = False
+        from_api: bool = False,
+        return_nea_name: bool = False,
     ) -> dict[str, any]:
     filters_list = [
         (filter1_1, filter1_2, filter1_3, filter1_4, filter1_inv),
@@ -252,7 +253,7 @@ def graph_query(
         return_median=return_median,
         catalogs=catalogs,
         catalog_exclude=cat_action == "exclude",
-        return_has_exo=mode == 'hist',
+        return_nea_name=return_nea_name or mode == 'hist',
     )
     labels = {}
     to_v2 = {}
@@ -276,24 +277,25 @@ def graph_query(
     if mode == 'scatter':
         if from_api:
             return {
-                'values': [
-                    {to_v2[key] if key in to_v2.keys() else key: value for key, value in db_return.items()}
-                    for db_return in graph_data],
-                'solarnorm': get_norm_data(solarnorm_id),
                 'counts': len(graph_data),
                 'labels': labels,
+                'solarnorm': get_norm_data(solarnorm_id),
+                'values': [
+                    {to_v2[key] if key in to_v2.keys() else key: value for key, value in db_return.items()}
+                    for db_return in graph_data
+                ],
             }
         else:
             output_header = ['name'] + [f'{x_axis}axis' for x_axis in axis_mapping.keys()]
             graph_keys = [from_v2[column_name] if column_name in from_v2.keys() else column_name
                           for column_name in output_header]
             return {
+                'labels': labels,
                 'outputs': {data_key: data_column for data_key, data_column in zip(
                     output_header,
                     [list(i) for i in zip(*[[data_row[data_key] for data_key in graph_keys]
                                             for data_row in graph_data])],
                 )},
-                'labels': labels,
             }
     else:
         # histogram
@@ -315,11 +317,12 @@ def graph_query(
         else:
             labels['yaxis'] = 'Number of Stellar Systems'
         if from_api:
-            return {'all_hypatia': hist_all.tolist(), 'exo_hosts': hist_planet.tolist(), 'edges': edges.tolist(),
-                    'labels': labels, 'count': len(x_data)}
+            return {'count': len(x_data), 'labels': labels,
+                    'all_hypatia': hist_all.tolist(), 'exo_hosts': hist_planet.tolist(), 'edges': edges.tolist()}
         else:
-            return {'hist_all': hist_all.tolist(), 'hist_planet': hist_planet.tolist(), 'edges': edges.tolist(),
-                    'labels': labels, 'x_data': x_data}
+            return {'labels': labels,
+                    'hist_all': hist_all.tolist(), 'hist_planet': hist_planet.tolist(), 'edges': edges.tolist(),
+                    'x_data': x_data}
 
 
 def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -> dict[str, any]:
@@ -347,6 +350,12 @@ def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -
     filter2_inv = is_true_str(settings.get('filter2_inv', 'false'))
     filter3_inv = is_true_str(settings.get('filter3_inv', 'false'))
     solarnorm_id = get_norm_key(settings.get('solarnorm', 'lodders09'))
+    statistic = settings.get('statistic', None)
+    return_nea_name = is_true_str(settings.get('return_nea_name', 'false'))
+    if statistic is None:
+        return_median = is_true_str(settings.get('return_median', 'true'))
+    else:
+        return_median = str(statistic).lower() == 'median'
     normalize = is_true_str(settings.get('normalize', 'false'))
     if solarnorm_id is None:
         solarnorm_id = 'lodders09'
@@ -372,8 +381,8 @@ def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -
                        cat_action=cat_action, catalogs=set(catalogs),
                        star_action=star_action, star_list=star_list,
                        filter1_inv=filter1_inv, filter2_inv=filter2_inv, filter3_inv=filter3_inv,
-                       solarnorm_id=solarnorm_id, mode=mode, normalize_hist=normalize,
-                       from_api=from_api)
+                       solarnorm_id=solarnorm_id, return_median=return_median, mode=mode, normalize_hist=normalize,
+                       from_api=from_api, return_nea_name=return_nea_name)
 
 
 if __name__ == '__main__':
