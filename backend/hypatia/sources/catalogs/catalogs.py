@@ -110,7 +110,7 @@ class Catalog:
             attribute_name = list(single_name_type)[0]
             self.star_names_type = attribute_name.lower()
         else:
-            raise NameError("The star name type is not one of the expected names.")
+            raise NameError("The star column name is not one of the expected names.")
         # this a legacy Hypatia system for reading in catalogs with a number of challenges.
         self.raw_data.original_star_names = getattr(self.raw_data, attribute_name)
         converted_star_names = []
