@@ -332,7 +332,6 @@ def table_settings_from_request(settings: dict[str, any]) -> dict[str, any]:
     requested_stellar_params = is_list_str(settings.get('requested_stellar_params', None))
     requested_planet_params = is_list_str(settings.get('requested_planet_params', None))
     requested_elements = is_list_str(settings.get('requested_elements', None), use_lower=False)
-    print('requested_elements:', requested_elements)
     if requested_elements is not None:
         requested_elements = [ElementID.from_str(el_name) for el_name in requested_elements]
     sort_field = is_none_str(settings.get('sort', None), default=None)
@@ -414,6 +413,10 @@ def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -
             db_field = f'{param_id.numerator}_{param_id.denominator}'
             to_v2[db_field] = axis_str
             from_v2[axis_str] = db_field
+    if any([graph_settings['planet_params_returned'], graph_settings['planet_params_match_filters'], graph_settings['planet_params_value_filters']]):
+        for data_row in graph_data:
+            if 'nea_name' in data_row.keys():
+                data_row['name'] = 'NEA Name ' + data_row['nea_name']
     # return the data in various formats depending on the requesting application.
     if is_histogram:
         # histogram
@@ -474,6 +477,7 @@ def table_query_from_request(settings: dict[str, any]):
     name_types_returned = table_settings['name_types_returned']
     stellar_params_returned = table_settings['stellar_params_returned']
     planet_params_returned = table_settings['planet_params_returned']
+    return_nea_name = bool(planet_params_returned)
     # get the data from the database
     table_data = hypatia_db.frontend_pipeline(
         db_formatted_names=table_settings['db_formatted_names'],
@@ -497,6 +501,7 @@ def table_query_from_request(settings: dict[str, any]):
         sort_reverse=table_settings['sort_reverse'],
         return_error=return_error,
         star_name_column='star_id',
+        return_nea_name=return_nea_name,
     )
 
     # check the element data error values and replace them with the representative error for zero and null values
@@ -527,6 +532,7 @@ def table_query_from_request(settings: dict[str, any]):
         all_columns.update(stellar_params_returned)
     if planet_params_returned:
         all_columns.update(planet_params_returned)
+        all_columns.add('nea_name')
     all_columns = sorted(all_columns)
     # return the table data
     return dict(body={
@@ -540,7 +546,7 @@ def table_query_from_request(settings: dict[str, any]):
 
 if __name__ == '__main__':
     test_settings = {
-        'filter1_1': 'none',
+        'filter1_1': 'eccentricity',
         'filter1_2': 'H',
         'filter1_3': '0.0001',
         'filter1_4': '0.5',
@@ -567,10 +573,10 @@ if __name__ == '__main__':
         'catalogs': 'none',
         'mode': 'hist',
         # below are the settings for the table query
-        'elements_returned': 'Fe;C;O;M;S;C;T;F;CII',
+        'requested_elements': 'Fe;C;O;Mg;S;C;Ti;F;CII',
+        'requested_planet_params': 'semi_major_axis;eccentricity;inclination;pl_mass;pl_radius',
         'sort_field': 'none',
         'sort_reverse': 'false',
         'return_error': 'false',
     }
-    # test_graph_data = graph_query_from_request(settings=test_settings)
     test_table_data = table_query_from_request(settings=test_settings)

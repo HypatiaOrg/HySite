@@ -637,10 +637,10 @@ class HypatiaDB(BaseStarCollection):
                         ratio_elements_set.add(element_ratio_id.denominator)
 
         all_elements_set = set()
-        for element_id_set in [set(elements_returned), set(elements_match_filters),
-                               set(element_value_filters.keys()), ratio_elements_set]:
+        for element_id_set in [elements_returned, elements_match_filters,
+                               element_value_filters.keys(), ratio_elements_set]:
             if element_id_set:
-                all_elements_set.update(element_id_set)
+                all_elements_set.update(set(element_id_set))
         all_elements = sorted(all_elements_set, key=element_rank)
         # initialize the pipeline
         json_pipeline = []
@@ -757,8 +757,8 @@ class HypatiaDB(BaseStarCollection):
             '_id': 0,
             f'{star_name_column}': '$_id',
         }
-        if return_nea_name:
-            return_doc['nea_name'] = '$nea.nea_name'
+
+
         if elements_returned:
             for element_name in sorted(elements_returned, key=element_rank):
                 element_str = str(element_name)
@@ -769,9 +769,16 @@ class HypatiaDB(BaseStarCollection):
         if stellar_params_returned:
             for param_name in stellar_params_returned:
                 return_doc[param_name] = f'$stellar.{param_name}.curated.value'
-        if planet_params_returned:
+        if is_planetary:
+            return_doc['nea_name'] = '$planets_array.v.pl_name'
             for param_name in planet_params_returned:
-                return_doc[param_name] = f'$planets_array.v.planetary.{param_name}.value'
+                if param_name not in {'pl_name', 'nea_name'}:
+                    if param_name == 'planet_letter':
+                        return_doc[param_name] = '$planets_array.v.letter'
+                    else:
+                        return_doc[param_name] = f'$planets_array.v.planetary.{param_name}.value'
+        elif return_nea_name:
+            return_doc['nea_name'] = '$nea.nea_name'
         if name_types_returned:
             for name_type in name_types_returned:
                 if name_type != star_name_column:
