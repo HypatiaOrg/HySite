@@ -1,7 +1,9 @@
+from copy import copy
+
 import numpy as np
 
 from api.db import summary_doc, hypatia_db
-from hypatia.elements import ElementID, RatioID, hydrogen_id
+from hypatia.elements import ElementID, RatioID, hydrogen_id, get_representative_error
 from api.v2.data_process import (get_norm_key, get_norm_data, get_catalog_summary, total_stars, total_abundance_count,
                                  available_wds_stars, available_nea_names, available_elements_v2, available_catalogs_v2,
                                  normalizations_v2)
@@ -71,11 +73,13 @@ def is_true_str(test: str) -> bool:
     return False
 
 
-def is_list_str(test: str | None) -> list[str] | None:
+def is_list_str(test: str | None, use_lower: bool = True) -> list[str] | None:
     if test is None:
         return None
     if isinstance(test, str):
-        test = test.lower()
+        test_lower = test.lower()
+        if use_lower:
+            test = test_lower
     if test in nones:
         return None
     if ';' not in test and ',' in test and 'wds' not in test:
@@ -215,143 +219,7 @@ class FilterForQuery:
             self.planet_params_value_filters[param_id] = (filter_low, filter_high, exclude)
 
 
-def graph_query(
-        xaxis1: str, xaxis2: str | None = None,
-        yaxis1: str | None = None, yaxis2: str | None = None,
-        zaxis1: str | None = None, zaxis2: str | None = None,
-        filter1_1: str | None = None, filter1_2: str | None = None,
-        filter1_3: float | None = None, filter1_4: float | None = None, filter1_inv: bool = False,
-        filter2_1: str | None = None, filter2_2: str | None = None,
-        filter2_3: float | None = None, filter2_4: float | None = None, filter2_inv: bool = False,
-        filter3_1: str | None = None, filter3_2: str | None = None,
-        filter3_3: float | None = None, filter3_4: float | None = None, filter3_inv: bool = False,
-        cat_action: str = 'exclude', catalogs: set[str] | None = None,
-        star_action: str = 'exclude', star_list: list[str] | None = None,
-        solarnorm_id: str = 'absolute', return_median: bool = True,
-        mode: str = 'scatter',
-        normalize_hist: bool = False,
-        from_api: bool = False,
-        return_nea_name: bool = False,
-    ) -> dict[str, any]:
-    filters_list = [
-        (filter1_1, filter1_2, filter1_3, filter1_4, filter1_inv),
-        (filter2_1, filter2_2, filter2_3, filter2_4, filter2_inv),
-        (filter3_1, filter3_2, filter3_3, filter3_4, filter3_inv),
-    ]
-    filter_for_query = FilterForQuery()
-    # paras the axis make iterables that are in the form of the final returned data product
-    axis_mapping = {'x': determine_param_type(param_name=xaxis1, denominator_element=xaxis2)}
-    if mode == 'scatter':
-        axis_mapping['y'] = determine_param_type(param_name=yaxis1, denominator_element=yaxis2)
-        if zaxis1 not in nones:
-            axis_mapping['z'] = determine_param_type(param_name=zaxis1, denominator_element=zaxis2)
-    # get the returned data types and the base filtering need to return these data types
-    [filter_for_query.add_match_filter(param_type=param_type, param_id=param_id)
-     for param_type, param_id in axis_mapping.values()]
-    # add other filtering for both matching and value filtering
-    for param_id, denominator_element, filter_low, filter_high, exclude in filters_list:
-        if param_id not in nones:
-            param_type, param_id = determine_param_type(param_name=param_id, denominator_element=denominator_element)
-            filter_for_query.set_range_filter(
-                param_type=param_type, param_id=param_id,
-                filter_low=filter_low, filter_high=filter_high, exclude=exclude)
-    if star_list:
-        db_formatted_names = sorted({name.replace(' ', '').lower() for name in star_list})
-    else:
-        db_formatted_names = None
-
-    # get compositions
-    graph_data = hypatia_db.graph_data_v2(
-        db_formatted_names=db_formatted_names,
-        db_formatted_names_exclude=star_action == "exclude",
-        elements_returned=filter_for_query.elements_returned,
-        elements_match_filters=filter_for_query.elements_match_filters,
-        element_value_filters=filter_for_query.element_value_filters,
-        element_ratios_returned=filter_for_query.element_ratios_returned,
-        element_ratios_value_filters=filter_for_query.element_ratios_value_filters,
-        stellar_params_returned=filter_for_query.stellar_params_returned,
-        stellar_params_match_filters=filter_for_query.stellar_params_match_filters,
-        stellar_params_value_filters=filter_for_query.stellar_params_value_filters,
-        planet_params_returned=filter_for_query.planet_params_returned,
-        planet_params_match_filters=filter_for_query.planet_params_match_filters,
-        planet_params_value_filters=filter_for_query.planet_params_value_filters,
-        solarnorm_id=get_norm_key(solarnorm_id),
-        return_median=return_median,
-        catalogs=catalogs,
-        catalog_exclude=cat_action == "exclude",
-        return_nea_name=return_nea_name or mode == 'hist',
-    )
-    labels = {}
-    to_v2 = {}
-    from_v2 = {}
-    for axis_name, (value_type, param_id) in axis_mapping.items():
-        axis_str = f'{axis_name}axis'
-        if value_type in {'stellar', 'planet'}:
-            labels[axis_str] = units_and_fields[param_id]['label']
-            to_v2[param_id] = axis_str
-            from_v2[axis_str] = param_id
-        elif value_type == 'element':
-            labels[axis_str] = f'[{param_id}/H]'
-            db_field = str(param_id)
-            to_v2[db_field] = axis_str
-            from_v2[axis_str] = db_field
-        elif value_type == 'element_ratio':
-            labels[axis_str] = str(param_id)
-            db_field = f'{param_id.numerator}_{param_id.denominator}'
-            to_v2[db_field] = axis_str
-            from_v2[axis_str] = db_field
-    if mode == 'scatter':
-        if from_api:
-            return {
-                'counts': len(graph_data),
-                'labels': labels,
-                'solarnorm': get_norm_data(solarnorm_id),
-                'values': [
-                    {to_v2[key] if key in to_v2.keys() else key: value for key, value in db_return.items()}
-                    for db_return in graph_data
-                ],
-            }
-        else:
-            output_header = ['name'] + [f'{x_axis}axis' for x_axis in axis_mapping.keys()]
-            graph_keys = [from_v2[column_name] if column_name in from_v2.keys() else column_name
-                          for column_name in output_header]
-            return {
-                'labels': labels,
-                'outputs': {data_key: data_column for data_key, data_column in zip(
-                    output_header,
-                    [list(i) for i in zip(*[[data_row[data_key] for data_key in graph_keys]
-                                            for data_row in graph_data])],
-                )},
-            }
-    else:
-        # histogram
-        db_field = from_v2['xaxis']
-        # value_type, param_id = axis_mapping['x']
-        x_data = [db_return[db_field] for db_return in graph_data]
-        x_data_with_planet = [db_return[db_field] for db_return in graph_data if 'nea_name' in db_return.keys()]
-        # builds the histogram
-        hist_all, edges = np.histogram(x_data, bins=20)
-        hist_planet, edges = np.histogram(x_data_with_planet, bins=edges)
-        # get maximum point on the histogram
-        max_hist_all = float(max(hist_all))
-        max_hist_planet = float(max(hist_planet))
-        # normalize if necessary
-        if normalize_hist:
-            hist_all = hist_all / max_hist_all
-            hist_planet = hist_planet / max_hist_planet
-            labels['yaxis'] = 'Relative Frequency'
-        else:
-            labels['yaxis'] = 'Number of Stellar Systems'
-        if from_api:
-            return {'count': len(x_data), 'labels': labels,
-                    'all_hypatia': hist_all.tolist(), 'exo_hosts': hist_planet.tolist(), 'edges': edges.tolist()}
-        else:
-            return {'labels': labels,
-                    'hist_all': hist_all.tolist(), 'hist_planet': hist_planet.tolist(), 'edges': edges.tolist(),
-                    'x_data': x_data}
-
-
-def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -> dict[str, any]:
+def graph_settings_from_request(settings: dict[str, any]):
     filter1_1 = is_none_str(settings.get('filter1_1', None), default=None)
     filter1_2 = is_none_str(settings.get('filter1_2', None), default='H')
     filter1_3 = is_float_str(settings.get('filter1_3', None))
@@ -385,51 +253,324 @@ def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -
     normalize = is_true_str(settings.get('normalize', 'false'))
     if solarnorm_id is None:
         solarnorm_id = 'lodders09'
-    catalogs = sorted({cat_data['id'] for cat_data
-                      in [get_catalog_summary(raw_name) for raw_name in settings.get('catalogs', [])]
-                      if cat_data is not None})
+
+    raw_cat = copy(is_none_str(settings.get('catalogs', None), default=None))
+    if raw_cat is None:
+        catalogs = None
+    elif isinstance(raw_cat, str):
+        parse_cats = (raw_cat.replace(' ', '').replace(',', ';').replace('\'', '')
+                      .replace('[', '').replace(']', ''))
+        catalogs = sorted({cat_data['id'] for cat_data
+                           in [get_catalog_summary(raw_name) for raw_name in parse_cats.split(';')]
+                           if cat_data is not None})
+    else:
+        catalogs = sorted({cat_data['id'] for cat_data
+                           in [get_catalog_summary(raw_name) for raw_name in raw_cat]
+                           if cat_data is not None})
     mode = settings.get('mode', None)
-    if mode != 'hist':
-        mode = 'scatter'
+    is_histogram = mode == 'hist'
+
     star_list = is_list_str(settings.get('star_list', None))
-    return graph_query(filter1_1=filter1_1, filter1_2=filter1_2, filter1_3=filter1_3, filter1_4=filter1_4,
-                       filter2_1=filter2_1, filter2_2=filter2_2, filter2_3=filter2_3, filter2_4=filter2_4,
-                       filter3_1=filter3_1, filter3_2=filter3_2, filter3_3=filter3_3, filter3_4=filter3_4,
-                       xaxis1=xaxis1, xaxis2=xaxis2, yaxis1=yaxis1, yaxis2=yaxis2, zaxis1=zaxis1, zaxis2=zaxis2,
-                       cat_action=cat_action, catalogs=set(catalogs),
-                       star_action=star_action, star_list=star_list,
-                       filter1_inv=filter1_inv, filter2_inv=filter2_inv, filter3_inv=filter3_inv,
-                       solarnorm_id=solarnorm_id, return_median=return_median, mode=mode, normalize_hist=normalize,
-                       from_api=from_api, return_nea_name=return_nea_name)
+    filters_list = [
+        (filter1_1, filter1_2, filter1_3, filter1_4, filter1_inv),
+        (filter2_1, filter2_2, filter2_3, filter2_4, filter2_inv),
+        (filter3_1, filter3_2, filter3_3, filter3_4, filter3_inv),
+    ]
+    filter_for_query = FilterForQuery()
+    # paras the axis make iterables that are in the form of the final returned data product
+    axis_mapping = {'x': determine_param_type(param_name=xaxis1, denominator_element=xaxis2)}
+    if mode == 'scatter':
+        axis_mapping['y'] = determine_param_type(param_name=yaxis1, denominator_element=yaxis2)
+        if zaxis1 not in nones:
+            axis_mapping['z'] = determine_param_type(param_name=zaxis1, denominator_element=zaxis2)
+    # get the returned data types and the base filtering need to return these data types
+    [filter_for_query.add_match_filter(param_type=param_type, param_id=param_id)
+     for param_type, param_id in axis_mapping.values()]
+    # add other filtering for both matching and value filtering
+    for param_id, denominator_element, filter_low, filter_high, exclude in filters_list:
+        if param_id not in nones:
+            param_type, param_id = determine_param_type(param_name=param_id, denominator_element=denominator_element)
+            filter_for_query.set_range_filter(
+                param_type=param_type, param_id=param_id,
+                filter_low=filter_low, filter_high=filter_high, exclude=exclude)
+    if star_list:
+        db_formatted_names = sorted({name.replace(' ', '').lower() for name in star_list})
+    else:
+        db_formatted_names = None
+    db_formatted_names_exclude = star_action == "exclude"
+    catalog_exclude = cat_action == "exclude"
+    return_nea_name = return_nea_name or mode == 'hist'
+    solarnorm_id = get_norm_key(solarnorm_id)
+    return dict(
+        db_formatted_names=db_formatted_names,
+        db_formatted_names_exclude=db_formatted_names_exclude,
+        elements_returned=filter_for_query.elements_returned,
+        elements_match_filters=filter_for_query.elements_match_filters,
+        element_value_filters=filter_for_query.element_value_filters,
+        element_ratios_returned=filter_for_query.element_ratios_returned,
+        element_ratios_value_filters=filter_for_query.element_ratios_value_filters,
+        stellar_params_returned=filter_for_query.stellar_params_returned,
+        stellar_params_match_filters=filter_for_query.stellar_params_match_filters,
+        stellar_params_value_filters=filter_for_query.stellar_params_value_filters,
+        planet_params_returned=filter_for_query.planet_params_returned,
+        planet_params_match_filters=filter_for_query.planet_params_match_filters,
+        planet_params_value_filters=filter_for_query.planet_params_value_filters,
+        solarnorm_id=solarnorm_id,
+        return_median=return_median,
+        catalogs=catalogs,
+        catalog_exclude=catalog_exclude,
+        return_nea_name=return_nea_name,
+        axis_mapping=axis_mapping,
+        is_histogram=is_histogram,
+        normalize_hist=normalize,
+    )
+
+
+def table_settings_from_request(settings: dict[str, any]) -> dict[str, any]:
+    graph_settings = graph_settings_from_request(settings=settings)
+    requested_name_types = is_list_str(settings.get('requested_name_types', None))
+    requested_stellar_params = is_list_str(settings.get('requested_stellar_params', None))
+    requested_planet_params = is_list_str(settings.get('requested_planet_params', None))
+    requested_elements = is_list_str(settings.get('requested_elements', None), use_lower=False)
+    print('requested_elements:', requested_elements)
+    if requested_elements is not None:
+        requested_elements = [ElementID.from_str(el_name) for el_name in requested_elements]
+    sort_field = is_none_str(settings.get('sort', None), default=None)
+    if sort_field is not None:
+        _sort_field_type, sort_field = determine_param_type(param_name=sort_field)
+    sort_reverse = is_true_str(settings.get('sort_reverse', 'false'))
+    show_error = is_true_str(settings.get('show_error', 'false'))
+
+    return dict(
+        db_formatted_names=graph_settings['db_formatted_names'],
+        db_formatted_names_exclude=graph_settings['db_formatted_names_exclude'],
+        elements_match_filters=graph_settings['elements_match_filters'],
+        element_value_filters=graph_settings['element_value_filters'],
+        element_ratios_value_filters=graph_settings['element_ratios_value_filters'],
+        stellar_params_match_filters=graph_settings['stellar_params_match_filters'],
+        stellar_params_value_filters=graph_settings['stellar_params_value_filters'],
+        planet_params_match_filters=graph_settings['planet_params_match_filters'],
+        planet_params_value_filters=graph_settings['planet_params_value_filters'],
+        solarnorm_id=graph_settings['solarnorm_id'],
+        return_median=graph_settings['return_median'],
+        catalogs=graph_settings['catalogs'],
+        catalog_exclude=graph_settings['catalog_exclude'],
+        name_types_returned=requested_name_types,
+        stellar_params_returned=requested_stellar_params,
+        planet_params_returned=requested_planet_params,
+        elements_returned=requested_elements,
+        sort_field=sort_field,
+        sort_reverse=sort_reverse,
+        return_error=show_error,
+    )
+
+
+def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -> dict[str, any]:
+    # parse the settings from the request for the graph query
+    graph_settings = graph_settings_from_request(settings=settings)
+    # get the data from the database
+    graph_data = hypatia_db.frontend_pipeline(
+        db_formatted_names=graph_settings['db_formatted_names'],
+        db_formatted_names_exclude=graph_settings['db_formatted_names_exclude'],
+        elements_returned=graph_settings['elements_returned'],
+        elements_match_filters=graph_settings['elements_match_filters'],
+        element_value_filters=graph_settings['element_value_filters'],
+        element_ratios_returned=graph_settings['element_ratios_returned'],
+        element_ratios_value_filters=graph_settings['element_ratios_value_filters'],
+        stellar_params_returned=graph_settings['stellar_params_returned'],
+        stellar_params_match_filters=graph_settings['stellar_params_match_filters'],
+        stellar_params_value_filters=graph_settings['stellar_params_value_filters'],
+        planet_params_returned=graph_settings['planet_params_returned'],
+        planet_params_match_filters=graph_settings['planet_params_match_filters'],
+        planet_params_value_filters=graph_settings['planet_params_value_filters'],
+        solarnorm_id=graph_settings['solarnorm_id'],
+        return_median=graph_settings['return_median'],
+        catalogs=graph_settings['catalogs'],
+        catalog_exclude=graph_settings['catalog_exclude'],
+        return_nea_name=graph_settings['return_nea_name'],
+    )
+    # get more settings about how to process the data
+    axis_mapping = graph_settings['axis_mapping']
+    solarnorm_id = graph_settings['solarnorm_id']
+    is_histogram = graph_settings['is_histogram']
+    normalize_hist = graph_settings['normalize_hist']
+    # calculate the labels for the data
+    labels = {}
+    to_v2 = {}
+    from_v2 = {}
+    for axis_name, (value_type, param_id) in graph_settings['axis_mapping'].items():
+        axis_str = f'{axis_name}axis'
+        if value_type in {'stellar', 'planet'}:
+            labels[axis_str] = units_and_fields[param_id]['label']
+            to_v2[param_id] = axis_str
+            from_v2[axis_str] = param_id
+        elif value_type == 'element':
+            labels[axis_str] = f'[{param_id}/H]'
+            db_field = str(param_id)
+            to_v2[db_field] = axis_str
+            from_v2[axis_str] = db_field
+        elif value_type == 'element_ratio':
+            labels[axis_str] = str(param_id)
+            db_field = f'{param_id.numerator}_{param_id.denominator}'
+            to_v2[db_field] = axis_str
+            from_v2[axis_str] = db_field
+    # return the data in various formats depending on the requesting application.
+    if is_histogram:
+        # histogram
+        db_field = from_v2['xaxis']
+        # value_type, param_id = axis_mapping['x']
+        x_data = [db_return[db_field] for db_return in graph_data]
+        x_data_with_planet = [db_return[db_field] for db_return in graph_data if 'nea_name' in db_return.keys()]
+        # builds the histogram
+        hist_all, edges = np.histogram(x_data, bins=20)
+        hist_planet, edges = np.histogram(x_data_with_planet, bins=edges)
+        # get maximum point on the histogram
+        max_hist_all = float(max(hist_all))
+        max_hist_planet = float(max(hist_planet))
+        # normalize if necessary
+        if normalize_hist:
+            hist_all = hist_all / max_hist_all
+            hist_planet = hist_planet / max_hist_planet
+            labels['yaxis'] = 'Relative Frequency'
+        else:
+            labels['yaxis'] = 'Number of Stellar Systems'
+        if from_api:
+            return {'count': len(x_data), 'labels': labels,
+                    'all_hypatia': hist_all.tolist(), 'exo_hosts': hist_planet.tolist(), 'edges': edges.tolist()}
+        else:
+            return {'labels': labels,
+                    'hist_all': hist_all.tolist(), 'hist_planet': hist_planet.tolist(), 'edges': edges.tolist(),
+                    'x_data': x_data}
+    else:
+        if from_api:
+            return {
+                'counts': len(graph_data),
+                'labels': labels,
+                'solarnorm': get_norm_data(solarnorm_id),
+                'values': [
+                    {to_v2[key] if key in to_v2.keys() else key: value for key, value in db_return.items()}
+                    for db_return in graph_data
+                ],
+            }
+        else:
+            output_header = ['name'] + [f'{x_axis}axis' for x_axis in axis_mapping.keys()]
+            graph_keys = [from_v2[column_name] if column_name in from_v2.keys() else column_name
+                          for column_name in output_header]
+            return {
+                'labels': labels,
+                'outputs': {data_key: data_column for data_key, data_column in zip(
+                    output_header,
+                    [list(i) for i in zip(*[[data_row[data_key] for data_key in graph_keys]
+                                            for data_row in graph_data])],
+                )},
+            }
+
+
+def table_query_from_request(settings: dict[str, any]):
+    # parse the settings from the request for the table query
+    table_settings = table_settings_from_request(settings=settings)
+    return_error = table_settings['return_error']
+    elements_returned = table_settings['elements_returned']
+    name_types_returned = table_settings['name_types_returned']
+    stellar_params_returned = table_settings['stellar_params_returned']
+    planet_params_returned = table_settings['planet_params_returned']
+    # get the data from the database
+    table_data = hypatia_db.frontend_pipeline(
+        db_formatted_names=table_settings['db_formatted_names'],
+        db_formatted_names_exclude=table_settings['db_formatted_names_exclude'],
+        elements_match_filters=table_settings['elements_match_filters'],
+        element_value_filters=table_settings['element_value_filters'],
+        element_ratios_value_filters=table_settings['element_ratios_value_filters'],
+        stellar_params_match_filters=table_settings['stellar_params_match_filters'],
+        stellar_params_value_filters=table_settings['stellar_params_value_filters'],
+        planet_params_match_filters=table_settings['planet_params_match_filters'],
+        planet_params_value_filters=table_settings['planet_params_value_filters'],
+        solarnorm_id=table_settings['solarnorm_id'],
+        return_median=table_settings['return_median'],
+        catalogs=table_settings['catalogs'],
+        catalog_exclude=table_settings['catalog_exclude'],
+        name_types_returned=name_types_returned,
+        stellar_params_returned=stellar_params_returned,
+        planet_params_returned=planet_params_returned,
+        elements_returned=elements_returned,
+        sort_field=table_settings['sort_field'],
+        sort_reverse=table_settings['sort_reverse'],
+        return_error=return_error,
+        star_name_column='star_id',
+    )
+
+    # check the element data error values and replace them with the representative error for zero and null values
+    rep_errors = [get_representative_error(el_id) for el_id in elements_returned]
+    element_str_names = [str(el_id) for el_id in elements_returned]
+    if return_error:
+        for data_row in table_data:
+            for el_name, el_rep_err in zip(element_str_names, rep_errors):
+                if el_name in data_row.keys():
+                    error_name = f'{el_name}_err'
+                    if error_name in data_row.keys():
+                        err_value = data_row[error_name]
+                        if err_value is None:
+                            data_row[error_name] = el_rep_err
+                        elif err_value == 0.0:
+                            data_row[error_name] = el_rep_err
+
+    # reformat the data to be a dictionary of column_name keys and list of values.
+    all_columns = set()
+    element_map = {}
+    if elements_returned:
+        element_str_names = [str(el_id) for el_id in elements_returned]
+        element_map = {el_str: el_str.replace('_', '') for el_str in element_str_names}
+        all_columns.update(element_str_names)
+    if name_types_returned:
+        all_columns.update(name_types_returned)
+    if stellar_params_returned:
+        all_columns.update(stellar_params_returned)
+    if planet_params_returned:
+        all_columns.update(planet_params_returned)
+    all_columns = sorted(all_columns)
+    # return the table data
+    return dict(body={
+        column_name: data_list for column_name, data_list in
+        zip(
+            [element_map[col_name] if col_name in element_map.keys() else col_name for col_name in all_columns],
+            zip(*[[row_data.get(col_name, '') for col_name in all_columns] for row_data in table_data])
+        )
+    })
 
 
 if __name__ == '__main__':
     test_settings = {
-        'filter1_1': 'pl_mass',
+        'filter1_1': 'none',
         'filter1_2': 'H',
         'filter1_3': '0.0001',
-        'filter1_4': None,
+        'filter1_4': '0.5',
         'filter2_1': 'none',
         'filter2_2': 'H',
-        'filter2_3': None,
-        'filter2_4': None,
+        'filter2_3': 'None',
+        'filter2_4': 'None',
         'filter3_1': 'none',
         'filter3_2': 'H',
-        'filter3_3': None,
-        'filter3_4': None,
+        'filter3_3': 'None',
+        'filter3_4': 'None',
         'xaxis1': 'Fe',
-        'xaxis2': 'H',
+        'xaxis2': 'C',
         'yaxis1': 'Si',
         'yaxis2': 'H',
         'zaxis1': 'none',
         'zaxis2': 'H',
         'cat_action': 'exclude',
-        'star_action': 'include',
-        'filter1_inv': False,
-        'filter2_inv': False,
-        'filter3_inv': False,
+        'star_action': 'exclude',
+        'filter1_inv': 'False',
+        'filter2_inv': 'False',
+        'filter3_inv': 'False',
         'solarnorm': 'lodders09',
-        'catalogs': [],
+        'catalogs': 'none',
         'mode': 'hist',
+        # below are the settings for the table query
+        'elements_returned': 'Fe;C;O;M;S;C;T;F;CII',
+        'sort_field': 'none',
+        'sort_reverse': 'false',
+        'return_error': 'false',
     }
-    test_graph_data = graph_query_from_request(settings=test_settings)
+    # test_graph_data = graph_query_from_request(settings=test_settings)
+    test_table_data = table_query_from_request(settings=test_settings)

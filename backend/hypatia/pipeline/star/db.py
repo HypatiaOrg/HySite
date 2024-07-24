@@ -293,19 +293,16 @@ def add_params_and_filters(match_filters: set[str] | None,
     curated_path = ''
     if base_path is None:
         if is_stellar:
-            base_path = 'stellar'
-            curated_path = 'curated.'
+            base_path = 'stellar.'
+            curated_path = '.curated'
         else:
-            base_path = 'planets_array.v.planetary'
+            base_path = 'planets_array.v.planetary.'
     if match_filters:
         for param_name_match in match_filters:
-            and_filters.append({f'{base_path}.{param_name_match}{curated_path}.value': {'$ne': None}})
+            and_filters.append({f'{base_path}{param_name_match}{curated_path}.value': {'$ne': None}})
     if value_filters:
         for param_name, (min_value, max_value, exclude) in value_filters.items():
-            if base_path == '':
-                path = f'{param_name}{curated_path}.value'
-            else:
-                path = f'{base_path}.{param_name}{curated_path}.value'
+            path = f'{base_path}{param_name}{curated_path}.value'
             if min_value is not None and max_value is not None:
                 if exclude:
                     and_filters.append({'$or': [{path: {'$lt': min_value}},
@@ -591,25 +588,30 @@ class HypatiaDB(BaseStarCollection):
         raw_results = list(self.collection.aggregate(json_pipeline))
         return {doc['match_name']: doc for doc in raw_results}
 
-    def graph_data_v2(self, db_formatted_names: list[str] = None,
-                      db_formatted_names_exclude: bool = False,
-                      elements_returned: list[ElementID] = None,
-                      elements_match_filters: set[ElementID] = None,
-                      element_value_filters: dict[ElementID, tuple[float | None, float | None, bool]] = None,
-                      element_ratios_returned: list[RatioID] = None,
-                      element_ratios_value_filters: dict[RatioID, tuple[float | None, float | None, bool]] = None,
-                      stellar_params_returned: list[str] = None,
-                      stellar_params_match_filters: set[str] = None,
-                      stellar_params_value_filters: dict[str, tuple[float | None, float | None, bool]] = None,
-                      planet_params_returned: list[str] = None,
-                      planet_params_match_filters: set[str] = None,
-                      planet_params_value_filters: dict[str, tuple[float | None, float | None, bool]] = None,
-                      solarnorm_id: str = 'absolute',
-                      return_median: bool = True,
-                      catalogs: set[str] | None = None,
-                      catalog_exclude: bool = False,
-                      return_nea_name: bool = False,
-                      ) -> list:
+    def frontend_pipeline(self, db_formatted_names: list[str] = None,
+                          db_formatted_names_exclude: bool = False,
+                          elements_returned: list[ElementID] = None,
+                          elements_match_filters: set[ElementID] = None,
+                          element_value_filters: dict[ElementID, tuple[float | None, float | None, bool]] = None,
+                          element_ratios_returned: list[RatioID] = None,
+                          element_ratios_value_filters: dict[RatioID, tuple[float | None, float | None, bool]] = None,
+                          stellar_params_returned: list[str] = None,
+                          stellar_params_match_filters: set[str] = None,
+                          stellar_params_value_filters: dict[str, tuple[float | None, float | None, bool]] = None,
+                          planet_params_returned: list[str] = None,
+                          planet_params_match_filters: set[str] = None,
+                          planet_params_value_filters: dict[str, tuple[float | None, float | None, bool]] = None,
+                          solarnorm_id: str = 'absolute',
+                          return_median: bool = True,
+                          catalogs: set[str] | None = None,
+                          catalog_exclude: bool = False,
+                          return_nea_name: bool = False,
+                          name_types_returned: list[str] | None = None,
+                          sort_field: str | ElementID | None = None,
+                          sort_reverse: bool = False,
+                          return_error: bool = False,
+                          star_name_column: str = 'name',
+                          ) -> list:
         if solarnorm_id == 'absolute':
             norm_path = 'absolute'
         else:
@@ -619,63 +621,127 @@ class HypatiaDB(BaseStarCollection):
         else:
             el_value_path = 'mean'
         is_planetary = any([planet_params_match_filters, planet_params_returned, planet_params_value_filters])
+        catalogs = sorted(catalogs) if catalogs else None
+        # get the unique elements
+        ratio_elements_set = set()
+        ratio_sets = []
+        if element_ratios_returned:
+            ratio_sets.append(element_ratios_returned)
+        if element_ratios_value_filters:
+            ratio_sets.extend(element_ratios_value_filters.keys())
+        if ratio_sets:
+            for element_ratio_id_set in ratio_sets:
+                if element_ratio_id_set:
+                    for element_ratio_id in element_ratio_id_set:
+                        ratio_elements_set.add(element_ratio_id.numerator)
+                        ratio_elements_set.add(element_ratio_id.denominator)
+
+        all_elements_set = set()
+        for element_id_set in [set(elements_returned), set(elements_match_filters),
+                               set(element_value_filters.keys()), ratio_elements_set]:
+            if element_id_set:
+                all_elements_set.update(element_id_set)
+        all_elements = sorted(all_elements_set, key=element_rank)
+        # initialize the pipeline
         json_pipeline = []
-        # stage 1: match and range based filtering of per-star parameters
-        and_filters = []
+        # stage 1: If needed, filter by per-star parameters to narrow the number of documents to process
+        and_filters_stellar = []
         if db_formatted_names:
-            and_filters.append({'aliases': {f"{'$nin' if db_formatted_names_exclude else '$in'}": db_formatted_names}})
-        if elements_match_filters:
-            for element_name in sorted(elements_match_filters, key=element_rank):
-                and_filters.append({f'{norm_path}.{element_name}': {'$ne': None}})
-        if element_value_filters and not catalogs:
-            # 'catalogs' triggers recalculation of values.
-            for element_name, (min_val, max_val, exclude) in element_value_filters.items():
-                if min_val is not None and max_val is not None:
-                    if exclude:
-                        and_filters.append({'$or': [{f'{norm_path}.{element_name}.{el_value_path}': {'$lt': min_val}},
-                                                    {f'{norm_path}.{element_name}.{el_value_path}': {'$gt': max_val}}]})
-                    else:
-                        and_filters.append({f'{norm_path}.{element_name}.{el_value_path}': {'$gte': min_val}})
-                        and_filters.append({f'{norm_path}.{element_name}.{el_value_path}': {'$lte': max_val}})
+            and_filters_stellar.append({'aliases': {f"{'$nin' if db_formatted_names_exclude else '$in'}": db_formatted_names}})
         # add the stellar parameters filters
-        and_filters.extend(add_params_and_filters(match_filters=stellar_params_match_filters,
-                                                  value_filters=stellar_params_value_filters, is_stellar=True))
+        and_filters_stellar.extend(add_params_and_filters(match_filters=stellar_params_match_filters,
+                                                          value_filters=stellar_params_value_filters, is_stellar=True))
         if is_planetary:
             # only require that a star has at least one planet at this stage.
-            and_filters.append({'nea': {'$ne': None}})
-        if and_filters:
+            and_filters_stellar.append({'nea': {'$ne': None}})
+        if and_filters_stellar:
             # only add a pipline stage if there are filters to apply.
-            json_pipeline.append({'$match': {"$and": and_filters}})
-        # stage 2a: per-planetary data - requires unwinding for the multiple exoplanets from a single star
+            json_pipeline.append({'$match': {"$and": and_filters_stellar}})
+
+        # stage 2: planetary data requires a new-fields, unwind, and match stage to reshape and filter the data.
         if is_planetary:
+            # stage 2a: reshape the planetary data to be an array of objects, which can be a targe for unwind
             json_pipeline.append({'$addFields': {'planets_array': {'$objectToArray': '$nea.planets'}}})
+            # stage 2b: unwind the planetary data to allow for per-planet filtering
             json_pipeline.append({'$unwind': '$planets_array'})
-            # stage 2b: per-planetary data match and range filtering
+            # stage 2c: per-planetary data match and range filtering
             and_filters_planetary = add_params_and_filters(match_filters=planet_params_match_filters,
                                                            value_filters=planet_params_value_filters, is_stellar=False)
-
             if and_filters_planetary:
                 # only add a pipline stage if there are filters to apply.
                 json_pipeline.append({'$match': {'$and': and_filters_planetary}})
 
-        # stage 3a: calculation new field creation
-        add_fields = {}
+        # stage 3: element not null, optional catalog filtering.
+        if catalogs:
+            # stage 3-catalogs: we need to find or exclude values from specific catalogs and calculate the median/mean
+            add_fields = {}
+            condition = {'$in': ['$$this.k', catalogs]}
+            if catalog_exclude:
+                condition = {'$not': condition}
+            for element_name in all_elements:
+                values_array = {
+                    '$map': {
+                        'input': {
+                            '$filter': {
+                                'input': {'$objectToArray': f'${norm_path}.{element_name}.catalogs'},
+                                'cond': condition,
+                            },
+                        },
+                        'in': '$$this.v',
+                    }
+                }
+                if return_median:
+                    cat_calc = {
+                        '$median': {
+                            'input': values_array,
+                            'method': 'approximate',
+                        },
+                    }
+                else:
+                    cat_calc = {'$avg': values_array}
+                add_fields[f'{element_name}'] = {'$round': [cat_calc, 2]}
+
+            if add_fields:
+                json_pipeline.append({'$addFields': add_fields})
+        else:
+            # stage 3-no-catalogs: make new field names for the elements
+            add_fields = {}
+            for element_name in all_elements:
+                element_filed_name = str(element_name)
+                add_fields[element_filed_name] = f'${norm_path}.{element_filed_name}.{el_value_path}'
+            json_pipeline.append({'$addFields': add_fields})
+
+        # stage 4: element match and value filtering
+        and_filters_elements = []
+        if elements_match_filters:
+            for element_name in sorted(elements_match_filters, key=element_rank):
+                and_filters_elements.append({f'{element_name}': {'$ne': None}})
+        if element_value_filters:
+            for element_name, (min_val, max_val, exclude) in element_value_filters.items():
+                if min_val is not None and max_val is not None:
+                    if exclude:
+                        and_filters_elements.append({'$or': [{f'{element_name}.{el_value_path}': {'$lt': min_val}},
+                                                    {f'{element_name}.{el_value_path}': {'$gt': max_val}}]})
+                    else:
+                        and_filters_elements.append({f'{element_name}.{el_value_path}': {'$gte': min_val}})
+                        and_filters_elements.append({f'{element_name}.{el_value_path}': {'$lte': max_val}})
+        if and_filters_elements:
+            json_pipeline.append({'$match': {'$and': and_filters_elements}})
+
+        # stage 5 ratio calculation
+        add_fields_ratio = {}
         if element_ratios_returned or element_ratios_value_filters:
             for ratio_id in list(element_ratios_returned | element_ratios_value_filters.keys()):
                 ratio_str = f'{ratio_id.numerator}_{ratio_id.denominator}'
-                add_fields[ratio_str] = {
+                add_fields_ratio[ratio_str] = {
                     '$round': [{
                         '$subtract': [f'${norm_path}.{ratio_id.numerator}.{el_value_path}',
                                       f'${norm_path}.{ratio_id.denominator}.{el_value_path}']}, 2]
                 }
-        if return_nea_name:
-            add_fields['nea_name'] = '$nea.nea_name'
-        if catalogs:
-            pass
-        if add_fields:
-            json_pipeline.append({'$addFields': add_fields})
+        if add_fields_ratio:
+            json_pipeline.append({'$addFields': add_fields_ratio})
 
-        # stage 3b: new field match and range filtering
+        # stage 6: elemental-ratio float-value filtering
         if element_ratios_value_filters:
             and_filters_ratios = add_params_and_filters(
                 match_filters=None,
@@ -686,17 +752,17 @@ class HypatiaDB(BaseStarCollection):
             if and_filters_ratios:
                 json_pipeline.append({'$match': {'$and': and_filters_ratios}})
 
-        # stage 4: project the final data
+        # stage 7: project the final data
         return_doc = {
             '_id': 0,
-            'name': '$_id',
+            f'{star_name_column}': '$_id',
         }
         if return_nea_name:
-            return_doc['nea_name'] = 1
+            return_doc['nea_name'] = '$nea.nea_name'
         if elements_returned:
             for element_name in sorted(elements_returned, key=element_rank):
                 element_str = str(element_name)
-                return_doc[element_str] = f'${norm_path}.{element_str}.{el_value_path}'
+                return_doc[element_str] = 1
         if element_ratios_returned:
             for ratio_id in element_ratios_returned:
                 return_doc[f'{ratio_id.numerator}_{ratio_id.denominator}'] = 1
@@ -706,6 +772,10 @@ class HypatiaDB(BaseStarCollection):
         if planet_params_returned:
             for param_name in planet_params_returned:
                 return_doc[param_name] = f'$planets_array.v.planetary.{param_name}.value'
+        if name_types_returned:
+            for name_type in name_types_returned:
+                if name_type != star_name_column:
+                    return_doc[name_type] = f'$names.{name_type}'
         json_pipeline.append({'$project': return_doc})
 
         # run the aggregation pipeline and return the results.
