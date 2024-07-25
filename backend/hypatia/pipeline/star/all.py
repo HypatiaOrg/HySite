@@ -386,7 +386,7 @@ class AllStarData:
                         element_lower = element_str.strip().lower()
                         if element_lower in self.hydrogen_element_lower or element_lower[-1] != 'h':
                             an_element_line += "H"
-                        an_element_line += f" {element_value:1.3f} [{single_catalog.catalog_long_name}]"
+                        an_element_line += f" {element_value} [{single_catalog.catalog_long_name}]"
                         star_write_lines.append(an_element_line)
                 # there is a blank line between stars
                 star_write_lines.append("")

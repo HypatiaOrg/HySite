@@ -5,9 +5,9 @@ import pymongo
 from hypatia.collect import BaseStarCollection
 
 
-indexed_name_types = ["hip", 'hd', 'tyc', 'gaia dr1', 'gaia dr2', 'gaia dr3', 'bd', '2mass', 'koi', 'kepler', 'wds']
+indexed_name_types = ['hip', 'hd', 'tyc', 'gaia dr1', 'gaia dr2', 'gaia dr3', 'bd', '2mass', 'koi', 'kepler', 'wds']
 index_props = {name_type: {"bsonType": ["string", "null"], "description": f"must be a string and is not required"}
-               for name_type in indexed_name_types}
+               for name_type in indexed_name_types + ['nea']}
 indexed_name_types = set(indexed_name_types)
 
 validator_star_doc = {

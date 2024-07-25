@@ -737,7 +737,7 @@ def pickle_to_hdf5(HYP_DATA_DIR: str, solarnorm: int):
     cache = pd.DataFrame(compositions_tbl,
                          columns=["solarnorm", "star_id", "star_hip", "catalogue", "element", "nlte", "count", "value"])
     print("Saving...")
-    cache.to_hdf(os.path.join(HYP_DATA_DIR, "compositions.%s.h5" % solarnorm), 'compositions')
+    cache.to_hdf(path_or_buf=os.path.join(HYP_DATA_DIR, "compositions.%s.h5" % solarnorm), key='compositions')
 
 
 def update_one_norm(norm: str, test_mode: bool = False):

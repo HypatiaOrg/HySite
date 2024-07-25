@@ -25,11 +25,11 @@ class ElementStats:
         if self.len < 1:
             pass
         elif self.len < 2:
-            self.mean = self.median = self.max = self.min = self.value_list[0]
+            self.mean = self.median = self.max = self.min = np.around(self.value_list[0], decimals=2)
             self.median_catalogs = [self.catalog_list[0]]
         else:
-            self.mean = np.around(np.mean(self.value_list), decimals=3)
-            self.median = np.around(np.median(self.value_list), decimals=3)
+            self.mean = np.around(np.mean(self.value_list), decimals=2)
+            self.median = np.around(np.median(self.value_list), decimals=2)
             self.max = np.max(self.value_list)
             self.min = np.min(self.value_list)
             self.spread = np.around(self.max - self.min, decimals=3)
