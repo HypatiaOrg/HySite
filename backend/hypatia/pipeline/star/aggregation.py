@@ -20,10 +20,16 @@ def add_params_and_filters(match_filters: set[str] | None,
             base_path = 'planets_array.v.planetary.'
     if match_filters:
         for param_name_match in match_filters:
-            and_filters.append({f'{base_path}{param_name_match}{curated_path}.value': {'$ne': None}})
+            if param_name_match == 'planet_letter':
+                and_filters.append({f'planets_array.v.letter': {'$ne': None}})
+            else:
+                and_filters.append({f'{base_path}{param_name_match}{curated_path}.value': {'$ne': None}})
     if value_filters:
         for param_name, (min_value, max_value, exclude) in value_filters.items():
-            path = f'{base_path}{param_name}{curated_path}.value'
+            if param_name == 'planet_letter':
+                path = 'planets_array.v.letter'
+            else:
+                path = f'{base_path}{param_name}{curated_path}.value'
             if min_value is not None and max_value is not None:
                 if exclude:
                     and_filters.append({'$or': [{path: {'$lt': min_value}},
@@ -75,6 +81,88 @@ def pipeline_add_starname_match(db_formatted_names: list[str], exclude: bool = F
             }
         }
     }
+
+
+def catalog_calc_array(element_name: ElementID, norm_path: str, catalogs: list[str], catalog_exclude: bool = False
+                       ) -> dict[str, dict]:
+    condition = {'$in': ['$$this.k', catalogs]}
+    if catalog_exclude:
+        condition = {'$not': condition}
+    return {
+        '$map': {
+            'input': {
+                '$filter': {
+                    'input': {'$objectToArray': f'${norm_path}.{element_name}.catalogs'},
+                    'cond': condition,
+                },
+            },
+            'in': '$$this.v',
+        }
+    }
+
+
+def catalogs_calc_from_values(values_array: dict[str, dict] | str, return_median: bool = True):
+    if return_median:
+        cat_calc = {
+            '$median': {
+                'input': values_array,
+                'method': 'approximate',
+            },
+        }
+    else:
+        cat_calc = {'$avg': values_array}
+    return {'$round': [cat_calc, 2]}
+
+
+def catalog_calc(all_elements: list[ElementID],
+                 norm_path: str,
+                 catalogs: list[str],
+                 catalog_exclude: bool,
+                 return_median: bool = True) -> dict[str, dict]:
+    add_fields = {}
+    for element_name in all_elements:
+        values_array = catalog_calc_array(element_name=element_name, norm_path=norm_path,
+                                          catalogs=catalogs, catalog_exclude=catalog_exclude)
+        add_fields[f'{element_name}'] = catalogs_calc_from_values(values_array=values_array,
+                                                                  return_median=return_median)
+    return {'$addFields': add_fields}
+
+
+def catalog_calc_with_error(all_elements: list[ElementID],
+                            norm_path: str,
+                            catalogs: list[str],
+                            catalog_exclude: bool,
+                            return_median: bool = True) -> list[dict[str, dict]]:
+    # get the values for in a two-step calculation; the first is to sort the values
+    add_fields_first_calc = {}
+    for element_name in all_elements:
+        add_fields_first_calc[f'{element_name}_cat_values'] = catalog_calc_array(
+            element_name=element_name, norm_path=norm_path, catalogs=catalogs, catalog_exclude=catalog_exclude)
+    # calculate the median/meaning and error values from the sorted in the first step of the calculation
+    add_fields_final_calc = {}
+    for element_name in all_elements:
+        values_array = f'${element_name}_cat_values'
+        # calculate the median/mean and error values
+        add_fields_final_calc[f'{element_name}'] = catalogs_calc_from_values(values_array=values_array,
+                                                                             return_median=return_median)
+        # calculate the error values
+        add_fields_final_calc[f'{element_name}_err'] = {
+            '$round': [{
+                '$divide': [
+                    {'$subtract': [{'$max': values_array}, {'$min': values_array}]},
+                    2.0,
+                ],
+            }, 2]
+        }
+
+    # package the results as two aggregation stages
+    json_pipeline_stages = []
+    if add_fields_first_calc:
+        json_pipeline_stages.append({'$addFields': add_fields_first_calc})
+    if add_fields_final_calc:
+        json_pipeline_stages.append({'$addFields': add_fields_final_calc})
+
+    return json_pipeline_stages
 
 
 def star_data_v2(db_formatted_names: list[str]) -> list[dict]:
@@ -244,41 +332,22 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
     # stage 3: element not null, optional catalog filtering.
     if catalogs:
         # stage 3-catalogs: we need to find or exclude values from specific catalogs and calculate the median/mean
-        add_fields = {}
-        condition = {'$in': ['$$this.k', catalogs]}
-        if catalog_exclude:
-            condition = {'$not': condition}
-        for element_name in all_elements:
-            values_array = {
-                '$map': {
-                    'input': {
-                        '$filter': {
-                            'input': {'$objectToArray': f'${norm_path}.{element_name}.catalogs'},
-                            'cond': condition,
-                        },
-                    },
-                    'in': '$$this.v',
-                }
-            }
-            if return_median:
-                cat_calc = {
-                    '$median': {
-                        'input': values_array,
-                        'method': 'approximate',
-                    },
-                }
-            else:
-                cat_calc = {'$avg': values_array}
-            add_fields[f'{element_name}'] = {'$round': [cat_calc, 2]}
-
-        if add_fields:
-            json_pipeline.append({'$addFields': add_fields})
+        if return_error:
+            json_pipeline.extend(catalog_calc_with_error(all_elements=all_elements, norm_path=norm_path,
+                                                         catalogs=catalogs, catalog_exclude=catalog_exclude,
+                                                         return_median=return_median))
+        else:
+            json_pipeline.append(catalog_calc(all_elements=all_elements, norm_path=norm_path,
+                                              catalogs=catalogs, catalog_exclude=catalog_exclude,
+                                              return_median=return_median))
     else:
         # stage 3-no-catalogs: make new field names for the elements
         add_fields = {}
         for element_name in all_elements:
-            element_filed_name = str(element_name)
-            add_fields[element_filed_name] = f'${norm_path}.{element_filed_name}.{el_value_path}'
+            element_field_name = str(element_name)
+            add_fields[element_field_name] = f'${norm_path}.{element_field_name}.{el_value_path}'
+            if return_error:
+                add_fields[f'{element_field_name}_err'] = f'${norm_path}.{element_field_name}.plusminus'
         json_pipeline.append({'$addFields': add_fields})
 
     # stage 4: element match and value filtering
@@ -332,16 +401,24 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
         for element_name in sorted(elements_returned, key=element_rank):
             element_str = str(element_name)
             return_doc[element_str] = 1
+            if return_error:
+                return_doc[f'{element_str}_err'] = 1
     if element_ratios_returned:
         for ratio_id in element_ratios_returned:
             return_doc[f'{ratio_id.numerator}_{ratio_id.denominator}'] = 1
     if stellar_params_returned:
         for param_name in stellar_params_returned:
+            # parameter's value
             return_doc[param_name] = f'$stellar.{param_name}.curated.value'
+            # parameter's error
+            if return_error and param_name not in string_names_types:
+                return_doc[f'{param_name}_err'] = f'$stellar.{param_name}.curated.err'
+            # sorting by a string field requires a different field to sort by.
             if sort_field == param_name and param_name in str_to_float_fields:
                 number_field_str = f'{param_name}_num'
                 return_doc[number_field_str] = f'$stellar.{number_field_str}.curated.value'
                 sort_field = number_field_str
+
     if is_planetary:
         return_doc['nea_name'] = '$planets_array.v.pl_name'
         if planet_params_returned:
@@ -349,8 +426,12 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
                 if param_name not in {'pl_name', 'nea_name'}:
                     if param_name == 'planet_letter':
                         return_doc[param_name] = '$planets_array.v.letter'
+                    elif param_name in string_names_types:
+                        return_doc[param_name] = f'$planets_array.v.planetary.{param_name}.value'
                     else:
                         return_doc[param_name] = f'$planets_array.v.planetary.{param_name}.value'
+                        if return_error:
+                            return_doc[f'{param_name}_err'] = f'$planets_array.v.planetary.{param_name}.err'
     elif return_nea_name:
         return_doc['nea_name'] = '$nea.nea_name'
     if name_types_returned:
@@ -363,7 +444,6 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
             sort_location = f'${sort_field}'
         # use this to sort null fields to the end of the list.
         return_doc['sort_field_type'] = {'$type': f'{sort_location}'}
-
     json_pipeline.append({'$project': return_doc})
 
     # Stage 8: sort the data

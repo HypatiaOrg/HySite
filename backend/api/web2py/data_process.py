@@ -3,6 +3,7 @@ from copy import copy
 import numpy as np
 
 from api.db import summary_doc, hypatia_db
+from hypatia.pipeline.star.aggregation import string_names_types
 from hypatia.elements import ElementID, RatioID, hydrogen_id, get_representative_error
 from api.v2.data_process import (get_norm_key, get_norm_data, get_catalog_summary, total_stars, total_abundance_count,
                                  available_wds_stars, available_nea_names, available_elements_v2, available_catalogs_v2,
@@ -13,7 +14,7 @@ stellar_param_types_v2 = ['raj2000', 'decj2000', 'dist', 'x_pos', 'y_pos', 'z_po
                           'sptype', 'vmag', 'bmag', 'bv', 'pm_ra', 'pm_dec', 'u_vel', 'v_vel', 'w_vel',
                           'disk', 'mass', 'rad']
 stellar_param_types_v2_set = set(stellar_param_types_v2)
-planet_param_types_v2 = ["semi_major_axis", "eccentricity", "inclination", "pl_mass", "pl_radius"]
+planet_param_types_v2 = ["semi_major_axis", "eccentricity", "inclination", "pl_mass", "pl_radius", 'planet_letter',]
 planet_param_types_v2_set = set(planet_param_types_v2)
 ranked_string_params = {'sptype': 'sptype_num', 'disk': 'disk_num'}
 nones = {None, 'none', ''}
@@ -56,14 +57,6 @@ for element_str_id in available_elements_v2:
     })
 
 
-def is_float_str(test: str | None) -> float | None:
-    try:
-        return float(test)
-    except ValueError:
-        return None
-    except TypeError:
-        return None
-
 
 def is_true_str(test: str) -> bool:
     if isinstance(test, str):
@@ -104,6 +97,16 @@ def is_none_str(test: str | None, default: str | None, use_lower: bool = True) -
             return test
     else:
         raise TypeError(f"Expected a string, got {type(test)} in is_none_str()")
+
+
+def is_value_str(test: str | None) -> float | str | None:
+    try:
+        return float(test)
+    except ValueError:
+        pass
+    except TypeError:
+        pass
+    return is_none_str(test, None)
 
 
 class ParameterFilters:
@@ -206,14 +209,24 @@ class FilterForQuery:
             param_id = 'disk_num'
         # ensure the types are of the filter_low and filter_high are either float or None
         if filter_low is not None and filter_high is not None:
-            filter_low = float(filter_low)
-            filter_high = float(filter_high)
-            if filter_low > filter_high:
-                filter_low, filter_high = filter_high, filter_low
+            try:
+                filter_low = float(filter_low)
+                filter_high = float(filter_high)
+            except ValueError:
+                pass
+            else:
+                if filter_low > filter_high:
+                    filter_low, filter_high = filter_high, filter_low
         elif filter_low is not None:
-            filter_low = float(filter_low)
+            try:
+                filter_low = float(filter_low)
+            except ValueError:
+                pass
         elif filter_high is not None:
-            filter_high = float(filter_high)
+            try:
+                filter_high = float(filter_high)
+            except ValueError:
+                pass
         if param_type == 'element':
             self.element_value_filters[param_id] = (filter_low, filter_high, exclude)
         elif param_type == 'element_ratio':
@@ -231,16 +244,16 @@ class FilterForQuery:
 def graph_settings_from_request(settings: dict[str, any]):
     filter1_1 = is_none_str(settings.get('filter1_1', None), default=None)
     filter1_2 = is_none_str(settings.get('filter1_2', None), default='H')
-    filter1_3 = is_float_str(settings.get('filter1_3', None))
-    filter1_4 = is_float_str(settings.get('filter1_4', None))
+    filter1_3 = is_value_str(settings.get('filter1_3', None))
+    filter1_4 = is_value_str(settings.get('filter1_4', None))
     filter2_1 = is_none_str(settings.get('filter2_1', None), default=None)
     filter2_2 = is_none_str(settings.get('filter2_2', None), default='H')
-    filter2_3 = is_float_str(settings.get('filter2_3', None))
-    filter2_4 = is_float_str(settings.get('filter2_4', None))
+    filter2_3 = is_value_str(settings.get('filter2_3', None))
+    filter2_4 = is_value_str(settings.get('filter2_4', None))
     filter3_1 = is_none_str(settings.get('filter3_1', None), default=None)
     filter3_2 = is_none_str(settings.get('filter3_2', None), default='H')
-    filter3_3 = is_float_str(settings.get('filter3_3', None))
-    filter3_4 = is_float_str(settings.get('filter3_4', None))
+    filter3_3 = is_value_str(settings.get('filter3_3', None))
+    filter3_4 = is_value_str(settings.get('filter3_4', None))
     xaxis1 = is_none_str(settings.get('xaxis1', None), default='Fe')
     xaxis2 = is_none_str(settings.get('xaxis2', None), default='H')
     yaxis1 = is_none_str(settings.get('yaxis1', None), default='Si')
@@ -532,7 +545,7 @@ def table_query_from_request(settings: dict[str, any]):
     if return_error:
         for data_row in table_data:
             for el_name, el_rep_err in zip(element_str_names, rep_errors):
-                if el_name in data_row.keys():
+                if el_name in data_row.keys() and data_row[el_name] is not None:
                     error_name = f'{el_name}_err'
                     if error_name in data_row.keys():
                         err_value = data_row[error_name]
@@ -548,12 +561,20 @@ def table_query_from_request(settings: dict[str, any]):
         element_str_names = [str(el_id) for el_id in elements_returned]
         element_map = {el_str: el_str.replace('_', '') for el_str in element_str_names}
         all_columns.update(element_str_names)
+        if return_error:
+            all_columns.update([f'{el_str}_err' for el_str in element_str_names])
     if name_types_returned:
         all_columns.update(name_types_returned)
     if stellar_params_returned:
         all_columns.update(stellar_params_returned)
+        if return_error:
+            all_columns.update([f'{stellar_param}_err' for stellar_param in stellar_params_returned
+                                if stellar_param not in string_names_types])
     if planet_params_returned:
         all_columns.update(planet_params_returned)
+        if return_error:
+            all_columns.update([f'{planet_param}_err' for planet_param in planet_params_returned
+                                if planet_param not in string_names_types])
     if any([planet_params_returned, planet_params_match_filters, planet_params_value_filters]):
         all_columns.add('nea_name')
     all_columns = sorted(all_columns)
@@ -579,10 +600,10 @@ def table_query_from_request(settings: dict[str, any]):
 
 if __name__ == '__main__':
     test_settings = {
-        'filter1_1': 'none',
+        'filter1_1': 'planet_letter',
         'filter1_2': 'H',
-        'filter1_3': '0.0001',
-        'filter1_4': '0.5',
+        'filter1_3': 'b',
+        'filter1_4': 'd',
         'filter2_1': 'none',
         'filter2_2': 'H',
         'filter2_3': 'None',
@@ -593,7 +614,7 @@ if __name__ == '__main__':
         'filter3_4': 'None',
         'xaxis1': 'Fe',
         'xaxis2': 'H',
-        'yaxis1': 'Fe',
+        'yaxis1': 'Si',
         'yaxis2': 'H',
         'zaxis1': 'none',
         'zaxis2': 'H',
@@ -603,15 +624,15 @@ if __name__ == '__main__':
         'filter2_inv': 'False',
         'filter3_inv': 'False',
         'solarnorm': 'lodders09',
-        'catalogs': 'none',
+        'catalogs': 'luck18',
         'mode': 'scatter',
         # below are the settings for the table query
         'requested_stellar_params': 'teff;sptype;disk',
         'requested_elements': 'Fe;C;O;Mg;S;C;Ti;F;CII',
-        'requested_planet_params': '',
+        'requested_planet_params': 'eccentricity;pl_radius',
         'requested_name_types': 'star_id,hd',
         'sort': 'Ti',
         'reverse': 'true',
-        'return_error': 'false',
+        'show_error': 'true',
     }
     test_table_data = table_query_from_request(settings=test_settings)

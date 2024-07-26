@@ -146,6 +146,8 @@ def single_param_strict_check(param_name: str, value: values_types, ref: str, un
         if err_high is not None:
             err_high = float(err_high)
         if err_low is not None and err_high is not None:
+            if err_low > 0:
+                err_low = -err_low
             value, err_low, err_high = format_by_err(value, err_low, err_high)
     if err_low is None or err_high is None:
         # when there are no error values, we can round bases on the expected number of decimals
@@ -177,7 +179,10 @@ class SingleParam(NamedTuple):
         err_high = self.err_high
         units = self.units
         rec = single_param_strict_check(param_str, value, ref, units, err_low, err_high)
-        if "units" in rec.keys():
-            del rec["units"]
+        if 'units' in rec.keys():
+            del rec['units']
+        if err_low is None or err_high is None:
+            return rec
+        rec['err'] = f'{err_low}/{err_high}'
         return rec
 
