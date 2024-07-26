@@ -47,6 +47,12 @@ v2_null_star_record = {
     "planets": None,
 }
 
+solar_norm_nea = 'lodders09'
+elements_nea_raw = ['Fe', 'C', 'O', 'Na', 'Mg', 'Al', 'Si', 'Ca', 'Y', 'Ba_II']
+elements_nea = [ElementID.from_str(element) for element in elements_nea_raw]
+elements_nea_v2_format = {element_id: str(element_id).replace('_', '') + 'H' for element_id in elements_nea}
+
+
 null_abundance_record = {'name': 'not-found'}
 
 normalizations_v2 = [{'id': norm_key} | {prop: norm_data[prop] if prop in norm_data.keys() else None
@@ -225,6 +231,48 @@ def get_abundance_data_v2(
     return user_packaged_results
 
 
+def nea_v2():
+    return_list = []
+    for star_dict in hypatia_db.nea_v2(solar_norm_nea=solar_norm_nea, elements_nea_v2_format=elements_nea_v2_format):
+        name = star_dict['name']
+        nea_name = star_dict.get('nea_name', None)
+        if nea_name:
+            is_planet_host = True
+        else:
+            is_planet_host = False
+        all_names = star_dict['all_names']
+        for el_v2_key in elements_nea_v2_format.values():
+            el_catalogs = star_dict.get(f'{el_v2_key}_catalogs', None)
+            if el_catalogs is None:
+                all_values = None
+                num_of_values = 0
+            else:
+                all_values = [{'value': cat_value, 'catalog': get_catalog_summary(catalog_id)}
+                              for catalog_id, cat_value in el_catalogs.items()]
+                num_of_values = len(all_values)
+            el_median_catalogs = star_dict.get(f'{el_v2_key}_median_catalogs', None)
+            if el_median_catalogs is None:
+                median_catalogs = None
+            else:
+                median_catalogs = [{'value': el_catalogs[catalog_id], 'catalog': get_catalog_summary(catalog_id)}
+                                   for catalog_id in el_median_catalogs]
+            return_list.append(dict(
+                name=name,
+                all_names=all_names,
+                element=el_v2_key,
+                solarnorm=solar_norm_nea,
+                all_values=all_values,
+                median=median_catalogs,
+                mean=star_dict.get(f'{el_v2_key}_mean', None),
+                plusminus_error=star_dict.get(f'{el_v2_key}_plusminus_error', None),
+                median_value=star_dict.get(f'{el_v2_key}_median_value', None),
+                num_of_values=num_of_values,
+                is_planet_host=is_planet_host,
+                nea_name=nea_name,
+            ))
+    return return_list
+
+
 if __name__ == '__main__':
     # test_star = get_star_data_v2(star_names=[
     #     "HIP 12345",
@@ -235,9 +283,11 @@ if __name__ == '__main__':
     #     'hip',
     #   ])
 
-    test_abundance = get_abundance_data_v2(
-        star_names_db_unique={'hip12345', 'hip56789', 'hip113044', 'hip22453', '*6lyn'},
-        element_ids_unique={ElementID.from_str('Fe'), ElementID.from_str('Li'),
-                            ElementID.from_str('Ti'), ElementID.from_str('baii')},
-        solar_norms_unique={'lodders09', 'original', 'absolute', 'grevesse07'},
-    )
+    # test_abundance = get_abundance_data_v2(
+    #     star_names_db_unique={'hip12345', 'hip56789', 'hip113044', 'hip22453', '*6lyn'},
+    #     element_ids_unique={ElementID.from_str('Fe'), ElementID.from_str('Li'),
+    #                         ElementID.from_str('Ti'), ElementID.from_str('baii')},
+    #     solar_norms_unique={'lodders09', 'original', 'absolute', 'grevesse07'},
+    # )
+
+    test_nea = nea_v2()

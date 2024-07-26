@@ -175,6 +175,31 @@ class HypatiaDB(BaseStarCollection):
         raw_results = list(self.collection.aggregate(json_pipeline))
         return {doc['match_name']: doc for doc in raw_results}
 
+    def nea_v2(self, solar_norm_nea: str, elements_nea_v2_format: dict[ElementID, str]) -> list[dict]:
+        if solar_norm_nea == 'absolute':
+            norm_str = 'absolute'
+        else:
+            norm_str = f'normalizations.{solar_norm_nea}'
+        element_fields = {}
+        for element_id, el_v2_field in elements_nea_v2_format.items():
+            el_path = f'{norm_str}.{element_id}'
+            element_fields[f'{el_v2_field}_mean'] = f'${el_path}.mean'
+            element_fields[f'{el_v2_field}_catalogs'] = f'${el_path}.catalogs'
+            element_fields[f'{el_v2_field}_median_catalogs'] = f'${el_path}.median_catalogs'
+            element_fields[f'{el_v2_field}_plusminus_error'] = f'${el_path}.plusminus'
+            element_fields[f'{el_v2_field}_median_value'] = f'${el_path}.median'
+
+        json_pipeline = [
+            {'$project': {
+                '_id': 0,
+                'name': '$_id',
+                'all_names': '$names.aliases',
+                'nea_name': '$nea.nea_name',
+                **element_fields,
+            }},
+        ]
+        return list(self.collection.aggregate(json_pipeline))
+
     def frontend_pipeline(self, db_formatted_names: list[str] = None,
                           db_formatted_names_exclude: bool = False,
                           elements_returned: list[ElementID] = None,

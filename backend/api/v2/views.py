@@ -2,7 +2,7 @@ from django.views import View
 from django.http import JsonResponse, HttpResponse
 from api.web2py.data_process import graph_query_from_request
 from api.v2.data_process import (normalizations_v2, available_elements_v2, available_catalogs_v2, get_star_data_v2,
-                                 get_abundance_data_v2, element_parse_v2, get_norm_key, max_unique_star_names)
+                                 get_abundance_data_v2, element_parse_v2, get_norm_key, max_unique_star_names, nea_v2)
 
 
 class SolarNorm(View):
@@ -101,5 +101,4 @@ class Data(View):
 
 class Nea(View):
     def get(self, request):
-
-        return JsonResponse(graph_query_from_request(settings=request.GET, from_api=True))
+        return JsonResponse(nea_v2(), safe=False)
