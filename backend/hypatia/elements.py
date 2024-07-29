@@ -1,5 +1,6 @@
 import os
 import tomllib
+from warnings import warn
 from typing import NamedTuple
 
 import numpy as np
@@ -8,7 +9,7 @@ from hypatia.config import ref_dir, site_dir
 from hypatia.tools.table_read import row_dict
 
 
-plusminus_error_default = 0.01
+plusminus_error_default = 0.1
 plusminus_error_decimals = 2
 elements_that_end_in_h = {'bh', 'rh', 'th', 'nh', 'h'}
 ambiguous_ion_elements = {frozenset({'s', 'si'}), frozenset({'n', 'ni'}), frozenset({'b', 'bi'})}
@@ -24,8 +25,6 @@ elements_found = set()
 element_csv = {key: {field_name: float(value) if field_name in float_params else value
                      for field_name, value in el_dict.items()}
                for key, el_dict in row_dict(os.path.join(ref_dir, "elementData.csv"), key='element_abrev').items()}
-
-
 
 
 summary_dict = {}
@@ -196,29 +195,33 @@ with open(element_plusminus_error_file, 'rb') as f:
 
 
 def get_representative_error(element_id: ElementID) -> float:
-    if element_id in plusminus_error:
+    if element_id in plusminus_error.keys():
         # this is the exit if the error was in the file or already loaded for a different ion state or NLTE status.
         return plusminus_error[element_id]
     # test if this element can be found in the error file with a different ion state or NLTE status
-    found_error = None
+    proxy_element = None
     if element_id.is_nlte:
         # test if an LTE version of this element is in the error file
         non_nlte_element_id = ElementID(name_lower=element_id.name_lower, ion_state=element_id.ion_state, is_nlte=False)
         if non_nlte_element_id in plusminus_error:
-            found_error = plusminus_error[non_nlte_element_id]
+            proxy_element = non_nlte_element_id
         elif element_id.ion_state is not None:
-            # test if an NLTE version of this element is available for an un-ionized version of this element
+            # test if an NLTE version of this element is available for a neutral version of this element
             non_nlte_element_id = ElementID(name_lower=element_id.name_lower, ion_state=None, is_nlte=True)
             if non_nlte_element_id in plusminus_error:
-                found_error = plusminus_error[non_nlte_element_id]
-    if found_error is None and element_id.ion_state is not None:
+                proxy_element = non_nlte_element_id
+    if proxy_element is None and element_id.ion_state is not None:
         # if no other solution was found, test if an LTE and electrically-neutral version of this element is available
         non_ion_element_id = ElementID(name_lower=element_id.name_lower, ion_state=None, is_nlte=False)
         if non_ion_element_id in plusminus_error:
-            found_error = plusminus_error[non_ion_element_id]
-    if found_error is None:
+            proxy_element = non_ion_element_id
+    if proxy_element is None:
         # return the default representative error.
         found_error = plusminus_error_default
+        warn(f'Element {element_id} not found in the error file, using default representative error.')
+    else:
+        found_error = plusminus_error[proxy_element]
+        warn(f'Element {element_id} not found in the error file, using proxy representative error for {proxy_element}.')
     # find this faster the next time
     plusminus_error[element_id] = found_error
     return plusminus_error_default
