@@ -2,11 +2,14 @@ import os
 import tomllib
 from typing import NamedTuple
 
+import numpy as np
+
 from hypatia.config import ref_dir, site_dir
 from hypatia.tools.table_read import row_dict
 
 
-plusminus_error_default = 0.001
+plusminus_error_default = 0.01
+plusminus_error_decimals = 2
 elements_that_end_in_h = {'bh', 'rh', 'th', 'nh', 'h'}
 ambiguous_ion_elements = {frozenset({'s', 'si'}), frozenset({'n', 'ni'}), frozenset({'b', 'bi'})}
 elements_that_end_in_i = {'li', 'si', 'ti', 'ni', 'bi', 'i'}
@@ -22,17 +25,14 @@ element_csv = {key: {field_name: float(value) if field_name in float_params else
                      for field_name, value in el_dict.items()}
                for key, el_dict in row_dict(os.path.join(ref_dir, "elementData.csv"), key='element_abrev').items()}
 
-# representative error file
-element_plusminus_error_file = os.path.join(site_dir, 'element_plusminus_err.toml')
-with open(element_plusminus_error_file, 'rb') as f:
-    plusminus_error = {key.lower(): float(value) for key, value in tomllib.load(f).items()}
+
 
 
 summary_dict = {}
 for el_name, el_dict in element_csv.items():
     el_name_lower = el_name.lower()
     # make a shallow copy of the element dictionary as a part of this data export
-    el_data = {**el_dict, "abbreviation": el_name, "plusminus": plusminus_error.get(el_name_lower, plusminus_error_default)}
+    el_data = {**el_dict, "abbreviation": el_name}
     summary_dict[el_name_lower] = el_data
 
 
@@ -181,6 +181,67 @@ class ElementID(NamedTuple):
         return f"ElementID({self})"
 
 
+# define some common element IDs
+hydrogen_id = ElementID.from_str("H")
+iron_id = ElementID.from_str("Fe")
+iron_ii_id = ElementID.from_str("Fe_II")
+iron_nlte_id = ElementID.from_str("NLTE_Fe")
+
+
+# representative error file
+element_plusminus_error_file = os.path.join(site_dir, 'element_plusminus_err.toml')
+with open(element_plusminus_error_file, 'rb') as f:
+    plusminus_error = {ElementID.from_str(key): np.round(float(value), decimals=plusminus_error_decimals)
+                       for key, value in tomllib.load(f).items()}
+
+
+def get_representative_error(element_id: ElementID) -> float:
+    if element_id in plusminus_error:
+        # this is the exit if the error was in the file or already loaded for a different ion state or NLTE status.
+        return plusminus_error[element_id]
+    # test if this element can be found in the error file with a different ion state or NLTE status
+    found_error = None
+    if element_id.is_nlte:
+        # test if an LTE version of this element is in the error file
+        non_nlte_element_id = ElementID(name_lower=element_id.name_lower, ion_state=element_id.ion_state, is_nlte=False)
+        if non_nlte_element_id in plusminus_error:
+            found_error = plusminus_error[non_nlte_element_id]
+        elif element_id.ion_state is not None:
+            # test if an NLTE version of this element is available for an un-ionized version of this element
+            non_nlte_element_id = ElementID(name_lower=element_id.name_lower, ion_state=None, is_nlte=True)
+            if non_nlte_element_id in plusminus_error:
+                found_error = plusminus_error[non_nlte_element_id]
+    if found_error is None and element_id.ion_state is not None:
+        # if no other solution was found, test if an LTE and electrically-neutral version of this element is available
+        non_ion_element_id = ElementID(name_lower=element_id.name_lower, ion_state=None, is_nlte=False)
+        if non_ion_element_id in plusminus_error:
+            found_error = plusminus_error[non_ion_element_id]
+    if found_error is None:
+        # return the default representative error.
+        found_error = plusminus_error_default
+    # find this faster the next time
+    plusminus_error[element_id] = found_error
+    return plusminus_error_default
+
+
+def element_rank(element_record: ElementID) -> float:
+    """Use this key in a sorting list like : sorted(list[ElementRecord], key=element_rank)"""
+    name_lower = element_record.name_lower
+    ion_state = element_record.ion_state
+    rank = float(summary_dict[name_lower]["atomic_number"])
+    if element_record.is_nlte:
+        rank += 0.001
+    if ion_state is not None:
+        ion_state = ion_state.lower()
+        if ion_state == "i":
+            rank += 0.0001
+        elif ion_state == "ii":
+            rank += 0.00011
+        elif ion_state == "iii":
+            rank += 0.000111
+    return rank
+
+
 class RatioID(NamedTuple):
     numerator: ElementID
     denominator: ElementID
@@ -207,29 +268,5 @@ class RatioID(NamedTuple):
         return f"RatioID({self})"
 
 
-def element_rank(element_record: ElementID) -> float:
-    """Use this key in a sorting list like : sorted(list[ElementRecord], key=element_rank)"""
-    name_lower = element_record.name_lower
-    ion_state = element_record.ion_state
-    rank = float(summary_dict[name_lower]["atomic_number"])
-    if element_record.is_nlte:
-        rank += 0.001
-    if ion_state is not None:
-        ion_state = ion_state.lower()
-        if ion_state == "i":
-            rank += 0.0001
-        elif ion_state == "ii":
-            rank += 0.00011
-        elif ion_state == "iii":
-            rank += 0.000111
-    return rank
-
-
-def get_representative_error(element_id: ElementID) -> float:
-    return plusminus_error.get(element_id.name_lower, plusminus_error_default)
-
-
-hydrogen_id = ElementID.from_str("H")
-iron_id = ElementID.from_str("Fe")
-iron_ii_id = ElementID.from_str("Fe_II")
-iron_nlte_id = ElementID.from_str("NLTE_Fe")
+if __name__ == '__main__':
+    print(get_representative_error(ElementID.from_str('LaII')))

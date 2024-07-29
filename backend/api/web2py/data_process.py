@@ -51,11 +51,9 @@ for element_str_id in available_elements_v2:
         element_name = f"{ref_this_el['element_name']} ({element_id.ion_state.upper()})"
     element_data.append({
         'element_id': element_str_id,
-        'plusminus': ref_this_el['plusminus'],
         'element_name': element_name,
         'abbreviation': abbreviation,
     })
-
 
 
 def is_true_str(test: str) -> bool:
@@ -563,6 +561,8 @@ def table_query_from_request(settings: dict[str, any]):
         all_columns.update(element_str_names)
         if return_error:
             all_columns.update([f'{el_str}_err' for el_str in element_str_names])
+            element_map.update({f'{el_str}_err': f'{web2py_formatted_str}_err'
+                                for el_str, web2py_formatted_str in element_map.items()})
     if name_types_returned:
         all_columns.update(name_types_returned)
     if stellar_params_returned:

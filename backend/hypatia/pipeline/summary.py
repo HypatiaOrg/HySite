@@ -47,7 +47,7 @@ class SummaryCollection(BaseCollection):
                             "bsonType": "object",
                             "description": "must be a object that describes a parameter",
                             "required": ['atomic_number', "average_mass_amu", 'element_name', 'abbreviation', 'group',
-                                         'ionization_energy_ev', 'plusminus'],
+                                         'ionization_energy_ev'],
                             "additionalProperties": True,
                             "properties": {
                                 "atomic_number": {

@@ -18,7 +18,7 @@ class BaseCollection:
             "properties": {
                 "_id": {
                     "bsonType": "string",
-                    "description": "must be a string and is required to be unquie"
+                    "description": "must be a string and is required to be unique"
                 },
             }
         }
