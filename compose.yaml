@@ -26,6 +26,8 @@ services:
             context: ./web2py
         pull_policy: always
         restart: "${RESTART_POLICY:-no}"
+        environment:
+            BASE_API_URL: "http://django-api:8111"
         volumes:
             # The web2 py app needs to read and write files, it uses the file system as a database
             # we must write file locally for them to persist between builds.
