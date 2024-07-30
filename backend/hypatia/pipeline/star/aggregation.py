@@ -89,80 +89,16 @@ def catalog_calc_array(element_name: ElementID, norm_path: str, catalogs: list[s
     if catalog_exclude:
         condition = {'$not': condition}
     return {
-        '$map': {
+        '$sortArray': {
             'input': {
                 '$filter': {
                     'input': {'$objectToArray': f'${norm_path}.{element_name}.catalogs'},
                     'cond': condition,
                 },
             },
-            'in': '$$this.v',
+            'sortBy': {'v': 1},
         }
     }
-
-
-def catalogs_calc_from_values(values_array: dict[str, dict] | str, return_median: bool = True):
-    if return_median:
-        cat_calc = {
-            '$median': {
-                'input': values_array,
-                'method': 'approximate',
-            },
-        }
-    else:
-        cat_calc = {'$avg': values_array}
-    return {'$round': [cat_calc, 2]}
-
-
-def catalog_calc(all_elements: list[ElementID],
-                 norm_path: str,
-                 catalogs: list[str],
-                 catalog_exclude: bool,
-                 return_median: bool = True) -> dict[str, dict]:
-    add_fields = {}
-    for element_name in all_elements:
-        values_array = catalog_calc_array(element_name=element_name, norm_path=norm_path,
-                                          catalogs=catalogs, catalog_exclude=catalog_exclude)
-        add_fields[f'{element_name}'] = catalogs_calc_from_values(values_array=values_array,
-                                                                  return_median=return_median)
-    return {'$addFields': add_fields}
-
-
-def catalog_calc_with_error(all_elements: list[ElementID],
-                            norm_path: str,
-                            catalogs: list[str],
-                            catalog_exclude: bool,
-                            return_median: bool = True) -> list[dict[str, dict]]:
-    # get the values for in a two-step calculation; the first is to sort the values
-    add_fields_first_calc = {}
-    for element_name in all_elements:
-        add_fields_first_calc[f'{element_name}_cat_values'] = catalog_calc_array(
-            element_name=element_name, norm_path=norm_path, catalogs=catalogs, catalog_exclude=catalog_exclude)
-    # calculate the median/meaning and error values from the sorted in the first step of the calculation
-    add_fields_final_calc = {}
-    for element_name in all_elements:
-        values_array = f'${element_name}_cat_values'
-        # calculate the median/mean and error values
-        add_fields_final_calc[f'{element_name}'] = catalogs_calc_from_values(values_array=values_array,
-                                                                             return_median=return_median)
-        # calculate the error values
-        add_fields_final_calc[f'{element_name}_err'] = {
-            '$round': [{
-                '$divide': [
-                    {'$subtract': [{'$max': values_array}, {'$min': values_array}]},
-                    2.0,
-                ],
-            }, 2]
-        }
-
-    # package the results as two aggregation stages
-    json_pipeline_stages = []
-    if add_fields_first_calc:
-        json_pipeline_stages.append({'$addFields': add_fields_first_calc})
-    if add_fields_final_calc:
-        json_pipeline_stages.append({'$addFields': add_fields_final_calc})
-
-    return json_pipeline_stages
 
 
 def star_data_v2(db_formatted_names: list[str]) -> list[dict]:
@@ -269,6 +205,7 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
                       sort_reverse: bool = False,
                       return_error: bool = False,
                       star_name_column: str = 'name',
+                      return_hover: bool = False,
                       ) -> list[dict]:
     if solarnorm_id == 'absolute':
         norm_path = 'absolute'
@@ -332,20 +269,64 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
     # stage 3: element not null, optional catalog filtering.
     if catalogs:
         # stage 3-catalogs: we need to find or exclude values from specific catalogs and calculate the median/mean
-        if return_error:
-            json_pipeline.extend(catalog_calc_with_error(all_elements=all_elements, norm_path=norm_path,
-                                                         catalogs=catalogs, catalog_exclude=catalog_exclude,
-                                                         return_median=return_median))
-        else:
-            json_pipeline.append(catalog_calc(all_elements=all_elements, norm_path=norm_path,
-                                              catalogs=catalogs, catalog_exclude=catalog_exclude,
-                                              return_median=return_median))
+        # get the values for in a two-step calculation; the first is to sort the values
+        add_fields_first_calc = {}
+        for element_name in all_elements:
+            add_fields_first_calc[f'{element_name}_cat_array'] = catalog_calc_array(
+                element_name=element_name, norm_path=norm_path, catalogs=catalogs, catalog_exclude=catalog_exclude)
+        # calculate the median/meaning and error values from the sorted in the first step of the calculation
+        add_fields_final_calc = {}
+        for element_name in all_elements:
+            values_array = {
+                '$map': {
+                    'input': f'${element_name}_cat_array',
+                    'in': '$$this.v',
+                },
+            }
+            # calculate the median/mean and error values
+            if return_median:
+                cat_calc = {
+                    '$median': {
+                        'input': values_array,
+                        'method': 'approximate',
+                    },
+                }
+            else:
+                cat_calc = {'$avg': values_array}
+            add_fields_final_calc[f'{element_name}'] = cat_calc
+            add_fields_final_calc[f'{element_name}_catalogs'] = {'$arrayToObject': f'${element_name}_cat_array'}
+            if return_error:
+                add_fields_final_calc[f'{element_name}'] = {'$round': [cat_calc, 2]}
+
+                # calculate the error values
+                add_fields_final_calc[f'{element_name}_err'] = {
+                    '$round': [{
+                        '$divide': [
+                            {'$subtract': [{'$max': values_array}, {'$min': values_array}]},
+                            2.0,
+                        ],
+                    }, 2]
+                }
+
+        # package the results as two aggregation stages
+        if add_fields_first_calc:
+            json_pipeline.append({'$addFields': add_fields_first_calc})
+        if add_fields_final_calc:
+            json_pipeline.append({'$addFields': add_fields_final_calc})
     else:
         # stage 3-no-catalogs: make new field names for the elements
         add_fields = {}
         for element_name in all_elements:
             element_field_name = str(element_name)
             add_fields[element_field_name] = f'${norm_path}.{element_field_name}.{el_value_path}'
+            add_fields[f'{element_field_name}_catalogs'] = {
+                '$arrayToObject': {
+                    '$sortArray': {
+                        'input': {'$objectToArray': f'${norm_path}.{element_field_name}.catalogs'},
+                        'sortBy': {'v': 1},
+                    }
+                }
+            }
             if return_error:
                 add_fields[f'{element_field_name}_err'] = f'${norm_path}.{element_field_name}.plusminus'
         json_pipeline.append({'$addFields': add_fields})
@@ -438,6 +419,10 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
         for name_type in name_types_returned:
             if name_type != star_name_column:
                 return_doc[name_type] = f'$names.{name_type}'
+    if return_hover:
+        if elements_returned:
+            for element_name in sorted(elements_returned, key=element_rank):
+                return_doc[f'{element_name}_catalogs'] = 1
     if sort_field:
         sort_location = return_doc[sort_field]
         if sort_location == 1:

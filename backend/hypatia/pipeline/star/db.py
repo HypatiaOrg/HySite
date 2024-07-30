@@ -223,6 +223,7 @@ class HypatiaDB(BaseStarCollection):
                           sort_reverse: bool = False,
                           return_error: bool = False,
                           star_name_column: str = 'name',
+                          return_hover: bool = False,
                           ) -> list:
         json_pipeline = frontend_pipeline(
             db_formatted_names=db_formatted_names,
@@ -248,6 +249,7 @@ class HypatiaDB(BaseStarCollection):
             sort_reverse=sort_reverse,
             return_error=return_error,
             star_name_column=star_name_column,
+            return_hover=return_hover
         )
         # run the aggregation pipeline and return the results.
         raw_results = list(self.collection.aggregate(json_pipeline))

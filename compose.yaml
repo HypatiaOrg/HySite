@@ -51,7 +51,7 @@ services:
             # django-static is written at build time by the SpExWebsite Dockerfile
             - "django-static:/app/static_root:rw"
         command: ["gunicorn", "core.wsgi", "--bind", "0.0.0.0:8111"]
-    nginx:
+    nginx-hysite:
         image: nginx:latest
         restart: "${RESTART_POLICY:-no}"
         ports:

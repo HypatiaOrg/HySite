@@ -4,7 +4,7 @@ import numpy as np
 
 from api.db import summary_doc, hypatia_db
 from hypatia.pipeline.star.aggregation import string_names_types
-from hypatia.elements import ElementID, RatioID, hydrogen_id, get_representative_error
+from hypatia.elements import ElementID, RatioID, hydrogen_id, get_representative_error, element_rank
 from api.v2.data_process import (get_norm_key, get_norm_data, get_catalog_summary, total_stars, total_abundance_count,
                                  available_wds_stars, available_nea_names, available_elements_v2, available_catalogs_v2,
                                  normalizations_v2)
@@ -357,6 +357,7 @@ def table_settings_from_request(settings: dict[str, any]) -> dict[str, any]:
     sort_field = is_none_str(settings.get('sort', None), default=None, use_lower=False)
     sort_reverse = is_true_str(settings.get('reverse', 'false'))
     show_error = is_true_str(settings.get('show_error', 'false'))
+    show_hover = is_true_str(settings.get('show_hover', 'false'))
 
     return dict(
         db_formatted_names=graph_settings['db_formatted_names'],
@@ -379,6 +380,7 @@ def table_settings_from_request(settings: dict[str, any]) -> dict[str, any]:
         sort_field=sort_field,
         sort_reverse=sort_reverse,
         return_error=show_error,
+        return_hover=show_hover,
     )
 
 
@@ -511,6 +513,7 @@ def table_query_from_request(settings: dict[str, any]):
     planet_params_match_filters = table_settings['planet_params_match_filters']
     planet_params_value_filters = table_settings['planet_params_value_filters']
     return_nea_name = bool(planet_params_returned)
+    return_hover = table_settings['return_hover']
     # get the data from the database
     table_data = hypatia_db.frontend_pipeline(
         db_formatted_names=table_settings['db_formatted_names'],
@@ -535,6 +538,7 @@ def table_query_from_request(settings: dict[str, any]):
         return_error=return_error,
         star_name_column='star_id',
         return_nea_name=return_nea_name,
+        return_hover=table_settings['return_hover'],
     )
 
     # check the element data error values and replace them with the representative error for zero and null values
@@ -584,6 +588,16 @@ def table_query_from_request(settings: dict[str, any]):
     else:
         planet_count = None
         star_count = len(table_data)
+
+    hover_data = {}
+    if return_hover:
+        if elements_returned:
+            hover_data.update({str(el_id): [] for el_id in elements_returned})
+            all_element = sorted(set(elements_returned), key=element_rank)
+            catalog_fields = [f'{el_id}_catalogs' for el_id in all_element]
+            for data_row in table_data:
+                for el_id, catalogs_field in zip(all_element, catalog_fields):
+                    hover_data[str(el_id)].append(data_row.get(catalogs_field, ''))
     # return the table data
     return dict(
         body={
@@ -593,6 +607,7 @@ def table_query_from_request(settings: dict[str, any]):
                 zip(*[[row_data.get(col_name, '') for col_name in all_columns] for row_data in table_data])
             )
         },
+        hover_data=hover_data,
         planet_count=planet_count,
         star_count=star_count,
     )
@@ -600,10 +615,10 @@ def table_query_from_request(settings: dict[str, any]):
 
 if __name__ == '__main__':
     test_settings = {
-        'filter1_1': 'planet_letter',
+        'filter1_1': 'none',
         'filter1_2': 'H',
-        'filter1_3': 'b',
-        'filter1_4': 'd',
+        'filter1_3': 'none',
+        'filter1_4': 'none',
         'filter2_1': 'none',
         'filter2_2': 'H',
         'filter2_3': 'None',
@@ -627,12 +642,14 @@ if __name__ == '__main__':
         'catalogs': 'luck18',
         'mode': 'scatter',
         # below are the settings for the table query
-        'requested_stellar_params': 'teff;sptype;disk',
+        'requested_stellar_params': '',
         'requested_elements': 'Fe;C;O;Mg;S;C;Ti;F;CII',
-        'requested_planet_params': 'eccentricity;pl_radius',
-        'requested_name_types': 'star_id,hd',
-        'sort': 'Ti',
+        'requested_planet_params': '',
+        'requested_name_types': '',
+        'sort': '',
         'reverse': 'true',
         'show_error': 'true',
+        'show_hover': 'true',
     }
-    test_table_data = table_query_from_request(settings=test_settings)
+    test_graph_data = graph_query_from_request(settings=test_settings)
+    # test_table_data = table_query_from_request(settings=test_settings)
