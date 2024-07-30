@@ -196,12 +196,15 @@ if __name__ == "__main__":
     add_norm = True  # you only need to do one time, multiple times overwrites the previous entry
     uniquify = True
     do_exo = False
-    test_catalog = False
-    insert_new = True
+    test_catalog = True
+    insert_new = False
+
+    # when done with upload, double check that weird elements or new ionizations have representative error:
+    # HySite/backend/hypatia/HyData/site_data
 
     if add_norm:
         sn = SolarNorm(os.path.join(ref_dir, "solar_norm_ref.csv"))
-        sn.add_normalization("nandakumar23ab", {"F":4.43, "Fe":7.45, "C":8.39, "N":7.78, "O":8.66})
+        sn.add_normalization("alexeeva23", {"Fe":4.43, "Y":2.21})
         #sn.add_normalization("lombardo22", {"Na":6.30, "Mg":7.54, "Al":6.47, "Si":7.52, "SiII":7.52, "Ca":6.33, "Sc":3.10, "ScII":3.10, "Ti":4.90, "TiII":4.90, "V":4.00, "VII":4.00, "Cr":5.64, "CrII":5.64, "Mn":5.37, "MnII":5.37, "Fe":7.52, "Co":4.92, "Ni":6.23, "Cu":4.21, "Zn":4.62, "SrII":2.92, "YII":2.21, "Zr":2.62, "ZrII":2.62})
         #sn.add_normalization("forsberg22", {"Fe": 7.45, "Mo": 1.88})
         sn.write(os.path.join(ref_dir, "solar_norm_ref.csv"))
@@ -233,7 +236,7 @@ if __name__ == "__main__":
                                                    reduce_abundances=True)
 
         output_star_data = dist_output + exo_output
-        output_star_data.normalize(norm_key="original")
+        output_star_data.normalize(norm_keys=["original"])
         stats = output_star_data.stats
 
     if insert_new:
