@@ -14,6 +14,9 @@ RUN adduser --system --uid 1001 python_user
 # initalize a directory for static files
 RUN mkdir /app/static_root
 RUN chown python_user:python_group /app/static_root
+# initalize a directory downloadable files
+RUN mkdir /app/output
+RUN chown python_user:python_group /app/output
 # initalize a directory for the virtual environment
 RUN mkdir /opt/venv
 RUN chown python_user:python_group /opt/venv
