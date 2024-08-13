@@ -1,5 +1,6 @@
 services:
     mongo-db:
+        container_name: mongoDB
         image: mongo
         restart: "${RESTART_POLICY:-no}"
         healthcheck:
