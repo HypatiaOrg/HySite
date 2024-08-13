@@ -52,6 +52,7 @@ services:
             - "django-static:/app/static_root:rw"
         command: ["gunicorn", "core.wsgi", "--bind", "0.0.0.0:8111"]
     nginx-hysite:
+        container_name: nginx-hysite
         image: nginx:latest
         restart: "${RESTART_POLICY:-no}"
         ports:
