@@ -47,7 +47,7 @@ for element_str_id in available_elements_v2:
         element_name = ref_this_el['element_name']
     else:
         upper_ion_state = element_id.ion_state.upper()
-        abbreviation = f"{ref_this_el['abbreviation']} ({element_id.ion_state.upper()})"
+        abbreviation = f"{ref_this_el['abbreviation']} {element_id.ion_state.upper()}"
         element_name = f"{ref_this_el['element_name']} ({element_id.ion_state.upper()})"
     element_data.append({
         'element_id': element_str_id,
@@ -561,7 +561,7 @@ def table_query_from_request(settings: dict[str, any]):
     element_map = {}
     if elements_returned:
         element_str_names = [str(el_id) for el_id in elements_returned]
-        element_map = {el_str: el_str.replace('_', '') for el_str in element_str_names}
+        element_map = {el_str: el_str for el_str in element_str_names}
         all_columns.update(element_str_names)
         if return_error:
             all_columns.update([f'{el_str}_err' for el_str in element_str_names])
