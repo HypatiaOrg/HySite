@@ -142,11 +142,13 @@ def element_parse_v2(element_name: str) -> ElementID | None:
         return None
 
 
-def nea_number_format(number):
+def nea_number_format(number: float | None) -> str | None:
     if number is None:
         return None
     else:
-        return f"{number:.2f}"
+        if number == 0.0:
+            return '0.00'
+        return f"{number:1.2f}"
 
 
 def format_abundance_record_v2(abundance_record: dict, name: str, match_name: str, all_names: list[str], nea_name: str,
@@ -256,6 +258,15 @@ def nea_v2():
             else:
                 median_catalogs = [{'value': el_catalogs[catalog_id], 'catalog': get_catalog_summary(catalog_id)}
                                    for catalog_id in el_median_catalogs]
+            mean = star_dict.get(f'{el_v2_key}_mean', None)
+            if mean is not None:
+                mean = nea_number_format(mean)
+            plusminus_error = star_dict.get(f'{el_v2_key}_plusminus_error', None)
+            if plusminus_error is not None:
+                plusminus_error = nea_number_format(plusminus_error)
+            median_value = star_dict.get(f'{el_v2_key}_median_value', None)
+            if median_value is not None:
+                median_value = nea_number_format(median_value)
             return_list.append(dict(
                 name=name,
                 all_names=all_names,
@@ -263,9 +274,9 @@ def nea_v2():
                 solarnorm=solar_norm_nea,
                 all_values=all_values,
                 median=median_catalogs,
-                mean=star_dict.get(f'{el_v2_key}_mean', None),
-                plusminus_error=star_dict.get(f'{el_v2_key}_plusminus_error', None),
-                median_value=star_dict.get(f'{el_v2_key}_median_value', None),
+                mean=mean,
+                plusminus_error=plusminus_error,
+                median_value=median_value,
                 num_of_values=num_of_values,
                 is_planet_host=is_planet_host,
                 nea_name=nea_name,
