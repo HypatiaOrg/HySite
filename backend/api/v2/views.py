@@ -71,7 +71,7 @@ class Composition(View):
                 return HttpResponse(
                     f'Failed to parse the received solar norm: {solar_norm}, '
                     f'the parsing result was {solarnorm_id}', status=400)
-            solar_norms_unique.add(solar_norm)
+            solar_norms_unique.add(solarnorm_id)
             # These three parts of information will be used to map the database results to the user's requested list
             user_request_id = (star_name, element_str, solar_norm)
             db_result_id = (star_name_db_format, element_id, solarnorm_id)

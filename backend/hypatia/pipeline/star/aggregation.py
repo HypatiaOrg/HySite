@@ -167,12 +167,14 @@ def abundance_data_v2(db_formatted_names: list[str],
     if do_absolute:
         for element_string in element_strings_unique:
             requested_fields[f'absolute.{element_string}'] = f'$absolute.{element_string}'
+    pipeline_names = pipeline_match_name(db_formatted_names)
+    match_name = pipeline_names[0] if isinstance(pipeline_names, list) else pipeline_names
     return [
         pipeline_add_starname_match(db_formatted_names),
         {'$project': {
             '_id': 0,
             'name': '$_id',
-            'match_name': pipeline_match_name(db_formatted_names)[0],
+            'match_name': match_name,
             'all_names': '$names.aliases',
             'nea_name': {
                 '$ifNull': ['$nea.nea_name', "unknown"]
