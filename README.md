@@ -1,7 +1,7 @@
 # HySite
 
 A website and database for elemental abundance measurements of the Hypatia Catalog. 
-This is a multi-service repository that containes all the data-sciences, API, and web development code.
+This is a multi-service repository that contains all the data-sciences, API, and web development code.
 
 # Installation
 

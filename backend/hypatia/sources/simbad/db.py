@@ -94,7 +94,5 @@ class StarCollection(BaseStarCollection):
         old_doc = self.collection.find_one({"_id": main_id})
         old_aliases = old_doc['aliases']
         new_aliases = sorted(list(set(old_aliases + new_aliases)))
-        return self.collection.update({"_id": main_id}, {"$set": {
-            "aliases": new_aliases,
-            "timestamp": time.time()
-        }})
+        new_doc = old_doc | {"aliases": new_aliases, "timestamp": time.time()}
+        return self.update(main_id=main_id, doc=new_doc)
