@@ -33,6 +33,8 @@ home_data = {
 units_and_fields = summary_doc['units_and_fields']
 units_and_fields_v2 = {a_param: units_and_fields[a_param] for a_param
                        in stellar_param_types_v2 + planet_param_types_v2 + list(ranked_string_params.values())}
+loggable_fields_v2 = {filed_name for filed_name, field_data in units_and_fields_v2.items()
+                      if field_data.get('loggable', False) is True}
 
 plot_norms = [{k: v for k, v in s_norm.items() if k != 'values'} for s_norm in normalizations_v2]
 chemical_ref = summary_doc['chemical_ref']
@@ -420,10 +422,12 @@ def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -
     labels = {}
     to_v2 = {}
     from_v2 = {}
+    is_loggable = {}
     for axis_name, (value_type, param_id) in graph_settings['axis_mapping'].items():
         axis_str = f'{axis_name}axis'
         if value_type in {'stellar', 'planet'}:
-            labels[axis_str] = units_and_fields[param_id]['label']
+            param_dict = units_and_fields_v2[param_id]
+            labels[axis_str] = f"{param_dict['label']} ({param_dict['units']})"
             to_v2[param_id] = axis_str
             from_v2[axis_str] = param_id
         elif value_type == 'element':
@@ -436,6 +440,7 @@ def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -
             db_field = f'{param_id.numerator}_{param_id.denominator}'
             to_v2[db_field] = axis_str
             from_v2[axis_str] = db_field
+        is_loggable[axis_str] = param_id in loggable_fields_v2
     unique_star_names = set()
     if any([graph_settings['planet_params_returned'], graph_settings['planet_params_match_filters'], graph_settings['planet_params_value_filters']]):
         for data_row in graph_data:
@@ -499,6 +504,7 @@ def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -
                 )},
                 'star_count': star_count,
                 'planet_count': planet_count,
+                'is_loggable': is_loggable,
             }
 
 
