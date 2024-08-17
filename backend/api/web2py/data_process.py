@@ -11,8 +11,8 @@ from api.v2.data_process import (get_norm_key, get_norm_data, get_catalog_summar
 
 
 stellar_param_types_v2 = ['raj2000', 'decj2000', 'dist', 'x_pos', 'y_pos', 'z_pos', 'teff', 'logg',
-                          'sptype', 'vmag', 'bmag', 'bv', 'pm_ra', 'pm_dec', 'u_vel', 'v_vel', 'w_vel',
-                          'disk', 'mass', 'rad']
+                          'sptype', 'sptype_num', 'vmag', 'bmag', 'bv', 'pm_ra', 'pm_dec', 'u_vel', 'v_vel', 'w_vel',
+                          'disk', 'disk_num', 'mass', 'rad']
 stellar_param_types_v2_set = set(stellar_param_types_v2)
 planet_param_types_v2 = ["semi_major_axis", "eccentricity", "inclination", "pl_mass", "pl_radius", 'planet_letter',]
 planet_param_types_v2_set = set(planet_param_types_v2)
@@ -152,7 +152,10 @@ class ParameterFilters:
                 self.filter_high = float(filter_high)
 
 
-def determine_param_type(param_name: str, denominator_element: str = None) -> tuple[str, str | ElementID | RatioID]:
+def determine_param_type(param_name: str, denominator_element: str = None, is_graphed: bool = False
+                         ) -> tuple[str, str | ElementID | RatioID]:
+    if is_graphed and param_name in ranked_string_params.keys():
+        param_name = ranked_string_params[param_name]
     if param_name in planet_param_types_v2_set:
         return 'planet', param_name
     elif param_name in stellar_param_types_v2_set:
@@ -300,11 +303,11 @@ def graph_settings_from_request(settings: dict[str, any]):
     ]
     filter_for_query = FilterForQuery()
     # paras the axis make iterables that are in the form of the final returned data product
-    axis_mapping = {'x': determine_param_type(param_name=xaxis1, denominator_element=xaxis2)}
+    axis_mapping = {'x': determine_param_type(param_name=xaxis1, denominator_element=xaxis2, is_graphed=True)}
     if mode == 'scatter':
-        axis_mapping['y'] = determine_param_type(param_name=yaxis1, denominator_element=yaxis2)
+        axis_mapping['y'] = determine_param_type(param_name=yaxis1, denominator_element=yaxis2, is_graphed=True)
         if zaxis1 not in nones:
-            axis_mapping['z'] = determine_param_type(param_name=zaxis1, denominator_element=zaxis2)
+            axis_mapping['z'] = determine_param_type(param_name=zaxis1, denominator_element=zaxis2, is_graphed=True)
     # get the returned data types and the base filtering need to return these data types
     [filter_for_query.add_match_filter(param_type=param_type, param_id=param_id)
      for param_type, param_id in axis_mapping.values()]
