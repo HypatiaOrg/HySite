@@ -12,11 +12,16 @@ Git is required to clone the repository.
 ## Clone and enter the repository
 ```bash
 git clone https://github.com/HypatiaOrg/HySite
-cd HySite
 ```
 
 ## Clone the data repository
 ```bash
-cd backend/hypatia
+cd HySite/backend/hypatia
 git clone https://github.com/HypatiaOrg/HyData
+```
+
+## Clone Web2py repository
+```bash
+cd ../../
+git clone https://github.com/HypatiaOrg/WebServer -b caleb/no-api --single-branch web2py
 ```
