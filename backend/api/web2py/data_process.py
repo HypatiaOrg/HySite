@@ -430,7 +430,8 @@ def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -
         axis_str = f'{axis_name}axis'
         if value_type in {'stellar', 'planet'}:
             param_dict = units_and_fields_v2[param_id]
-            labels[axis_str] = f"{param_dict['label']} ({param_dict['units']})"
+            units = param_dict['units']
+            labels[axis_str] = f"{param_dict['label']}{' (' + units + ')' if units else ''}"
             to_v2[param_id] = axis_str
             from_v2[axis_str] = param_id
         elif value_type == 'element':
