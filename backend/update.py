@@ -13,7 +13,8 @@ def legacy_update(test_mode: bool = True, output_list: list[str] = None, mongo_u
     delete_test_database(test_mode=test_mode, remove_compositions=True)
     output = standard_output(do_legacy=True, from_scratch=True, refresh_exo_data=False,
                              norm_keys=output_list, mongo_upload=mongo_upload)
-    [update_one_norm(norm_key, test_mode=test_mode) for norm_key in abs_list + output_list]
+    for norm_key in output_list + abs_list:
+        update_one_norm(norm_key, test_mode=test_mode)
     return output
 
 

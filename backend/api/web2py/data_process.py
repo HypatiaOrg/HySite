@@ -2,7 +2,7 @@ from copy import copy
 
 import numpy as np
 
-from api.db import summary_doc, hypatia_db
+from api.db import summary_doc, hypatia_db, number_of_catalogs
 from hypatia.pipeline.star.aggregation import string_names_types
 from hypatia.elements import ElementID, RatioID, hydrogen_id, get_representative_error, element_rank
 from api.v2.data_process import (get_norm_key, get_norm_data, get_catalog_summary, total_stars, total_abundance_count,
@@ -26,7 +26,7 @@ home_data = {
     'stars_with_planets': len(available_nea_names),
     'stars_multistar': len(available_wds_stars),
     'elements': len(available_elements_v2),
-    'catalogs': len(available_catalogs_v2),
+    'catalogs': number_of_catalogs,
     'abundances': total_abundance_count,
 }
 
