@@ -1,8 +1,11 @@
+import Link from 'next/link';
+import Script from 'next/script'
 import type { Metadata } from "next";
+import React, {ReactElement} from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import React, {ReactElement} from "react";
-import Script from 'next/script'
+
+
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,19 +18,37 @@ export function QueryClient(): ReactElement {
     return (
         <div className="flex flex-col h-full w-full absolute top-0 left-0 z-10">
             <div className="flex-none w-full items-center font-mono text-lg p-4">
-                <div>
-                    <div className="flex flex-row gap-4">
+                <div className="flex flex-row w-full gap-4">
+                    <div>
+                        <Link href="/">Home</Link>
+                    </div>
+                    |
+                    <div>
+                        <Link href="/hypatia/default/launch">Elements & Properties</Link>
+                    </div>
+                    |
+                    <div>
+                        <Link href="/hypatia/default/launch?mode=hist"> Stars With/Without Planets </Link>
+                    </div>
+                    <div className="flex flex-grow justify-end gap-4">
                         <div>
-                            Home
+                            <Link href="/hypatia/default/help">Help</Link>
                         </div>
+                        |
                         <div>
-                            Elements & Properties
+                            <Link href="/hypatia/default/about">About</Link>
                         </div>
+                        |
                         <div>
-                            Stars With/Without Planets
+                            <Link href="/hypatia/default/credits">Acknowledgements</Link>
+                        </div>
+                        |
+                        <div>
+                            <Link href="/api">API</Link>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     );
