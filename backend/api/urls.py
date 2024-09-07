@@ -1,8 +1,10 @@
 from django.urls import path
 
 from api.views import HomeView
+from api.planets.views import PlanetView
 from api.web2py.views import Web2pyHome, Summary, GraphView, TableView
 from api.v2.views import Nea, Data, Composition, Star, SolarNorm, AvailableElements, AvailableCatalogs
+
 
 urlpatterns = [
     path('v2/nea/', Nea.as_view(), name='nea'),
@@ -16,5 +18,6 @@ urlpatterns = [
     path('web2py/summary/', Summary.as_view(), name='web2py-summary'),
     path('web2py/graph/', GraphView.as_view(), name='web2py-graph'),
     path('web2py/table/', TableView.as_view(), name='web2py-table'),
+    path('planets/', PlanetView.as_view(), name='planets'),
     path('', HomeView.as_view(), name='index'),
 ]
