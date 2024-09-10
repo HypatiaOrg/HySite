@@ -72,7 +72,7 @@ services:
         environment:
             JUPYTER_TOKEN: "${JUPYTER_TOKEN:-docker}"
             GRANT_SUDO: "yes"
-            DOCKER_STACKS_JUPYTER_CMD: "lab"
+            DOCKER_STACKS_JUPYTER_CMD: "notebook"
             DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY}"
             MONGO_USERNAME: "${MONGO_USERNAME}"
             MONGO_PASSWORD: "${MONGO_PASSWORD}"
