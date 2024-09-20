@@ -1,0 +1,31 @@
+astro_query_dr1_params = {"ra", "ra_error", "dec", "dec_error", "ref_epoch", "source_id", "parallax",
+                               "parallax_error",
+                               "pmra", "pmra_error", "pmdec", "pmdec_error", "duplicated_source",
+                               "phot_g_mean_flux", "phot_g_mean_flux_error", "phot_g_mean_mag"}
+astro_query_dr2_params = {"ra", "ra_error", "dec", "dec_error", "ref_epoch", "source_id",
+                               "parallax", "parallax_error",
+                               "pmra", "pmra_error", "pmdec", "pmdec_error", "duplicated_source",
+                               "phot_g_mean_flux", "phot_g_mean_flux_error",
+                               "phot_g_mean_mag",
+                               "radial_velocity", "radial_velocity_error",
+                               "teff_val", "teff_percentile_lower", "teff_percentile_upper",
+                               "r_est", "r_lo", "r_hi"}
+astro_query_dr3_params = {"ra", "ra_error", "dec", "dec_error", "ref_epoch", "source_id",
+                               "parallax", "parallax_error",
+                               "pmra", "pmra_error", "pmdec", "pmdec_error", "duplicated_source",
+                               "phot_g_mean_flux", "phot_g_mean_flux_error",
+                               "phot_g_mean_mag",
+                               "radial_velocity", "radial_velocity_error",
+                               "teff_gspphot", "teff_gspphot_lower", "teff_gspphot_upper",
+                               "distance_gspphot", "distance_gspphot_lower", "distance_gspphot_upper",}
+param_to_units = {"ra_epochJ2000": "deg", "ra_error": "deg", 'dec_epochJ2000': 'deg', "dec_error": 'deg',
+                       "ref_epoch": 'Julian Years', 'parallax': 'mas', "parallax_error": "mas",
+                       "pmra": 'mas/yr', "pmra_error": "mas/yr",
+                       "pmdec": 'mas/yr', "pmdec_error": "mas/yr",
+                       "phot_g_mean_flux": "e-/s", "phot_g_mean_mag": 'mag',
+                       "radial_velocity": "km/s",
+                       "teff_val": "K", "teff_percentile_lower": "K", "teff_percentile_upper": "K",
+                       "teff_gspphot": "K", "teff_gspphot_lower": "K", "teff_gspphot_upper": "K",
+                       "r_est": "[pc]", "r_lo": "[pc]", "r_hi": "[pc]", 'dist': '[pc]',
+                       "distance_gspphot": "[pc]", "distance_gspphot_lower": "[pc]", "distance_gspphot_upper": "[pc]",}
+

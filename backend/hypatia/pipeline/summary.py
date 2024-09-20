@@ -74,10 +74,6 @@ class SummaryCollection(BaseCollection):
                                     "bsonType": "double",
                                     "description": "must be a number for the ionization energy of the element in electron volts"
                                 },
-                                "plusminus": {
-                                    "bsonType": "double",
-                                    "description": "must be a number for the representative error of the element"
-                                },
                             },
                         },
                     },

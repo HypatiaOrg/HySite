@@ -2,8 +2,8 @@ import os
 import pickle
 
 from hypatia.sources.xhips import Xhip
-from hypatia.sources.gaia import GaiaLib
 from hypatia.sources.pastel import Pastel
+from hypatia.sources.gaia.ops import GaiaLib
 from hypatia.object_params import SingleParam
 from hypatia.tools.table_read import row_dict
 from hypatia.pipeline.star.all import AllStarData
