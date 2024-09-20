@@ -5,8 +5,8 @@ from typing import NamedTuple
 
 import numpy as np
 
-from hypatia.config import ref_dir, site_dir
-from hypatia.tools.table_read import row_dict
+from hypatia.config import site_dir
+from hypatia.element_data import periodic_table
 
 
 plusminus_error_default = 0.1
@@ -22,17 +22,11 @@ expected_ion_states = [state.lower() for state in expected_ion_states_upper]
 float_params = {"ionization_energy_ev", 'average_mass_amu'}
 elements_found = set()
 # from the chemical data CSV file
-element_csv = {key: {field_name: float(value) if field_name in float_params else value
-                     for field_name, value in el_dict.items()}
-               for key, el_dict in row_dict(os.path.join(ref_dir, "elementData.csv"), key='element_abrev').items()}
 
 
-summary_dict = {}
-for el_name, el_dict in element_csv.items():
-    el_name_lower = el_name.lower()
-    # make a shallow copy of the element dictionary as a part of this data export
-    el_data = {**el_dict, "abbreviation": el_name}
-    summary_dict[el_name_lower] = el_data
+
+summary_dict = {periodic_table_element.abbreviation.lower(): periodic_table_element.to_dict()
+                for periodic_table_element in periodic_table}
 
 
 def under_score_clean_up(a_string: str) -> str:
