@@ -1,7 +1,8 @@
 import requests
 
-from hypatia.tools.table_read import num_format
+import numpy as np
 
+from hypatia.tools.table_read import num_format
 
 nea_host_name_rank_order = [
     'gaia_id',
@@ -33,26 +34,42 @@ nea_unphysical_if_zero_params = {
 
 nea_has_error_params = [
     "sy_dist",
+    "sy_pnum",
     "pl_orbper",
     "pl_orbsmax",
     "pl_orbeccen",
     "pl_orbincl",
     "pl_bmassj",
     "pl_radj",
+    "pl_bmasse",
+    "pl_rade",
     "st_mass",
     "st_rad",
+    "st_teff",
 ]
 
 nea_requested_data_types_default = [
     "hostname",
     "pl_letter",
     "pl_name",
+    "pl_controv_flag",
+    "pl_radelim",
     "hd_name",
     "hip_name",
     "tic_id",
     "gaia_id",
     "discoverymethod",
 ]
+
+a_radius_gap = -0.09
+b_radius_gap = 0.21
+c_radius_gap = 0.35
+def radius_gap_function(period: float, st_mass: float, pl_radius: float) -> float:
+    """ Returns positive values. Values above 1 is above the radius gap, likely a mini-Neptune """
+    log10_rp = a_radius_gap * np.log10(period) + b_radius_gap * np.log10(st_mass) + c_radius_gap
+    return pl_radius / (10.0**log10_rp)
+
+
 for has_error_param in nea_has_error_params:
     nea_requested_data_types_default.extend([has_error_param, f"{has_error_param}err1", f"{has_error_param}err2"])
 
@@ -62,7 +79,6 @@ items_str = ",".join(nea_requested_data_types_default)
 # <https://exoplanetarchive.ipac.caltech.edu/docs/TAP/usingTAP.html>
 query_str = f'https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select+{items_str}+from+ps&format=tsv'
 
-
 nea_to_hypatia_fields = {
     "hostname": "nea_name",
     "hd_name": "hd",
@@ -70,8 +86,10 @@ nea_to_hypatia_fields = {
     "tic_id": "tic",
     "gaia_id": "gaia dr2",
     "sy_dist": "dist",
+    "sy_pnum": "num_planets",
     "st_mass": "mass",
     "st_rad": "rad",
+    'st_teff': 'teff',
     "pl_letter": "letter",
     "pl_name": "pl_name",
     "discoverymethod": "discovery_method",
@@ -81,11 +99,14 @@ nea_to_hypatia_fields = {
     "pl_orbincl": "inclination",
     "pl_bmassj": "pl_mass",
     "pl_radj": "pl_radius",
+    "pl_radelim": "pl_radelim",
+    'pl_controv_flag': 'pl_controv_flag',
+    'pl_bmasse': 'pl_bmasse',
+    'pl_rade': 'pl_rade',
 }
 
 non_parameter_fields = {'_id', 'nea_name', "attr_name", 'hip', 'hd', 'tic', 'gaia dr2',
                         'planet_letters', 'planets', 'letter', 'pl_name'}
-
 
 hypatia_host_level_params = {nea_to_hypatia_fields[key] for key in nea_host_level_params}
 hypatia_host_name_rank_order = [nea_to_hypatia_fields[key] for key in nea_host_name_rank_order]
