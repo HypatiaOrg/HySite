@@ -43,6 +43,7 @@ MONGO_HOST = os.environ.get("MONGO_HOST", "hypatiacatalog.com")
 MONGO_USERNAME = os.environ.get("MONGO_USERNAME", "username")
 MONGO_PASSWORD = os.environ.get("MONGO_PASSWORD", "password")
 MONGO_PORT = os.environ.get("MONGO_PORT", 27017)
+CONNECTION_STRING = os.environ.get("CONNECTION_STRING", None)
 
 def url_encode(string_to_encode: str, url_safe: str = "!~*'()") -> str:
     return quote(string_to_encode.encode('utf-8'), safe=url_safe)
@@ -51,7 +52,10 @@ def get_connection_string(user: str = MONGO_USERNAME, password: str = MONGO_PASS
                           host: str = MONGO_HOST, port: str | int = MONGO_PORT) -> str:
     return f'mongodb://{url_encode(user)}:{url_encode(password)}@{host}:{port}'
 
-connection_string = get_connection_string()
+if CONNECTION_STRING is None:
+    connection_string = get_connection_string()
+else:
+    connection_string = CONNECTION_STRING
 
 # Legacy SQLite and HDF5 data directories
 hdf5_data_dir = os.path.join(projects_dir, "WebServer", "web2py", "applications", "hypatia", "hypdata")
