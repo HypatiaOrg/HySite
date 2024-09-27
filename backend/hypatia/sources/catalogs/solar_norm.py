@@ -1,4 +1,5 @@
 import os
+from warnings import warn
 
 from hypatia.config import ref_dir
 from hypatia.tools.table_read import row_dict
@@ -13,7 +14,7 @@ def un_norm_x_over_h(relative_x_over_h: float, solar_x: float):
     """
     We take the relative value of an element X to Hydrogen (H) of a star compared to the solar abundance of the same
     ratio. Note that this calculation takes place in Log base 10 space, and returns values in log space, so simple
-    additions and subtractions are all that is needed for this calculation.
+    additions and subtractions are all that is necessary for this calculation.
 
     The abundance of Hydrogen, H_star, is defined as 10^12 atoms thus log(H_star) = log(10^12) = 12. By this definition,
     H_solar := log(10^12) = 12 and H_star := log(10^12) = 12 thus H_star = H_solar
@@ -115,8 +116,14 @@ class SolarNorm:
         if file_path is None:
             file_path = os.path.join(ref_dir, "solar_norm_ref.csv")
         self.file_path = file_path
-        raw_file = row_dict(self.file_path, key="catalog", delimiter=",", null_value="")
-        self.comments = raw_file.pop("comments")
+        if os.path.exists(file_path):
+            raw_file = row_dict(self.file_path, key="catalog", delimiter=",", null_value="")
+            self.comments = raw_file.pop("comments")
+        else:
+            warn(f"Solar Norm file: {file_path} does not exist. An empty dictionary will be used.")
+            raw_file = {}
+            self.comments = None
+
         self.sol_abund = {cat_name: {ElementID.from_str(element_string=el_str): float(el_val)
                                      for el_str, el_val in cat_data.items() if el_str not in self.ref_columns}
                           for cat_name, cat_data in raw_file.items()}
