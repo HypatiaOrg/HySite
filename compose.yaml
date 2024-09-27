@@ -11,8 +11,8 @@ services:
             start_period: 40s
         environment:
             # These *INITDB* variables only used when the database is first initialized
-            MONGO_INITDB_ROOT_USERNAME: "${MONGO_USERNAME}"
-            MONGO_INITDB_ROOT_PASSWORD: "${MONGO_PASSWORD}"
+            MONGO_INITDB_ROOT_USERNAME: "${MONGO_USERNAME:-admin}"
+            MONGO_INITDB_ROOT_PASSWORD: "${MONGO_PASSWORD:-super-not-secure}"
         volumes:
             - type: bind
               source: ./mongo
@@ -48,8 +48,8 @@ services:
         # ports: ["8111:8111"]
         environment:
             DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY}"
-            MONGO_USERNAME: "${MONGO_USERNAME}"
-            MONGO_PASSWORD: "${MONGO_PASSWORD}"
+            MONGO_USERNAME: "${MONGO_USERNAME:-admin}"
+            MONGO_PASSWORD: "${MONGO_PASSWORD:-super-not-secure}"
             MONGO_HOST: "${MONGO_HOST:-mongoDB}"
 
         volumes:
@@ -74,9 +74,10 @@ services:
             GRANT_SUDO: "yes"
             DOCKER_STACKS_JUPYTER_CMD: "notebook"
             DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY}"
-            MONGO_USERNAME: "${MONGO_USERNAME}"
-            MONGO_PASSWORD: "${MONGO_PASSWORD}"
+            MONGO_USERNAME: "${MONGO_USERNAME:-admin}"
+            MONGO_PASSWORD: "${MONGO_PASSWORD:-super-not-secure}"
             MONGO_HOST: "${MONGO_HOST:-mongoDB}"
+            CONNECTION_STRING: ${CONNECTION_STRING:-none}
         volumes:
             - ./backend:/backend
         profiles: ["ipython"]

@@ -32,6 +32,7 @@ hacked = {
 """
 Environmental based Configuration
 """
+none_set = {None, 'none', 'null', ''}
 
 # Load the .env file
 env_path = os.path.join(repo_dir, '.env')
@@ -43,7 +44,9 @@ MONGO_HOST = os.environ.get("MONGO_HOST", "hypatiacatalog.com")
 MONGO_USERNAME = os.environ.get("MONGO_USERNAME", "username")
 MONGO_PASSWORD = os.environ.get("MONGO_PASSWORD", "password")
 MONGO_PORT = os.environ.get("MONGO_PORT", 27017)
-CONNECTION_STRING = os.environ.get("CONNECTION_STRING", None)
+CONNECTION_STRING = os.environ.get("CONNECTION_STRING", 'none')
+if CONNECTION_STRING.lower() in none_set:
+    CONNECTION_STRING = None
 
 def url_encode(string_to_encode: str, url_safe: str = "!~*'()") -> str:
     return quote(string_to_encode.encode('utf-8'), safe=url_safe)
