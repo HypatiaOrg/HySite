@@ -51,10 +51,18 @@ services:
             MONGO_USERNAME: "${MONGO_USERNAME:-admin}"
             MONGO_PASSWORD: "${MONGO_PASSWORD:-super-not-secure}"
             MONGO_HOST: "${MONGO_HOST:-mongoDB}"
-
+        read_only: true
         volumes:
             # django-static is written at build time by the SpExWebsite Dockerfile
-            - "django-static:/app/static_root:rw"
+            - "django-static:/app/static_root:ro"
+            # matplotlib_cache is recommended for matplotlib to work in a docker container
+            - "matplotlib_cache:/home/python_user/django_backend/.cache/matplotlib:rw"
+            # gunicorn to store temporary files
+            - "gunicorn_tmp:/var/tmp:rw"
+            # Data input for processing
+            - "./backend/hypatia/HyData:/home/python_user/django_backend/hypatia/HyData:${VOLUME_SPECIFICATION:-rw}"
+            # Data output from processing
+            - "./backend/output:${DATA_OUTPUT_DIR:-/home/python_user/django_backend/output}:${VOLUME_SPECIFICATION:-rw}"
         command: ["gunicorn", "core.wsgi", "--bind", "0.0.0.0:8111"]
         profiles: ["dual", "api"]
         networks:
@@ -99,6 +107,8 @@ services:
 
 volumes:
     django-static:
+    matplotlib_cache:
+    gunicorn_tmp:
 
 networks:
     hynet:
