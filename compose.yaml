@@ -31,10 +31,17 @@ services:
         restart: "${RESTART_POLICY:-no}"
         environment:
             BASE_API_URL: "http://django-api:8111"
+        read_only: true
         volumes:
-            # The web2 py app needs to read and write files, it uses the file system as a database
-            # we must write file locally for them to persist between builds.
-            - ./web2py:/home/web2py/web2py:rw
+            # uncomment below to sync all the web2py files for development
+            # - ./web2py:/home/web2py/web2py:rw
+            # store log and other files in a volume on the host
+            - "web_to_py_temp:/home/python_kid/web2py_app/temp_data:rw"
+            # gunicorn to store temporary files
+            - "web_to_py_gunicorn_tmp:/var/tmp:rw"
+            # session data (saved user session states)
+            - "web_to_py_session_data:/home/python_kid/web2py_app/applications/hypatia/sessions:rw"
+
         # the first command to run when the container starts, start the gunicorn server
         command: ["python", "anyserver.py", "-s", "gunicorn", "-i", "0.0.0.0", "-p", "8222"]
         # ports: ["8222:8222"]
@@ -106,9 +113,12 @@ services:
             - hynet
 
 volumes:
-    django-static:
+    django_static:
     matplotlib_cache:
     gunicorn_tmp:
+    web_to_py_temp:
+    web_to_py_gunicorn_tmp:
+    web_to_py_session_data:
 
 networks:
     hynet:
