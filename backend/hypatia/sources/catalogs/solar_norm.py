@@ -1,4 +1,5 @@
 import os
+from warnings import warn
 
 from hypatia.config import ref_dir
 from hypatia.tools.table_read import row_dict
@@ -13,7 +14,7 @@ def un_norm_x_over_h(relative_x_over_h: float, solar_x: float):
     """
     We take the relative value of an element X to Hydrogen (H) of a star compared to the solar abundance of the same
     ratio. Note that this calculation takes place in Log base 10 space, and returns values in log space, so simple
-    additions and subtractions are all that is needed for this calculation.
+    additions and subtractions are all that is necessary for this calculation.
 
     The abundance of Hydrogen, H_star, is defined as 10^12 atoms thus log(H_star) = log(10^12) = 12. By this definition,
     H_solar := log(10^12) = 12 and H_star := log(10^12) = 12 thus H_star = H_solar
@@ -115,68 +116,79 @@ class SolarNorm:
         if file_path is None:
             file_path = os.path.join(ref_dir, "solar_norm_ref.csv")
         self.file_path = file_path
-        raw_file = row_dict(self.file_path, key="catalog", delimiter=",", null_value="")
-        self.comments = raw_file.pop("comments")
-        self.sol_abund = {cat_name: {ElementID.from_str(element_string=el_str): float(el_val)
-                                     for el_str, el_val in cat_data.items() if el_str not in self.ref_columns}
+        if os.path.exists(file_path):
+            raw_file = row_dict(self.file_path, key="catalog", delimiter=",", null_value="")
+            self.comments = raw_file.pop("comments")
+        else:
+            warn(f"Solar Norm file: {file_path} does not exist. An empty dictionary will be used.")
+            raw_file = {}
+            self.comments = None
+
+        self.solar_norm_dict = {cat_name: {ElementID.from_str(element_string=el_str): float(el_val)
+                                           for el_str, el_val in cat_data.items() if el_str not in self.ref_columns}
                           for cat_name, cat_data in raw_file.items()}
         self.ref_data = {cat_name: {ref_type: cat_data[ref_type] for ref_type in self.ref_columns}
                          for cat_name, cat_data in raw_file.items()}
 
     def __call__(self, norm_key=None):
         if norm_key is None:
-            return self.sol_abund
+            return self.solar_norm_dict
         if norm_key.lower() == "absolute":
             return None
         else:
-            return self.sol_abund[norm_key.lower()]
+            return self.solar_norm_dict[norm_key.lower()]
 
-    def add_normalization(self, handle, element_dict):
-        self.sol_abund[handle] = element_dict
+    def add_normalization(self, handle: str, author:str, year: int | str, element_dict: dict[str | ElementID, float]):
+        formated_dict = {}
+        for el_name, solar_values in element_dict.items():
+            if isinstance(el_name, ElementID):
+                formated_dict[el_name] = solar_values
+            else:
+                formated_dict[ElementID.from_str(el_name)] = solar_values
+        self.solar_norm_dict[handle] = formated_dict
+        self.ref_data[handle] = {'author': author, 'year': year}
 
     def write(self, write_file=None):
         if write_file is None:
             write_file = self.file_path
 
-        norm_keys = self.sol_abund.keys()
+        norm_keys = self.solar_norm_dict.keys()
         element_keys = set()
-        [element_keys.add(element) for norm_key in norm_keys for element in self.sol_abund[norm_key].keys()
+        [element_keys.add(element) for norm_key in norm_keys for element in self.solar_norm_dict[norm_key].keys()
          if element not in self.ref_columns]
-        sorted_element_records = sorted([ElementID.from_str(element_string=el_str) for el_str in element_keys],
-                                        key=element_rank)
-        sorted_element_keys = ['catalog'] + [str(el_rec) for el_rec in sorted_element_records] + list(sorted(self.ref_columns))
-        header = ','.join(sorted_element_keys)
+        sorted_element_records = sorted(element_keys,  key=element_rank)
+        sorted_header_keys = ['catalog'] + list(sorted(self.ref_columns)) + sorted_element_records
+        header = ','.join([str(column_name) for column_name in sorted_header_keys]) + '\n'
         body = ''
         for norm_key in sorted(norm_keys):
-            self.sol_abund[norm_key]['catalog'] = norm_key
-            element_keys_this_dict = set(self.sol_abund[norm_key].keys())
-            for header_key in sorted_element_keys:
-                if header_key in element_keys_this_dict:
-                    body += str(self.sol_abund[norm_key][header_key]) + ','
-                else:
-                    body += ","
-            body = body[:-1] + '\n'
+            values_dict = self.solar_norm_dict[norm_key] | self.ref_data[norm_key] | {'catalog': norm_key}
+            values_list = [str(values_dict[header_key]) if header_key in values_dict.keys() else ''
+                           for header_key in sorted_header_keys]
+            body += ','.join(values_list) + '\n'
         with open(write_file, 'w') as f:
+            if self.comments is not None:
+                for comment in self.comments:
+                    f.write('# ' + comment + '\n')
             f.write(header)
             f.write(body)
 
     def to_record(self, norm_keys: list[str] = None) -> dict[str, dict[str, str | int | dict[str, float]]]:
         if norm_keys is None:
-            norm_keys = list(self.sol_abund.keys())
+            norm_keys = list(self.solar_norm_dict.keys())
         if 'original' in norm_keys:
             norm_keys.remove('original')
         if 'absolute' in norm_keys:
             norm_keys.remove('absolute')
-        return {norm_key: {**self.ref_data[norm_key], 'values': {str(el_id): solar_norm_dict[norm_key][el_id]
-                                                                 for el_id in sorted(self.sol_abund[norm_key].keys(),
+        return {norm_key: {**self.ref_data[norm_key], 'values': {str(el_id): self.solar_norm_dict[norm_key][el_id]
+                                                                 for el_id in sorted(self.solar_norm_dict[norm_key].keys(),
                                                                                      key=element_rank)},
                            'notes': f'This key provides data that is normalized to the Sun using values from {self.ref_data[norm_key]["author"]}'}
                 for norm_key in norm_keys}
 
 
-sn = SolarNorm()
-solar_norm_dict = sn()
+solar_norm = SolarNorm()
+solar_norm_dict = solar_norm()
 
 if __name__ == "__main__":
-    # sn.write(os.path.join(ref_dir, "test_solar_norm.csv"))
+    # solar_norm.write(os.path.join(ref_dir, "test_solar_norm.csv"))
     pass

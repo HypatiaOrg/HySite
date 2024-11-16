@@ -45,6 +45,15 @@ class CatOps:
         self.cat_dict = {}
         for a_line in cat_lines[1:]:
             short, long, norm = a_line.split(',')
+            try:
+                # This process is used by the summary upload.
+                # It checks to see if the year value can be found in the long name
+                make_cat_record(short=short, long=long, norm=norm)
+            except ValueError:
+                error_msg = f"Error in the catalog file: {self.cat_file}\n"
+                error_msg += f"Error in the line: {a_line}\n"
+                error_msg += f"Is there a 'year' in the long name and is it in parentheses?"
+                raise ValueError(error_msg)
             self.cat_dict[short.lower().strip()] = {"long": long.strip(), 'norm': norm.lower().strip()}
         if self.verbose:
             print("\nLoading the catalog file:", self.cat_file)

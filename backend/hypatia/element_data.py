@@ -11,12 +11,12 @@ class PeriodicTableElement(NamedTuple):
 
     def to_dict(self):
         return {
-            'atomic_number': self.atomic_number,
-            'average_mass_amu': self.average_mass_amu,
+            'atomic_number': int(self.atomic_number),
+            'average_mass_amu': float(self.average_mass_amu),
             'element_name': self.element_name,
             'abbreviation': self.abbreviation,
-            'group': self.group,
-            'ionization_energy_ev': self.ionization_energy_ev
+            'group': int(self.group),
+            'ionization_energy_ev': float(self.ionization_energy_ev)
         }
 
 

@@ -1,5 +1,6 @@
 import os
 import tomllib
+from warnings import warn
 from typing import NamedTuple
 from collections import UserDict
 
@@ -12,8 +13,12 @@ params_and_units_file = os.path.join(site_dir, 'params_units.toml')
 
 
 def get_params_and_units_from_file() -> dict:
-    with open(params_and_units_file, 'rb') as f:
-        return tomllib.load(f)
+    if os.path.exists(params_and_units_file):
+        with open(params_and_units_file, 'rb') as f:
+            return tomllib.load(f)
+    else:
+        warn(f"Parameters and Units file: {params_and_units_file} does not exist. An empty dictionary will be used.")
+        return {}
 
 
 expected_params_dict = get_params_and_units_from_file()
