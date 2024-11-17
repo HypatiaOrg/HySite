@@ -14,7 +14,8 @@ from hypatia.sources.catalogs.solar_norm import (solar_norm_dict, ratio_to_eleme
                                                  un_norm_x_over_fe, un_norm_x_over_h, un_norm_abs_x)
 
 
-indicates_mixed_name_types = {"Star", "star", "Stars", "starname", "Starname", "Name", "ID", "Object", "HDBD"}
+indicates_mixed_name_types = {"Star", "star", "Stars", "starname", "Starname", "Name", "ID", "Object", "HDBD",
+                              'simbad_id'}
 indicates_single_name_types = {"TYC", "HD", "HIP", "HR", "TrES", "CoRoT", "XO", "HAT", "WASP"}
 
 
@@ -111,17 +112,23 @@ class Catalog:
             self.star_names_type = attribute_name.lower()
         else:
             raise NameError("The star column name is not one of the expected names.")
-        # this a legacy Hypatia system for reading in catalogs with a number of challenges.
-        self.raw_data.original_star_names = getattr(self.raw_data, attribute_name)
-        converted_star_names = []
-        for raw_name in self.raw_data.original_star_names:
-            try:
-                found_simbad_name = calc_simbad_name(raw_name, key=self.star_names_type)
-            except ValueError:
-                converted_star_names.append(raw_name)
-            else:
-                converted_star_names.append(found_simbad_name)
-        # the modern system for getting the main star name from the SIMBAD sources.
+        if attribute_name == 'simbad_id':
+            # Catalogs added after the 2024 update will have the star names in the SIMBAD format.
+            self.star_names_type = 'simbad_id'
+            self.raw_data.original_star_names = self.raw_data.original_name
+            converted_star_names = self.raw_data.simbad_id
+        else:
+            # this a legacy Hypatia system for reading in catalogs with a number of challenges.
+            self.raw_data.original_star_names = getattr(self.raw_data, attribute_name)
+            converted_star_names = []
+            for raw_name in self.raw_data.original_star_names:
+                try:
+                    found_simbad_name = calc_simbad_name(raw_name, key=self.star_names_type)
+                except ValueError:
+                    converted_star_names.append(raw_name)
+                else:
+                    converted_star_names.append(found_simbad_name)
+        # double-check that this name is still the primary name in SIMBAD
         self.star_names = [get_main_id(simbad_formatted, test_origin=catalog_name)
                            for simbad_formatted in converted_star_names]
         # add the star names to the raw_data object
@@ -132,8 +139,9 @@ class Catalog:
         self.element_to_ratio_name = {}
         self.absolute_elements = set()
         self.element_id_to_un_norm_func = {}
+        non_element_keys = {'comments', 'original_name', attribute_name}
         for key in self.raw_data.keys:
-            if key in {"comments", attribute_name}:
+            if key in non_element_keys:
                 # these are not element keys, so we skip them.
                 continue
             try:
@@ -288,7 +296,7 @@ class Catalog:
                         "in the Hypatia package"]
             new_short_name = "_XX_of_" + total_string + "_unique_"
         else:
-            raise KeyError("'" + str(target) + "' was not one of the expected target types for writing a catalog data")
+            raise KeyError(f"'{target}' was not one of the expected target types for writing a catalog data")
         new_short_name = self.catalog_name + new_short_name + date_string
         file_name = new_short_name.replace(" ", "").lower() + ".csv"
         short_names_list = []
@@ -309,14 +317,25 @@ class Catalog:
             if target == "un_norm":
                 header_list = [f"{element}_A" for element in ordered_element_list]
             else:
-                header_list = [self.element_to_ratio_name[element] for element in ordered_element_list]
+                header_list = []
+                for element_string in ordered_element_list:
+                    element_id = self.element_to_ratio_name[element_string]
+                    un_norm_type = self.element_id_to_un_norm_func[element_string]
+                    if un_norm_type == "un_norm_abs_x":
+                        header_list.append(f"{element_id}_A")
+                    elif un_norm_type == "un_norm_x_over_h":
+                        header_list.append(f"{element_id}_H")
+                    elif un_norm_type == "un_norm_x_over_fe":
+                        header_list.append(f"{element_id}_Fe")
+                    else:
+                        raise KeyError(f"Un-normalization function: {un_norm_type} not recognized for {self.catalog_name}")
             header = ','.join(["simbad_id", 'original_name'] + header_list) + '\n'
             body = []
             for main_star_id, original_name, element_data in star_list:
-                single_line = f"{main_star_id},original_name," + ','.join([str(element_data[element])
-                                                                           if element in element_data.keys()
-                                                                           else ""
-                                                                           for element in ordered_element_list])
+                single_line = f"{main_star_id},{original_name}," + ','.join([str(element_data[element])
+                                                                             if element in element_data.keys()
+                                                                             else ""
+                                                                             for element in ordered_element_list])
                 body.append(single_line + "\n")
             full_file_and_path = os.path.join(output_dir, file_name)
             with open(full_file_and_path, 'w') as f:

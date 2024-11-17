@@ -4,8 +4,8 @@ import datetime
 
 import numpy as np
 
-from hypatia.sources.gaia import GaiaLib
 from hypatia.elements import element_rank
+from hypatia.sources.gaia.ops import GaiaLib
 from hypatia.config import star_data_output_dir
 from hypatia.plots.histograms import simple_hist
 from hypatia.plots.quick_plots import quick_plotter

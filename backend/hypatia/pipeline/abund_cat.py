@@ -1,7 +1,7 @@
 import numpy as np
 
 from hypatia.elements import ElementID
-from hypatia.sources.catalogs.solar_norm import solar_norm_dict
+from hypatia.sources.catalogs.catalogs import solar_norm_dict
 
 
 class SingleNorm:

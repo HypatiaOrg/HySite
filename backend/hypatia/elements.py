@@ -183,9 +183,14 @@ iron_nlte_id = ElementID.from_str("NLTE_Fe")
 
 # representative error file
 element_plusminus_error_file = os.path.join(site_dir, 'element_plusminus_err.toml')
-with open(element_plusminus_error_file, 'rb') as f:
-    plusminus_error = {ElementID.from_str(key): np.round(float(value), decimals=plusminus_error_decimals)
-                       for key, value in tomllib.load(f).items()}
+if os.path.exists(element_plusminus_error_file):
+    with open(element_plusminus_error_file, 'rb') as f:
+        plusminus_error = {ElementID.from_str(key): np.round(float(value), decimals=plusminus_error_decimals)
+                           for key, value in tomllib.load(f).items()}
+else:
+    plusminus_error = {}
+    warn(f"Element representative error file {element_plusminus_error_file} not found.")
+    # this is the default error value for elements not found in the error file
 
 
 def get_representative_error(element_id: ElementID) -> float:

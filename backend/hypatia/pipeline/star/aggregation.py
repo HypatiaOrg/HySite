@@ -83,16 +83,20 @@ def pipeline_add_starname_match(db_formatted_names: list[str], exclude: bool = F
     }
 
 
-def catalog_calc_array(element_name: ElementID, norm_path: str, catalogs: list[str], catalog_exclude: bool = False
-                       ) -> dict[str, dict]:
+def catalog_calc_array(element_name: ElementID, norm_path: str, catalogs: list[str], catalog_exclude: bool = False,
+                       return_linear: bool = False) -> dict[str, dict]:
     condition = {'$in': ['$$this.k', catalogs]}
     if catalog_exclude:
         condition = {'$not': condition}
+    if return_linear:
+        obj_name = 'catalogs_linear'
+    else:
+        obj_name = 'catalogs'
     return {
         '$sortArray': {
             'input': {
                 '$filter': {
-                    'input': {'$objectToArray': f'${norm_path}.{element_name}.catalogs'},
+                    'input': {'$objectToArray': f'${norm_path}.{element_name}.{obj_name}'},
                     'cond': condition,
                 },
             },
@@ -275,13 +279,23 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
         add_fields_first_calc = {}
         for element_name in all_elements:
             add_fields_first_calc[f'{element_name}_cat_array'] = catalog_calc_array(
-                element_name=element_name, norm_path=norm_path, catalogs=catalogs, catalog_exclude=catalog_exclude)
+                element_name=element_name, norm_path=norm_path, catalogs=catalogs,
+                catalog_exclude=catalog_exclude,
+                return_linear=False)
+            if not return_median:
+                add_fields_first_calc[f'{element_name}_cat_array_linear'] = catalog_calc_array(
+                    element_name=element_name, norm_path=norm_path, catalogs=catalogs,
+                    catalog_exclude=catalog_exclude,
+                    return_linear=True)
+
+
         # calculate the median/meaning and error values from the sorted in the first step of the calculation
         add_fields_final_calc = {}
+        array_suffix = '_linear' if not return_median else ''
         for element_name in all_elements:
             values_array = {
                 '$map': {
-                    'input': f'${element_name}_cat_array',
+                    'input': f'${element_name}_cat_array{array_suffix}',
                     'in': '$$this.v',
                 },
             }
@@ -294,7 +308,7 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
                     },
                 }
             else:
-                cat_calc = {'$avg': values_array}
+                cat_calc = {'$log10': {'$avg': values_array}}
             add_fields_final_calc[f'{element_name}'] = cat_calc
             add_fields_final_calc[f'{element_name}_catalogs'] = {'$arrayToObject': f'${element_name}_cat_array'}
             if return_error:

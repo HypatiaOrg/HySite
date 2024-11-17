@@ -67,15 +67,26 @@ class HypatiaDB(BaseStarCollection):
         if len(catalogs_this_star) > 0:
             self.added_catalogs.update(catalogs_this_star)
             reduced_abundances = single_star.reduced_abundances
-            abundance_output = {norm: {element_name: {data_key: reduced_abundances[norm][element_name][data_key]
-                                                           for data_key
-                                                           in reduced_abundances[norm][element_name].__dict__.keys()
-                                                           if data_key in single_abundance_keys
-                                                           and reduced_abundances[norm][element_name][data_key]
-                                                           is not None}
-                                       for element_name in sorted(reduced_abundances[norm].available_abundances,
-                                                                  key=element_rank)}
-                                for norm in reduced_abundances.keys()}
+            abundance_output = {}
+            for norm in reduced_abundances.keys():
+                abundance_output_norm = {}
+                reduced_this_norm = reduced_abundances[norm]
+                for element_name in sorted(reduced_abundances[norm].available_abundances,
+                                           key=element_rank):
+                    el_stats = reduced_this_norm[element_name]
+                    export_cat_data = {}
+                    for export_field in single_abundance_keys:
+                        try:
+                            export_data = getattr(el_stats, export_field)
+                        except AttributeError:
+                            pass
+                        else:
+                            if export_data is not None:
+                                export_cat_data[export_field] = export_data
+                    if export_cat_data:
+                        abundance_output_norm[element_name] = export_cat_data
+                if abundance_output_norm:
+                    abundance_output[norm] = abundance_output_norm
             equilibrium = {}
             non_equilibrium = {}
             for norm_key, element_data in abundance_output.items():

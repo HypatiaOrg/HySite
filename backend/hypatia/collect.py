@@ -11,14 +11,14 @@ from hypatia.config import connection_string
 class BaseCollection:
     client = pymongo.MongoClient(connection_string)
     validator = {
-        "$jsonSchema": {
-            "bsonType": "object",
-            "title": "The validator schema for the base class StarCollection",
-            "required": ["_id"],
-            "properties": {
-                "_id": {
-                    "bsonType": "string",
-                    "description": "must be a string and is required to be unique"
+        '$jsonSchema': {
+            'bsonType': 'object',
+            'title': 'The validator schema for the base class StarCollection',
+            'required': ['_id'],
+            'properties': {
+                '_id': {
+                    'bsonType': 'string',
+                    'description': 'must be a string and is required to be unique'
                 },
             }
         }
@@ -36,7 +36,7 @@ class BaseCollection:
         self.test_connection()
 
     def create_indexes(self):
-        pass
+        self.collection_add_index(index_name='_id', unique=True)
 
     def reset(self):
         self.drop_collection()
@@ -54,7 +54,7 @@ class BaseCollection:
                 time.sleep(1)
             else:
                 if self.verbose:
-                    print(f'Connected to MongoDB server version {self.server_info["version"]}')
+                    print(f"Connected to MongoDB server version {self.server_info['version']}")
                     print(f'Connected to database {self.db_name} and collection {self.collection_name}')
                 break
             time.sleep(5)
@@ -80,7 +80,7 @@ class BaseCollection:
         return self.db.drop()
 
     def collection_add_index(self, index_name: str, ascending: bool = True, unique: bool = False):
-        if unique:
+        if unique and index_name != '_id':
             self.collection.create_index([(index_name, 1 if ascending else -1)], unique=unique)
         else:
             self.collection.create_index([(index_name, 1 if ascending else -1)])
@@ -101,14 +101,14 @@ class BaseCollection:
             return self.collection.find(query)
 
     def find_by_id(self, find_id: str) -> dict:
-        return self.collection.find_one({"_id": find_id})
+        return self.collection.find_one({'_id': find_id})
 
     def remove_by_id(self, remove_id: str) -> pymongo.results.DeleteResult:
-        return self.collection.delete_one({"_id": remove_id})
+        return self.collection.delete_one({'_id': remove_id})
 
 
 class BaseStarCollection(BaseCollection):
-    def __init__(self, collection_name: str, db_name: str = 'metadata', name_col: str = "_id", verbose: bool = True):
+    def __init__(self, collection_name: str, db_name: str = 'metadata', name_col: str = '_id', verbose: bool = True):
         super().__init__(collection_name, db_name, verbose)
         self.name_col = name_col
 
@@ -116,4 +116,4 @@ class BaseStarCollection(BaseCollection):
         self.collection_add_index(self.name_col, unique=True)
 
     def update_timestamp(self, update_id: str) -> pymongo.results.UpdateResult:
-        return self.collection.update({"_id": update_id}, {"$set": {"timestamp": time.time()}})
+        return self.collection.update({'_id': update_id}, {'$set': {'timestamp': time.time()}})

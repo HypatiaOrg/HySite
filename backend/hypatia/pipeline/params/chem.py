@@ -9,16 +9,22 @@ class ElementStats:
         self.name = element_name
         self.element_id = element_name
         self.value_list = []
+        self.value_list_linear = []
         self.catalog_list = []
         self.catalogs = {}
+        self.catalogs_linear = {}
         self.len = 0
         self.mean = self.median = self.max = self.min = self.spread = self.plusminus = self.std = self.median_catalogs = None
 
     def add_value(self, value: float, catalog: str):
-        formatted_value = np.around(float(value), decimals=3)
+        value = float(value)
+        formatted_value = np.around(value, decimals=3)
+        value_linear = 10.0**(formatted_value)
         self.value_list.append(formatted_value)
+        self.value_list_linear.append(value_linear)
         self.catalog_list.append(catalog)
         self.catalogs[catalog] = formatted_value
+        self.catalogs_linear[catalog] = value_linear
 
     def calc_stats(self):
         self.len = self.__len__()
@@ -28,10 +34,11 @@ class ElementStats:
             self.mean = self.median = self.max = self.min = np.around(self.value_list[0], decimals=2)
             self.median_catalogs = [self.catalog_list[0]]
         else:
-            self.mean = np.around(np.mean(self.value_list), decimals=2)
-            self.median = np.around(np.median(self.value_list), decimals=2)
-            self.max = np.max(self.value_list)
-            self.min = np.min(self.value_list)
+            value_array = np.array(self.value_list)
+            self.mean = np.around(np.log10(np.mean(np.array(self.value_list_linear))), decimals=2)
+            self.median = np.around(np.median(value_array), decimals=2)
+            self.max = np.max(value_array)
+            self.min = np.min(value_array)
             self.spread = np.around(self.max - self.min, decimals=3)
             self.plusminus = np.around(self.spread / 2.0, decimals=2)
             value_list_sorted, catalog_list_sorted = zip(*sorted(zip(self.value_list, self.catalog_list)))

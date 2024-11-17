@@ -11,8 +11,8 @@ services:
             start_period: 40s
         environment:
             # These *INITDB* variables only used when the database is first initialized
-            MONGO_INITDB_ROOT_USERNAME: "${MONGO_USERNAME}"
-            MONGO_INITDB_ROOT_PASSWORD: "${MONGO_PASSWORD}"
+            MONGO_INITDB_ROOT_USERNAME: "${MONGO_USERNAME:-admin}"
+            MONGO_INITDB_ROOT_PASSWORD: "${MONGO_PASSWORD:-super-not-secure}"
         volumes:
             - type: bind
               source: ./mongo
@@ -31,10 +31,17 @@ services:
         restart: "${RESTART_POLICY:-no}"
         environment:
             BASE_API_URL: "http://django-api:8111"
+        read_only: true
         volumes:
-            # The web2 py app needs to read and write files, it uses the file system as a database
-            # we must write file locally for them to persist between builds.
-            - ./web2py:/home/web2py/web2py:rw
+            # uncomment below to sync all the web2py files for development
+            # - ./web2py:/home/web2py/web2py:rw
+            # store log and other files in a volume on the host
+            - "web_to_py_temp:/home/python_kid/web2py_app/temp_data:rw"
+            # gunicorn to store temporary files
+            - "web_to_py_gunicorn_tmp:/var/tmp:rw"
+            # session data (saved user session states)
+            - "web_to_py_session_data:/home/python_kid/web2py_app/applications/hypatia/sessions:rw"
+
         # the first command to run when the container starts, start the gunicorn server
         command: ["python", "anyserver.py", "-s", "gunicorn", "-i", "0.0.0.0", "-p", "8222"]
         # ports: ["8222:8222"]
@@ -48,13 +55,21 @@ services:
         # ports: ["8111:8111"]
         environment:
             DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY}"
-            MONGO_USERNAME: "${MONGO_USERNAME}"
-            MONGO_PASSWORD: "${MONGO_PASSWORD}"
+            MONGO_USERNAME: "${MONGO_USERNAME:-admin}"
+            MONGO_PASSWORD: "${MONGO_PASSWORD:-super-not-secure}"
             MONGO_HOST: "${MONGO_HOST:-mongoDB}"
-
+        read_only: true
         volumes:
-            # django-static is written at build time by the SpExWebsite Dockerfile
-            - "django-static:/app/static_root:rw"
+            # django_static is written at build time by the SpExWebsite Dockerfile
+            - "django_static:/app/static_root:ro"
+            # matplotlib_cache is recommended for matplotlib to work in a docker container
+            - "matplotlib_cache:/home/python_user/django_backend/.cache/matplotlib:rw"
+            # gunicorn to store temporary files
+            - "gunicorn_tmp:/var/tmp:rw"
+            # Data input for processing
+            - "./backend/hypatia/HyData:/home/python_user/django_backend/hypatia/HyData:${VOLUME_SPECIFICATION:-rw}"
+            # Data output from processing
+            - "./backend/output:${DATA_OUTPUT_DIR:-/home/python_user/django_backend/output}:${VOLUME_SPECIFICATION:-rw}"
         command: ["gunicorn", "core.wsgi", "--bind", "0.0.0.0:8111"]
         profiles: ["dual", "api"]
         networks:
@@ -74,9 +89,10 @@ services:
             GRANT_SUDO: "yes"
             DOCKER_STACKS_JUPYTER_CMD: "notebook"
             DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY}"
-            MONGO_USERNAME: "${MONGO_USERNAME}"
-            MONGO_PASSWORD: "${MONGO_PASSWORD}"
+            MONGO_USERNAME: "${MONGO_USERNAME:-admin}"
+            MONGO_PASSWORD: "${MONGO_PASSWORD:-super-not-secure}"
             MONGO_HOST: "${MONGO_HOST:-mongoDB}"
+            CONNECTION_STRING: ${CONNECTION_STRING:-none}
         volumes:
             - ./backend:/backend
         profiles: ["ipython"]
@@ -91,13 +107,18 @@ services:
             - "${LOCAL_PORT:-80}:80"
         volumes:
             - "./nginx/default.conf:/etc/nginx/conf.d/default.conf"
-            - "django-static:/django/static_root:ro"
+            - "django_static:/django/static_root:ro"
         profiles: ["dual", "api"]
         networks:
             - hynet
 
 volumes:
-    django-static:
+    django_static:
+    matplotlib_cache:
+    gunicorn_tmp:
+    web_to_py_temp:
+    web_to_py_gunicorn_tmp:
+    web_to_py_session_data:
 
 networks:
     hynet:

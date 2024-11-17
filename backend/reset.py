@@ -1,9 +1,10 @@
 import os
 import time
+
 from hypatia.config import ref_dir
-from hypatia.sources.gaia import GaiaLib
 from standard_lib import standard_output
 from hypatia.pipeline.nat_cat import NatCat
+from hypatia.sources.gaia.ops import GaiaLib
 from hypatia.sources.catalogs.ops import CatOps
 from hypatia.sources.tic.ops import tic_collection
 from hypatia.sources.simbad.ops import star_collection
