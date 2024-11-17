@@ -6,8 +6,7 @@ from astropy.time import Time
 from astropy import units as u
 from astropy.coordinates import SkyCoord, Distance
 
-from hypatia.sources.gaia.db import (astro_query_dr1_params, astro_query_dr2_params, astro_query_dr3_params,
-                                     param_to_units)
+from hypatia.sources.gaia.db import astro_query_dr1_params, astro_query_dr2_params, astro_query_dr3_params
 
 
 deg_per_mas = 1.0 / (1000.0 * 60.0 * 60.0)
@@ -25,6 +24,8 @@ def simple_job_text(dr_num, sub_list):
 
 
 class GaiaQuery:
+    batch_size = 500
+
     def __init__(self, verbose=False):
         # import this package at 'runtime' not 'import time' to avoid an unnecessary connection to the Gaia SQL server
         self.astro_query_gaia = importlib.import_module('astroquery.gaia')
@@ -33,12 +34,11 @@ class GaiaQuery:
         self.gaia_dr1_data = None
         self.gaia_dr2_data = None
         self.gaia_dr3_data = None
+        self.star_dict = None
 
         self.astro_query_dr1_params = set(astro_query_dr1_params)
         self.astro_query_dr2_params = set(astro_query_dr2_params)
         self.astro_query_dr3_params = set(astro_query_dr3_params)
-        self.param_to_units = param_to_units
-        self.params_with_units = set(self.param_to_units.keys())
 
     def astroquery_get_job(self, job, dr_num=2):
         while job._phase != 'COMPLETED':
@@ -89,7 +89,7 @@ class GaiaQuery:
         cut_index = len('Gaia DR# ')
         cut_name_list = [gaia_name[cut_index:] for gaia_name in simbad_formatted_name_list]
         for source_id in cut_name_list:
-            if len(sub_list) == 500:
+            if len(sub_list) == self.batch_size:
                 list_of_sub_lists.append(sub_list)
                 sub_list = [source_id]
             else:

@@ -80,7 +80,7 @@ class BaseCollection:
         return self.db.drop()
 
     def collection_add_index(self, index_name: str, ascending: bool = True, unique: bool = False):
-        if unique:
+        if unique and index_name != '_id':
             self.collection.create_index([(index_name, 1 if ascending else -1)], unique=unique)
         else:
             self.collection.create_index([(index_name, 1 if ascending else -1)])

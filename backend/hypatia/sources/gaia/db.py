@@ -22,16 +22,6 @@ astro_query_dr3_params = ['ra', 'ra_error', 'dec', 'dec_error', 'ref_epoch', 'so
                           'radial_velocity', 'radial_velocity_error',
                           'teff_gspphot', 'teff_gspphot_lower', 'teff_gspphot_upper',
                           'distance_gspphot', 'distance_gspphot_lower', 'distance_gspphot_upper',]
-param_to_units = {'ra_epochJ2000': 'deg', 'ra_error': 'deg', 'dec_epochJ2000': 'deg', 'dec_error': 'deg',
-                  'ref_epoch': 'Julian Years', 'parallax': 'mas', 'parallax_error': 'mas',
-                  'pmra': 'mas/yr', 'pmra_error': 'mas/yr',
-                  'pmdec': 'mas/yr', 'pmdec_error': 'mas/yr',
-                  'phot_g_mean_flux': 'e-/s', 'phot_g_mean_mag': 'mag',
-                  'radial_velocity': 'km/s',
-                  'teff_val': 'K', 'teff_percentile_lower': 'K', 'teff_percentile_upper': 'K',
-                  'teff_gspphot': 'K', 'teff_gspphot_lower': 'K', 'teff_gspphot_upper': 'K',
-                  'r_est': '[pc]', 'r_lo': '[pc]', 'r_hi': '[pc]', 'dist': '[pc]',
-                  'distance_gspphot': '[pc]', 'distance_gspphot_lower': '[pc]', 'distance_gspphot_upper': '[pc]',}
 string_types = {'name'}
 bool_types  = {'duplicated_source'}
 int_types = {'source_id'}
@@ -146,6 +136,6 @@ class GaiaRef(BaseCollection):
                                                                         for gaia_data in gaia_records]])
 
     def find(self, gaia_star_id: int):
-        if gaia_star_id in self.available_ids:
+        if int(gaia_star_id) in self.available_ids:
             return self.local_collection[gaia_star_id]
         return None
