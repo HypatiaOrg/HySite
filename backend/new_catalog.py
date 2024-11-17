@@ -196,8 +196,8 @@ if __name__ == "__main__":
     add_norm = False  # you only need to do one time, multiple times overwrites the previous entry
     uniquify = True
     do_exo = False
-    test_catalog = True
-    insert_new = False
+    test_catalog = False
+    insert_new = True
 
     # when done with upload, double-check that weird elements or new ionizations have representative error:
     # HySite/backend/hypatia/HyData/site_data
