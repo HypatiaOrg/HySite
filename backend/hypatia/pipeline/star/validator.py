@@ -85,6 +85,18 @@ nea_stellar_or_planetary_params = {
     },
 }
 
+catalog_name_value_object = {
+    'bsonType': 'object',
+    'description': 'These are the raw values pair with the catalog name of the source',
+    'additionalProperties': False,
+    'patternProperties': {
+        '.+': {
+            'bsonType': 'double',
+            'description': 'a float value for the abundance',
+        },
+    },
+}
+
 single_abundance = {
     'mean': {
         'bsonType': 'double',
@@ -110,17 +122,8 @@ single_abundance = {
         'bsonType': 'double',
         'description': 'must be a double and is not required'
     },
-    'catalogs': {
-        'bsonType': 'object',
-        'description': 'These are the raw values pair with the catalog name of the source',
-        'additionalProperties': False,
-        'patternProperties': {
-            '.+': {
-                'bsonType': 'double',
-                'description': 'a float value for the abundance',
-            },
-        },
-    },
+    'catalogs': catalog_name_value_object,
+    'catalogs_linear': catalog_name_value_object,
     'median_catalogs': {
         'bsonType': 'array',
         'description': 'The catalogs that contain the median value',
@@ -130,6 +133,7 @@ single_abundance = {
         },
     },
 }
+
 single_abundance_keys = set(single_abundance.keys())
 chemical_abundances = {
     'bsonType': 'object',
@@ -201,7 +205,6 @@ nea_data = {
         },
     },
 }
-
 
 validator = {
     '$jsonSchema': {

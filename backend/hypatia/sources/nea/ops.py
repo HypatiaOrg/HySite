@@ -113,7 +113,10 @@ def refresh_nea_data(verbose: bool = False):
     nea_collection.reset()
     if verbose:
         print("Refreshing NEA data")
-    return [nea_collection.add_one(format_for_mongo(host_data)) for host_data in set_data_by_host(query_nea()).values()]
+    for host_data in set_data_by_host(query_nea()).values():
+        nea_collection.add_one(format_for_mongo(host_data))
+    if verbose:
+        print("NEA data refreshed")
 
 
 def get_all_nea() -> list[dict[str, any]]:

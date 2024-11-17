@@ -1,5 +1,7 @@
 import os
 import dotenv
+from urllib.parse import quote
+
 
 # directory information in the Hypatia Database
 base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -30,6 +32,7 @@ hacked = {
 """
 Environmental based Configuration
 """
+none_set = {None, 'none', 'null', ''}
 
 # Load the .env file
 env_path = os.path.join(repo_dir, '.env')
@@ -40,7 +43,22 @@ if os.path.exists(env_path):
 MONGO_HOST = os.environ.get("MONGO_HOST", "hypatiacatalog.com")
 MONGO_USERNAME = os.environ.get("MONGO_USERNAME", "username")
 MONGO_PASSWORD = os.environ.get("MONGO_PASSWORD", "password")
-connection_string = f'mongodb://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_HOST}:27017'
+MONGO_PORT = os.environ.get("MONGO_PORT", 27017)
+CONNECTION_STRING = os.environ.get("CONNECTION_STRING", 'none')
+if CONNECTION_STRING.lower() in none_set:
+    CONNECTION_STRING = None
+
+def url_encode(string_to_encode: str, url_safe: str = "!~*'()") -> str:
+    return quote(string_to_encode.encode('utf-8'), safe=url_safe)
+
+def get_connection_string(user: str = MONGO_USERNAME, password: str = MONGO_PASSWORD,
+                          host: str = MONGO_HOST, port: str | int = MONGO_PORT) -> str:
+    return f'mongodb://{url_encode(user)}:{url_encode(password)}@{host}:{port}'
+
+if CONNECTION_STRING is None:
+    connection_string = get_connection_string()
+else:
+    connection_string = CONNECTION_STRING
 
 # Legacy SQLite and HDF5 data directories
 hdf5_data_dir = os.path.join(projects_dir, "WebServer", "web2py", "applications", "hypatia", "hypdata")

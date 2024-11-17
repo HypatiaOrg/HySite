@@ -1,5 +1,9 @@
-# Custom patterns for the HySite project
-.env
+# # Custom patterns for the HySite project
+# all environment files
+*.env
+# but not the example.env
+!example.env
+# ignore the JetBrains IDE files
 .idea/
 
 # Byte-compiled / optimized / DLL files

@@ -117,6 +117,20 @@ validator = {
 }
 
 
+def and_filters(min_value: float | None, max_value: float | None, field_name: str) -> list[dict]:
+    and_filters_planetary = []
+    if min_value is not None and max_value is not None:
+        and_filters_planetary.append({'$or': [
+            {f'planets_array.v.{field_name}.value': {'$gte': min_value}},
+            {f'planets_array.v.{field_name}.value': {'$lte': max_value}}
+        ]})
+    elif min_value is not None:
+        and_filters_planetary.append({f'planets_array.v.{field_name}.value': {'$gte': min_value}})
+    elif max_value is not None:
+        and_filters_planetary.append({f'planets_array.v.{field_name}.value': {'$lte': max_value}})
+    return and_filters_planetary
+
+
 class ExoPlanetStarCollection(BaseStarCollection):
     validator = validator
 
@@ -127,3 +141,28 @@ class ExoPlanetStarCollection(BaseStarCollection):
         self.collection_add_index(index_name='hd', ascending=True, unique=False)
         self.collection_add_index(index_name='hip', ascending=True, unique=False)
         self.collection_add_index(index_name='planet_letters', ascending=True, unique=False)
+
+    def get_all_stars(self):
+        return list(self.collection.find())
+
+    def hysite_api(self, pl_mass_min: float = None, pl_mass_max: float = None,
+                   pl_radius_min: float = None, pl_radius_max: float = None):
+        # stage 1a: reshape the planetary data to be an array of objects, which can be a targe for unwind
+        # stage 1b: unwind the planetary data to allow for per-planet filtering
+        json_pipeline = [{'$addFields': {'planets_array': {'$objectToArray': '$planets'}}},
+                         {'$unwind': '$planets_array'}]
+        # Stage 2: filtering
+        and_filters_planetary = []
+        and_filters_planetary.extend(and_filters(min_value=pl_mass_min, max_value=pl_mass_max, field_name='pl_mass'))
+        and_filters_planetary.extend(and_filters(min_value=pl_radius_min, max_value=pl_radius_max, field_name='pl_radius'))
+        if and_filters_planetary:
+            # only add a pipline stage if there are filters to apply.
+            json_pipeline.append({'$match': {'$and': and_filters_planetary}})
+        # # stage 3: group the data back into a single document
+        json_pipeline.append({'$group': {
+            '_id': '$_id',
+            'nea_name': {'$first': '$nea_name'},
+            'planets_list': {'$push': '$planets_array.v'},
+        }})
+        raw_results = list(self.collection.aggregate(json_pipeline))
+        return raw_results

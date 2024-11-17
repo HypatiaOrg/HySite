@@ -1,10 +1,10 @@
 from hypatia.collect import BaseCollection
 from hypatia.config import default_catalog_file
-from hypatia.sources.catalogs.solar_norm import sn
 from hypatia.elements import element_rank, ElementID
 from hypatia.object_params import expected_params_dict
 from hypatia.elements import summary_dict, elements_found
 from hypatia.sources.catalogs.ops import export_to_records
+from hypatia.sources.catalogs.solar_norm import solar_norm
 
 
 class SummaryCollection(BaseCollection):
@@ -73,10 +73,6 @@ class SummaryCollection(BaseCollection):
                                 "ionization_energy_ev": {
                                     "bsonType": "double",
                                     "description": "must be a number for the ionization energy of the element in electron volts"
-                                },
-                                "plusminus": {
-                                    "bsonType": "double",
-                                    "description": "must be a number for the representative error of the element"
                                 },
                             },
                         },
@@ -227,7 +223,7 @@ def upload_summary(found_elements: set[ElementID] = None, found_element_nlte: se
     catalog_data = export_to_records(catalog_input_file=catalogs_file_name,
                                      requested_catalogs=sorted(found_catalogs) if found_catalogs else None)
 
-    normalizations = sn.to_record(norm_keys=found_normalizations) | \
+    normalizations = solar_norm.to_record(norm_keys=found_normalizations) | \
         {'absolute': {'author': 'Absolute', 'notes': 'This key provides data that is in absolute scale and is not normalized to the Sun.'},
          'original': {'author': 'Original', 'notes': 'This key provides the originally published normalization, but omits data that was originally published as absolute. '}}
 
