@@ -193,7 +193,7 @@ def insert_new_catalogs(verbose=True, user_prompt=True):
 
 if __name__ == "__main__":
     verbose = True
-    add_norm = False  # you only need to do one time, multiple times overwrites the previous entry
+    add_norm = False  # you only need to do one time, multiple times overwrites the previous entry. Also running will exit code 0.
     uniquify = True
     do_exo = False
     test_catalog = False
@@ -204,8 +204,8 @@ if __name__ == "__main__":
 
     if add_norm:
         sn = SolarNorm(os.path.join(ref_dir, "solar_norm_ref.csv"))
-        sn.add_normalization(handle="alexeeva23", author="Alexeeva et al.", year=2023, element_dict={"Fe":4.43, "Y":2.21})
-        #sn.add_normalization("lombardo22", {"Na":6.30, "Mg":7.54, "Al":6.47, "Si":7.52, "SiII":7.52, "Ca":6.33, "Sc":3.10, "ScII":3.10, "Ti":4.90, "TiII":4.90, "V":4.00, "VII":4.00, "Cr":5.64, "CrII":5.64, "Mn":5.37, "MnII":5.37, "Fe":7.52, "Co":4.92, "Ni":6.23, "Cu":4.21, "Zn":4.62, "SrII":2.92, "YII":2.21, "Zr":2.62, "ZrII":2.62})
+        #sn.add_normalization(handle="alexeeva23", author="Alexeeva et al.", year=2023, element_dict={"Fe":4.43, "Y":2.21})
+        sn.add_normalization("vitali24", author="Vitali et al.", year=2024, element_dict={"Al":6.39,"BaII":2.23,"Ca":6.32,"CeII":1.4,"Co":4.9,"Cr":5.55,"Cu":4.13,"Fe":7.43,"LaII":1.1,"Mg":7.6,"Mn":5.37,"Na":6.28,"NdII":1.46,"Ni":6.18,"ScII":3.15,"Si":7.49,"Sr":2.79,"TiII":4.93,"V":3.93,"YII":2.1,"ZrII":2.55,"EuII":0.52})
         #sn.add_normalization("forsberg22", {"Fe": 7.45, "Mo": 1.88})
         sn.write(os.path.join(ref_dir, "solar_norm_ref.csv"))
         print("New normalizations added to the solar_norm_ref.csv file.")

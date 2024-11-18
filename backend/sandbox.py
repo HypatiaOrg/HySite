@@ -19,29 +19,32 @@ from hypatia.pipeline.nat_cat import NatCat, load_catalog_query
 from hypatia.pipeline.star.output import load_pickled_output
 
 
-def mdwarf_output(from_scratch=True, short_name_list='mdwarf_subset_catalog_file.csv', norm_key=None,
-                  target_list=None,  fast_update_gaia=False, from_pickle=False):
+def mdwarf_output(from_scratch=True, refresh_exo_data=False, short_name_list='mdwarf_subset_catalog_file.csv', norm_keys: list[str] = None,
+                  target_list=None, fast_update_gaia=True, from_pickled_cat: bool = False, from_pickled_output: bool = False,
+                    do_legacy: bool = False, mongo_upload: bool = True):
     target_output = None
     params = ["dist", "logg", 'Teff', "SpType", 'st_mass', 'st_rad', "disk"]
     star_name_type = ['gaia dr2', "gaia dr1", "hip", 'hd', "wds"]
     if short_name_list is None:
         catalogs_file_name = None
     else:
-        catalogs_file_name = 'load/subsets/mdwarf_subset_catalog_file.csv'
+        catalogs_file_name = 'hypatia/HyData/subsets/mdwarf_subset_catalog_file.csv'
 
-    if from_pickle:
+    if from_pickled_cat:
         nat_cat = load_catalog_query()
-        output_star_data = load_pickled_output()
     else:
         nat_cat = NatCat(params_list_for_stats=params,
                          star_types_for_stats=star_name_type,
                          catalogs_from_scratch=from_scratch, verbose=True, catalogs_verbose=True,
-                         get_abundance_data=True, get_exo_data=True, refresh_exo_data=from_scratch,
+                         get_abundance_data=True, get_exo_data=True, refresh_exo_data=refresh_exo_data,
                          target_list=target_list,
-                         simbad_go_fast=False,
                          fast_update_gaia=fast_update_gaia,
                          catalogs_file_name=catalogs_file_name)
         nat_cat.pickle_myself()
+
+    if from_pickled_output:
+        output_star_data = load_pickled_output()
+    else:
 
         dist_output = nat_cat.make_output_star_data(min_catalog_count=1,
                                                     parameter_bound_filter=[("Teff", 2300.0, 5000.)],
@@ -75,21 +78,31 @@ def mdwarf_output(from_scratch=True, short_name_list='mdwarf_subset_catalog_file
                                 at_least_fe_and_another=True,
                                 remove_nlte_abundances=True,
                                 keep_complement=False,
-                                is_target=False)
-        if not (norm_key is None or norm_key.lower() == 'absolute'):
-            output_star_data.normalize(norm_key=norm_key)
+                                is_target=None)
+        output_star_data.normalize(norm_keys=norm_keys)
         output_star_data.filter(element_bound_filter=None)  # filter after normalization, and logic
         output_star_data.output_file(output_dir=None, exo_mode=True)
-        output_star_data.do_stats(params_set=nat_cat.params_list_for_stats, star_name_types=nat_cat.star_types_for_stats)
-        output_star_data.reduce_elements()
-        output_star_data.find_available_attributes()
+        output_star_data.do_stats(params_set=nat_cat.params_list_for_stats,
+                                  star_name_types=nat_cat.star_types_for_stats)
+        if mongo_upload:
+            output_star_data.reduce_elements()
+            output_star_data.find_available_attributes()
+            output_star_data.export_to_mongo(catalogs_file_name=nat_cat.catalogs_file_name)
         output_star_data.pickle_myself()
     return nat_cat, output_star_data, target_output
 
 nonMs = ['HD 88230', 'HD 178126', 'LHS 104', 'LHS 170', 'LHS 173', 'LHS 236', 'LHS 343', 'LHS 467', 'LHS 1138', 'LHS 1482','LHS 1819','LHS 1841', 'LHS 2161', 'LHS 2463', 'LHS 2715', 'LHS 2938', 'LHS 3084', 'HIP 27928', 'G 39-36', 'HIP 37798', 'HIP 67308', 'LHS 1229', 'HD 11964B', 'HD 18143B', 'HD285804', 'BD-01 293B', 'BD+17 719C', 'BD+24 0004B', 'GJ 129', 'GJ 1177B', '2MASS 2203769-2452313', 'HD 35155', 'HD 49368', 'HD 120933', 'HD 138481', 'HD 10380', 'HD 10824', 'HD 15656', 'HD 20468', 'HD 20644', 'HD 23413', 'HD 29065', 'HD 52960', 'HD 58972', 'HD 62721', 'HD 88230', 'HD 218792', 'HD 223719', 'HD 225212', 'HD 6860', 'HD 18191', 'HD 18884', 'HD 30959', 'HD 35155', 'HD 44478', 'HD 49368', 'HD 71250', 'HD 112300', 'HD 119228', 'HD 120933', 'HD 138481', 'HD 147923', 'HD 216386', 'HD 224935', 'HD 10380', 'HD 10824', 'HD 15656', 'HD 20468', 'HD 20644', 'HD 23413', 'HD 29065', 'HD 52960', 'HD 58972', 'HD 60522', 'HD 62721', 'HD 88230', 'HD 218792', 'HD 223719', 'HD 225212']
-nat_cat, output_star_data, target_star_data = mdwarf_output(from_scratch=True, norm_key="lodders09",
-                                                            target_list=nonMs, fast_update_gaia=True,
-                                                            from_pickle=False)
+all_params = set()
+
+test_norm_keys = ["lodders09"]
+test_refresh_exo_data = False
+test_from_scratch = True
+test_from_pickled_cat = False
+target_list=nonMs
+
+nat_cat, output_star_data, target_star_data = mdwarf_output(from_scratch=test_from_scratch, norm_keys=test_norm_keys,
+                                                            target_list=target_list, refresh_exo_data=test_refresh_exo_data,
+                                                            from_pickled_cat=test_from_pickled_cat)
 stats = output_star_data.stats
 
 #Run this to load the data for the SAKHMET target stars
