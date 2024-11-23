@@ -116,6 +116,8 @@ def query_simbad_star(test_simbad_name: str) -> tuple[str | None, list[str], dic
         star_data = query_simbad_star_data(test_simbad_name)
         if test_simbad_name == "Gaia DR2 4087838959097352064":
             star_data['DEC'] = ["-16 35 27.118803876"]
+        if test_simbad_name == "BD+39 03309":
+            star_data['RA'] = ["18 03 47.3520267264"]
         parsed_data = parse_star_data(star_data)
         simbad_main_id = parsed_data['MAIN_ID']
         if star_data is None:

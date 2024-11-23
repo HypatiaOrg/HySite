@@ -205,8 +205,8 @@ if __name__ == "__main__":
     if add_norm:
         sn = SolarNorm(os.path.join(ref_dir, "solar_norm_ref.csv"))
         #sn.add_normalization(handle="alexeeva23", author="Alexeeva et al.", year=2023, element_dict={"Fe":4.43, "Y":2.21})
-        sn.add_normalization("vitali24", author="Vitali et al.", year=2024, element_dict={"Al":6.39,"BaII":2.23,"Ca":6.32,"CeII":1.4,"Co":4.9,"Cr":5.55,"Cu":4.13,"Fe":7.43,"LaII":1.1,"Mg":7.6,"Mn":5.37,"Na":6.28,"NdII":1.46,"Ni":6.18,"ScII":3.15,"Si":7.49,"Sr":2.79,"TiII":4.93,"V":3.93,"YII":2.1,"ZrII":2.55,"EuII":0.52})
-        #sn.add_normalization("forsberg22", {"Fe": 7.45, "Mo": 1.88})
+        sn.add_normalization(handle="pozhath24", author="Pozhath and Lambert", year=2024, element_dict={"Na":6.27, "Mg":7.59, "Al":6.37, "Si":7.52, "Ca":6.28, "ScII":3.16, "Ti":4.87, "TiII":4.98, "V":3.83, "Cr":5.59, "Mn":5.39, "Fe":7.44, "Co":4.81, "Ni":6.22, "Zn":4.50, "YII":2.16, "Zr":2.59, "BaII":2.24, "LaII":1.19, "NdII":1.40, "EuII":0.53})
+        #sn.add_normalization(handle="spite22-24", author="Spite et al.", year=2022, element_dict={"Fe": 7.50, "C":8.50, "N":7.86, "O":8.76, "Na":6.30, "Mg":7.54, "Al":6.47, "Si":7.52, "Ca":6.33, "Sc":3.10, "Ti":4.90, "Cr":5.64, "Mn":5.37, "Co":4.92, "Ni":6.23, "Zn":4.62, "SrII":2.92, "YII":2.21, "ZrII":2.58, "Mo":192, "Ru":1.84, "Pd":1.66, "Ag":0.94, "BaII":2.17, "LaII":1.14, "CeII":1.60, "NdII":1.45, "EuII":0.52, "DyII":1.14, "ErII":0.96, "YbII":0.86})
         sn.write(os.path.join(ref_dir, "solar_norm_ref.csv"))
         print("New normalizations added to the solar_norm_ref.csv file.")
         print("exiting so that the file can be reloaded.")
@@ -239,7 +239,7 @@ if __name__ == "__main__":
                                                    reduce_abundances=True)
 
         output_star_data = dist_output + exo_output
-        output_star_data.normalize(norm_keys=["original"])
+        output_star_data.normalize(norm_keys=["lodders09"])
         stats = output_star_data.stats
 
     if insert_new:
