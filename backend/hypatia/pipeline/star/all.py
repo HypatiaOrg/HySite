@@ -110,37 +110,39 @@ class AllStarData:
         if self.verbose:
             print("Exoplanet data acquired.\n")
 
-    def get_targets(self, main_star_ids: list[str]):
+    def get_targets(self, target_star_ids: list[str]):
         """
         This should be run last, after all the other data import methods, methods with the prefix 'get_' above.
 
         This method makes a star name entry for target stars that were not imported through other methods.
         Target stars that were found through other methods are modified to have the variable,
         SingleStar.is_target = True, set to True. This variable is used to define the set of target stars.
-        :param main_star_ids: list - elements of this list each a str hypatia_handle.
+        :param target_star_ids: list - elements of this list each a str hypatia_handle.
         :return:
         """
-        self.targets_requested = main_star_ids
+        self.targets_requested = target_star_ids
         self.targets_found = set()
         self.targets_not_found = set()
         # See what stars are already load through other import processes.
-        for hypatia_handle in main_star_ids:
-            if hypatia_handle in self.star_names:
-                self.targets_found.add(hypatia_handle)
+        for target_simbad_id in target_star_ids:
+            if target_simbad_id in self.star_names:
+                self.targets_found.add(target_simbad_id)
             else:
-                self.targets_not_found.add(hypatia_handle)
+                self.targets_not_found.add(target_simbad_id)
         # add the un_found stars to AllStarData
-        for un_found_hypatia_handle in self.targets_not_found:
-            simbad_doc = get_star_data(un_found_hypatia_handle)
+        for not_found_target_simbad_id in list(self.targets_not_found):
+            simbad_doc = get_star_data(not_found_target_simbad_id)
             attr_name = simbad_doc['attr_name']
-            main_star_id = simbad_doc['_id']
             # add this reference name to the set of names
-            self.star_names.add(un_found_hypatia_handle)
+            self.star_names.add(not_found_target_simbad_id)
             # create entry for the catalog information
-            self.__setattr__(attr_name, SingleStar(main_star_id, simbad_doc, is_target=True, verbose=self.verbose))
+            self.__setattr__(attr_name, SingleStar(not_found_target_simbad_id, simbad_doc=simbad_doc, is_target=True,
+                                                   verbose=self.verbose))
         # note the found stars have been identified as target stars
-        for found_hypatia_handle in self.targets_found:
-            found_single_star = self.__getattribute__(found_hypatia_handle)
+        for found_target_simbad_id in list(self.targets_found):
+            simbad_doc = get_star_data(found_target_simbad_id)
+            attr_name = simbad_doc['attr_name']
+            found_single_star = self.__getattribute__(attr_name)
             found_single_star.is_target = True
 
     def fast_update_gaia(self):
@@ -265,16 +267,28 @@ class AllStarData:
                     if lower_case_name_type in simbad_doc.keys():
                         star_name = simbad_doc[lower_case_name_type]
                         if "2MASS" == name_type:
-                            _, star_number = star_name.split("J", 1)
+                            try:
+                                _, star_number = star_name.split("J", 1)
+                            except ValueError:
+                                star_number = star_name.lower().replace('2mass', '').strip()
                             name_line += star_number
                         elif 'bd' == name_type:
                             name_line += "B" + star_name[2:]
                         elif 'Gaia DR2' == name_type:
                             name_line += star_name.replace("Gaia DR2 ", "")
                         else:
-                            _, star_number = star_name.split(" ", 1)
-                            if "hd" == name_type:
-                                star_number = star_number.lstrip("0")
+                            try:
+                                _, star_number = star_name.split(" ", 1)
+                            except ValueError:
+                                for letter_index, letter in list(enumerate(star_name)):
+                                    if letter.isdigit():
+                                        star_number = star_name[letter_index:]
+                                        break
+                                else:
+                                    star_number = ''
+                            else:
+                                if "hd" == name_type:
+                                    star_number = star_number.lstrip("0")
                             name_line += star_number
                     star_write_lines.append(name_line)
                 # all the other available names

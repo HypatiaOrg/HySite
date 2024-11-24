@@ -22,7 +22,7 @@ def load_catalog_query():
 class NatCat:
 
     def __init__(self, params_list_for_stats=None, star_types_for_stats=None,
-                 catalogs_from_scratch=False, verbose=False, catalogs_verbose=True,
+                 catalogs_from_scratch=True, verbose=False, catalogs_verbose=True,
                  get_abundance_data=True, get_exo_data=False, refresh_exo_data=False,
                  target_list=None,  fast_update_gaia=False,
                  catalogs_file_name=None, abundance_data_path=None):
@@ -115,15 +115,15 @@ class NatCat:
         if isinstance(target_list, str):
             with open(target_list, 'r') as f:
                 target_list = [name.strip() for name in f.readlines()]
-        star_name_ids = [get_main_id(target_name) for target_name in target_list]
+        star_ids = [get_main_id(target_name) for target_name in target_list]
         if self.verbose:
             print('  Hypatia handles acquired for target stars.')
-        self.star_data.get_targets(main_star_ids=star_name_ids)
+        self.star_data.get_targets(target_star_ids=star_ids)
         self.targets_found = self.star_data.targets_found
         self.targets_not_found = self.star_data.targets_not_found
         if self.verbose:
             print(F'Target Data Acquired.')
-            print(F'  Targets requested: {"%3i" % len(target_list)} : {sorted(star_name_ids)}')
+            print(F'  Targets requested: {"%3i" % len(target_list)} : {sorted(star_ids)}')
             print(F'      Targets found: {"%3i" % len(self.targets_found)} : {sorted(self.targets_found)}')
             print(F'  Targets not found: {"%3i" % len(self.targets_not_found)} : {sorted(self.targets_not_found)}\n')
 

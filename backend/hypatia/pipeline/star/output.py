@@ -376,12 +376,14 @@ class OutputStarData(AllStarData):
         stars_removed = 0
         if self.verbose:
             print("Removing not target star.")
-        for hypatia_handle in list(self.star_names):
-            single_star = self.__getattribute__(hypatia_handle)
+        for main_id in list(self.star_names):
+            simbad_doc = get_star_data(main_id)
+            attr_name = simbad_doc['attr_name']
+            single_star = self.__getattribute__(attr_name)
             if matching_truth_value != single_star.is_target:
                 stars_removed += 1
                 self.__delattr__(single_star.attr_name)
-                self.star_names.remove(hypatia_handle)
+                self.star_names.remove(main_id)
         if self.verbose:
             print("  Stars removed:", stars_removed)
             if self.star_names == set():
