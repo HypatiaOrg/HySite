@@ -77,7 +77,7 @@ test_norm_keys = ["lodders09"]
 test_refresh_exo_data = False
 test_from_scratch = True
 test_from_pickled_cat = False
-target_list=nonMs
+target_list = nonMs
 
 nat_cat, output_star_data, target_star_data = mdwarf_output(norm_keys=test_norm_keys,
                                                             target_list=target_list,
@@ -160,7 +160,7 @@ def mdwarf_histogram(self):
     # plt.title(self.description)
     # ax.show()
     ax.set_aspect('auto')
-    name = "mdwarf23-bigHist-" + str(totalNum) + ".pdf"
+    name = "mdwarf24-bigHist-" + str(totalNum) + ".pdf"
     file_name = os.path.join(plot_dir, "hist", name)
     fig.savefig(file_name)
     print("Number of elements", len(ordered_list_of_bins) - 1)
