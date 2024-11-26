@@ -1,5 +1,6 @@
 import time
 
+from hypatia.config import MONGO_DATABASE
 from hypatia.collect import BaseStarCollection
 from hypatia.sources.simbad.db import indexed_name_types
 from hypatia.elements import element_rank, ElementID, RatioID
@@ -269,7 +270,7 @@ class HypatiaDB(BaseStarCollection):
 
 if __name__ == '__main__':
     from itertools import product
-    hypatiaDB = HypatiaDB(db_name='public', collection_name='hypatiaDB')
+    hypatiaDB = HypatiaDB(db_name=MONGO_DATABASE, collection_name='hypatiaDB')
     # hypatiaDB.reset()  # WARNING: This will delete all data in the collection
     u_norms = ["absolute", 'lodders09', 'original']
     u_s_counts = [False, True]

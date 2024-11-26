@@ -58,6 +58,7 @@ services:
             MONGO_USERNAME: "${MONGO_USERNAME:-admin}"
             MONGO_PASSWORD: "${MONGO_PASSWORD:-super-not-secure}"
             MONGO_HOST: "${MONGO_HOST:-mongoDB}"
+            MONGO_DATABASE: "${MONGO_DATABASE:-test}"
         read_only: true
         volumes:
             # django_static is written at build time by the SpExWebsite Dockerfile
