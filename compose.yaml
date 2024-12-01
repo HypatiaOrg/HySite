@@ -24,7 +24,6 @@ services:
             - hynet
 
     web-to-py:
-        image: ghcr.io/hypatiaorg/hyapp:LATEST
         build:
             context: ./web2py
         pull_policy: always
