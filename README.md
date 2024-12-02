@@ -30,7 +30,6 @@ python backend/update.py
 ```
 
 ## view the test version of the website on your local computer
-
 ```bash
 docker compose pull
 ```
@@ -42,6 +41,64 @@ docker compose up --build
 ```
 
 use `control-c` to stop the server and free up the terminal
+
+## Commit and push the changes to the repository in GitHub
+
+### optional: switch to a new branch
+```bash
+git checkout -b <branch-name>
+````
+
+for example, to switch to a branch called `update-data`
+```bash
+git checkout -b update-data
+```
+
+### check file changes with git status
+```bash
+git status
+```
+
+### Add the changes to the git repository
+`<files>`  is a list of files that you want to commit,
+these could be changed files, new files, or deleted files.
+```bash
+git add <files>
+```
+
+### Verify that the changes have been staged (added)
+```bash  
+git status
+```
+
+### commit the changes with a message
+```bash
+git commit -m "A message about the changes"
+```
+
+### push the changes to the repository
+```bash
+git push
+```
+
+### optional 1: make a pull request on GitHub
+Go to the GitHub repository and make a pull request from the branch you pushed to the main branch.
+https://github.com/HypatiaOrg/HySite/pulls
+
+Follow the prompts to create the pull request.
+
+It is possible to merge the changes directly from the GitHub interface,
+and then delete the branch after the changes have been merged.
+
+### optional 2: merge the changes into the main branch
+```bash
+git checkout main
+git merge <branch-name>
+```
+and then push the changes to the repository
+```bash
+git push
+```
 
 ## Run the backend/hypatia/pipline.py script to move to data to a public database
 
@@ -55,6 +112,9 @@ to run a separate definition that updates the public database.
 
 
 ### Docker environment (option 1)
+This requires that any changes have been pushed to the repository
+and are on the main branch or the caleb/no-api branch for the Web2py repository.
+
 ```bash
 docker compose run --rm django-api python update.py --publish
 ```
