@@ -91,6 +91,10 @@ class BaseCollection:
     def add_one(self, doc: dict | list | float | str | int) -> pymongo.results.InsertOneResult:
         return self.collection.insert_one(doc)
 
+    def add_many(self, docs: list[dict | list | float | str | int] | pymongo.cursor.Cursor) \
+            -> pymongo.results.InsertManyResult:
+        return self.collection.insert_many(docs)
+
     def find_one(self, query: dict) -> dict:
         return self.collection.find_one(query)
 

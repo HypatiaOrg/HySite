@@ -11,85 +11,77 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
+from hypatia.pipeline.nat_cat import NatCat
+from hypatia.config import plot_dir, hydata_dir
 from hypatia.pipeline.star.stats import autolabel
-from hypatia.config import working_dir
-from hypatia.elements import element_rank
-
-from hypatia.pipeline.nat_cat import NatCat, load_catalog_query
-from hypatia.pipeline.star.output import load_pickled_output
+from hypatia.elements import element_rank, ElementID
 
 
-def mdwarf_output(from_scratch=True, short_name_list='mdwarf_subset_catalog_file.csv', norm_key=None,
-                  target_list=None,  fast_update_gaia=False, from_pickle=False):
-    target_output = None
-    params = ["dist", "logg", 'Teff', "SpType", 'st_mass', 'st_rad', "disk"]
-    star_name_type = ['gaia dr2', "gaia dr1", "hip", 'hd', "wds"]
-    if short_name_list is None:
-        catalogs_file_name = None
-    else:
-        catalogs_file_name = 'load/subsets/mdwarf_subset_catalog_file.csv'
-
-    if from_pickle:
-        nat_cat = load_catalog_query()
-        output_star_data = load_pickled_output()
-    else:
-        nat_cat = NatCat(params_list_for_stats=params,
-                         star_types_for_stats=star_name_type,
-                         catalogs_from_scratch=from_scratch, verbose=True, catalogs_verbose=True,
-                         get_abundance_data=True, get_exo_data=True, refresh_exo_data=from_scratch,
-                         target_list=target_list,
-                         simbad_go_fast=False,
-                         fast_update_gaia=fast_update_gaia,
-                         catalogs_file_name=catalogs_file_name)
-        nat_cat.pickle_myself()
-
-        dist_output = nat_cat.make_output_star_data(min_catalog_count=1,
-                                                    parameter_bound_filter=[("Teff", 2300.0, 5000.)],
+def mdwarf_output(target_list: list[str],
+                 catalogs_file_name: str = os.path.join(hydata_dir, 'subsets', 'mdwarf_subset_catalog_file.csv'),
+                 refresh_exo_data=False, norm_keys: list[str] = None,
+                 params_list_for_stats: list[str] = None, star_types_for_stats: list[str] = None,
+                 parameter_bound_filter: list[tuple[str, int | float | str, int| float | str]] = None):
+    if params_list_for_stats is None:
+        params_list_for_stats = ["dist", "logg", 'Teff', "SpType", 'st_mass', 'st_rad', "disk"]
+    if star_types_for_stats is None:
+        star_types_for_stats = ['gaia dr2', "gaia dr1", "hip", 'hd', "wds"]
+    if parameter_bound_filter is None:
+        parameter_bound_filter = [("Teff", 2300.0, 5000.)]
+    nat_cat = NatCat(params_list_for_stats=params_list_for_stats,
+                     star_types_for_stats=star_types_for_stats,
+                     catalogs_from_scratch=True, verbose=True, catalogs_verbose=True,
+                     get_abundance_data=True, get_exo_data=True, refresh_exo_data=refresh_exo_data,
+                     target_list=target_list,
+                     catalogs_file_name=catalogs_file_name)
+    dist_output = nat_cat.make_output_star_data(min_catalog_count=1,
+                                                    parameter_bound_filter=parameter_bound_filter,
                                                     star_data_stats=False,
                                                     reduce_abundances=False)
 
-        exo_output = nat_cat.make_output_star_data(min_catalog_count=1,
-                                                   parameter_bound_filter=None,
-                                                   has_exoplanet=True,
-                                                   star_data_stats=False,
-                                                   reduce_abundances=False)
-        if target_list is None:
-            output_star_data = dist_output + exo_output
-        else:
-            # sort by is the data a target star
-            target_output = nat_cat.make_output_star_data(is_target=True)
-            output_star_data = dist_output + exo_output + target_output
-        # optional 2nd filtering step
-        # Check mission elements: {'C','N','O','F','Na','Mg','Si','Cl','K','Ca','Ti'} -- True
-        # Both Mg and Si measurements: {'Mg','Si'} -- False
-        # Also look at target overlap
-        output_star_data.filter(target_catalogs=None, or_logic_for_catalogs=True,
-                                catalogs_return_only_targets=False,
-                                target_star_name_types=None, and_logic_for_star_names=True,
-                                target_params=None, and_logic_for_params=True,
-                                target_elements=None, or_logic_for_element=True,
-                                element_bound_filter=None,  # filtering happens before normalization
-                                min_catalog_count=None,
-                                parameter_bound_filter=None,
-                                parameter_match_filter=None,
-                                at_least_fe_and_another=True,
-                                remove_nlte_abundances=True,
-                                keep_complement=False,
-                                is_target=False)
-        if not (norm_key is None or norm_key.lower() == 'absolute'):
-            output_star_data.normalize(norm_key=norm_key)
-        output_star_data.filter(element_bound_filter=None)  # filter after normalization, and logic
-        output_star_data.output_file(output_dir=None, exo_mode=True)
-        output_star_data.do_stats(params_set=nat_cat.params_list_for_stats, star_name_types=nat_cat.star_types_for_stats)
-        output_star_data.reduce_elements()
-        output_star_data.find_available_attributes()
-        output_star_data.pickle_myself()
+    exo_output = nat_cat.make_output_star_data(min_catalog_count=1,
+                                               parameter_bound_filter=None,
+                                               has_exoplanet=True,
+                                               star_data_stats=False,
+                                               reduce_abundances=False)
+    # sort by is the data a target star
+    target_output = nat_cat.make_output_star_data(is_target=True)
+    output_star_data = dist_output + exo_output + target_output
+    # optional 2nd filtering step
+    # Check mission elements: {'C','N','O','F','Na','Mg','Si','Cl','K','Ca','Ti'} -- True
+    # Both Mg and Si measurements: {'Mg','Si'} -- False
+    # Also look at target overlap
+    output_star_data.filter(target_catalogs=None, or_logic_for_catalogs=True,
+                            catalogs_return_only_targets=False,
+                            target_star_name_types=None, and_logic_for_star_names=True,
+                            target_params=None, and_logic_for_params=True,
+                            target_elements=None, or_logic_for_element=True,
+                            element_bound_filter=None,  # filtering happens before normalization
+                            min_catalog_count=None,
+                            parameter_bound_filter=None,
+                            parameter_match_filter=None,
+                            at_least_fe_and_another=True,
+                            remove_nlte_abundances=True,
+                            keep_complement=False,
+                            is_target=None)
+    output_star_data.normalize(norm_keys=norm_keys)
+    output_star_data.filter(element_bound_filter=None)  # filter after normalization, and logic
+    output_star_data.do_stats(params_set=nat_cat.params_list_for_stats,
+                              star_name_types=nat_cat.star_types_for_stats)
     return nat_cat, output_star_data, target_output
 
-nonMs = ['HD 88230', 'HD 178126', 'LHS 104', 'LHS 170', 'LHS 173', 'LHS 236', 'LHS 343', 'LHS 467', 'LHS 1138', 'LHS 1482','LHS 1819','LHS 1841', 'LHS 2161', 'LHS 2463', 'LHS 2715', 'LHS 2938', 'LHS 3084', 'HIP 27928', 'G 39-36', 'HIP 37798', 'HIP 67308', 'LHS 1229', 'HD 11964B', 'HD 18143B', 'HD285804', 'BD-01 293B', 'BD+17 719C', 'BD+24 0004B', 'GJ 129', 'GJ 1177B', '2MASS 2203769-2452313', 'HD 35155', 'HD 49368', 'HD 120933', 'HD 138481', 'HD 10380', 'HD 10824', 'HD 15656', 'HD 20468', 'HD 20644', 'HD 23413', 'HD 29065', 'HD 52960', 'HD 58972', 'HD 62721', 'HD 88230', 'HD 218792', 'HD 223719', 'HD 225212', 'HD 6860', 'HD 18191', 'HD 18884', 'HD 30959', 'HD 35155', 'HD 44478', 'HD 49368', 'HD 71250', 'HD 112300', 'HD 119228', 'HD 120933', 'HD 138481', 'HD 147923', 'HD 216386', 'HD 224935', 'HD 10380', 'HD 10824', 'HD 15656', 'HD 20468', 'HD 20644', 'HD 23413', 'HD 29065', 'HD 52960', 'HD 58972', 'HD 60522', 'HD 62721', 'HD 88230', 'HD 218792', 'HD 223719', 'HD 225212']
-nat_cat, output_star_data, target_star_data = mdwarf_output(from_scratch=True, norm_key="lodders09",
-                                                            target_list=nonMs, fast_update_gaia=True,
-                                                            from_pickle=False)
+nonMs = ['HD 88230', 'HD 178126', 'LHS 104', 'LHS 170', 'LHS 173', 'LHS 236', 'LHS 343', 'LHS 467', 'LHS 1138', 'LHS 1482','LHS 1819','LHS 1841', 'LHS 2161', 'LHS 2463', 'LHS 2715', 'LHS 2938', 'LHS 3084', 'HIP 27928', 'G 39-36', 'HIP 37798', 'HIP 67308', 'LHS 1229', 'HD 11964B', 'HD 18143B', 'HD 285804', 'BD-01 293B', 'BD+17 719C', 'BD+24 0004B', 'GJ 129', 'GJ 1177B', '2MASS 2203769-2452313', 'HD 35155', 'HD 49368', 'HD 120933', 'HD 138481', 'HD 10380', 'HD 10824', 'HD 15656', 'HD 20468', 'HD 20644', 'HD 23413', 'HD 29065', 'HD 52960', 'HD 58972', 'HD 62721', 'HD 88230', 'HD 218792', 'HD 223719', 'HD 225212', 'HD 6860', 'HD 18191', 'HD 18884', 'HD 30959', 'HD 35155', 'HD 44478', 'HD 49368', 'HD 71250', 'HD 112300', 'HD 119228', 'HD 120933', 'HD 138481', 'HD 147923', 'HD 216386', 'HD 224935', 'HD 10380', 'HD 10824', 'HD 15656', 'HD 20468', 'HD 20644', 'HD 23413', 'HD 29065', 'HD 52960', 'HD 58972', 'HD 60522', 'HD 62721', 'HD 88230', 'HD 218792', 'HD 223719', 'HD 225212']
+all_params = set()
+
+test_norm_keys = ["lodders09"]
+test_refresh_exo_data = False
+test_from_scratch = True
+test_from_pickled_cat = False
+target_list = nonMs
+
+nat_cat, output_star_data, target_star_data = mdwarf_output(norm_keys=test_norm_keys,
+                                                            target_list=target_list,
+                                                            refresh_exo_data=test_refresh_exo_data)
 stats = output_star_data.stats
 
 #Run this to load the data for the SAKHMET target stars
@@ -123,11 +115,13 @@ stats = output_star_data.stats
 def mdwarf_histogram(self):
     n = len(self.available_bins) + 2  #add extra elements for F and 13C
     ordered_list_of_bins = [""]
+    element_ids = [ElementID.from_str(el_str) for el_str in self.available_bins]
     if "each elemental abundance" in self.description:
-        ordered_list_of_bins.extend(sorted(self.available_bins, key=element_rank))
+        ordered_list_of_bins.extend([str(el_id) for el_id in sorted(element_ids, key=element_rank)]) #check to keep only this
     else:
         ordered_list_of_bins.extend(sorted(self.available_bins))
-    if 'Fe' in ordered_list_of_bins: ordered_list_of_bins.remove('Fe')
+    if 'Fe' in ordered_list_of_bins:
+        ordered_list_of_bins.remove('Fe')
     hits = [0]
     hits.extend([self.__getattribute__(bin_name) for bin_name in ordered_list_of_bins[1:]])
     ordered_list_of_bins.insert(2, '13C') #for 13C
@@ -166,8 +160,8 @@ def mdwarf_histogram(self):
     # plt.title(self.description)
     # ax.show()
     ax.set_aspect('auto')
-    name = "mdwarf23-bigHist-" + str(totalNum) + ".pdf"
-    file_name = os.path.join(working_dir, "plots", 'output', "hist", name)
+    name = "mdwarf24-bigHist-" + str(totalNum) + ".pdf"
+    file_name = os.path.join(plot_dir, "hist", name)
     fig.savefig(file_name)
     print("Number of elements", len(ordered_list_of_bins) - 1)
     return ordered_list_of_bins
