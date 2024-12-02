@@ -27,7 +27,7 @@ pickle_out = os.path.join(output_products_dir, 'pickle_output_star_data.pkl')
 hacked = {
     'Kepler-84': ('dist', 1443.26796, '[pc]', 'Hypatia Override for Kepler-84'),
 }
-# For these SIMBAD name the API fails to return a few of the values that are available on the main website. 
+# For these SIMBAD name the API fails to return a few of the values that are available on the main website.
 simbad_parameters_hack = {'Gaia DR2 4087838959097352064':
                               {'DEC': '-16 35 27.118803876'},
                           'BD+39 03309':
@@ -49,7 +49,8 @@ if os.path.exists(env_path):
 MONGO_HOST = os.environ.get('MONGO_HOST', 'hypatiacatalog.com')
 MONGO_USERNAME = os.environ.get('MONGO_USERNAME', 'username')
 MONGO_PASSWORD = os.environ.get('MONGO_PASSWORD', 'password')
-MONGO_PORT = os.environ.get('MONGO_PORT', 27017)
+MONGO_PORT = os.environ.get('MONGO_PORT', "27017")
+MONGO_DATABASE = os.environ.get('MONGO_DATABASE', 'test')
 CONNECTION_STRING = os.environ.get('CONNECTION_STRING', 'none')
 if CONNECTION_STRING.lower() in none_set:
     CONNECTION_STRING = None
