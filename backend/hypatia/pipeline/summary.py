@@ -1,10 +1,10 @@
 from hypatia.collect import BaseCollection
-from hypatia.config import default_catalog_file
 from hypatia.elements import element_rank, ElementID
 from hypatia.object_params import expected_params_dict
 from hypatia.elements import summary_dict, elements_found
 from hypatia.sources.catalogs.ops import export_to_records
 from hypatia.sources.catalogs.solar_norm import solar_norm
+from hypatia.config import default_catalog_file, MONGO_DATABASE
 
 
 class SummaryCollection(BaseCollection):
@@ -217,7 +217,7 @@ def upload_summary(found_elements: set[ElementID] = None, found_element_nlte: se
         ids_with_wds_names = set()
     if ids_with_nea_names is None:
         ids_with_nea_names = set()
-    summary_db = SummaryCollection(db_name='public', collection_name='summary')
+    summary_db = SummaryCollection(db_name=MONGO_DATABASE, collection_name='summary')
     summary_db.reset()
 
     catalog_data = export_to_records(catalog_input_file=catalogs_file_name,

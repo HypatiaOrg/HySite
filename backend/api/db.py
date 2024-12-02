@@ -1,15 +1,16 @@
 from warnings import warn
 
+from hypatia.config import MONGO_DATABASE
 from hypatia.pipeline.star.db import HypatiaDB
 from hypatia.pipeline.summary import SummaryCollection
 from hypatia.sources.nea.db import ExoPlanetStarCollection
 
 
 """Instances that can get data from the database."""
-summary_db = SummaryCollection(db_name='public', collection_name='summary')
-hypatia_db = HypatiaDB(db_name='public', collection_name='hypatiaDB')
+summary_db = SummaryCollection(db_name=MONGO_DATABASE, collection_name='summary')
+hypatia_db = HypatiaDB(db_name=MONGO_DATABASE, collection_name='hypatiaDB')
 nea_db = ExoPlanetStarCollection(db_name='metadata', collection_name='nea')
-# star_collection = StarCollection(db_name='public', collection_name='stars')
+# star_collection = StarCollection(db_name=MONGO_DATABASE, collection_name='stars')
 
 """Database summary information."""
 summary_doc = summary_db.get_summary()

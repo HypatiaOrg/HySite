@@ -24,14 +24,13 @@ services:
             - hynet
 
     web-to-py:
-        image: ghcr.io/hypatiaorg/hyapp:LATEST
         build:
             context: ./web2py
         pull_policy: always
         restart: "${RESTART_POLICY:-no}"
         environment:
             BASE_API_URL: "http://django-api:8111"
-        read_only: true
+        read_only: "${READ_ONLY:-false}"
         volumes:
             # uncomment below to sync all the web2py files for development
             # - ./web2py:/home/web2py/web2py:rw
@@ -58,7 +57,8 @@ services:
             MONGO_USERNAME: "${MONGO_USERNAME:-admin}"
             MONGO_PASSWORD: "${MONGO_PASSWORD:-super-not-secure}"
             MONGO_HOST: "${MONGO_HOST:-mongoDB}"
-        read_only: true
+            MONGO_DATABASE: "${MONGO_DATABASE:-test}"
+        read_only: "${READ_ONLY:-false}"
         volumes:
             # django_static is written at build time by the SpExWebsite Dockerfile
             - "django_static:/app/static_root:ro"

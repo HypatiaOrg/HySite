@@ -3,6 +3,7 @@ The main_id, or _id, can be used to link star names across different sources wit
 """
 from getpass import getuser
 
+from hypatia.config import MONGO_DATABASE
 from hypatia.pipeline.star.db import HypatiaDB
 from hypatia.sources.simbad.ops import get_main_id
 from hypatia.sources.nea.db import ExoPlanetStarCollection
@@ -46,7 +47,7 @@ for star_name in star_list:
     star_list_to_main_id[star_name] = main_id
 
 # This can be used to get Hypatia Catalog data or to get NEA data
-hypatiaDB = HypatiaDB(db_name='public', collection_name='hypatiaDB')
+hypatiaDB = HypatiaDB(db_name=MONGO_DATABASE, collection_name='hypatiaDB')
 neaDB = ExoPlanetStarCollection(db_name='metadata', collection_name='nea')
 
 for star_name, main_id in star_list_to_main_id.items():
