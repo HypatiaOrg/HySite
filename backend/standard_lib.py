@@ -345,9 +345,9 @@ def calc_molar_fractions(elemlist, solarvals, errvals, **kwargs):
 elemList=["Fe","Mg", "Si", "Al", "Ti", "Ti_II", "Y", "Y_II", "Ba_II", "Cs"]
 propertyList=["teff", "logg"]
 filename="hypatia/plots/hypatiaUpdated_flat_file.csv"
-targetList = ClassyReader(filename="hypatia/HyData/target_lists/HWO-FP-Tier1-2-stars.csv")
+targetList = ClassyReader(filename="hypatia/HyData/target_lists/HWO-FP-Tier1-2-stars.csv") #None if no list
 
-def create_flat_file(elemList, propertyList, filename, targetlist = False):
+def create_flat_file(elemList, propertyList, filename, targetList):
     """
     Examples of the input (these are used by Amilcar for planetPrediction):
     elemList=["Fe","Li","C","O","Na","Mg","Al","Si","Ca","Sc","Ti","V","Cr","Mn","Co","Ni","Y"]
@@ -362,85 +362,60 @@ def create_flat_file(elemList, propertyList, filename, targetlist = False):
     create_flat_file(elemList, propertyList, filename, targetList)
     """
     with open(os.path.join(base_dir, filename), "w") as combined_data_file:
-        if targetlist:
+        if targetList is not None:
             header = "HPIC_name,star_name," + ",".join(elemList) + "," + ",".join(propertyList) + "\n"
             combined_data_file.write(header)
-            for star in targetlist.Star:
+            for star in targetList.Star:
                 originalName = star
                 temp = output_star_data.get_single_star_data(star)
                 if temp is None:
                     combined_data_file.write(f'{originalName}'+ "\n")
                 else:
-                    star_name = temp.attr_name
                     combined_data_file.write(f'{originalName},')
-                    single_star = output_star_data.__getattribute__(star_name)
-                    combined_data_file.write(f'{single_star.star_reference_name},')
-                    values = []
-                    for element in elemList:
-                        elemID = ElementID.from_str(element)
-                        elemsAvailable = single_star.reduced_abundances['lodders09'].available_abundances
-                        if elemID in elemsAvailable:
-                            values.append(str(round(single_star.reduced_abundances['lodders09'].__getattribute__(element).median, 2)))
-                        else:
-                            values.append('nan')
-                    combined_data_file.write(",".join(values))
-                    properties = []
-                    for property in propertyList:
-                        if property in single_star.params.available_params:
-                            # Note that some stars have x, y, z pos parameters, others have pos (embedded),
-                            # and others have both. The below will miss the ones with only pos (embedded).
-                            if property == "x_pos":
-                                properties.append(str(round(single_star.params.pos[0][0], 3)))
-                            elif property == "y_pos":
-                                properties.append(str(round(single_star.params.pos[0][1], 3)))
-                            elif property == "z_pos":
-                                properties.append(str(round(single_star.params.pos[0][2], 3)))
-                            elif property == "teff_ref":
-                                properties.append(single_star.params.teff.ref)
-                            elif property == "logg_ref":
-                                properties.append(single_star.params.logg.ref)
-                            else:
-                                properties.append(str(single_star.params.__getattribute__(property).value))
-                                properties.append(str(single_star.params.__getattribute__(property).ref))
-                        else:
-                            properties.append('nan')
-                    all_params.update(single_star.params.available_params)
-                    combined_data_file.write("," + ",".join(properties) + "\n")
-
+                    star_name = temp.attr_name
+                    populate_flat_file(elemList, propertyList, star_name, combined_data_file)
         else:
             header = "star_name," + ",".join(elemList) + "," + ",".join(propertyList) + "\n"
             combined_data_file.write(header)
             star_names_list = list(sorted(output_star_data.star_names))
             for star in star_names_list:  #what is a better way to get the attr name?
                 star_name = output_star_data.get_single_star_data(star).attr_name
-                single_star = output_star_data.__getattribute__(star_name)
-                combined_data_file.write(f'{single_star.star_reference_name},')
-                values = []
-                for element in elemList:
-                    elemID = ElementID.from_str(element)
-                    elemsAvailable = single_star.reduced_abundances['lodders09'].available_abundances
-                    if elemID in elemsAvailable:
-                        values.append(str(round(single_star.reduced_abundances['lodders09'].__getattribute__(element).median, 2)))
-                    else:
-                        values.append('nan')
-                combined_data_file.write(",".join(values))
-                properties = []
-                for property in propertyList:
-                    if property in single_star.params.available_params:
-                        # Note that some stars have x, y, z pos parameters, others have pos (embedded),
-                        # and others have both. The below will miss the ones with only pos (embedded).
-                        if property == "x_pos":
-                            properties.append(str(round(single_star.params.pos[0][0], 3)))
-                        elif property == "y_pos":
-                            properties.append(str(round(single_star.params.pos[0][1], 3)))
-                        elif property == "z_pos":
-                            properties.append(str(round(single_star.params.pos[0][2], 3)))
-                        else:
-                            properties.append(str(single_star.params.__getattribute__(property).value))
-                    else:
-                        properties.append('nan')
-                all_params.update(single_star.params.available_params)
-                combined_data_file.write("," + ",".join(properties) + "\n")
+                populate_flat_file(elemList, propertyList, star_name, combined_data_file)
+
+def populate_flat_file(elemList, propertyList, star_name, combined_data_file):
+    single_star = output_star_data.__getattribute__(star_name)
+    combined_data_file.write(f'{single_star.star_reference_name},')
+    values = []
+    for element in elemList:
+        elemID = ElementID.from_str(element)
+        elemsAvailable = single_star.reduced_abundances['lodders09'].available_abundances
+        if elemID in elemsAvailable:
+            values.append(str(round(single_star.reduced_abundances['lodders09'].__getattribute__(element).median, 2)))
+        else:
+            values.append('nan')
+    combined_data_file.write(",".join(values))
+    properties = []
+    for property in propertyList:
+        if property in single_star.params.available_params:
+            # Note that some stars have x, y, z pos parameters, others have pos (embedded),
+            # and others have both. The below will miss the ones with only pos (embedded).
+            if property == "x_pos":
+                properties.append(str(round(single_star.params.pos[0][0], 3)))
+            elif property == "y_pos":
+                properties.append(str(round(single_star.params.pos[0][1], 3)))
+            elif property == "z_pos":
+                properties.append(str(round(single_star.params.pos[0][2], 3)))
+            elif property == "teff_ref":
+                properties.append(single_star.params.teff.ref)
+            elif property == "logg_ref":
+                properties.append(single_star.params.logg.ref)
+            else:
+                properties.append(str(single_star.params.__getattribute__(property).value))
+                properties.append(str(single_star.params.__getattribute__(property).ref))
+        else:
+            properties.append('nan')
+    all_params.update(single_star.params.available_params)
+    combined_data_file.write("," + ",".join(properties) + "\n")
 
 
 if __name__ == "__main__":
