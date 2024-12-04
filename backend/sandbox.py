@@ -27,7 +27,7 @@ def mdwarf_output(target_list: list[str],
     if star_types_for_stats is None:
         star_types_for_stats = ['gaia dr2', "gaia dr1", "hip", 'hd', "wds"]
     if parameter_bound_filter is None:
-        parameter_bound_filter = [("Teff", 2300.0, 5000.)]
+        parameter_bound_filter = [("Teff", 2300.0, 4000.), ("logg", 3.5, 6.0)]
     nat_cat = NatCat(params_list_for_stats=params_list_for_stats,
                      star_types_for_stats=star_types_for_stats,
                      catalogs_from_scratch=True, verbose=True, catalogs_verbose=True,
@@ -70,7 +70,7 @@ def mdwarf_output(target_list: list[str],
                               star_name_types=nat_cat.star_types_for_stats)
     return nat_cat, output_star_data, target_output
 
-nonMs = ['HD 88230', 'HD 178126', 'LHS 104', 'LHS 170', 'LHS 173', 'LHS 236', 'LHS 343', 'LHS 467', 'LHS 1138', 'LHS 1482','LHS 1819','LHS 1841', 'LHS 2161', 'LHS 2463', 'LHS 2715', 'LHS 2938', 'LHS 3084', 'HIP 27928', 'G 39-36', 'HIP 37798', 'HIP 67308', 'LHS 1229', 'HD 11964B', 'HD 18143B', 'HD 285804', 'BD-01 293B', 'BD+17 719C', 'BD+24 0004B', 'GJ 129', 'GJ 1177B', '2MASS 2203769-2452313', 'HD 35155', 'HD 49368', 'HD 120933', 'HD 138481', 'HD 10380', 'HD 10824', 'HD 15656', 'HD 20468', 'HD 20644', 'HD 23413', 'HD 29065', 'HD 52960', 'HD 58972', 'HD 62721', 'HD 88230', 'HD 218792', 'HD 223719', 'HD 225212', 'HD 6860', 'HD 18191', 'HD 18884', 'HD 30959', 'HD 35155', 'HD 44478', 'HD 49368', 'HD 71250', 'HD 112300', 'HD 119228', 'HD 120933', 'HD 138481', 'HD 147923', 'HD 216386', 'HD 224935', 'HD 10380', 'HD 10824', 'HD 15656', 'HD 20468', 'HD 20644', 'HD 23413', 'HD 29065', 'HD 52960', 'HD 58972', 'HD 60522', 'HD 62721', 'HD 88230', 'HD 218792', 'HD 223719', 'HD 225212']
+nonMs = ['HD 88230', 'HD 178126', 'LHS 104', 'LHS 170', 'LHS 173', 'LHS 236', 'LHS 343', 'LHS 467', 'LHS 1138', 'LHS 1482','LHS 1819','LHS 1841', 'LHS 2161', 'LHS 2463', 'LHS 2715', 'LHS 2938', 'LHS 3084', 'HIP 27928', 'G 39-36', 'HIP 37798', 'HIP 67308', 'LHS 1229', 'HD 11964B', 'HD 18143B', 'HD 285804', 'BD-01 293B', 'BD+17 719C', 'BD+24 0004B', 'GJ 129', 'GJ 1177B', '2MASS 2203769-2452313', 'HD 35155', 'HD 49368', 'HD 120933', 'HD 138481', 'HD 10380', 'HD 10824', 'HD 15656', 'HD 20468', 'HD 20644', 'HD 23413', 'HD 29065', 'HD 52960', 'HD 58972', 'HD 62721', 'HD 88230', 'HD 218792', 'HD 223719', 'HD 225212', 'HD 6860', 'HD 18191', 'HD 18884', 'HD 30959', 'HD 35155', 'HD 44478', 'HD 49368', 'HD 71250', 'HD 112300', 'HD 119228', 'HD 120933', 'HD 138481', 'HD 147923', 'HD 216386', 'HD 224935', 'HD 10380', 'HD 10824', 'HD 15656', 'HD 20468', 'HD 20644', 'HD 23413', 'HD 29065', 'HD 52960', 'HD 58972', 'HD 60522', 'HD 62721', 'HD 88230', 'HD 218792', 'HD 223719', 'HD 225212', 'LP 714-47', 'HD 97101', 'HD 168442']
 all_params = set()
 
 test_norm_keys = ["lodders09"]
@@ -146,7 +146,7 @@ def mdwarf_histogram(self):
     rectsData = plt.bar(ind, hits, width, color="grey", label="Current Data for "+str(totalNum)+" M-Dwarfs") #,\nonly 73 stars have mission elements")
     ax.set_xlabel('Spectroscopic Abundances for M-Dwarfs (excluding Fe)', fontsize=15)
     ax.set_ylabel('Number of Stars with Measured Element X', fontsize=14)
-    ax.set_ylim([0.0, np.max(baselineHits) + 210.])
+    ax.set_ylim([0.0, np.max(baselineHits) + 600.])
     ax.set_xlim([0.0, float(n+1)])
     ax.set_xticks(ind)
     ax.set_xticklabels(tuple(ordered_list_of_bins), fontsize=13)
