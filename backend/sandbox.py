@@ -12,13 +12,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from hypatia.pipeline.nat_cat import NatCat
-from hypatia.config import plot_dir, hydata_dir
+from hypatia.config import plot_dir, hydata_dir, ref_dir
 from hypatia.pipeline.star.stats import autolabel
 from hypatia.elements import element_rank, ElementID
 
 
 def mdwarf_output(target_list: list[str],
-                 catalogs_file_name: str = os.path.join(hydata_dir, 'subsets', 'mdwarf_subset_catalog_file.csv'),
+                 catalogs_file_name: str = os.path.join(hydata_dir, 'subsets', 'mdwarf_subset_catalog_file.csv'), # 'reference_data', 'catalog_file.csv'
                  refresh_exo_data=False, norm_keys: list[str] = None,
                  params_list_for_stats: list[str] = None, star_types_for_stats: list[str] = None,
                  parameter_bound_filter: list[tuple[str, int | float | str, int| float | str]] = None):
@@ -27,7 +27,7 @@ def mdwarf_output(target_list: list[str],
     if star_types_for_stats is None:
         star_types_for_stats = ['gaia dr2', "gaia dr1", "hip", 'hd', "wds"]
     if parameter_bound_filter is None:
-        parameter_bound_filter = [("Teff", 2300.0, 4000.), ("logg", 3.5, 6.0)]
+        parameter_bound_filter = [("Teff", 2300.0, 4000.), ("logg", 3.5, 6.0), ("dist", 0.0, 30.0)]
     nat_cat = NatCat(params_list_for_stats=params_list_for_stats,
                      star_types_for_stats=star_types_for_stats,
                      catalogs_from_scratch=True, verbose=True, catalogs_verbose=True,
@@ -70,19 +70,22 @@ def mdwarf_output(target_list: list[str],
                               star_name_types=nat_cat.star_types_for_stats)
     return nat_cat, output_star_data, target_output
 
-nonMs = ['HD 88230', 'HD 178126', 'LHS 104', 'LHS 170', 'LHS 173', 'LHS 236', 'LHS 343', 'LHS 467', 'LHS 1138', 'LHS 1482','LHS 1819','LHS 1841', 'LHS 2161', 'LHS 2463', 'LHS 2715', 'LHS 2938', 'LHS 3084', 'HIP 27928', 'G 39-36', 'HIP 37798', 'HIP 67308', 'LHS 1229', 'HD 11964B', 'HD 18143B', 'HD 285804', 'BD-01 293B', 'BD+17 719C', 'BD+24 0004B', 'GJ 129', 'GJ 1177B', '2MASS 2203769-2452313', 'HD 35155', 'HD 49368', 'HD 120933', 'HD 138481', 'HD 10380', 'HD 10824', 'HD 15656', 'HD 20468', 'HD 20644', 'HD 23413', 'HD 29065', 'HD 52960', 'HD 58972', 'HD 62721', 'HD 88230', 'HD 218792', 'HD 223719', 'HD 225212', 'HD 6860', 'HD 18191', 'HD 18884', 'HD 30959', 'HD 35155', 'HD 44478', 'HD 49368', 'HD 71250', 'HD 112300', 'HD 119228', 'HD 120933', 'HD 138481', 'HD 147923', 'HD 216386', 'HD 224935', 'HD 10380', 'HD 10824', 'HD 15656', 'HD 20468', 'HD 20644', 'HD 23413', 'HD 29065', 'HD 52960', 'HD 58972', 'HD 60522', 'HD 62721', 'HD 88230', 'HD 218792', 'HD 223719', 'HD 225212', 'LP 714-47', 'HD 97101', 'HD 168442']
+# the nonMs are being manually added back in, not removed
+# these need to be removed: 'LP 714-47', 'HD 97101', 'HD 168442'
+# nonMs = ['HD 88230', 'HD 178126', 'LHS 104', 'LHS 170', 'LHS 173', 'LHS 236', 'LHS 343', 'LHS 467', 'LHS 1138', 'LHS 1482','LHS 1819','LHS 1841', 'LHS 2161', 'LHS 2463', 'LHS 2715', 'LHS 2938', 'LHS 3084', 'HIP 27928', 'G 39-36', 'HIP 37798', 'HIP 67308', 'LHS 1229', 'HD 11964B', 'HD 18143B', 'HD 285804', 'BD-01 293B', 'BD+17 719C', 'BD+24 0004B', 'GJ 129', 'GJ 1177B', '2MASS 2203769-2452313', 'HD 35155', 'HD 49368', 'HD 120933', 'HD 138481', 'HD 10380', 'HD 10824', 'HD 15656', 'HD 20468', 'HD 20644', 'HD 23413', 'HD 29065', 'HD 52960', 'HD 58972', 'HD 62721', 'HD 88230', 'HD 218792', 'HD 223719', 'HD 225212', 'HD 6860', 'HD 18191', 'HD 18884', 'HD 30959', 'HD 35155', 'HD 44478', 'HD 49368', 'HD 71250', 'HD 112300', 'HD 119228', 'HD 120933', 'HD 138481', 'HD 147923', 'HD 216386', 'HD 224935', 'HD 10380', 'HD 10824', 'HD 15656', 'HD 20468', 'HD 20644', 'HD 23413', 'HD 29065', 'HD 52960', 'HD 58972', 'HD 60522', 'HD 62721', 'HD 88230', 'HD 218792', 'HD 223719', 'HD 225212']
 all_params = set()
 
 test_norm_keys = ["lodders09"]
 test_refresh_exo_data = False
 test_from_scratch = True
 test_from_pickled_cat = False
-target_list = nonMs
+target_list = "hypatia/HyData/target_lists/hypatia_mdwarf_cut_justnames.csv"
+#target_list = os.path.join(ref_dir, 'hypatia_mdwarf_cut_justnames.csv')
 
 nat_cat, output_star_data, target_star_data = mdwarf_output(norm_keys=test_norm_keys,
                                                             target_list=target_list,
                                                             refresh_exo_data=test_refresh_exo_data)
-stats = output_star_data.stats
+stats = target_star_data.stats
 
 #Run this to load the data for the SAKHMET target stars
 #sak_target_list = os.path.join(ref_dir, 'Sakhmet-survey-stars.csv')
@@ -101,18 +104,25 @@ stats = output_star_data.stats
 #        overlapName.append(star)
 #        overlapData.append(check)
 
-##Since Tsuji has absolute data and no Fe, it's not being read in -- this checks the overlap with other datasets to manually add into histogram
-#tsuji_targs = ["GJ 15A","GJ 54.1","GJ 105B","GJ 166C","GJ 176","GJ 179","GJ 205","GJ 212","GJ 229","GJ 231.1B","GJ 250B","GJ 273","GJ 324B","GJ 338A","GJ 338B","GJ 380","GJ 406","GJ 411","GJ 412A","GJ 436","GJ 526","GJ 581","GJ 611B","GJ 649","GJ 686","GJ 687","GJ 725A","GJ 725B","GJ 752B","GJ 768.1C","GJ 777B","GJ 783.2B","GJ 797B","GJ 809","GJ 820B","GJ 849","GJ 873","GJ 876","GJ 880","GJ 884","GJ 1002","GJ 1245B","GJ 3348B","HIP 12961","HIP 57050","HIP 79431","2MASS J02530084+1652532","LP 412-31","2MASS J1835379+325954"]
-#tsuData = []
-#tsuName = []
-#for star in tsuji_targs:
-#    check = output_star_data.get_single_star_data(star)
-#    if check:
-#        tsuName.append(star)
-#        tsuData.append(check)
+#Since Tsuji16b has absolute data and no Fe, it's not being read in -- this checks the overlap with other datasets to manually add into histogram
+runTsuji = True
+def tsuji_overlap(runTsuji):
+    if runTsuji:
+        tsuji_targs = ["GJ 15A","GJ 54.1","GJ 105B","GJ 166C","GJ 176","GJ 179","GJ 205","GJ 212","GJ 229","GJ 231.1B","GJ 250B","GJ 273","GJ 324B","GJ 338A","GJ 338B","GJ 380","GJ 406","GJ 411","GJ 412A","GJ 436","GJ 526","GJ 581","GJ 611B","GJ 649","GJ 686","GJ 687","GJ 725A","GJ 725B","GJ 752B","GJ 768.1 C","GJ 777B","GJ 783.2B","GJ 797B","GJ 809","GJ 820B","GJ 849","GJ 873","GJ 876","GJ 880","GJ 884","GJ 1002","GJ 1245B","G 102-4","HIP 12961","HIP 57050","HIP 79431","2MASS J02530084+1652532","LP 412-31","2MASSI J1835379+325954"]
+        tsuData = []
+        tsuName = []
 
-#22 Tsuji stars overlap with other datasets, so Tsuji adds 27 stars for 12C and O abundances and Abia adds 53 for Sr(NLTE)
+        for star in tsuji_targs:
+           check = target_star_data.get_single_star_data(star)
+           if check:
+               tsuName.append(star)
+               tsuData.append(check)
+        print("Number of stars that overlap with Tsuji data:", len(tsuName))
+        print("Number of stars to be added to C and O:", 49-len(tsuName))
+
+#Run the definition above to figure out the number to add for 12C and O abundances for TsujiAddition of absolute abundances
 def mdwarf_histogram(self):
+    tsujiAddition = 19
     n = len(self.available_bins) + 2  #add extra elements for F and 13C
     ordered_list_of_bins = [""]
     element_ids = [ElementID.from_str(el_str) for el_str in self.available_bins]
@@ -128,22 +138,20 @@ def mdwarf_histogram(self):
     hits.insert(2, 2)
     ordered_list_of_bins.insert(5, 'F')
     hits.insert(5, 0)
-    tsujiAbiaElems = [0, 27, 0, 0, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 53, 0]
-    hits = [sum(x) for x in zip(tsujiAbiaElems, hits)]
     print(ordered_list_of_bins)
     print(hits)
-    baselineHits = [0, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 0, 0, 0, 0, 0, 0, 0]
-    thresholdHits = [0, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 0, 0, 0, 0, 0, 0, 0]
+    baselineHits = [0, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    thresholdHits = [0, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     basePlusHits = [sum(x) for x in zip(baselineHits, hits)]
     threshPlusHits = [sum(x) for x in zip(thresholdHits, hits)]
     ind = np.arange(n+0)    #minus 1 for removing Fe, plus 2 for adding F
     width = 0.8
     fig = plt.figure(figsize=(10, 5))
     ax = fig.add_subplot(111)
-    totalNum = self.__getattribute__('Fe')+27
+    totalNum = self.__getattribute__('Fe')
     rectsBase = plt.bar(ind, basePlusHits, width, color='firebrick', label="SAKHMET Mission (+300 M-Dwarfs)")
     rectsThresh = plt.bar(ind, threshPlusHits, width, color='salmon', label="Threshold Mission (+125 M-Dwarfs)")
-    rectsData = plt.bar(ind, hits, width, color="grey", label="Current Data for "+str(totalNum)+" M-Dwarfs") #,\nonly 73 stars have mission elements")
+    rectsData = plt.bar(ind, hits, width, color="grey", label="Current Data for "+str(totalNum)+" M-Dwarfs")
     ax.set_xlabel('Spectroscopic Abundances for M-Dwarfs (excluding Fe)', fontsize=15)
     ax.set_ylabel('Number of Stars with Measured Element X', fontsize=14)
     ax.set_ylim([0.0, np.max(baselineHits) + 600.])
