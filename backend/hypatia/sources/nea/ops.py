@@ -1,7 +1,8 @@
 from hypatia.tools.exceptions import StarNameNotFound
 from hypatia.sources.nea.db import ExoPlanetStarCollection
 from hypatia.object_params import SingleParam, expected_params_dict, ObjectParams
-from hypatia.sources.nea.query import query_nea, set_data_by_host, hypatia_host_name_rank_order, non_parameter_fields
+from hypatia.sources.nea.query import (query_nea, set_data_by_host, hypatia_host_name_rank_order, non_parameter_fields,
+                                       calculate_nea_row)
 from hypatia.sources.simbad.ops import (get_main_id, interactive_name_menu, star_collection, no_simbad_add_name,
                                         get_attr_name)
 
@@ -113,8 +114,9 @@ def refresh_nea_data(verbose: bool = False):
     nea_collection.reset()
     if verbose:
         print("Refreshing NEA data")
-    for host_data in set_data_by_host(query_nea()).values():
-        nea_collection.add_one(format_for_mongo(host_data))
+    nea_collection.add_many([format_for_mongo(host_data) for host_data in set_data_by_host([calculate_nea_row(row)
+                             for row in query_nea()]).values()
+                            ])
     if verbose:
         print("NEA data refreshed")
 
