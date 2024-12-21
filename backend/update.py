@@ -60,4 +60,3 @@ if __name__ == '__main__':
             norm_keys = None
         nat_cat, output_star_data, target_star_data = update(norm_keys=norm_keys,
                                                              refresh_exo_data=args.refresh_exo_data)
-

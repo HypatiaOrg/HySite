@@ -343,9 +343,7 @@ def calc_molar_fractions(elemlist, solarvals, errvals, **kwargs):
 
 
 elemList=["Fe","Mg", "Si", "Al", "Ti", "Ti_II", "Y", "Y_II", "Ba_II", "Cs"]
-propertyList=["teff", "logg"]
-filename="hypatia/plots/hypatiaUpdated_flat_file.csv"
-targetList = ClassyReader(filename="hypatia/HyData/target_lists/HWO-FP-Tier1-2-stars.csv") #None if no list
+propertyList=["teff", "logg"]#None if no list
 
 def create_flat_file(elemList, propertyList, filename, targetList):
     """

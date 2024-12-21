@@ -174,6 +174,18 @@ planet_bson = {
             'bsonType': 'string',
             'description': 'must be a string and is required'
         },
+        'pl_controv_flag': {
+            'bsonType': 'bool',
+            'description': 'must be a boolean and is not required'
+        },
+        'radius_gap': {
+            'bsonType': 'double',
+            'description': 'must be a double and is not required'
+        },
+        'pl_radelim': {
+            'bsonType': ['double', 'int'],
+            'description': 'must bea double and is not required'
+        },
         'planetary': nea_stellar_or_planetary_params,
     },
     'additionalProperties': False,
