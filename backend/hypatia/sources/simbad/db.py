@@ -2,6 +2,7 @@ import time
 
 import pymongo
 
+from hypatia.config import current_user
 from hypatia.collect import BaseStarCollection
 
 
@@ -24,6 +25,10 @@ validator_star_doc = {
             'description': 'must be a string and is required'
         },
         'origin': {
+            'bsonType': 'string',
+            'description': 'must be a string and is required'
+        },
+        'upload_by': {
             'bsonType': 'string',
             'description': 'must be a string and is required'
         },
@@ -110,6 +115,7 @@ class StarCollection(BaseStarCollection):
         new_aliases = sorted(list(set(old_aliases + new_aliases)))
         new_doc = old_doc | {'aliases': new_aliases, 'timestamp': time.time()}
         new_doc['match_names'] = [get_match_name(name=name) for name in new_aliases]
+        new_doc['upload_by'] = current_user
         return self.update(main_id=main_id, doc=new_doc)
 
     def prune_older_records(self, prune_before_timestamp: float) -> pymongo.results.DeleteResult:

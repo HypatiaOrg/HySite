@@ -4,7 +4,8 @@ import time
 from hypatia.tools.exceptions import StarNameNotFound
 from hypatia.sources.simbad.query import query_simbad_star
 from hypatia.sources.simbad.db import StarCollection, indexed_name_types, get_match_name
-from hypatia.config import default_reset_time_seconds, no_simbad_reset_time_seconds, MONGO_STARNAMES_COLLECTION
+from hypatia.config import (default_reset_time_seconds, no_simbad_reset_time_seconds, MONGO_STARNAMES_COLLECTION,
+                            current_user)
 
 
 
@@ -107,6 +108,7 @@ def no_simbad_add_name(name: str, origin: str, aliases: list[str] = None) -> Non
         '_id': name,
         'attr_name': get_attr_name(name),
         'origin': origin,
+        'upload_by': current_user,
         'timestamp': time.time(),
         **parse_indexed_name(star_names_list),
         'aliases': star_names_list,
@@ -123,6 +125,7 @@ def format_simbad_star_record(simbad_main_id: str, star_data: dict[str, any], st
         '_id': simbad_main_id,
         'attr_name': get_attr_name(simbad_main_id),
         'origin': 'simbad',
+        'upload_by': current_user,
         'timestamp': time.time(),
         **{field: star_data[field] for field in ra_dec_fields if field in star_data.keys()},
         **parse_indexed_name(star_names),

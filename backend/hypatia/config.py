@@ -1,6 +1,11 @@
 import os
+from getpass import getuser
+
 import dotenv
 from urllib.parse import quote
+
+# User information
+current_user = getuser()
 
 # star-names database
 default_reset_time_seconds = 60 * 60 * 24 * 365.24 * 3  # 3 years
