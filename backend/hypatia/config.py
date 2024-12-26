@@ -52,7 +52,7 @@ if os.path.exists(env_path):
 MONGO_HOST = os.environ.get('MONGO_HOST', 'hypatiacatalog.com')
 MONGO_USERNAME = os.environ.get('MONGO_USERNAME', 'username')
 MONGO_PASSWORD = os.environ.get('MONGO_PASSWORD', 'password')
-MONGO_PORT = os.environ.get('MONGO_PORT', "27017")
+MONGO_PORT = os.environ.get('MONGO_PORT', '27017')
 MONGO_DATABASE = os.environ.get('MONGO_DATABASE', 'test')
 CONNECTION_STRING = os.environ.get('CONNECTION_STRING', 'none')
 if CONNECTION_STRING.lower() in none_set:

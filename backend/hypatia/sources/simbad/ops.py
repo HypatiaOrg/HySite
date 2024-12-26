@@ -10,20 +10,20 @@ from hypatia.config import default_reset_time_seconds, no_simbad_reset_time_seco
 
 cache_names = {}
 cache_docs = {}
-star_collection = StarCollection(collection_name="stars")
+star_collection = StarCollection(collection_name='stars')
 star_collection.prune_older_records(prune_before_timestamp=time.time() - default_reset_time_seconds)
 
 
 def get_attr_name(name: str) -> str:
-    """Converts a star name into a name that can be used as a sources table name or as a Python attribute name."""
-    test_name = name.strip().lower().replace(" ", "_")
-    while "__" in test_name:
-        test_name = test_name.replace("__", "_")
-    return test_name.replace("*", "star")\
-        .replace("+", "plus").replace("-", "minus")\
-        .replace("2mass", "twomass").replace(".", "point")\
-        .replace("[", "leftsqbracket").replace("]", "rightsqbracket")\
-        .replace(",", "comma")
+    """Converts a star name into a name that can be used as a source table name or as a Python attribute name."""
+    test_name = name.strip().lower().replace(' ', '_')
+    while '__' in test_name:
+        test_name = test_name.replace('__', '_')
+    return test_name.replace('*', 'star')\
+        .replace('+', 'plus').replace('-', 'minus')\
+        .replace('2mass', 'twomass').replace('.', 'point')\
+        .replace('[', 'leftsqbracket').replace(']', 'rightsqbracket')\
+        .replace(',', 'comma')
 
 
 def parse_indexed_name(star_names: list[str]) -> dict[str, str]:
@@ -66,10 +66,10 @@ def get_all_star_docs(do_cache_update: bool = True) -> dict[str, any]:
     all_star_docs = star_collection.find_all()
     if do_cache_update:
         for one_doc in all_star_docs:
-            simbad_main_id = one_doc["_id"]
+            simbad_main_id = one_doc['_id']
             set_cache_data(simbad_main_id=simbad_main_id, star_record=one_doc,
-                           star_name_aliases=set(one_doc["aliases"]))
-    return {one_doc["_id"]: one_doc for one_doc in all_star_docs}
+                           star_name_aliases=set(one_doc['aliases']))
+    return {one_doc['_id']: one_doc for one_doc in all_star_docs}
 
 
 def uniquify_star_names(star_names: list[str], simbad_main_id: str) -> list[str]:
@@ -100,33 +100,33 @@ def no_simbad_add_name(name: str, origin: str, aliases: list[str] = None) -> Non
         aliases.add(name)
     star_names_list = list(aliases)
     if not star_names_list:
-        raise ValueError("No names were provided to add to the no-SIMBAD sources.")
+        raise ValueError('No names were provided to add to the no-SIMBAD sources.')
     if not name:
         name = star_names_list[0]
     star_record = {
-        "_id": name,
-        "attr_name": get_attr_name(name),
-        "origin": origin,
-        "timestamp": time.time(),
+        '_id': name,
+        'attr_name': get_attr_name(name),
+        'origin': origin,
+        'timestamp': time.time(),
         **parse_indexed_name(star_names_list),
-        "aliases": star_names_list,
+        'aliases': star_names_list,
     }
     # add the main_id to the that sources table
     star_collection.add_one(doc=star_record)
 
 
-ra_dec_fields = {"ra", "dec", "hmsdms"}
+ra_dec_fields = {'ra', 'dec', 'hmsdms'}
 
 
 def format_simbad_star_record(simbad_main_id: str, star_data: dict[str, any], star_names: list[str]) -> dict[str, any]:
     return {
-        "_id": simbad_main_id,
-        "attr_name": get_attr_name(simbad_main_id),
-        "origin": "simbad",
-        "timestamp": time.time(),
+        '_id': simbad_main_id,
+        'attr_name': get_attr_name(simbad_main_id),
+        'origin': 'simbad',
+        'timestamp': time.time(),
         **{field: star_data[field] for field in ra_dec_fields if field in star_data.keys()},
         **parse_indexed_name(star_names),
-        "aliases": star_names,
+        'aliases': star_names,
     }
 
 
@@ -212,16 +212,16 @@ def interactive_name_menu(test_name: str = '', test_origin: str = 'unknown',  ma
             if simbad_main_id is not None:
                 return simbad_main_id
             print(f"This star's test_name: {test_name} origin: {test_origin}")
-        print(" is not in the sources tables and it was not found on SIMBAD.")
-        print("Please select an option (or use control-c to exit):")
-        print(" 1. Enter a new name to try to query for SIMBAD (default).")
+        print(' is not in the sources tables and it was not found on SIMBAD.')
+        print('Please select an option (or use control-c to exit):')
+        print(' 1. Enter a new name to try to query for SIMBAD (default).')
         print(" 2. Enter 'no-simbad' or '2'")
-        print("    to add star name to the no-SIMBAD sources.")
-        user_response = input("Enter your choice: ").strip()
+        print('    to add star name to the no-SIMBAD sources.')
+        user_response = input('Enter your choice: ').strip()
         count += 1
 
 
-def get_main_id(test_name: str, test_origin: str = "unknown", allow_interaction: bool = True) -> str:
+def get_main_id(test_name: str, test_origin: str = 'unknown', allow_interaction: bool = True) -> str:
     # check if the name has been queried this session.
     test_name_lower = test_name.lower()
     if test_name_lower in cache_names:
@@ -229,9 +229,9 @@ def get_main_id(test_name: str, test_origin: str = "unknown", allow_interaction:
     # check if the name is in the sources.
     names_doc = star_collection.find_name_match(test_name)
     if names_doc is not None:
-        main_id = names_doc["_id"]
+        main_id = names_doc['_id']
         # is this star a known no-SIMBAD star?
-        if names_doc['origin'] != "simbad":
+        if names_doc['origin'] != 'simbad':
             # This star has been in the no-SIMBAD sources before
             if names_doc['timestamp'] + no_simbad_reset_time_seconds < time.time():
                 # case this star has been in the no-SIMBAD sources for too long, let us see id it is in SIMBAD now.
@@ -245,7 +245,7 @@ def get_main_id(test_name: str, test_origin: str = "unknown", allow_interaction:
                     # note the cache is already updated in ask_simbad
                     return main_id_possible
         # update all the aliases for this star
-        cache_update = {alias.lower(): main_id for alias in names_doc["aliases"]}
+        cache_update = {alias.lower(): main_id for alias in names_doc['aliases']}
         cache_names.update(cache_update)
         return main_id
     # this needs user intervention to continue
@@ -258,7 +258,7 @@ def get_main_id(test_name: str, test_origin: str = "unknown", allow_interaction:
     return simbad_main_id
 
 
-def get_star_data(test_name: str, test_origin: str = "unknown", no_cache: bool = False) -> dict[str, any]:
+def get_star_data(test_name: str, test_origin: str = 'unknown', no_cache: bool = False) -> dict[str, any]:
     main_id = get_main_id(test_name, test_origin)
     return get_star_data_by_main_id(main_id, no_cache)
 
@@ -266,6 +266,6 @@ def get_star_data(test_name: str, test_origin: str = "unknown", no_cache: bool =
 # preloading the cache with all the star data
 get_all_star_docs()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # star_collection.reset()
-    get_main_id("wasp-173 b")
+    get_main_id('wasp-173 b')
