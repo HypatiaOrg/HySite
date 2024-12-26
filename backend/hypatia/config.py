@@ -54,6 +54,7 @@ MONGO_USERNAME = os.environ.get('MONGO_USERNAME', 'username')
 MONGO_PASSWORD = os.environ.get('MONGO_PASSWORD', 'password')
 MONGO_PORT = os.environ.get('MONGO_PORT', '27017')
 MONGO_DATABASE = os.environ.get('MONGO_DATABASE', 'test')
+MONGO_STARNAMES_COLLECTION = os.environ.get('MONGO_STARNAMES_COLLECTION', 'stars')
 CONNECTION_STRING = os.environ.get('CONNECTION_STRING', 'none')
 if CONNECTION_STRING.lower() in none_set:
     CONNECTION_STRING = None
@@ -69,12 +70,3 @@ if CONNECTION_STRING is None:
     connection_string = get_connection_string()
 else:
     connection_string = CONNECTION_STRING
-
-# Legacy SQLite and HDF5 data directories
-hdf5_data_dir = os.path.join(projects_dir, 'WebServer', 'web2py', 'applications', 'hypatia', 'hypdata')
-sqlite_data_dir = os.path.join(projects_dir, 'WebServer', 'web2py', 'applications', 'hypatia', 'databases')
-test_database_dir = os.path.join(output_products_dir, 'database_test')
-if not os.path.exists(test_database_dir):
-    os.makedirs(test_database_dir)
-
-
