@@ -2,6 +2,9 @@ import os
 import dotenv
 from urllib.parse import quote
 
+# star-names database
+default_reset_time_seconds = 60 * 60 * 24 * 365.24 * 3  # 3 years
+no_simbad_reset_time_seconds = 60 * 60 * 24 * 365.24  # 1 year
 
 # directory information in the Hypatia Database
 base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))

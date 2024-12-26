@@ -96,3 +96,6 @@ class StarCollection(BaseStarCollection):
         new_aliases = sorted(list(set(old_aliases + new_aliases)))
         new_doc = old_doc | {"aliases": new_aliases, "timestamp": time.time()}
         return self.update(main_id=main_id, doc=new_doc)
+
+    def prune_older_records(self, prune_before_timestamp: float) -> pymongo.results.DeleteResult:
+        return self.collection.delete_many({"timestamp": {"$lt": prune_before_timestamp}})

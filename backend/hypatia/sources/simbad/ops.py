@@ -1,14 +1,17 @@
 import time
 
+
 from hypatia.tools.exceptions import StarNameNotFound
 from hypatia.sources.simbad.query import query_simbad_star
 from hypatia.sources.simbad.db import StarCollection, indexed_name_types
+from hypatia.config import default_reset_time_seconds, no_simbad_reset_time_seconds
 
 
-no_simbad_reset_time_seconds = 60 * 60 * 24 * 365.24  # 1 year
+
 cache_names = {}
 cache_docs = {}
 star_collection = StarCollection(collection_name="stars")
+star_collection.prune_older_records(prune_before_timestamp=time.time() - default_reset_time_seconds)
 
 
 def get_attr_name(name: str) -> str:
