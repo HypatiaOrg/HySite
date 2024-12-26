@@ -3,7 +3,7 @@ import time
 
 from hypatia.tools.exceptions import StarNameNotFound
 from hypatia.sources.simbad.query import query_simbad_star
-from hypatia.sources.simbad.db import StarCollection, indexed_name_types
+from hypatia.sources.simbad.db import StarCollection, indexed_name_types, get_match_name
 from hypatia.config import default_reset_time_seconds, no_simbad_reset_time_seconds, MONGO_STARNAMES_COLLECTION
 
 
@@ -47,7 +47,7 @@ def set_default_main_id(simbad_main_id: str) -> str:
     then, we return the main_id that was found last time, which might have a different capitalization
     from the SIMBAD sources.
     """
-    return cache_names.setdefault(simbad_main_id.lower(), simbad_main_id)
+    return cache_names.setdefault(get_match_name(simbad_main_id), simbad_main_id)
 
 
 def set_cache_data(simbad_main_id: str, star_record: dict[str, any] = None, star_name_aliases: set[str] = None) -> None:
@@ -59,7 +59,7 @@ def set_cache_data(simbad_main_id: str, star_record: dict[str, any] = None, star
         if not isinstance(star_name_aliases, set):
             star_name_aliases = set(star_name_aliases)
         # insert the key, with the specified value if it does not exist
-        [cache_names.setdefault(alias.lower(), simbad_main_id) for alias in star_name_aliases]
+        [cache_names.setdefault(get_match_name(alias), simbad_main_id) for alias in star_name_aliases]
 
 
 def get_all_star_docs(do_cache_update: bool = True) -> dict[str, any]:
@@ -87,7 +87,7 @@ def uniquify_star_names(star_names: list[str], simbad_main_id: str) -> list[str]
 
 def get_simbad_main_id(test_name: str) -> str | None:
     """Get the main_id for a star name from the cache, return None if the name is not in the cache."""
-    return cache_names.get(test_name.lower(), None)
+    return cache_names.get(get_match_name(test_name), None)
 
 
 def no_simbad_add_name(name: str, origin: str, aliases: list[str] = None) -> None:
@@ -127,6 +127,7 @@ def format_simbad_star_record(simbad_main_id: str, star_data: dict[str, any], st
         **{field: star_data[field] for field in ra_dec_fields if field in star_data.keys()},
         **parse_indexed_name(star_names),
         'aliases': star_names,
+        'match_names': [get_match_name(name) for name in star_names],
     }
 
 
@@ -245,7 +246,7 @@ def get_main_id(test_name: str, test_origin: str = 'unknown', allow_interaction:
                     # note the cache is already updated in ask_simbad
                     return main_id_possible
         # update all the aliases for this star
-        cache_update = {alias.lower(): main_id for alias in names_doc['aliases']}
+        cache_update = {match_name: main_id for match_name in names_doc['match_names']}
         cache_names.update(cache_update)
         return main_id
     # this needs user intervention to continue

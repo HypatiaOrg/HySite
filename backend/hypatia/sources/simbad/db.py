@@ -53,11 +53,24 @@ validator_star_doc = {
                 'bsonType': 'string',
                 'description': 'must be a string star name',
             },
-
-        }
+        },
+        'match_names': {
+            'bsonType': 'array',
+            'minItems': 1,
+            'uniqueItems': True,
+            'description': 'must be an array of string names that this star is known by',
+            'items': {
+                'bsonType': 'string',
+                'description': 'must be a blank space removed low-case string star names ',
+            },
+        },
     },
     'additionalProperties': False,
 }
+
+
+def get_match_name(name: str) -> str:
+    return name.replace(' ', '').lower()
 
 
 class StarCollection(BaseStarCollection):
@@ -71,19 +84,20 @@ class StarCollection(BaseStarCollection):
         for name_type in indexed_name_types:
             self.collection_add_index(index_name=name_type, ascending=True, unique=False)
         self.collection_add_index(index_name='aliases', ascending=True, unique=False)
+        self.collection_add_index(index_name='match_names', ascending=True, unique=False)
 
     def update(self, main_id: str, doc: dict[str, list | str | float]) -> pymongo.results.InsertOneResult:
         return self.collection.replace_one({'_id': main_id}, doc)
 
     def find_name_match(self, name: str) -> dict | None:
-        result = self.collection.find_one({'aliases': {'$in': [name]}})
+        result = self.collection.find_one({'match_names': {'$in': [name]}})
         if result:
             return result
         else:
             return None
 
     def find_names_from_expression(self, regex: str) -> pymongo.cursor.Cursor:
-        return self.collection.find({'aliases': {'$regex': f'{regex}', '$options': 'i'}})
+        return self.collection.find({'match_names': {'$regex': f'{regex}', '$options': 'i'}})
 
     def get_ids_for_name_type(self, name_type: str) -> list[str]:
         if name_type not in indexed_name_types:
@@ -95,6 +109,7 @@ class StarCollection(BaseStarCollection):
         old_aliases = old_doc['aliases']
         new_aliases = sorted(list(set(old_aliases + new_aliases)))
         new_doc = old_doc | {'aliases': new_aliases, 'timestamp': time.time()}
+        new_doc['match_names'] = [get_match_name(name=name) for name in new_aliases]
         return self.update(main_id=main_id, doc=new_doc)
 
     def prune_older_records(self, prune_before_timestamp: float) -> pymongo.results.DeleteResult:

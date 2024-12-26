@@ -250,16 +250,6 @@ validator = {
                 'description': 'must be a string and is not required'
             },
             'names': validator_star_doc,
-            'aliases': {
-                'bsonType': 'array',
-                'minItems': 1,
-                'uniqueItems': True,
-                'description': 'must be an array of string names that this star is known by',
-                'items': {
-                    'bsonType': 'string',
-                    'description': 'must be a string star name',
-                },
-            },
             'stellar': {
                 'bsonType': 'object',
                 'description': 'An object with all the per-star data for a single star',
