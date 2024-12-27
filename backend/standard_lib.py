@@ -351,7 +351,7 @@ def create_flat_file(elemList, propertyList, filename, targetList):
     elemList=["Fe","Li","C","O","Na","Mg","Al","Si","Ca","Sc","Ti","V","Cr","Mn","Co","Ni","Y"]
     propertyList=["raj2000", "decj2000", "x_pos", "y_pos", "z_pos", "dist", "disk", "sptype", "vmag",
                              "bv", "u_vel", "v_vel", "w_vel", "teff", "logg", "mass", "rad"]
-    filename="hypatia/load/data_products/star_data_output/hypatiaUpdated_flat_file.csv"
+    filename="hypatia/HyData/target_lists/hypatiaUpdated_flat_file.csv"
     targetList = ClassyReader(filename="hypatia/HyData/target_lists/HWO-FP-Tier1-2-stars.csv")
 
     Note that the elements shouldn't have an "H" appended at the end. Also, header names will differ from the
@@ -373,7 +373,10 @@ def create_flat_file(elemList, propertyList, filename, targetList):
                     star_name = temp.attr_name
                     populate_flat_file(elemList, propertyList, star_name, combined_data_file)
         else:
-            header = "star_name," + ",".join(elemList) + "," + ",".join(propertyList) + "\n"
+            if propertyList is not None:
+                header = "star_name," + ",".join(elemList) + "," + ",".join(propertyList) + "\n"
+            else:
+                header = "star_name," + ",".join(elemList) + "," + "\n"
             combined_data_file.write(header)
             star_names_list = list(sorted(output_star_data.star_names))
             for star in star_names_list:  #what is a better way to get the attr name?
@@ -393,25 +396,26 @@ def populate_flat_file(elemList, propertyList, star_name, combined_data_file):
             values.append('nan')
     combined_data_file.write(",".join(values))
     properties = []
-    for property in propertyList:
-        if property in single_star.params.available_params:
-            # Note that some stars have x, y, z pos parameters, others have pos (embedded),
-            # and others have both. The below will miss the ones with only pos (embedded).
-            if property == "x_pos":
-                properties.append(str(round(single_star.params.pos[0][0], 3)))
-            elif property == "y_pos":
-                properties.append(str(round(single_star.params.pos[0][1], 3)))
-            elif property == "z_pos":
-                properties.append(str(round(single_star.params.pos[0][2], 3)))
-            elif property == "teff_ref":
-                properties.append(single_star.params.teff.ref)
-            elif property == "logg_ref":
-                properties.append(single_star.params.logg.ref)
+    if propertyList is not None:
+        for property in propertyList:
+            if property in single_star.params.available_params:
+                # Note that some stars have x, y, z pos parameters, others have pos (embedded),
+                # and others have both. The below will miss the ones with only pos (embedded).
+                if property == "x_pos":
+                    properties.append(str(round(single_star.params.pos[0][0], 3)))
+                elif property == "y_pos":
+                    properties.append(str(round(single_star.params.pos[0][1], 3)))
+                elif property == "z_pos":
+                    properties.append(str(round(single_star.params.pos[0][2], 3)))
+                elif property == "teff_ref":
+                    properties.append(single_star.params.teff.ref)
+                elif property == "logg_ref":
+                    properties.append(single_star.params.logg.ref)
+                else:
+                    properties.append(str(single_star.params.__getattribute__(property).value))
+                    properties.append(str(single_star.params.__getattribute__(property).ref))
             else:
-                properties.append(str(single_star.params.__getattribute__(property).value))
-                properties.append(str(single_star.params.__getattribute__(property).ref))
-        else:
-            properties.append('nan')
+                properties.append('nan')
     all_params.update(single_star.params.available_params)
     combined_data_file.write("," + ",".join(properties) + "\n")
 

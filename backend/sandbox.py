@@ -120,7 +120,7 @@ def tsuji_overlap(runTsuji):
         print("Number of stars that overlap with Tsuji data:", len(tsuName))
         print("Number of stars to be added to C and O:", 49-len(tsuName))
 
-#Run the definition above to figure out the number to add for 12C and O abundances for TsujiAddition of absolute abundances
+# No more need to add in Tsuji abundances, Abia was a bad idea
 def mdwarf_histogram(self):
     tsujiAddition = 19
     n = len(self.available_bins) + 2  #add extra elements for F and 13C
