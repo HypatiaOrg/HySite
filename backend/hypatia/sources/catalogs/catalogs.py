@@ -55,7 +55,6 @@ def get_catalogs(from_scratch=False, catalogs_file_name=None, local_abundance_di
                                      local_abundance_dir=local_abundance_dir)
                         for key in catalog_names}
         for cat_data in catalog_dict.values():
-            cat_data.update_star_names()
             cat_data.un_normalize()
 
     else:
@@ -80,13 +79,13 @@ class Catalog:
         self.norm_key = norm_key
         self.catalogs_file_name = catalogs_file_name
         if local_abundance_dir is None:
+            local_abundance_dir = abundance_dir
             self.file_path = os.path.join(abundance_dir, catalog_name.replace(' ', '').lower())
         else:
             self.file_path = os.path.join(local_abundance_dir, catalog_name.replace(' ', '').lower())
         self.save_file_name = os.path.join(cat_pickles_dir, catalog_name.replace(' ', '').lower() + '.pkl')
         self.main_star_ids_unique_groups = None
         self.unique_star_groups = None
-        self.comments = None
         self.name_update_needed = None
 
         if os.path.lexists(self.file_path + '.csv'):
@@ -100,6 +99,10 @@ class Catalog:
 
         # use ClassyReader, add attributes of the file (i.e., the element columns) to the raw_data attribute
         self.raw_data = ClassyReader(self.file_path, delimiter=self.delimiter)
+        if hasattr(self.raw_data, 'comments'):
+            self.comments = self.raw_data.comments
+        else:
+            self.comments = None
         # set a single normalization dictionary for the catalog
         self.norm_dict = solar_norm_dict[self.norm_key]
 
@@ -133,9 +136,9 @@ class Catalog:
                 else:
                     converted_star_names.append(found_simbad_name)
         # double-check that this name is still the primary name in SIMBAD
-        star_docs = get_star_data_batch([(simbad_name,) for simbad_name in converted_star_names],
-                                        test_origin=f'{self.catalog_name}')
-        self.star_names = [star_doc['_id'] for star_doc in star_docs]
+        self.star_docs = get_star_data_batch([(simbad_name,) for simbad_name in converted_star_names],
+                                              test_origin=f'{self.catalog_name}')
+        self.star_names = [star_doc['_id'] for star_doc in self.star_docs]
         # add the star names to the raw_data object
         self.raw_data.star_names = self.star_names
 
@@ -189,24 +192,12 @@ class Catalog:
             print(f'   Loaded the data for the {self.catalog_name} - star name type: {self.star_names_type}')
 
         # Initialize the un-normalized data and data products from other methods.
-        self.main_star_names = None
-        self.star_docs = None
         self.abs_star_data = []
         self.unreferenced_stars = []
         self.unreferenced_stars_raw_index = []
-
-    def update_star_names(self):
-        """
-        Get all the star's names, using the SIMBAD sources
-        """
-        self.main_star_names = []
-        self.star_docs = []
-        if self.verbose:
-            print(f'Updating the{self.catalog_name} star names from reference data')
-        for element_data, star_name in zip(self.raw_star_data, self.star_names):
-            simbad_doc = get_star_data(star_name)
-            self.main_star_names.append(simbad_doc['_id'])
-            self.star_docs.append(simbad_doc)
+        # Update to the new catalog format so the read is faster next time.
+        if attribute_name != 'simbad_id':
+            self.write_catalog(output_dir=local_abundance_dir, target='raw', update_catalog_list=True)
 
     def remove_elements(self, lost_element: ElementID, reason):
         self.element_ratio_keys.remove(self.element_to_ratio_name[lost_element])
@@ -217,7 +208,7 @@ class Catalog:
         # check to see if the normalization will cover all the elements in this catalog.
         if self.norm_dict is not None:
             for main_star_id, original_star_name, star_dict \
-                    in zip(self.main_star_names, self.original_star_names, self.raw_star_data):
+                    in zip(self.star_names, self.original_star_names, self.raw_star_data):
                 # get the keys that are not elements, such as star_name and comments
                 element_dict = {element_id: star_dict[element_id]
                                 for element_id in self.element_keys & set(star_dict.keys())}
@@ -262,10 +253,9 @@ class Catalog:
                 self.abs_star_data.append(un_norm_dict)
 
     def find_double_listed(self):
-        self.update_star_names()
         self.unique_star_groups = []
         self.main_star_ids_unique_groups = []
-        for main_star_id, original_name, element_data in zip(self.main_star_names, self.original_star_names, self.raw_star_data):
+        for main_star_id, original_name, element_data in zip(self.star_names, self.original_star_names, self.raw_star_data):
             # find a group that the star is not in and add it to that group, make new groups as needed.
             for group_num, main_star_ids in list(enumerate(self.main_star_ids_unique_groups)):
                 if main_star_id not in main_star_ids:
@@ -284,20 +274,20 @@ class Catalog:
         now = datetime.datetime.now()
         date_string = f"{'%02i' % now.day}_{'%02i' % now.month}_{'%04i' % now.year}"
         if target == 'raw':
-            star_lists = [zip(self.main_star_names, self.original_star_names, self.raw_star_data)]
+            star_lists = [zip(self.star_names, self.original_star_names, self.raw_star_data)]
             comments = [f'{date_string} Raw data (original solar normalization) output from the Catalog class in the ' +
                         'Hypatia package.']
             new_short_name = '_raw_'
         elif target == 'un_norm':
-            star_lists = [zip(self.main_star_names, self.original_star_names, self.abs_star_data)]
+            star_lists = [zip(self.star_names, self.original_star_names, self.abs_star_data)]
             comments = [f'{date_string} Absolute (un-normalized) data output from the Catalog class in the Hypatia ' +
                         'package']
             new_short_name = '_absolute_'
         elif target == 'unique':
             star_lists = self.unique_star_groups
             total_string = str('%02i' % len(self.unique_star_groups))
-            comments = [f'XX of {total_string} {date_string}' +
-                        ' Raw data (original solar normalization) data output from the Catalog class ' +
+            comments = [f'XX of {total_string} {date_string} ' +
+                        'Raw data (original solar normalization) data output from the Catalog class ' +
                         'in the Hypatia package']
             new_short_name = '_XX_of_' + total_string + '_unique_'
         else:
@@ -345,7 +335,7 @@ class Catalog:
             full_file_and_path = os.path.join(output_dir, file_name)
             with open(full_file_and_path, 'w') as f:
                 for comment in comments:
-                    f.write('#' + comment + '\n')
+                    f.write(f'# {comment}\n')
                 f.write(header[:-1] + '\n')
                 [f.write(single_line) for single_line in body]
             if add_to_git:

@@ -126,6 +126,8 @@ def unique_abundances(verbose=True):
         single_cat.find_double_listed()
         if len(single_cat.unique_star_groups) > 1:
             single_cat.write_catalog(output_dir=new_abundances_dir, target='unique', update_catalog_list=True)
+        else:
+            single_cat.write_catalog(output_dir=new_abundances_dir, target='raw', update_catalog_list=True)
     if verbose:
         print("catalogs have been checked, and when necessary split, to have each catalog file \n" +
               "have only one entry per unique star.\n")
