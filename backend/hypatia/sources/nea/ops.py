@@ -8,9 +8,9 @@ from hypatia.sources.simbad.ops import (get_main_id, interactive_name_menu, star
                                         get_attr_name, set_cache_data)
 
 
-nea_ref = "NASA Exoplanet Archive"
-nea_collection = ExoPlanetStarCollection(collection_name="nea")
-known_micro_names = {"kmt", "ogle", "moa", 'k2'}
+nea_ref = 'NASA Exoplanet Archive'
+nea_collection = ExoPlanetStarCollection(collection_name='nea')
+known_micro_names = {'kmt', 'ogle', 'moa', 'k2'}
 system_designations = {'a', 'b', 'c', 'ab', 'ac', 'bc'}
 incorrect_nea_names = {'Gaia DR2 4794830231453653888'}
 # Gaia DR2 4794830231453653888 is incorrectly associated with HD 41004B in the NEA sources,
@@ -27,16 +27,16 @@ def get_nea_data(test_name: str) -> dict or None:
 
 def needs_micro_lense_name_change(nea_name: str) -> None or str:
     nea_name_lower = nea_name.lower()
-    if "-" not in nea_name:
+    if '-' not in nea_name:
         return None
-    name_prefix = nea_name_lower.split("-", 1)[0]
+    name_prefix = nea_name_lower.split('-', 1)[0]
     if name_prefix not in known_micro_names:
         return None
-    system_designation = ""
-    if " " in nea_name and nea_name_lower.rsplit(" ", 1)[-1] in system_designations:
-        nea_name, system_designation = nea_name.rsplit(" ", 1)
-        system_designation = " " + system_designation
-    if nea_name.lower().endswith("l"):
+    system_designation = ''
+    if ' ' in nea_name and nea_name_lower.rsplit(' ', 1)[-1] in system_designations:
+        nea_name, system_designation = nea_name.rsplit(' ', 1)
+        system_designation = ' ' + system_designation
+    if nea_name.lower().endswith('l'):
         return nea_name[:-1] + system_designation
     else:
         return None
@@ -49,7 +49,7 @@ def format_for_mongo(host_data: dict, test_origin: str = 'nea') -> dict:
     # every star must have a nea_name that is not empty
     nea_name = host_data['nea_name']
     if not nea_name:
-        raise ValueError(f"No valid name found for host, this is not supposed to happen, see host_data: {host_data}")
+        raise ValueError(f'No valid name found for host, this is not supposed to happen, see host_data: {host_data}')
     mirco_name_for_simbad = needs_micro_lense_name_change(nea_name)
     if mirco_name_for_simbad is not None:
         names_to_try = [mirco_name_for_simbad] + names_to_try
@@ -71,7 +71,7 @@ def format_for_mongo(host_data: dict, test_origin: str = 'nea') -> dict:
             names_str = str("', '".join(names_to_try))
             print(f"This star's names ('{names_str}') origin: nea")
             if INTERACTIVE_STARNAMES:
-                found_id = interactive_name_menu(test_name="", test_origin=test_origin, aliases=names_to_try)
+                found_id = interactive_name_menu(test_name='', test_origin=test_origin, aliases=names_to_try)
                 # if one name was not found, then we will update all the names to try in the aliases
                 star_doc = star_collection.update_aliases(main_id=found_id, new_aliases=names_to_try)
                 set_cache_data(simbad_main_id=found_id, star_record=star_doc,
@@ -80,9 +80,9 @@ def format_for_mongo(host_data: dict, test_origin: str = 'nea') -> dict:
                 no_simbad_add_name(name=names_to_try[0], origin=test_origin, aliases=names_to_try)
         else:
             # automatically add the name to the sources without a SIMBAD name or a prompt
-            no_simbad_add_name(name=nea_name, aliases=names_to_try, origin="nea")
-            found_id = get_main_id(test_name=nea_name, test_origin="nea", allow_interaction=False)
-    mongo_format = {"_id": found_id, 'attr_name': get_attr_name(found_id),
+            no_simbad_add_name(name=nea_name, aliases=names_to_try, origin='nea')
+            found_id = get_main_id(test_name=nea_name, test_origin='nea', allow_interaction=False)
+    mongo_format = {'_id': found_id, 'attr_name': get_attr_name(found_id),
                     'planet_letters': list(host_data['planets'].keys()), **host_data}
     # test that the formating will work when this data is returned from the database, but do not use the returned data
     format_to_hypatia(mongo_format)
@@ -112,19 +112,19 @@ def format_to_hypatia(mongo_format: dict, is_planetary: bool = False) -> dict:
                 object_params[param] = SingleParam.strict_format(param_name=param, **nea_values,
                                                                  ref=nea_ref, units=units)
         else:
-            raise KeyError(f"Unexpected parameter: {param} in host data: {mongo_format} from NEA. Does this parameter need to be added to the allowed parameters file?")
+            raise KeyError(f'Unexpected parameter: {param} in host data: {mongo_format} from NEA. Does this parameter need to be added to the allowed parameters file?')
     return hypatia_format
 
 
 def refresh_nea_data(verbose: bool = False):
     nea_collection.reset()
     if verbose:
-        print("Refreshing NEA data")
+        print('Refreshing NEA data')
     nea_collection.add_many([format_for_mongo(host_data) for host_data in set_data_by_host([calculate_nea_row(row)
                              for row in query_nea()]).values()
                             ])
     if verbose:
-        print("NEA data refreshed")
+        print('NEA data refreshed')
 
 
 def get_all_nea() -> list[dict[str, any]]:

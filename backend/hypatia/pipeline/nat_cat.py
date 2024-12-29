@@ -40,12 +40,12 @@ class NatCat:
 
         # populated some default values
         if params_list_for_stats is None:
-            params_list_for_stats = ["dist", "teff", "vmag", "SpType"]
+            params_list_for_stats = ['dist', 'teff', 'vmag', 'SpType']
         if star_types_for_stats is None:
-            star_types_for_stats = ['gaia dr2', "gaia dr1", "hip", "hd"]
+            star_types_for_stats = ['gaia dr2', 'gaia dr1', 'hip', 'hd']
 
         # reference data
-        self.normalization_ref = row_dict(os.path.join(ref_dir, "solar_norm_ref.csv"), key='catalog')
+        self.normalization_ref = row_dict(os.path.join(ref_dir, 'solar_norm_ref.csv'), key='catalog')
         self.xhip = Xhip()
         self.pastel = Pastel(verbose=self.verbose)
 
@@ -53,7 +53,7 @@ class NatCat:
         self.params_list_for_stats = [param.lower() for param in params_list_for_stats]
         self.star_types_for_stats = star_types_for_stats
 
-        self.text_file_dir = os.path.join(working_dir, "load", 'data_products')
+        self.text_file_dir = os.path.join(working_dir, 'load', 'data_products')
 
         # variables that are populated in methods
         self.catalog_dict = None
@@ -86,25 +86,25 @@ class NatCat:
     def catalog_data(self):
         if self.verbose:
             print('\nLoading and mapping the stellar abundance data...')
-            print("  Loading Abundance catalog data...")
+            print('  Loading Abundance catalog data...')
         self.catalog_dict = get_catalogs(from_scratch=self.catalogs_from_scratch,
                                          local_abundance_dir=self.abundance_data_path,
                                          catalogs_file_name=self.catalogs_file_name,
                                          verbose=self.catalogs_verbose)
         if self.catalogs_from_scratch:
             if self.verbose:
-                print("    Saving Abundance data to pickle files...")
+                print('    Saving Abundance data to pickle files...')
             for catalog_short_name in self.catalog_dict.keys():
                 self.catalog_dict[catalog_short_name].save()
             if self.verbose:
-                print("      Saving complete.")
+                print('      Saving complete.')
         if self.verbose:
             print('    Abundance data load and processed.')
-            print("  Linking abundance data to stellar objects...")
+            print('  Linking abundance data to stellar objects...')
         self.init_catalogs = set(self.catalog_dict.keys())
         self.star_data.get_abundances(all_catalogs=self.catalog_dict)
         if self.verbose:
-            print("Stellar abundance data acquired.\n")
+            print('Stellar abundance data acquired.\n')
 
     def xo_data(self):
         self.star_data.get_exoplanets(refresh_exo_data=self.refresh_exo_data)
@@ -123,14 +123,14 @@ class NatCat:
         self.targets_not_found = self.star_data.targets_not_found
         if self.verbose:
             print(F'Target Data Acquired.')
-            print(F'  Targets requested: {"%3i" % len(target_list)} : {sorted(star_ids)}')
-            print(F'      Targets found: {"%3i" % len(self.targets_found)} : {sorted(self.targets_found)}')
-            print(F'  Targets not found: {"%3i" % len(self.targets_not_found)} : {sorted(self.targets_not_found)}\n')
+            print(F'  Targets requested: {'%3i' % len(target_list)} : {sorted(star_ids)}')
+            print(F'      Targets found: {'%3i' % len(self.targets_found)} : {sorted(self.targets_found)}')
+            print(F'  Targets not found: {'%3i' % len(self.targets_not_found)} : {sorted(self.targets_not_found)}\n')
 
     def get_params(self, get_gaia_params: bool = True, get_pastel_params: bool = True, get_exo_params: bool = True,
                    get_tic_params: bool = True, get_hipparcos_params: bool = True):
         if self.verbose:
-            print("Acquiring stellar parameter data...")
+            print('Acquiring stellar parameter data...')
         gaia_lib = None
         for single_star in self.star_data:
             main_star_id = single_star.star_reference_name
@@ -159,8 +159,8 @@ class NatCat:
                 if self.xhip.ref_data is None:
                     self.xhip.load(verbose=self.verbose)
                 xhip_params_dict = None
-                if "hip" in single_star.simbad_doc.keys():
-                    hip_name = single_star.simbad_doc["hip"]
+                if 'hip' in single_star.simbad_doc.keys():
+                    hip_name = single_star.simbad_doc['hip']
                     xhip_params_dict = self.xhip.get_xhip_data(hip_name=hip_name)
                     if xhip_params_dict is not None:
                         single_star.xhip_params(xhip_params_dict)
@@ -170,21 +170,21 @@ class NatCat:
         for string_name in hacked.keys():
             param, value, units, ref = hacked[string_name]
             hacked_single_param = SingleParam(value=value, units=units, ref=ref)
-            simbad_doc = get_star_data(test_name=string_name, test_origin="hacked")
-            main_star_id = simbad_doc["_id"]
+            simbad_doc = get_star_data(test_name=string_name, test_origin='hacked')
+            main_star_id = simbad_doc['_id']
             if main_star_id in self.star_data.star_names:
                 this_star = self.star_data.__getattribute__(simbad_doc['attr_name'])
                 this_star.params.update_param(param, hacked_single_param, overwrite_existing=False)
         if self.verbose:
             if get_gaia_params:
-                print("  Gaia stellar parameters acquired.")
+                print('  Gaia stellar parameters acquired.')
             if get_pastel_params:
-                print("  Pastel stellar parameters acquired.")
+                print('  Pastel stellar parameters acquired.')
             if get_tic_params:
-                print("  Tess Input Catalog stellar parameters acquired.")
+                print('  Tess Input Catalog stellar parameters acquired.')
             if get_hipparcos_params:
-                print("  X-Hipparcos stellar parameters acquired.")
-            print("Stellar parameters acquired, reference is up-to-data, and calculations completed\n")
+                print('  X-Hipparcos stellar parameters acquired.')
+            print('Stellar parameters acquired, reference is up-to-data, and calculations completed\n')
 
     def get_unreferenced_stars(self):
         self.unreferenced_stars = {key: self.catalog_dict[key].unreferenced_stars for key in self.catalog_dict.keys()
@@ -254,10 +254,10 @@ class NatCat:
 
     def pickle_myself(self):
         if self.verbose:
-            print("Picking an entire NatCat class.\nFile name:", pickle_nat)
+            print('Picking an entire NatCat class.\nFile name:', pickle_nat)
         pickle.dump(self, open(pickle_nat, 'wb'))
         if self.verbose:
-            print("  pickling complete.")
+            print('  pickling complete.')
 
     def output_abs_abundances(self):
         output_dir = os.path.join(abundance_dir, 'absolute')
@@ -265,7 +265,7 @@ class NatCat:
             os.mkdir(output_dir)
         for catalog_name in self.catalog_dict.keys():
             single_catalog = self.catalog_dict[catalog_name]
-            single_catalog.write_catalog(target="un_norm", update_catalog_list=False,
+            single_catalog.write_catalog(target='un_norm', update_catalog_list=False,
                                          add_to_git=False, output_dir=output_dir)
 
     def output_raw_abundances(self):
@@ -274,5 +274,5 @@ class NatCat:
             os.mkdir(output_dir)
         for catalog_name in self.catalog_dict.keys():
             single_catalog = self.catalog_dict[catalog_name]
-            single_catalog.write_catalog(target="raw", update_catalog_list=False,
+            single_catalog.write_catalog(target='raw', update_catalog_list=False,
                                          add_to_git=False, output_dir=output_dir)

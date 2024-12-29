@@ -16,9 +16,9 @@ from hypatia.sources.catalogs.solar_norm import (solar_norm_dict, ratio_to_eleme
                                                  un_norm_x_over_fe, un_norm_x_over_h, un_norm_abs_x)
 
 
-indicates_mixed_name_types = {"Star", "star", "Stars", "starname", "Starname", "Name", "ID", "Object", "HDBD",
+indicates_mixed_name_types = {'Star', 'star', 'Stars', 'starname', 'Starname', 'Name', 'ID', 'Object', 'HDBD',
                               'simbad_id'}
-indicates_single_name_types = {"TYC", "HD", "HIP", "HR", "TrES", "CoRoT", "XO", "HAT", "WASP"}
+indicates_single_name_types = {'TYC', 'HD', 'HIP', 'HR', 'TrES', 'CoRoT', 'XO', 'HAT', 'WASP'}
 
 
 def get_catalogs(from_scratch=False, catalogs_file_name=None, local_abundance_dir=None, verbose=False):
@@ -29,7 +29,7 @@ def get_catalogs(from_scratch=False, catalogs_file_name=None, local_abundance_di
     to be handed to the CatalogQuery class.
     """
 
-    if catalogs_file_name is None or catalogs_file_name == "catalog_file.csv":
+    if catalogs_file_name is None or catalogs_file_name == 'catalog_file.csv':
         full_catalog_file_name = default_catalog_file
     else:
         full_catalog_file_name = catalogs_file_name
@@ -46,7 +46,7 @@ def get_catalogs(from_scratch=False, catalogs_file_name=None, local_abundance_di
     catalog_names = sorted([short_name for short_name in catalog_info.short])
 
     if from_scratch:
-        # Make a dictionary of all the catalogs listed in the file in "catalogs_file_name"
+        # Make a dictionary of all the catalogs listed in the file in 'catalogs_file_name'
         catalog_dict = {key: Catalog(catalog_name=key,
                                      long_name=long_catalog_names[key],
                                      norm_key=catalog_norm[key],
@@ -60,7 +60,7 @@ def get_catalogs(from_scratch=False, catalogs_file_name=None, local_abundance_di
 
     else:
         catalog_pickle_files = [(catalog_name, os.path.join(cat_pickles_dir,
-                                                            f"{catalog_name.lower().replace(' ', '')}.pkl"))
+                                                            f'{catalog_name.lower().replace(' ', '')}.pkl'))
                                 for catalog_name in catalog_names]
         catalog_dict = {}
         for catalog_name, catalog_pickle_file in catalog_pickle_files:
@@ -70,7 +70,7 @@ def get_catalogs(from_scratch=False, catalogs_file_name=None, local_abundance_di
 
 
 class Catalog:
-    def __init__(self, catalog_name, long_name, norm_key, catalogs_file_name="", verbose=False,
+    def __init__(self, catalog_name, long_name, norm_key, catalogs_file_name='', verbose=False,
                  local_abundance_dir=None):
         self.catalog_name = catalog_name
         self.verbose = verbose
@@ -80,23 +80,23 @@ class Catalog:
         self.norm_key = norm_key
         self.catalogs_file_name = catalogs_file_name
         if local_abundance_dir is None:
-            self.file_path = os.path.join(abundance_dir, catalog_name.replace(" ", "").lower())
+            self.file_path = os.path.join(abundance_dir, catalog_name.replace(' ', '').lower())
         else:
-            self.file_path = os.path.join(local_abundance_dir, catalog_name.replace(" ", "").lower())
-        self.save_file_name = os.path.join(cat_pickles_dir, catalog_name.replace(" ", "").lower() + ".pkl")
+            self.file_path = os.path.join(local_abundance_dir, catalog_name.replace(' ', '').lower())
+        self.save_file_name = os.path.join(cat_pickles_dir, catalog_name.replace(' ', '').lower() + '.pkl')
         self.main_star_ids_unique_groups = None
         self.unique_star_groups = None
         self.comments = None
         self.name_update_needed = None
 
-        if os.path.lexists(self.file_path + ".csv"):
-            self.file_path += ".csv"
-            self.delimiter = ","
-        elif os.path.lexists(self.file_path + ".tsv"):
-            self.file_path += ".tsv"
-            self.delimiter = "|"
+        if os.path.lexists(self.file_path + '.csv'):
+            self.file_path += '.csv'
+            self.delimiter = ','
+        elif os.path.lexists(self.file_path + '.tsv'):
+            self.file_path += '.tsv'
+            self.delimiter = '|'
         else:
-            raise FileExistsError(f"The file: {self.file_path} was not found")
+            raise FileExistsError(f'The file: {self.file_path} was not found')
 
         # use ClassyReader, add attributes of the file (i.e., the element columns) to the raw_data attribute
         self.raw_data = ClassyReader(self.file_path, delimiter=self.delimiter)
@@ -115,7 +115,7 @@ class Catalog:
             attribute_name = list(single_name_type)[0]
             self.star_names_type = attribute_name.lower()
         else:
-            raise NameError("The star column name is not one of the expected names.")
+            raise NameError('The star column name is not one of the expected names.')
         if attribute_name == 'simbad_id':
             # Catalogs added after the 2024 update will have the star names in the SIMBAD format.
             self.star_names_type = 'simbad_id'
@@ -153,7 +153,7 @@ class Catalog:
                 element_id, un_norm_func_name = ratio_to_element(key)
             except KeyError as e:
                 print(e)
-                raise ElementNameErrorInCatalog(f"Key: {key} in catalog: {self.catalog_name} is not a recognized element key.")
+                raise ElementNameErrorInCatalog(f'Key: {key} in catalog: {self.catalog_name} is not a recognized element key.')
             else:
                 formatted_key = f'{element_id}'
                 if formatted_key != key:
@@ -169,7 +169,7 @@ class Catalog:
         self.element_keys = set(self.element_to_ratio_name.keys())
         self.element_ratio_keys = {self.element_to_ratio_name[key] for key in self.element_to_ratio_name}
         if iron_ii_id in self.element_keys:
-            warn(f"The Fe_II element in {self.catalog_name} is not allowed in the catalog data.")
+            warn(f'The Fe_II element in {self.catalog_name} is not allowed in the catalog data.')
             self.element_keys.remove(iron_ii_id)
             del self.element_to_ratio_name[iron_ii_id]
         """
@@ -180,7 +180,7 @@ class Catalog:
         self.raw_star_data = [
             {ElementID.from_str(element_key): self.raw_data.__getattribute__(element_key)[catalog_index]
              for element_key in self.element_ratio_keys
-             if self.raw_data.__getattribute__(element_key)[catalog_index] not in {99.99, ""}}
+             if self.raw_data.__getattribute__(element_key)[catalog_index] not in {99.99, ''}}
             for catalog_index in range(len(self.raw_data.star_names))
         ]
         self.star_names = self.raw_data.star_names
@@ -202,7 +202,7 @@ class Catalog:
         self.main_star_names = []
         self.star_docs = []
         if self.verbose:
-            print("Updating the", self.catalog_name, "star names from reference data")
+            print(f'Updating the{self.catalog_name} star names from reference data')
         for element_data, star_name in zip(self.raw_star_data, self.star_names):
             simbad_doc = get_star_data(star_name)
             self.main_star_names.append(simbad_doc['_id'])
@@ -211,7 +211,7 @@ class Catalog:
     def remove_elements(self, lost_element: ElementID, reason):
         self.element_ratio_keys.remove(self.element_to_ratio_name[lost_element])
         self.element_keys.remove(lost_element)
-        warn(f"Element: {lost_element} was removed from the catalog: {self.catalog_name} because {reason}")
+        warn(f'Element: {lost_element} was removed from the catalog: {self.catalog_name} because {reason}')
 
     def un_normalize(self):
         # check to see if the normalization will cover all the elements in this catalog.
@@ -228,7 +228,7 @@ class Catalog:
                 for element_id in key_set:
                     un_norm_func_name = self.element_id_to_un_norm_func[element_id]
                     element_value = element_dict[element_id]
-                    if un_norm_func_name == "un_norm_abs_x":
+                    if un_norm_func_name == 'un_norm_abs_x':
                          un_norm_dict[element_id] = un_norm_abs_x(element_value)
                     else:
                         # these elements require a solar value to un-normalize
@@ -241,23 +241,23 @@ class Catalog:
                             if default_element in self.norm_dict.keys():
                                 solar_value = self.norm_dict[default_element]
                         if solar_value is None:
-                            self.remove_elements(element_id, "no solar value available")
+                            self.remove_elements(element_id, 'no solar value available')
                             continue
-                        if un_norm_func_name == "un_norm_x_over_h":
+                        if un_norm_func_name == 'un_norm_x_over_h':
                             un_norm_dict[element_id] = un_norm_x_over_h(relative_x_over_h=element_value,
                                                                         solar_x=solar_value)
-                        elif un_norm_func_name == "un_norm_x_over_fe":
+                        elif un_norm_func_name == 'un_norm_x_over_fe':
                             if element_id.is_nlte and iron_nlte_id in key_set:
                                 iron_value = element_dict[iron_nlte_id]
                             elif iron_id not in key_set:
-                                raise KeyError(f"Element: {element_id} in catalog: {self.catalog_name} star:{original_star_name} requires [Fe/H] to un-normalize.")
+                                raise KeyError(f'Element: {element_id} in catalog: {self.catalog_name} star:{original_star_name} requires [Fe/H] to un-normalize.')
                             else:
                                 iron_value = element_dict[iron_id]
                             un_norm_dict[element_id] = un_norm_x_over_fe(relative_x_over_fe=element_value,
                                                                          relative_fe_over_h=iron_value,
                                                                          solar_x=solar_value)
                         else:
-                            raise KeyError(f"Un-normalization function: {un_norm_func_name} not recognized for {self.catalog_name} star:{original_star_name}")
+                            raise KeyError(f'Un-normalization function: {un_norm_func_name} not recognized for {self.catalog_name} star:{original_star_name}')
                 # rewrite the dict to include the non-element keys like star names.
                 self.abs_star_data.append(un_norm_dict)
 
@@ -278,96 +278,96 @@ class Catalog:
                 self.main_star_ids_unique_groups.append({main_star_id})
                 self.unique_star_groups.append([(main_star_id, original_name, element_data)])
 
-    def write_catalog(self, output_dir: str, target="raw", update_catalog_list=False, add_to_git=False):
-        if target.lower() in {"unnorm", "abs", 'absolute'}:
-            target = "un_norm"
+    def write_catalog(self, output_dir: str, target='raw', update_catalog_list=False, add_to_git=False):
+        if target.lower() in {'unnorm', 'abs', 'absolute'}:
+            target = 'un_norm'
         now = datetime.datetime.now()
         date_string = f"{'%02i' % now.day}_{'%02i' % now.month}_{'%04i' % now.year}"
-        if target == "raw":
+        if target == 'raw':
             star_lists = [zip(self.main_star_names, self.original_star_names, self.raw_star_data)]
-            comments = [f"{date_string} Raw data (original solar normalization) output from the Catalog class in the " +
-                        "Hypatia package."]
-            new_short_name = "_raw_"
-        elif target == "un_norm":
+            comments = [f'{date_string} Raw data (original solar normalization) output from the Catalog class in the ' +
+                        'Hypatia package.']
+            new_short_name = '_raw_'
+        elif target == 'un_norm':
             star_lists = [zip(self.main_star_names, self.original_star_names, self.abs_star_data)]
-            comments = [f"{date_string} Absolute (un-normalized) data output from the Catalog class in the Hypatia " +
-                        "package"]
-            new_short_name = "_absolute_"
-        elif target == "unique":
+            comments = [f'{date_string} Absolute (un-normalized) data output from the Catalog class in the Hypatia ' +
+                        'package']
+            new_short_name = '_absolute_'
+        elif target == 'unique':
             star_lists = self.unique_star_groups
-            total_string = str("%02i" % len(self.unique_star_groups))
-            comments = ["XX of " + total_string + " " + date_string +
-                        " Raw data (original solar normalization) data output from the Catalog class " +
-                        "in the Hypatia package"]
-            new_short_name = "_XX_of_" + total_string + "_unique_"
+            total_string = str('%02i' % len(self.unique_star_groups))
+            comments = [f'XX of {total_string} {date_string}' +
+                        ' Raw data (original solar normalization) data output from the Catalog class ' +
+                        'in the Hypatia package']
+            new_short_name = '_XX_of_' + total_string + '_unique_'
         else:
             raise KeyError(f"'{target}' was not one of the expected target types for writing a catalog data")
         new_short_name = self.catalog_name + new_short_name + date_string
-        file_name = new_short_name.replace(" ", "").lower() + ".csv"
+        file_name = new_short_name.replace(' ', '').lower() + '.csv'
         short_names_list = []
         if self.comments is not None:
             comments.extend(self.comments)
         for list_index, star_list in list(enumerate(star_lists)):
-            if target == "unique":
-                this_list_number = str("%02i" % (list_index + 1))
+            if target == 'unique':
+                this_list_number = str('%02i' % (list_index + 1))
                 comments[0] = this_list_number + comments[0][2:]
-                new_short_name = self.catalog_name + "_" + this_list_number + \
+                new_short_name = self.catalog_name + '_' + this_list_number + \
                                  new_short_name[len(self.catalog_name) + 3:]
                 short_names_list.append(new_short_name)
-                file_name = self.catalog_name.replace(" ", "").lower() + "_" + this_list_number + \
-                            file_name[len(self.catalog_name.replace(" ", "")) + 3:]
+                file_name = self.catalog_name.replace(' ', '').lower() + '_' + this_list_number + \
+                            file_name[len(self.catalog_name.replace(' ', '')) + 3:]
             else:
                 short_names_list.append(new_short_name)
             ordered_element_list = sorted(self.element_keys, key=element_rank)
-            if target == "un_norm":
-                header_list = [f"{element}_A" for element in ordered_element_list]
+            if target == 'un_norm':
+                header_list = [f'{element}_A' for element in ordered_element_list]
             else:
                 header_list = []
                 for element_string in ordered_element_list:
                     element_id = self.element_to_ratio_name[element_string]
                     un_norm_type = self.element_id_to_un_norm_func[element_string]
-                    if un_norm_type == "un_norm_abs_x":
-                        header_list.append(f"{element_id}_A")
-                    elif un_norm_type == "un_norm_x_over_h":
-                        header_list.append(f"{element_id}_H")
-                    elif un_norm_type == "un_norm_x_over_fe":
-                        header_list.append(f"{element_id}_Fe")
+                    if un_norm_type == 'un_norm_abs_x':
+                        header_list.append(f'{element_id}_A')
+                    elif un_norm_type == 'un_norm_x_over_h':
+                        header_list.append(f'{element_id}_H')
+                    elif un_norm_type == 'un_norm_x_over_fe':
+                        header_list.append(f'{element_id}_Fe')
                     else:
-                        raise KeyError(f"Un-normalization function: {un_norm_type} not recognized for {self.catalog_name}")
-            header = ','.join(["simbad_id", 'original_name'] + header_list) + '\n'
+                        raise KeyError(f'Un-normalization function: {un_norm_type} not recognized for {self.catalog_name}')
+            header = ','.join(['simbad_id', 'original_name'] + header_list) + '\n'
             body = []
             for main_star_id, original_name, element_data in star_list:
-                single_line = f"{main_star_id},{original_name}," + ','.join([str(element_data[element])
+                single_line = f'{main_star_id},{original_name},' + ','.join([str(element_data[element])
                                                                              if element in element_data.keys()
-                                                                             else ""
+                                                                             else ''
                                                                              for element in ordered_element_list])
-                body.append(single_line + "\n")
+                body.append(single_line + '\n')
             full_file_and_path = os.path.join(output_dir, file_name)
             with open(full_file_and_path, 'w') as f:
                 for comment in comments:
-                    f.write("#" + comment + '\n')
-                f.write(header[:-1] + "\n")
+                    f.write('#' + comment + '\n')
+                f.write(header[:-1] + '\n')
                 [f.write(single_line) for single_line in body]
             if add_to_git:
-                os.system(f"git add {full_file_and_path}")
+                os.system(f'git add {full_file_and_path}')
 
         if update_catalog_list:
             long_name = self.long_name
             norm_name = self.norm_key
             target_file = os.path.join(abundance_dir, self.catalogs_file_name)
-            old_file = os.path.join(abundance_dir, "old_" + os.path.basename(self.catalogs_file_name))
+            old_file = os.path.join(abundance_dir, 'old_' + os.path.basename(self.catalogs_file_name))
             shutil.copyfile(target_file, old_file)
-            header = "short,long,norm\n"
+            header = 'short,long,norm\n'
             catalog_name_data = ClassyReader(old_file)
             body = []
             for line_index in range(len(catalog_name_data.short)):
                 test_short_name = catalog_name_data.short[line_index]
                 if test_short_name == self.catalog_name:
                     for new_short_name in short_names_list:
-                        body.append(new_short_name + "," + long_name + "," + norm_name + "\n")
+                        body.append(new_short_name + ',' + long_name + ',' + norm_name + '\n')
                 else:
-                    body.append(test_short_name + "," + catalog_name_data.long[line_index] + "," +
-                                catalog_name_data.norm[line_index] + "\n")
+                    body.append(test_short_name + ',' + catalog_name_data.long[line_index] + ',' +
+                                catalog_name_data.norm[line_index] + '\n')
             with open(os.path.join(target_file), 'w') as f:
                 f.write(header)
                 [f.write(single_line) for single_line in body]
@@ -381,9 +381,9 @@ class Catalog:
         pickle.dump(self, open(self.save_file_name, 'wb'))
 
 
-if __name__ == "__main__":
-    test_cat = Catalog(catalog_name="nissen97",
-                       long_name="Nissen & Schuster (1997)",
-                       norm_key="neuforge97",
+if __name__ == '__main__':
+    test_cat = Catalog(catalog_name='nissen97',
+                       long_name='Nissen & Schuster (1997)',
+                       norm_key='neuforge97',
                        verbose=True)
     test_cat.un_normalize()
