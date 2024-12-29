@@ -1,11 +1,10 @@
 import time
 
-
 from hypatia.tools.exceptions import StarNameNotFound
 from hypatia.sources.simbad.query import query_simbad_star
 from hypatia.sources.simbad.db import StarCollection, indexed_name_types, get_match_name
 from hypatia.config import (default_reset_time_seconds, no_simbad_reset_time_seconds, MONGO_STARNAMES_COLLECTION,
-                            current_user)
+                            current_user, INTERACTIVE_STARNAMES)
 
 
 
@@ -13,6 +12,8 @@ cache_names = {}
 cache_docs = {}
 star_collection = StarCollection(collection_name=MONGO_STARNAMES_COLLECTION)
 star_collection.prune_older_records(prune_before_timestamp=time.time() - default_reset_time_seconds)
+star_collection.prune_older_records(prune_before_timestamp=time.time() - no_simbad_reset_time_seconds,
+                                    additional_filter={'origin': {'$ne': 'simbad'}})
 
 
 def get_attr_name(name: str) -> str:
@@ -104,6 +105,7 @@ def no_simbad_add_name(name: str, origin: str, aliases: list[str] = None) -> Non
         raise ValueError('No names were provided to add to the no-SIMBAD sources.')
     if not name:
         name = star_names_list[0]
+    match_names =  [get_match_name(name) for name in star_names_list]
     star_record = {
         '_id': name,
         'attr_name': get_attr_name(name),
@@ -112,9 +114,11 @@ def no_simbad_add_name(name: str, origin: str, aliases: list[str] = None) -> Non
         'timestamp': time.time(),
         **parse_indexed_name(star_names_list),
         'aliases': star_names_list,
+        'match_names': match_names,
     }
     # add the main_id to the that sources table
     star_collection.add_one(doc=star_record)
+    set_cache_data(simbad_main_id=name, star_name_aliases=set(match_names))
 
 
 ra_dec_fields = {'ra', 'dec', 'hmsdms'}
@@ -144,6 +148,16 @@ def get_star_data_by_main_id(main_id: str, no_cache: bool = False) -> dict[str, 
     return cache_doc
 
 
+def set_star_doc(simbad_main_id: str, star_names: list[str], star_data: dict[str, any]) -> dict[str, any]:
+    # uniquify the star names, and this will update the cache
+    star_record = format_simbad_star_record(simbad_main_id, star_data, sorted(star_names))
+    # update the sources with the new data
+    star_collection.add_one(doc=star_record)
+    # update the cache with the new data
+    set_cache_data(simbad_main_id=simbad_main_id, star_record=star_record, star_name_aliases=set(star_names))
+    return star_record
+
+
 def ask_simbad(test_name: str, original_name: str = None) -> str or None:
     # query SIMBAD for the star data
     simbad_main_id_found, star_names_list, star_data = query_simbad_star(test_name)
@@ -161,13 +175,8 @@ def ask_simbad(test_name: str, original_name: str = None) -> str or None:
         # create a cache and sources records for this star
         # check for capitalization differences in the main_id
         simbad_main_id = set_default_main_id(simbad_main_id_found)
-        # uniquify the star names, and this will update the cache
         star_names = uniquify_star_names(star_names_list + list(update_names), simbad_main_id)
-        star_record = format_simbad_star_record(simbad_main_id, star_data, star_names)
-        # update the sources with the new data
-        star_collection.add_one(doc=star_record)
-        # update the cache with the new data
-        set_cache_data(simbad_main_id=simbad_main_id, star_record=star_record, star_name_aliases=set(star_names))
+        set_star_doc(simbad_main_id=simbad_main_id, star_names=star_names, star_data=star_data)
         # return the main_id
         return simbad_main_id
     # get the existing record from the cache/sources
@@ -187,7 +196,7 @@ def ask_simbad(test_name: str, original_name: str = None) -> str or None:
     return simbad_main_id
 
 
-def interactive_name_menu(test_name: str = '', test_origin: str = 'unknown',  max_tries: int = 5,
+def interactive_name_menu(test_name: str = '', test_origin: str = current_user,  max_tries: int = 5,
                           aliases: list[str] = None) -> str:
     count = 0
     user_response = None
@@ -225,9 +234,9 @@ def interactive_name_menu(test_name: str = '', test_origin: str = 'unknown',  ma
         count += 1
 
 
-def get_main_id(test_name: str, test_origin: str = 'unknown', allow_interaction: bool = True) -> str:
+def get_main_id(test_name: str, test_origin: str = current_user, allow_interaction: bool = INTERACTIVE_STARNAMES) -> str:
     # check if the name has been queried this session.
-    test_name_lower = test_name.lower()
+    test_name_lower = get_match_name(test_name)
     if test_name_lower in cache_names:
         return cache_names[test_name_lower]
     # check if the name is in the sources.

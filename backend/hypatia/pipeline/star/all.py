@@ -415,7 +415,7 @@ class AllStarData:
                 abs_output = True
 
     def get_single_star_data(self, star_name):
-        main_star_id = get_main_id(star_name)
+        main_star_id = get_main_id(star_name, test_origin='get_single_star_data')
         if main_star_id in self.star_names:
             simbad_doc = get_star_data(main_star_id, test_origin="AllStarData.get_single_star_data")
             return self.__getattribute__(simbad_doc['attr_name'])

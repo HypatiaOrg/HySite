@@ -5,9 +5,11 @@ import datetime
 from warnings import warn
 
 from hypatia.tools.table_read import ClassyReader
+from hypatia.sources.simbad.ops import get_star_data
 from hypatia.tools.star_names import calc_simbad_name
+from hypatia.tools.color_text import catalog_name_text
+from hypatia.sources.simbad.batch import get_star_data_batch
 from hypatia.tools.exceptions import ElementNameErrorInCatalog
-from hypatia.sources.simbad.ops import get_star_data, get_main_id
 from hypatia.config import abundance_dir, default_catalog_file, cat_pickles_dir
 from hypatia.elements import element_rank, ElementID, iron_id, iron_ii_id, iron_nlte_id
 from hypatia.sources.catalogs.solar_norm import (solar_norm_dict, ratio_to_element,
@@ -72,6 +74,8 @@ class Catalog:
                  local_abundance_dir=None):
         self.catalog_name = catalog_name
         self.verbose = verbose
+        if self.verbose:
+            print(f'{catalog_name_text(self.catalog_name)} is being loaded')
         self.long_name = long_name
         self.norm_key = norm_key
         self.catalogs_file_name = catalogs_file_name
@@ -129,8 +133,9 @@ class Catalog:
                 else:
                     converted_star_names.append(found_simbad_name)
         # double-check that this name is still the primary name in SIMBAD
-        self.star_names = [get_main_id(simbad_formatted, test_origin=catalog_name)
-                           for simbad_formatted in converted_star_names]
+        star_docs = get_star_data_batch([(simbad_name,) for simbad_name in converted_star_names],
+                                        test_origin=f'{self.catalog_name}')
+        self.star_names = [star_doc['_id'] for star_doc in star_docs]
         # add the star names to the raw_data object
         self.raw_data.star_names = self.star_names
 
@@ -181,7 +186,7 @@ class Catalog:
         self.star_names = self.raw_data.star_names
         self.original_star_names = self.raw_data.original_star_names
         if self.verbose:
-            print("Loaded the data for the", self.catalog_name, "- star name type:", self.star_names_type)
+            print(f'   Loaded the data for the {self.catalog_name} - star name type: {self.star_names_type}')
 
         # Initialize the un-normalized data and data products from other methods.
         self.main_star_names = None

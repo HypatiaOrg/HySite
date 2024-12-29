@@ -74,7 +74,7 @@ validator_star_doc = {
 }
 
 
-def get_match_name(name: str) -> str:
+def  get_match_name(name: str) -> str:
     return name.replace(' ', '').lower()
 
 
@@ -94,8 +94,12 @@ class StarCollection(BaseStarCollection):
     def update(self, main_id: str, doc: dict[str, list | str | float]) -> pymongo.results.InsertOneResult:
         return self.collection.replace_one({'_id': main_id}, doc)
 
-    def find_name_match(self, name: str) -> dict | None:
-        result = self.collection.find_one({'match_names': {'$in': [name]}})
+    def find_name_match(self, name: str | list[str]) -> dict | None:
+        if isinstance(name, str):
+            names = [name]
+        else:
+            names = name
+        result = self.collection.find_one({'match_names': {'$in': names}})
         if result:
             return result
         else:
@@ -109,14 +113,25 @@ class StarCollection(BaseStarCollection):
             raise ValueError(f'{name_type} is not a valid name type.')
         return self.collection.find({name_type: {'$exists': True}}).distinct('_id')
 
-    def update_aliases(self, main_id: str, new_aliases: list[str]) -> pymongo.results.UpdateResult:
+    def update_aliases(self, main_id: str, new_aliases: list[str]) -> dict[str, any]:
         old_doc = self.collection.find_one({'_id': main_id})
         old_aliases = old_doc['aliases']
         new_aliases = sorted(list(set(old_aliases + new_aliases)))
         new_doc = old_doc | {'aliases': new_aliases, 'timestamp': time.time()}
         new_doc['match_names'] = [get_match_name(name=name) for name in new_aliases]
         new_doc['upload_by'] = current_user
-        return self.update(main_id=main_id, doc=new_doc)
+        self.update(main_id=main_id, doc=new_doc)
+        return new_doc
 
-    def prune_older_records(self, prune_before_timestamp: float) -> pymongo.results.DeleteResult:
-        return self.collection.delete_many({'timestamp': {'$lt': prune_before_timestamp}})
+    def prune_older_records(self, prune_before_timestamp: float, additional_filter: dict[str, any] | None = None) -> pymongo.results.DeleteResult:
+        if additional_filter:
+            return self.collection.delete_many({
+                'timestamp': {'$lt': prune_before_timestamp},
+                **additional_filter
+            })
+        else:
+            return self.collection.delete_many({
+                'timestamp': {'$lt': prune_before_timestamp},
+            })
+
+

@@ -115,7 +115,7 @@ class NatCat:
         if isinstance(target_list, str):
             with open(target_list, 'r') as f:
                 target_list = [name.strip() for name in f.readlines()]
-        star_ids = [get_main_id(target_name) for target_name in target_list]
+        star_ids = [get_main_id(target_name, test_origin='target-list') for target_name in target_list]
         if self.verbose:
             print('  Hypatia handles acquired for target stars.')
         self.star_data.get_targets(target_star_ids=star_ids)

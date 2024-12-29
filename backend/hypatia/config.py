@@ -8,6 +8,9 @@ from urllib.parse import quote
 current_user = getuser()
 
 # star-names database
+simbad_big_sleep_seconds = 30.0
+simbad_small_sleep_seconds = 7.0
+simbad_batch_size = 100
 default_reset_time_seconds = 60 * 60 * 24 * 365.24 * 3  # 3 years
 no_simbad_reset_time_seconds = 60 * 60 * 24 * 365.24  # 1 year
 
@@ -35,7 +38,7 @@ pickle_out = os.path.join(output_products_dir, 'pickle_output_star_data.pkl')
 hacked = {
     'Kepler-84': ('dist', 1443.26796, '[pc]', 'Hypatia Override for Kepler-84'),
 }
-# For these SIMBAD name the API fails to return a few of the values that are available on the main website.
+# For these SIMBAD names, the API fails to return a few of the values that are available on the main website.
 simbad_parameters_hack = {'Gaia DR2 4087838959097352064':
                               {'DEC': '-16 35 27.118803876'},
                           'BD+39 03309':
@@ -60,6 +63,7 @@ MONGO_PASSWORD = os.environ.get('MONGO_PASSWORD', 'password')
 MONGO_PORT = os.environ.get('MONGO_PORT', '27017')
 MONGO_DATABASE = os.environ.get('MONGO_DATABASE', 'test')
 MONGO_STARNAMES_COLLECTION = os.environ.get('MONGO_STARNAMES_COLLECTION', 'stars')
+INTERACTIVE_STARNAMES = os.environ.get('INTERACTIVE_STARNAMES', 'True').lower() in {'true', '1', 't', 'y', 'yes', 'on'}
 CONNECTION_STRING = os.environ.get('CONNECTION_STRING', 'none')
 if CONNECTION_STRING.lower() in none_set:
     CONNECTION_STRING = None

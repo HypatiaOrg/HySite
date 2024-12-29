@@ -1,5 +1,6 @@
 import time
 from urllib.parse import quote_plus
+from requests.exceptions import ConnectionError
 
 import numpy as np
 from astropy import units as u
@@ -7,13 +8,12 @@ from astropy.coordinates import SkyCoord
 from astroquery.simbad import Simbad as AQSimbad
 from astroquery.exceptions import TableParseError
 
-from hypatia.config import simbad_parameters_hack
+from hypatia.tools.color_text import simbad_error_text
+from hypatia.config import simbad_parameters_hack, simbad_big_sleep_seconds, simbad_small_sleep_seconds
 
 
-simbad_count = 0
-count_per_big_sleep = 100
-big_sleep_seconds = 30
-small_sleep_seconds = 1
+connection_error_max_retries = 5
+null_simbad_values = {'', '--'}
 
 
 def simbad_url(simbad_name: str) -> str:
@@ -29,20 +29,34 @@ def simbad_coord_to_deg(ra: str, dec: str) -> tuple[float, float, str]:
 
 
 def count_wrapper(func):
-    def wrapper(simbad_name: str):
-        global simbad_count
-        simbad_count += 1
-        print(f'{simbad_name:16} Simbad Query Count: {simbad_count}')
-        results = func(simbad_name)
-        if count_per_big_sleep <= simbad_count:
-            print(f'\nSimbad Query Count: {simbad_count}\n')
-            print(f'Sleeping for {big_sleep_seconds} seconds...\n')
-            simbad_count = 0
-            time.sleep(big_sleep_seconds)
+    def wrapper(simbad_name: str | list[str] | set[str]):
+        start_time = time.time()
+        if isinstance(simbad_name, str):
+            items_number = 1
+            name_str = simbad_name
         else:
-            print(f'Simbad Query Count: {simbad_count}\n')
-            print(f'Sleeping for {small_sleep_seconds} second...\n')
-            time.sleep(small_sleep_seconds)
+            items_number = len(simbad_name)
+            name_str = ', '.join([str(one_name) for one_name in simbad_name])
+        for connection_error_index in range(connection_error_max_retries + 1):
+            print(f'Query for {items_number} item(s): {name_str}')
+            try:
+                results = func(simbad_name)
+            except ConnectionError:
+                print(f'  {simbad_error_text("Connection Error")} for:  {name_str}')
+                if connection_error_max_retries > connection_error_index:
+                    connection_error_number = connection_error_index + 1
+                    print(f'  Sleeping for {simbad_big_sleep_seconds:1.3f} seconds then')
+                    print(f'  Retrying {connection_error_number} of {connection_error_max_retries}')
+                    time.sleep(simbad_big_sleep_seconds)
+            else:
+                break
+        else:
+            raise ConnectionError(f'Connection Error for {name_str}, max retries ({connection_error_max_retries}) reached')
+        delta_time = time.time() - start_time
+        sleep_time = max(simbad_small_sleep_seconds - delta_time, 0.0)
+        if sleep_time > 0.0:
+            print(f'Sleeping for {sleep_time:1.3} seconds...\n')
+            time.sleep(sleep_time)
         return results
     return wrapper
 
@@ -67,12 +81,9 @@ def query_simbad_star_data(simbad_name: str) -> dict or None:
     and it's coordinates.
 
     :param simbad_name: str - a string that will match a Simbad record.
-    :return: list of dicts for multiple objects or a dictionary object with the query data
-             for a single query.
+    :return: A dictionary object with the query data for a single query.
     """
     try:
-        global simbad_count
-        simbad_count += 1
         results_table = AQSimbad.query_object(simbad_name)
     except TableParseError:
         print(f'  SIMBAD Query Exception for {simbad_name}\n')
@@ -81,32 +92,35 @@ def query_simbad_star_data(simbad_name: str) -> dict or None:
         print(f'  No star data results for {simbad_name} ')
         return None
     print(f'  Found star data results for {simbad_name} ')
-    return dict(results_table)
-
-
-def parse_star_data(results_dict: dict) -> dict or list[dict]:
+    results_dict = dict(results_table)
     data_len = len(np.array(results_dict['MAIN_ID']))
     if data_len != 1:
         raise ValueError(f'Expected a single star, found {data_len}, see the results_dict: {results_dict}')
     else:
         data_this_object = {results_key: np.array(results_array_value)[0]
                             for results_key, results_array_value in results_dict.items()}
-        ra_raw, dec_raw = data_this_object['RA'], data_this_object['DEC']
-        main_id = results_dict['MAIN_ID'][0]
-        if ra_raw == '' and dec_raw == '':
-            # this is a known issue where RA and Dec values are not available on SIMBAD.
-            print(f'    No RA Dec results from the SIMBAD record for {main_id}')
-        else:
-            if dec_raw == '-':
-                print(f'Vist the SIMBAD pages for {main_id} at:')
-                print(f'{simbad_url(main_id)}')
-                print('This is known issue where the DECLINATION value is not available on the API')
-                dec_raw = input('Copy and paste the value here and continue:\n')
-            ra_deg, dec_deg, hmsdms = simbad_coord_to_deg(ra=ra_raw, dec=dec_raw)
-            data_this_object['ra'] = ra_deg
-            data_this_object['dec'] = dec_deg
-            data_this_object['hmsdms'] = hmsdms
-        return data_this_object
+    return data_this_object
+
+
+def parse_star_data(star_data: dict[str, any]) -> dict[str, any]:
+    star_data_lower = {key.lower(): value for key, value in star_data.items() if str(value) not in null_simbad_values}
+    main_id = star_data_lower['main_id']
+    if 'ra' not in star_data_lower.keys() and 'dec' not in star_data_lower.keys():
+        # this is a known issue where RA and Dec values are not available on SIMBAD.
+        print(f'    No RA Dec results from the SIMBAD record for {main_id}')
+    else:
+        ra_raw = star_data_lower['ra']
+        dec_raw =star_data_lower['dec']
+        if dec_raw == '-':
+            print(f'Vist the SIMBAD pages for {main_id} at:')
+            print(f'{simbad_url(main_id)}')
+            print('This is known issue where the DECLINATION value is not available on the API')
+            dec_raw = input('Copy and paste the value here and continue:\n')
+        ra_deg, dec_deg, hmsdms = simbad_coord_to_deg(ra=ra_raw, dec=dec_raw)
+        star_data_lower['ra'] = ra_deg
+        star_data_lower['dec'] = dec_deg
+        star_data_lower['hmsdms'] = hmsdms
+    return star_data_lower
 
 
 def query_simbad_star(test_simbad_name: str) -> tuple[str | None, list[str], dict[str, any]]:
@@ -120,7 +134,7 @@ def query_simbad_star(test_simbad_name: str) -> tuple[str | None, list[str], dic
             for key, value in replace_values.items():
                 star_data[key] = value
         parsed_data = parse_star_data(star_data)
-        simbad_main_id = parsed_data['MAIN_ID']
+        simbad_main_id = parsed_data['main_id']
         if star_data is None:
             return None, star_names, {}
         else:
