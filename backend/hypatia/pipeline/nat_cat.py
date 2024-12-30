@@ -212,7 +212,6 @@ class NatCat:
                               keep_complement=False,
                               is_target=None,
                               norm_keys: list[str] = None,
-                              write_out=False, output_dir=None, exo_mode=False,
                               star_data_stats=True,
                               reduce_abundances=True):
         """
@@ -242,8 +241,6 @@ class NatCat:
                                 is_target=is_target)
         if norm_keys is not None:
             output_star_data.normalize(norm_keys=norm_keys)
-        if write_out:
-            output_star_data.output_file(output_dir=output_dir, exo_mode=exo_mode)
         if star_data_stats:
             output_star_data.do_stats(params_set=self.params_list_for_stats,
                                       star_name_types=self.star_types_for_stats)

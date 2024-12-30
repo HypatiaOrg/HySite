@@ -35,9 +35,9 @@ def mdwarf_output(target_list: list[str],
                      target_list=target_list,
                      catalogs_file_name=catalogs_file_name)
     dist_output = nat_cat.make_output_star_data(min_catalog_count=1,
-                                                    parameter_bound_filter=parameter_bound_filter,
-                                                    star_data_stats=False,
-                                                    reduce_abundances=False)
+                                                parameter_bound_filter=parameter_bound_filter,
+                                                star_data_stats=False,
+                                                reduce_abundances=False)
 
     exo_output = nat_cat.make_output_star_data(min_catalog_count=1,
                                                parameter_bound_filter=None,
