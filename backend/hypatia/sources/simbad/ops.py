@@ -7,7 +7,6 @@ from hypatia.config import (default_reset_time_seconds, no_simbad_reset_time_sec
                             current_user, INTERACTIVE_STARNAMES)
 
 
-
 cache_names = {}
 cache_docs = {}
 star_collection = StarCollection(collection_name=MONGO_STARNAMES_COLLECTION)
@@ -121,12 +120,12 @@ def no_simbad_add_name(name: str, origin: str, aliases: list[str] = None) -> Non
     set_cache_data(simbad_main_id=name, star_name_aliases=set(match_names))
 
 
-ra_dec_fields = {'ra', 'dec', 'hmsdms'}
+ra_dec_fields = {'ra', 'dec', 'hmsdms', 'coord_bibcode'}
 param_fields = {'sptype', 'sp_bibcode'}
 
 
 def format_simbad_star_record(simbad_main_id: str, star_data: dict[str, any], star_names: list[str]) -> dict[str, any]:
-    return {
+    star_doc = {
         '_id': simbad_main_id,
         'attr_name': get_attr_name(simbad_main_id),
         'origin': 'simbad',
@@ -134,9 +133,12 @@ def format_simbad_star_record(simbad_main_id: str, star_data: dict[str, any], st
         'timestamp': time.time(),
         **{field: star_data[field] for field in ra_dec_fields if field in star_data.keys()},
         **parse_indexed_name(star_names),
-        'aliases': star_names,
-        'match_names': [get_match_name(name) for name in star_names],
+        'aliases': list(set(star_names)),
+        'match_names': list(set(get_match_name(name) for name in star_names)),
     }
+    if 'params' in star_data.keys():
+        star_doc['params'] = star_data['params']
+    return star_doc
 
 
 def get_star_data_by_main_id(main_id: str, no_cache: bool = False) -> dict[str, any]:
@@ -281,5 +283,4 @@ def get_star_data(test_name: str, test_origin: str = 'unknown', no_cache: bool =
 get_all_star_docs()
 
 if __name__ == '__main__':
-    # star_collection.reset()
-    get_main_id('wasp-173 b')
+    get_main_id('wasp-173')

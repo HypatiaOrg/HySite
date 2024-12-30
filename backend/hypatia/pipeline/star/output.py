@@ -4,10 +4,10 @@ import pickle
 from hypatia.object_params import SingleParam
 from hypatia.pipeline.star.db import HypatiaDB
 from hypatia.pipeline.star.all import AllStarData
+from hypatia.elements import spectral_type_to_float
 from hypatia.pipeline.summary import upload_summary
 from hypatia.sources.simbad.ops import get_star_data
 from hypatia.pipeline.params.filters import core_filter
-from hypatia.legacy.data_formats import spectral_type_to_float
 from hypatia.plots.element_rad_plot import make_element_distance_plots
 from hypatia.config import pickle_out, default_catalog_file, MONGO_DATABASE
 

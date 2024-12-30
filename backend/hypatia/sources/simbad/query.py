@@ -2,11 +2,10 @@ import time
 from urllib.parse import quote_plus
 from requests.exceptions import ConnectionError
 
-import numpy as np
 from astropy import units as u
+from astropy.table import Table
+from astroquery.simbad import Simbad
 from astropy.coordinates import SkyCoord
-from astroquery.simbad import Simbad as AQSimbad
-from astroquery.exceptions import TableParseError
 
 from hypatia.tools.color_text import simbad_error_text
 from hypatia.config import simbad_parameters_hack, simbad_big_sleep_seconds, simbad_small_sleep_seconds
@@ -65,45 +64,62 @@ def count_wrapper(func):
     return wrapper
 
 
-@count_wrapper
-def query_simbad_star_names(simbad_name: str) -> list[str] or None:
-    raw_results = AQSimbad.query_objectids(simbad_name)
-    if raw_results is None:
-        print(f'  No star name results for {simbad_name} ')
-        return None
-    else:
-        print(f'  Found star name results for {simbad_name} ')
-        # we are expecting a table with a single column of star names
-        names_list = list(raw_results.columns['ID'])
-    return names_list
+def table_to_dict_format(table_data: Table) -> list[dict[str, any]]:
+    dict_data = dict(table_data)
+    table_columns = list(dict_data.keys())
+    return [{column_name: data_value for column_name, data_value in zip(table_columns, data_row)}
+            for data_row in zip(*[list(dict_data[key]) for key in table_columns])]
 
 
 @count_wrapper
-def query_simbad_star_data(simbad_name: str) -> dict or None:
-    """
-    This is the primary query type for Simbad, it gives the star's Main Simbad ID,
-    and it's coordinates.
+def show_table_definitions(table_name: str = 'basic'):
+    return table_to_dict_format(Simbad.list_columns(table_name))
 
-    :param simbad_name: str - a string that will match a Simbad record.
-    :return: A dictionary object with the query data for a single query.
-    """
-    try:
-        results_table = AQSimbad.query_object(simbad_name)
-    except TableParseError:
-        print(f'  SIMBAD Query Exception for {simbad_name}\n')
-        return None
-    if results_table is None:
-        print(f'  No star data results for {simbad_name} ')
-        return None
-    print(f'  Found star data results for {simbad_name} ')
-    results_dict = dict(results_table)
-    data_len = len(np.array(results_dict['MAIN_ID']))
-    if data_len != 1:
-        raise ValueError(f'Expected a single star, found {data_len}, see the results_dict: {results_dict}')
-    else:
-        data_this_object = {results_key: np.array(results_array_value)[0]
-                            for results_key, results_array_value in results_dict.items()}
-    return data_this_object
+
+@count_wrapper
+def get_from_any_ids(any_ids: set[str]) -> dict[str, dict[str, any]]:
+    return_rows = table_to_dict_format(Simbad.query_tap(f"""
+        SELECT requested.id AS requested_id, ident.id as id, ident.oidref AS oid
+        FROM ident
+        JOIN TAP_UPLOAD.requested AS requested ON ident.id = requested.id;
+    """, requested=Table([list(sorted(any_ids))], names=['id'])))
+    return {row['requested_id'].strip(): {'id': row['id'], 'oid': row['oid']} for row in return_rows}
+
+@count_wrapper
+def get_simbad_from_ids(oids: set[str]) -> dict[str, dict[str, any]]:
+    return_rows = {}
+    for row in table_to_dict_format(Simbad.query_tap(f"""
+        SELECT requested.oid AS requested_oid, basic.main_id AS main_id, 
+        basic.ra AS "ra", basic.dec AS "dec", basic.coo_bibcode AS "coord_bibcode",
+        basic.sp_type AS sptype, basic.sp_bibcode AS sp_bibcode, ids.ids AS aliases
+        FROM basic
+        JOIN TAP_UPLOAD.requested AS requested ON basic.oid = requested.oid
+        JOIN ids ON basic.oid = ids.oidref;
+        """, requested=Table([list(sorted(oids))], names=['oid']))):
+        main_id = row['main_id']
+        # a parameters hack to fix some known issues with the SIMBAD data
+        if main_id in simbad_parameters_hack.keys():
+            replace_values = simbad_parameters_hack[main_id]
+            for key, value in replace_values.items():
+                row[key] = value
+        # extract parameters
+        params = {}
+        if ('sptype' in row.keys() and 'sp_bibcode' in row.keys()
+                and row['sptype'] not in null_simbad_values and row['sp_bibcode'] not in null_simbad_values):
+            params['sptype'] = {'value': row['sptype'], 'ref': row['sp_bibcode']}
+        # assemble the data
+        data_doc = parse_star_data({
+            'main_id': main_id,
+            'ra': row['ra'],
+            'dec': row['dec'],
+            'coord_bibcode': row['coord_bibcode'],
+            'aliases': row['aliases'].split('|')
+        })
+        # check if there are any parameters to add
+        if params:
+            data_doc['params'] = params
+        return_rows[row['requested_oid']] = data_doc
+    return return_rows
 
 
 def parse_star_data(star_data: dict[str, any]) -> dict[str, any]:
@@ -128,23 +144,23 @@ def parse_star_data(star_data: dict[str, any]) -> dict[str, any]:
 
 
 def query_simbad_star(test_simbad_name: str) -> tuple[str | None, list[str], dict[str, any]]:
-    star_names = query_simbad_star_names(test_simbad_name)
-    if star_names is None:
-        return None, [], {}
-    else:
-        star_data = query_simbad_star_data(test_simbad_name)
-        if test_simbad_name in simbad_parameters_hack.keys():
-            replace_values = simbad_parameters_hack[test_simbad_name]
-            for key, value in replace_values.items():
-                star_data[key] = value
-        parsed_data = parse_star_data(star_data)
-        simbad_main_id = parsed_data['main_id']
-        if star_data is None:
-            return None, star_names, {}
-        else:
+    results_dict = get_from_any_ids({test_simbad_name})
+    if results_dict:
+        found_oid_id, found_oid_dict = list(results_dict.items())[0]
+        found_oid = found_oid_dict['oid']
+        return_rows = get_simbad_from_ids({found_oid})
+        if return_rows:
+            star_data = return_rows[found_oid]
+            star_names = star_data['aliases']
+            parsed_data = parse_star_data(star_data)
+            simbad_main_id = parsed_data['main_id']
             return simbad_main_id, star_names, parsed_data
+    return None, [], {}
 
 
 if __name__ == '__main__':
     simbad_like_name = 'WOLF 359'
     simbad_main_id_test, star_names_test, star_data_test = query_simbad_star(simbad_like_name)
+    basic_table = show_table_definitions('basic')
+    ids_table = show_table_definitions('ids')
+    ident_table = show_table_definitions('ident')

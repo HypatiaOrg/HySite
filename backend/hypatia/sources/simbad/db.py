@@ -1,77 +1,12 @@
 import time
 
-import pymongo
+from pymongo.cursor import Cursor
+from pymongo.results import DeleteResult, InsertOneResult
+
 
 from hypatia.config import current_user
 from hypatia.collect import BaseStarCollection
-
-
-indexed_name_types = ['hip', 'hd', 'tyc', 'gaia dr1', 'gaia dr2', 'gaia dr3', 'bd', '2mass', 'koi', 'kepler', 'wds']
-index_props = {name_type: {'bsonType': ['string', 'null'], 'description': f'must be a string and is not required'}
-               for name_type in indexed_name_types + ['nea']}
-indexed_name_types = set(indexed_name_types)
-
-validator_star_doc = {
-    'bsonType': 'object',
-    'title': 'The validator schema for the StarName class',
-    'required': ['_id', 'attr_name', 'origin', 'timestamp', 'aliases'],
-    'properties': {
-        '_id': {
-            'bsonType': 'string',
-            'description': 'must be a string and is required and unique'
-        },
-        'attr_name': {
-            'bsonType': 'string',
-            'description': 'must be a string and is required'
-        },
-        'origin': {
-            'bsonType': 'string',
-            'description': 'must be a string and is required'
-        },
-        'upload_by': {
-            'bsonType': 'string',
-            'description': 'must be a string and is required'
-        },
-        'timestamp': {
-            'bsonType': 'double',
-            'description': 'must be a double and is required'
-        },
-        'ra': {
-            'bsonType': 'double',
-            'description': 'must be a double and is not required'
-        },
-        'dec': {
-            'bsonType': 'double',
-            'description': 'must be a double and is not required'
-        },
-        'hmsdms': {
-            'bsonType': 'string',
-            'description': 'must be a string and is not required'
-        },
-        **index_props,
-        'aliases': {
-            'bsonType': 'array',
-            'minItems': 1,
-            'uniqueItems': True,
-            'description': 'must be an array of string names that this star is known by',
-            'items': {
-                'bsonType': 'string',
-                'description': 'must be a string star name',
-            },
-        },
-        'match_names': {
-            'bsonType': 'array',
-            'minItems': 1,
-            'uniqueItems': True,
-            'description': 'must be an array of string names that this star is known by',
-            'items': {
-                'bsonType': 'string',
-                'description': 'must be a blank space removed low-case string star names ',
-            },
-        },
-    },
-    'additionalProperties': False,
-}
+from hypatia.sources.simbad.validator import validator_star_doc, indexed_name_types
 
 
 def  get_match_name(name: str) -> str:
@@ -91,7 +26,7 @@ class StarCollection(BaseStarCollection):
         self.collection_add_index(index_name='aliases', ascending=True, unique=False)
         self.collection_add_index(index_name='match_names', ascending=True, unique=False)
 
-    def update(self, main_id: str, doc: dict[str, list | str | float]) -> pymongo.results.InsertOneResult:
+    def update(self, main_id: str, doc: dict[str, list | str | float]) -> InsertOneResult:
         return self.collection.replace_one({'_id': main_id}, doc)
 
     def find_name_match(self, name: str | list[str]) -> dict | None:
@@ -105,7 +40,7 @@ class StarCollection(BaseStarCollection):
         else:
             return None
 
-    def find_names_from_expression(self, regex: str) -> pymongo.cursor.Cursor:
+    def find_names_from_expression(self, regex: str) -> Cursor:
         return self.collection.find({'match_names': {'$regex': f'{regex}', '$options': 'i'}})
 
     def get_ids_for_name_type(self, name_type: str) -> list[str]:
@@ -118,12 +53,13 @@ class StarCollection(BaseStarCollection):
         old_aliases = old_doc['aliases']
         new_aliases = sorted(list(set(old_aliases + new_aliases)))
         new_doc = old_doc | {'aliases': new_aliases, 'timestamp': time.time()}
-        new_doc['match_names'] = [get_match_name(name=name) for name in new_aliases]
+        new_doc['match_names'] = list({get_match_name(name=name) for name in new_aliases})
         new_doc['upload_by'] = current_user
         self.update(main_id=main_id, doc=new_doc)
         return new_doc
 
-    def prune_older_records(self, prune_before_timestamp: float, additional_filter: dict[str, any] | None = None) -> pymongo.results.DeleteResult:
+    def prune_older_records(self, prune_before_timestamp: float, additional_filter: dict[str, any] | None = None
+                            ) -> DeleteResult:
         if additional_filter:
             return self.collection.delete_many({
                 'timestamp': {'$lt': prune_before_timestamp},
@@ -135,3 +71,7 @@ class StarCollection(BaseStarCollection):
             })
 
 
+if __name__ == '__main__':
+    from hypatia.config import MONGO_STARNAMES_COLLECTION
+    star_collection = StarCollection(collection_name=MONGO_STARNAMES_COLLECTION)
+    star_collection.reset()

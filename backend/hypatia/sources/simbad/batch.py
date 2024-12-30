@@ -2,7 +2,7 @@ from pymongo.errors import DuplicateKeyError
 
 from hypatia.sources.simbad.db import get_match_name
 from hypatia.config import simbad_batch_size, INTERACTIVE_STARNAMES
-from hypatia.sources.simbad.tap import get_from_any_ids, get_simbad_from_ids
+from hypatia.sources.simbad.query import get_from_any_ids, get_simbad_from_ids
 from hypatia.sources.simbad.ops import (get_simbad_main_id, get_star_data_by_main_id, set_star_doc,
                                         uniquify_star_names, interactive_name_menu, cache_names, get_star_data,
                                         no_simbad_add_name, star_collection, set_cache_data)
