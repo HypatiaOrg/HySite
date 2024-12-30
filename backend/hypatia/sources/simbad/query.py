@@ -14,6 +14,7 @@ from hypatia.config import simbad_parameters_hack, simbad_big_sleep_seconds, sim
 
 connection_error_max_retries = 5
 null_simbad_values = {'', '--'}
+simbad_last_query_time = 0.0
 
 
 def simbad_url(simbad_name: str) -> str:
@@ -30,15 +31,23 @@ def simbad_coord_to_deg(ra: str, dec: str) -> tuple[float, float, str]:
 
 def count_wrapper(func):
     def wrapper(simbad_name: str | list[str] | set[str]):
-        start_time = time.time()
+        global simbad_last_query_time
+        delta_time = time.time() - simbad_last_query_time
+        while delta_time < simbad_small_sleep_seconds:
+            sleep_time = simbad_small_sleep_seconds - delta_time + 0.1
+            print(f'Sleeping for {sleep_time:1.3} seconds...\n')
+            time.sleep(sleep_time)
+            delta_time = time.time() - simbad_last_query_time
         if isinstance(simbad_name, str):
-            items_number = 1
             name_str = simbad_name
+            print_string = f'Query for one (1) item: {name_str}'
         else:
             items_number = len(simbad_name)
             name_str = ', '.join([str(one_name) for one_name in simbad_name])
+            print_string = f'Query for {items_number} item(s): {name_str}'
         for connection_error_index in range(connection_error_max_retries + 1):
-            print(f'Query for {items_number} item(s): {name_str}')
+            print(print_string)
+            simbad_last_query_time = time.time()
             try:
                 results = func(simbad_name)
             except ConnectionError:
@@ -52,11 +61,6 @@ def count_wrapper(func):
                 break
         else:
             raise ConnectionError(f'Connection Error for {name_str}, max retries ({connection_error_max_retries}) reached')
-        delta_time = time.time() - start_time
-        sleep_time = max(simbad_small_sleep_seconds - delta_time, 0.0)
-        if sleep_time > 0.0:
-            print(f'Sleeping for {sleep_time:1.3} seconds...\n')
-            time.sleep(sleep_time)
         return results
     return wrapper
 

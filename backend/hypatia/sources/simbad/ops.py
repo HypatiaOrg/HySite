@@ -122,6 +122,7 @@ def no_simbad_add_name(name: str, origin: str, aliases: list[str] = None) -> Non
 
 
 ra_dec_fields = {'ra', 'dec', 'hmsdms'}
+param_fields = {'sptype', 'sp_bibcode'}
 
 
 def format_simbad_star_record(simbad_main_id: str, star_data: dict[str, any], star_names: list[str]) -> dict[str, any]:

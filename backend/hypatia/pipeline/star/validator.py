@@ -222,7 +222,7 @@ validator = {
     '$jsonSchema': {
         'bsonType': 'object',
         'title': 'The validator schema for the StarName class',
-        'required': ['_id', 'attr_name', 'timestamp', 'aliases'],
+        'required': ['_id', 'attr_name', 'timestamp'],
         'description': 'This is a Star level record for HypatiaCatalog.com the holds abundance and planetary data.',
         'properties': {
             '_id': {

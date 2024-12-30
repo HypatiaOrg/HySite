@@ -8,7 +8,11 @@ from hypatia.sources.simbad.ops import (get_simbad_main_id, get_star_data_by_mai
                                         no_simbad_add_name, star_collection, set_cache_data)
 
 
-def get_star_data_batch(search_ids: list[tuple[str, ...]], test_origin='batch') -> list[dict[str, any]]:
+def get_star_data_batch(search_ids: list[tuple[str, ...]],
+                        test_origin: str = 'batch',
+                        has_micro_lens_names: list[bool] | None = None,
+                        all_ids: list[tuple[str, ...]] | None = None
+                        ) -> list[dict[str, any]]:
     # step 1: get all the data from the existing star_collection
     star_docs = []
     not_found_ids = {}
@@ -50,6 +54,7 @@ def get_star_data_batch(search_ids: list[tuple[str, ...]], test_origin='batch') 
         # separate into found and not-found by index
         index_to_oid = {}
         oid_to_indexes = {}
+        multi_oid_indexes = set()
         for found_oid_id, found_oid_dict in results_dict.items():
             oid = found_oid_dict['oid']
             list_index = id_to_list_index[found_oid_id]
@@ -57,11 +62,24 @@ def get_star_data_batch(search_ids: list[tuple[str, ...]], test_origin='batch') 
                 oid_to_indexes[oid].add(list_index)
             else:
                 oid_to_indexes[oid] = {list_index}
-            if list_index in index_to_oid.keys():
-                if index_to_oid[list_index] != oid:
-                    raise ValueError(f"List index {list_index} has more than one oid")
+            if list_index not in index_to_oid.keys():
+                index_to_oid[list_index] = {oid: {found_oid_id}}
+            elif oid not in index_to_oid[list_index].keys():
+                index_to_oid[list_index][oid] = {found_oid_id}
+                if len(index_to_oid[list_index]) > 1:
+                    # we will raise and error after we collect all the results to provide a better error message
+                    multi_oid_indexes.add(list_index)
             else:
-                index_to_oid[list_index] = oid
+                index_to_oid[list_index][oid].add(found_oid_id)
+        # raise an error if the same list index has more than one oid from simbad
+        if len(multi_oid_indexes) != 0:
+            error_msg = f'List indexes {multi_oid_indexes} have more than one oid from the SIMBAD API\n'
+            for list_index in multi_oid_indexes:
+                oid_map = index_to_oid[list_index]
+                error_msg += f' List index {list_index} has more than one oid from the SIMBAD API for names {search_ids[list_index]}\n'
+                for found_oid, found_names in oid_map.items():
+                    error_msg += f'  Found SIMBAD database id:({found_oid}) for names: {found_names}\n'
+            raise ValueError(error_msg)
         # Update the not-found indexed for processing after the batching loop
         simbad_not_found_indexes.update(all_list_indexes - set(index_to_oid.keys()))
         # get the other data from the SIMBAD API
@@ -76,8 +94,13 @@ def get_star_data_batch(search_ids: list[tuple[str, ...]], test_origin='batch') 
                 # get all the star names from all the aliases that match the main_id
                 star_names = list(star_data['aliases'])
                 for list_index in oid_to_indexes[oid]:
-                    star_names = uniquify_star_names(star_names + list(search_ids[list_index]),
-                                                     simbad_main_id=simbad_main_id)
+                    if all_ids is not None:
+                        provided_names = list(all_ids[list_index])
+                    else:
+                        provided_names = list(search_ids[list_index])
+                    star_names = uniquify_star_names(star_names + provided_names, simbad_main_id=simbad_main_id)
+                if star_data['main_id'] == 'CFHTWIR-Oph  98':
+                    print(f"  Temporary test point for star data['CFHTWIR-Oph  98'] {star_data['main_id']}")
                 try:
                     star_doc = set_star_doc(simbad_main_id=star_data['main_id'], star_names=star_names,
                                             star_data=star_data)
@@ -98,7 +121,12 @@ def get_star_data_batch(search_ids: list[tuple[str, ...]], test_origin='batch') 
                 break
         else:
             if INTERACTIVE_STARNAMES:
-                interactive_name_menu(test_origin=test_origin, aliases=list(this_index_search_ids))
+                if has_micro_lens_names is not None and has_micro_lens_names[not_found_index]:
+                    # automatically add the name to the sources without a SIMBAD name or a prompt
+                    no_simbad_add_name(name=this_index_search_ids[0], origin=test_origin,
+                                       aliases=list(this_index_search_ids))
+                else:
+                    interactive_name_menu(test_origin=test_origin, aliases=list(this_index_search_ids))
             else:
                 no_simbad_add_name(name=this_index_search_ids[0], origin=test_origin,
                                    aliases=list(this_index_search_ids))

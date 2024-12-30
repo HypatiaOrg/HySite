@@ -73,7 +73,7 @@ class AllStarData:
             cat_data = all_catalogs[short_catalog_name]
             for catalog_dict, simbad_doc, main_id, original_star_name \
                     in zip(cat_data.abs_star_data, cat_data.star_docs,
-                           cat_data.main_star_names, cat_data.original_star_names):
+                           cat_data.star_names, cat_data.original_star_names):
                 catalog_dict['norm_key'] = all_catalogs[short_catalog_name].norm_key
                 catalog_dict['long_name'] = all_catalogs[short_catalog_name].long_name
                 catalog_dict['original_star_name'] = original_star_name

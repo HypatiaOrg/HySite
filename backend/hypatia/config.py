@@ -9,10 +9,39 @@ current_user = getuser()
 
 # star-names database
 simbad_big_sleep_seconds = 30.0
-simbad_small_sleep_seconds = 7.0
-simbad_batch_size = 100
+simbad_small_sleep_seconds = 5.0
+simbad_batch_size = 1000
 default_reset_time_seconds = 60 * 60 * 24 * 365.24 * 3  # 3 years
 no_simbad_reset_time_seconds = 60 * 60 * 24 * 365.24  # 1 year
+
+# nea database
+nea_ref = 'NASA Exoplanet Archive'
+known_micro_names = {'kmt', 'ogle', 'moa', 'k2'}
+system_designations = {'a', 'b', 'c', 'ab', 'ac', 'bc'}
+# Example: Gaia DR2 4794830231453653888 is incorrectly associated with HD 41004B in the NEA sources,
+# but this GAIA name is for HD 41004A, which also has an entry in the NEA sources.
+# one line per star name that is causing the problem
+nea_names_the_cause_wrong_simbad_references = {
+    'HD 132563',
+    'Gaia DR2 4794830231453653888',
+    'TIC 392045047', 'Oph 11',
+    'TIC 1129033', # NEA NAME: WASP-77 A
+    'HD 358155', 'TIC 442530946', # NEA NAME: WASP-70 A
+    'TIC 122298563', 'Kepler-759', # NEA NAME: Kepler-759
+    'HIP 14101', # LTT 1445 A
+    'TIC 21113347', # HATS-58 A
+    'TIC 37348844', 'NGTS-10', # NEA NAME: HATS-58 A
+    'Gaia DR2 2106370541711607680', # NEA NAME: Kepler-983
+    'TIC 454227159', '2MASS J11011926-7732383', # NEA NAME: 2MASS J11011926-7732383
+    'Kepler-1855', # NEA NAME: Kepler-1855
+    'TIC 122605766', 'Kepler-497',  # NEA NAME: Kepler-497
+    'Kepler-1281', 'TIC 27458799', # NEA NAME: Kepler-1281
+    'TIC 171098231', 'Kepler-1309', # NEA NAME: Kepler-1309
+    'TIC 120764338', 'Kepler-1495', # NEA NAME: Kepler-1495
+    'TIC 239291510', 'Kepler-1802', # NEA NAME: Kepler-1802
+    'TIC 26541175', 'Kepler-1437', # NEA NAME: Kepler-1437
+    'TIC 63285279', 'Kepler-1534', # NEA NAME: Kepler-1534
+}
 
 # directory information in the Hypatia Database
 base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
