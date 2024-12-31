@@ -106,7 +106,7 @@ def get_simbad_from_ids(oids: set[str]) -> dict[str, dict[str, any]]:
         params = {}
         if ('sptype' in row.keys() and 'sp_bibcode' in row.keys()
                 and row['sptype'] not in null_simbad_values and row['sp_bibcode'] not in null_simbad_values):
-            params['sptype'] = {'value': row['sptype'], 'ref': row['sp_bibcode']}
+            params['sptype'] = {'value': row['sptype'], 'ref': f'SIMBAD provided bibcode: {row['sp_bibcode']}'}
         # assemble the data
         data_doc = parse_star_data({
             'main_id': main_id,
