@@ -99,8 +99,6 @@ def get_star_data_batch(search_ids: list[tuple[str, ...]],
                     else:
                         provided_names = list(search_ids[list_index])
                     star_names = uniquify_star_names(star_names + provided_names, simbad_main_id=simbad_main_id)
-                if star_data['main_id'] == 'CFHTWIR-Oph  98':
-                    print(f"  Temporary test point for star data['CFHTWIR-Oph  98'] {star_data['main_id']}")
                 try:
                     star_doc = set_star_doc(simbad_main_id=star_data['main_id'], star_names=star_names,
                                             star_data=star_data)
