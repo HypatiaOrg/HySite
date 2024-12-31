@@ -5,8 +5,6 @@ import datetime
 from warnings import warn
 
 from hypatia.tools.table_read import ClassyReader
-from hypatia.sources.simbad.ops import get_star_data
-from hypatia.tools.star_names import calc_simbad_name
 from hypatia.tools.color_text import catalog_name_text
 from hypatia.sources.simbad.batch import get_star_data_batch
 from hypatia.tools.exceptions import ElementNameErrorInCatalog
@@ -123,20 +121,14 @@ class Catalog:
             # Catalogs added after the 2024 update will have the star names in the SIMBAD format.
             self.star_names_type = 'simbad_id'
             self.raw_data.original_star_names = self.raw_data.original_name
-            converted_star_names = self.raw_data.simbad_id
+            input_names = self.raw_data.simbad_id
         else:
             # this a legacy Hypatia system for reading in catalogs with a number of challenges.
             self.raw_data.original_star_names = getattr(self.raw_data, attribute_name)
-            converted_star_names = []
-            for raw_name in self.raw_data.original_star_names:
-                try:
-                    found_simbad_name = calc_simbad_name(raw_name, key=self.star_names_type)
-                except ValueError:
-                    converted_star_names.append(raw_name)
-                else:
-                    converted_star_names.append(found_simbad_name)
+            input_names = self.raw_data.original_star_names
+
         # double-check that this name is still the primary name in SIMBAD
-        self.star_docs = get_star_data_batch([(simbad_name,) for simbad_name in converted_star_names],
+        self.star_docs = get_star_data_batch([(simbad_name,) for simbad_name in input_names],
                                               test_origin=f'{self.catalog_name}')
         self.star_names = [star_doc['_id'] for star_doc in self.star_docs]
         # add the star names to the raw_data object

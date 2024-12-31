@@ -29,26 +29,33 @@ def get_star_data_batch(search_ids: list[tuple[str, ...]],
     # step 2: get the data from the SIMBAD API
     # step 2a: unraveled and batch the ids for query to the SIMBAD API
     batched_unraveled_ids = []
+    batched_indexes = []
     unraveled_ids = set()
     batch_size = 0
     id_to_list_index = {}
+    indexes_this_batch = set()
     for list_index, search_tuple in not_found_ids.items():
         for single_id in search_tuple:
             batch_size += 1
             unraveled_ids.add(single_id)
-            if single_id in id_to_list_index:
-                raise ValueError(f"ID {single_id} is in more than one search_tuple")
-            id_to_list_index[single_id] = list_index
+            indexes_this_batch.add(list_index)
+            if single_id in id_to_list_index.keys():
+                id_to_list_index[single_id].add(list_index)
+            else:
+                id_to_list_index[single_id] = {list_index}
         if batch_size >= simbad_batch_size:
             batched_unraveled_ids.append(unraveled_ids)
             unraveled_ids = set()
+            batched_indexes.append(indexes_this_batch)
+            indexes_this_batch = set()
             batch_size = 0
     if unraveled_ids:
         batched_unraveled_ids.append(unraveled_ids)
+    if indexes_this_batch:
+        batched_indexes.append(indexes_this_batch)
     # step 2b: query the SIMBAD API for the data
     simbad_not_found_indexes = set()
-    for unraveled_ids in batched_unraveled_ids:
-        all_list_indexes = {id_to_list_index[single_id] for single_id in unraveled_ids}
+    for unraveled_ids, indexes_this_batch in zip(batched_unraveled_ids, batched_indexes):
         # get the SIMBAD database iod
         results_dict = get_from_any_ids(unraveled_ids)
         # separate into found and not-found by index
@@ -57,20 +64,20 @@ def get_star_data_batch(search_ids: list[tuple[str, ...]],
         multi_oid_indexes = set()
         for found_oid_id, found_oid_dict in results_dict.items():
             oid = found_oid_dict['oid']
-            list_index = id_to_list_index[found_oid_id]
-            if oid in oid_to_indexes.keys():
-                oid_to_indexes[oid].add(list_index)
-            else:
-                oid_to_indexes[oid] = {list_index}
-            if list_index not in index_to_oid.keys():
-                index_to_oid[list_index] = {oid: {found_oid_id}}
-            elif oid not in index_to_oid[list_index].keys():
-                index_to_oid[list_index][oid] = {found_oid_id}
-                if len(index_to_oid[list_index]) > 1:
-                    # we will raise and error after we collect all the results to provide a better error message
-                    multi_oid_indexes.add(list_index)
-            else:
-                index_to_oid[list_index][oid].add(found_oid_id)
+            for list_index in sorted(id_to_list_index[found_oid_id]):
+                if oid in oid_to_indexes.keys():
+                    oid_to_indexes[oid].add(list_index)
+                else:
+                    oid_to_indexes[oid] = {list_index}
+                if list_index not in index_to_oid.keys():
+                    index_to_oid[list_index] = {oid: {found_oid_id}}
+                elif oid not in index_to_oid[list_index].keys():
+                    index_to_oid[list_index][oid] = {found_oid_id}
+                    if len(index_to_oid[list_index]) > 1:
+                        # we will raise and error after we collect all the results to provide a better error message
+                        multi_oid_indexes.add(list_index)
+                else:
+                    index_to_oid[list_index][oid].add(found_oid_id)
         # raise an error if the same list index has more than one oid from simbad
         if len(multi_oid_indexes) != 0:
             error_msg = f'List indexes {multi_oid_indexes} have more than one oid from the SIMBAD API\n'
@@ -81,7 +88,7 @@ def get_star_data_batch(search_ids: list[tuple[str, ...]],
                     error_msg += f'  Found SIMBAD database id:({found_oid}) for names: {found_names}\n'
             raise ValueError(error_msg)
         # Update the not-found indexed for processing after the batching loop
-        simbad_not_found_indexes.update(all_list_indexes - set(index_to_oid.keys()))
+        simbad_not_found_indexes.update(indexes_this_batch - set(index_to_oid.keys()))
         # get the other data from the SIMBAD API
         if len(oid_to_indexes) != 0:
             oid_data = get_simbad_from_ids(set(oid_to_indexes.keys()))
