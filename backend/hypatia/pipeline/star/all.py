@@ -68,6 +68,9 @@ class AllStarData:
             attr_name = get_star_data(test_name=star_name, test_origin='AllStarData.__iter__()')['attr_name']
             yield self.__getattribute__(attr_name)
 
+    def __len__(self):
+        return len(self.star_names)
+
     def get_abundances(self, all_catalogs):
         for short_catalog_name in sorted(all_catalogs.keys()):
             cat_data = all_catalogs[short_catalog_name]

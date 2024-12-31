@@ -596,33 +596,7 @@ class OutputStarData(AllStarData):
     def export_to_mongo(self, catalogs_file_name: str = default_catalog_file):
         hypatia_db = HypatiaDB(db_name=MONGO_DATABASE, collection_name='hypatiaDB')
         hypatia_db.reset()
-        for single_star in self:
-            available_params = single_star.params.available_params
-            if 'sptype' in available_params:
-                sptype_param = single_star.params.sptype
-                new_param = SingleParam.strict_format(param_name='sptype_num',
-                                                      value=spectral_type_to_float(single_star.params.sptype.value),
-                                                      ref=sptype_param.ref,
-                                                      units='')
-                single_star.params.update_param('sptype_num', new_param)
-            if 'disk' in available_params:
-                disk_param = single_star.params.disk
-                disk_num = None
-                if disk_param.value == 'thin':
-                    disk_num = 0
-                elif disk_param.value == 'thick':
-                    disk_num = 1
-                elif disk_param.value == 'N/A':
-                    pass
-                else:
-                    raise ValueError("Disk value not recognized.")
-                if disk_num is not None:
-                    new_param = SingleParam.strict_format(param_name='disk_num',
-                                                          value=disk_num,
-                                                          ref=disk_param.ref,
-                                                          units='')
-                    single_star.params.update_param('disk_num', new_param)
-            hypatia_db.add_star(single_star)
+        [hypatia_db.add_star(single_star) for single_star in self]
         # add the summary and site-wide information
         found_elements = hypatia_db.added_elements
         found_element_nlte = hypatia_db.added_elements_nlte

@@ -128,12 +128,16 @@ class NatCat:
             print(F'  Targets not found: {'%3i' % len(self.targets_not_found)} : {sorted(self.targets_not_found)}\n')
 
     def get_params(self, get_gaia_params: bool = True, get_pastel_params: bool = True, get_exo_params: bool = True,
-                   get_tic_params: bool = True, get_hipparcos_params: bool = True):
+                   get_tic_params: bool = True, get_hipparcos_params: bool = True, get_simbad_params: bool = True):
         if self.verbose:
             print('Acquiring stellar parameter data...')
         gaia_lib = None
+        print_int = round(len(self.star_data) / 20)
         for single_star in self.star_data:
+            if self.verbose and single_star.index % print_int == 0:
+                print(f'  {single_star.index:6} of {len(self.star_data)} stars processed.')
             main_star_id = single_star.star_reference_name
+            # Star Parameters from the Pastel Data Set
             if get_pastel_params:
                 # Star Parameters from the Pastel Catalog (effective temperature and Log values for surface gravity)
                 if self.pastel.data is None:
@@ -141,29 +145,33 @@ class NatCat:
                 pastel_record = self.pastel.get_record_from_aliases(aliases=single_star.simbad_doc['aliases'])
                 if pastel_record is not None:
                     single_star.pastel_params(pastel_record)
+            # Star Parameters from the Gaia Catalog
             if get_gaia_params:
                 if gaia_lib is None:
                     gaia_lib = GaiaLib(verbose=self.verbose)
                 _attr_name, gaia_params_dict = gaia_lib.get_object_params(main_star_id)
                 single_star.gaia_params(gaia_params_dict)
+            # Stellar Parameters from the Exoplanet Catalog
             if get_exo_params:
                 single_star.exo_params()
+            # Stellar Parameters from the Tess Input Catalog
             if get_tic_params:
-                # Stellar Parameters from the Tess Input Catalog
-                requested_tic = None
                 requested_tic = get_hy_tic_data(single_star.star_reference_name)
                 if requested_tic is not None:
                     single_star.params.update_params(requested_tic, overwrite_existing=False)
+            # add SIMBAD params
+            if get_simbad_params:
+                single_star.simbad_params(overwrite_existing=False)
+            # Parameters for the Hipparcos Survey
             if get_hipparcos_params:
-                # Parameters for the Hipparcos Survey
                 if self.xhip.ref_data is None:
                     self.xhip.load(verbose=self.verbose)
-                xhip_params_dict = None
                 if 'hip' in single_star.simbad_doc.keys():
                     hip_name = single_star.simbad_doc['hip']
                     xhip_params_dict = self.xhip.get_xhip_data(hip_name=hip_name)
                     if xhip_params_dict is not None:
                         single_star.xhip_params(xhip_params_dict)
+            # calculated parameters based on the available parameters
             single_star.params.calculated_params()
 
         # hacked parameters to add at the last minute (from config.py)
@@ -176,14 +184,6 @@ class NatCat:
                 this_star = self.star_data.__getattribute__(simbad_doc['attr_name'])
                 this_star.params.update_param(param, hacked_single_param, overwrite_existing=False)
         if self.verbose:
-            if get_gaia_params:
-                print('  Gaia stellar parameters acquired.')
-            if get_pastel_params:
-                print('  Pastel stellar parameters acquired.')
-            if get_tic_params:
-                print('  Tess Input Catalog stellar parameters acquired.')
-            if get_hipparcos_params:
-                print('  X-Hipparcos stellar parameters acquired.')
             print('Stellar parameters acquired, reference is up-to-data, and calculations completed\n')
 
     def get_unreferenced_stars(self):

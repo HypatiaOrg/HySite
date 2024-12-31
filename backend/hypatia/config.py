@@ -18,9 +18,43 @@ no_simbad_reset_time_seconds = 60 * 60 * 24 * 365.24  # 1 year
 nea_ref = 'NASA Exoplanet Archive'
 known_micro_names = {'kmt', 'ogle', 'moa', 'k2'}
 system_designations = {'a', 'b', 'c', 'ab', 'ac', 'bc'}
+
+# directory information in the Hypatia Database
+base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+repo_dir = os.path.dirname(base_dir)
+projects_dir = os.path.dirname(repo_dir)
+
+working_dir = os.path.join(base_dir, 'hypatia')
+hydata_dir = os.path.join(working_dir, 'HyData')
+ref_dir = os.path.join(hydata_dir, 'reference_data')
+abundance_dir = os.path.join(hydata_dir, 'abundance_data')
+site_dir = os.path.join(hydata_dir, 'site_data')
+params_and_units_file = os.path.join(site_dir, 'params_units.toml')
+
+output_products_dir = os.path.join(base_dir, 'output')
+star_data_output_dir = os.path.join(output_products_dir, 'star_data_output')
+plot_dir = os.path.join(output_products_dir, 'plots')
+
+default_catalog_file = os.path.join(ref_dir, 'catalog_file.csv')
+cat_pickles_dir = os.path.join(output_products_dir, 'catalog_pickles')
+pickle_nat = os.path.join(output_products_dir, 'pickle_nat.pkl')
+pickle_out = os.path.join(output_products_dir, 'pickle_output_star_data.pkl')
+
+# hacked stellar parameters, these will override any values from reference data.
+hacked = {
+    'Kepler-84': ('dist', 1443.26796, '[pc]', 'Hypatia Override for Kepler-84'),
+}
+# For these SIMBAD names, the API fails to return a few of the values that are available on the main website.
+simbad_parameters_hack = {'Gaia DR2 4087838959097352064':
+                              {'DEC': '-16 35 27.118803876'},
+                          'BD+39 03309':
+                              {'RA': '18 03 47.3520267264'},
+                          }
+
+# NEA provided names that return SIMBAD ids that refer a different part of a multiple star system.
 # Example: Gaia DR2 4794830231453653888 is incorrectly associated with HD 41004B in the NEA sources,
 # but this GAIA name is for HD 41004A, which also has an entry in the NEA sources.
-# one line per star name that is causing the problem
+# one line per star name that is causing the conflict
 nea_names_the_cause_wrong_simbad_references = {
     'HD 132563',
     'Gaia DR2 4794830231453653888',
@@ -42,37 +76,6 @@ nea_names_the_cause_wrong_simbad_references = {
     'TIC 26541175', 'Kepler-1437', # NEA NAME: Kepler-1437
     'TIC 63285279', 'Kepler-1534', # NEA NAME: Kepler-1534
 }
-
-# directory information in the Hypatia Database
-base_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-repo_dir = os.path.dirname(base_dir)
-projects_dir = os.path.dirname(repo_dir)
-
-working_dir = os.path.join(base_dir, 'hypatia')
-hydata_dir = os.path.join(working_dir, 'HyData')
-ref_dir = os.path.join(hydata_dir, 'reference_data')
-abundance_dir = os.path.join(hydata_dir, 'abundance_data')
-site_dir = os.path.join(hydata_dir, 'site_data')
-
-output_products_dir = os.path.join(base_dir, 'output')
-star_data_output_dir = os.path.join(output_products_dir, 'star_data_output')
-plot_dir = os.path.join(output_products_dir, 'plots')
-
-default_catalog_file = os.path.join(ref_dir, 'catalog_file.csv')
-cat_pickles_dir = os.path.join(output_products_dir, 'catalog_pickles')
-pickle_nat = os.path.join(output_products_dir, 'pickle_nat.pkl')
-pickle_out = os.path.join(output_products_dir, 'pickle_output_star_data.pkl')
-
-# hacked stellar parameters, these will override any values from reference data.
-hacked = {
-    'Kepler-84': ('dist', 1443.26796, '[pc]', 'Hypatia Override for Kepler-84'),
-}
-# For these SIMBAD names, the API fails to return a few of the values that are available on the main website.
-simbad_parameters_hack = {'Gaia DR2 4087838959097352064':
-                              {'DEC': '-16 35 27.118803876'},
-                          'BD+39 03309':
-                              {'RA': '18 03 47.3520267264'},
-                          }
 
 
 """
