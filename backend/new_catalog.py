@@ -9,7 +9,7 @@ Hypatia Database accompanying the contents of the catalogs data.
 3) The columns with the names of the stars should have a name like 'star' or 'star'. This column can also be named "hd"
 or "hip" or any other Hypatia Database name type when the star names are of the same type.
 4) The rest of the columns are for element abundance reported in dex notation on a scale from -inf-12.
-5) Elemental abundance headers should formatted using standard element abbreviations.
+5) Elemental abundance headers should be formatted using standard element abbreviations.
 6) Header requirements for elemental abundance columns. Examples: CaH, CaIH, CaIIH, AF, ASi, SiNLTE
     a) Elements that are ratios are expected to be ratios of either Hydrogen "H" or Iron "Fe" at
        the end of the header string.
@@ -138,7 +138,7 @@ def reset_input_catalogs(verbose: bool = True):
     :param verbose: bool - when True, the code with report the actions it is taking.
     :return:
     """
-    co = CatOps(cat_file=os.path.join(ref_dir, "catalog_file.csv"), load=True, verbose=verbose)
+    co = CatOps(cat_file=main_catalog_file, load=True, verbose=verbose)
     co.reset_cat_file(reset_cat_file_name=new_catalogs_file_name, delete_old_cat_file=True, delete_and_move=True)
 
 

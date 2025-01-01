@@ -2,7 +2,7 @@ import os
 import shutil
 
 from hypatia.tools.table_read import row_dict
-from hypatia.config import ref_dir, abundance_dir, default_catalog_file
+from hypatia.config import ref_dir, abundance_dir, default_catalog_file, new_abundances_dir
 
 
 def make_cat_record(short: str, long: str, norm: str):
@@ -117,7 +117,7 @@ class CatOps:
 
         if delete_and_move:
             from_dir = abundance_dir
-            to_dir = os.path.dirname(reset_cat_file_name)
+            to_dir = new_abundances_dir
             if self.verbose:
                 print('\nMoving the unprocessed catalog data files to', to_dir)
             # move all the unprocessed files to the folder that contains the reset version of the catalog file.

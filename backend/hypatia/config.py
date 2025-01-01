@@ -27,10 +27,8 @@ projects_dir = os.path.dirname(repo_dir)
 working_dir = os.path.join(base_dir, 'hypatia')
 hydata_dir = os.path.join(working_dir, 'HyData')
 ref_dir = os.path.join(hydata_dir, 'reference_data')
-abundance_dir = os.path.join(hydata_dir, 'abundance_data')
-site_dir = os.path.join(hydata_dir, 'site_data')
-params_and_units_file = os.path.join(site_dir, 'params_units.toml')
 
+abundance_dir = os.path.join(hydata_dir, 'abundance_data')
 new_abundances_dir = os.path.join(abundance_dir, 'new_data')
 new_catalogs_file_name = os.path.join(ref_dir, 'new_catalogs_file.csv')
 main_catalog_file = os.path.join(ref_dir, 'catalog_file.csv')
@@ -43,6 +41,9 @@ default_catalog_file = os.path.join(ref_dir, 'catalog_file.csv')
 cat_pickles_dir = os.path.join(output_products_dir, 'catalog_pickles')
 pickle_nat = os.path.join(output_products_dir, 'pickle_nat.pkl')
 pickle_out = os.path.join(output_products_dir, 'pickle_output_star_data.pkl')
+
+site_dir = os.path.join(hydata_dir, 'site_data')
+params_and_units_file = os.path.join(site_dir, 'params_units.toml')
 
 # hacked stellar parameters, these will override any values from reference data.
 hacked = {
