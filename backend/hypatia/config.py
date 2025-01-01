@@ -9,7 +9,7 @@ current_user = getuser()
 
 # star-names database
 simbad_big_sleep_seconds = 30.0
-simbad_small_sleep_seconds = 5.0
+simbad_small_sleep_seconds = 1.0
 simbad_batch_size = 1000
 default_reset_time_seconds = 60 * 60 * 24 * 365.24 * 3  # 3 years
 no_simbad_reset_time_seconds = 60 * 60 * 24 * 365.24  # 1 year
@@ -30,6 +30,10 @@ ref_dir = os.path.join(hydata_dir, 'reference_data')
 abundance_dir = os.path.join(hydata_dir, 'abundance_data')
 site_dir = os.path.join(hydata_dir, 'site_data')
 params_and_units_file = os.path.join(site_dir, 'params_units.toml')
+
+new_abundances_dir = os.path.join(abundance_dir, 'new_data')
+new_catalogs_file_name = os.path.join(new_abundances_dir, 'new_catalogs_file.csv')
+main_catalog_file = os.path.join(ref_dir, 'catalog_file.csv')
 
 output_products_dir = os.path.join(base_dir, 'output')
 star_data_output_dir = os.path.join(output_products_dir, 'star_data_output')

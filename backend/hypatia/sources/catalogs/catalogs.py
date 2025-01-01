@@ -187,9 +187,6 @@ class Catalog:
         self.abs_star_data = []
         self.unreferenced_stars = []
         self.unreferenced_stars_raw_index = []
-        # Update to the new catalog format so the read is faster next time.
-        if attribute_name != 'simbad_id':
-            self.write_catalog(output_dir=local_abundance_dir, target='raw', update_catalog_list=True)
 
     def remove_elements(self, lost_element: ElementID, reason):
         self.element_ratio_keys.remove(self.element_to_ratio_name[lost_element])

@@ -90,14 +90,8 @@ import shutil
 from hypatia.pipeline.nat_cat import NatCat
 from hypatia.sources.catalogs.ops import CatOps
 from hypatia.sources.catalogs.solar_norm import SolarNorm
-from hypatia.config import abundance_dir, ref_dir
 from hypatia.sources.catalogs.catalogs import get_catalogs
-
-# File locations
-new_abundances_dir = os.path.join(abundance_dir, "new_data")
-new_catalogs_file_name = os.path.join(new_abundances_dir, "new_catalogs_file.csv")
-
-main_catalog_file = os.path.join(ref_dir, "catalog_file.csv")
+from hypatia.config import abundance_dir, ref_dir, new_abundances_dir, new_catalogs_file_name, main_catalog_file
 
 
 def load_catalogs(verbose=True):
