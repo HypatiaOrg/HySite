@@ -32,7 +32,7 @@ site_dir = os.path.join(hydata_dir, 'site_data')
 params_and_units_file = os.path.join(site_dir, 'params_units.toml')
 
 new_abundances_dir = os.path.join(abundance_dir, 'new_data')
-new_catalogs_file_name = os.path.join(new_abundances_dir, 'new_catalogs_file.csv')
+new_catalogs_file_name = os.path.join(ref_dir, 'new_catalogs_file.csv')
 main_catalog_file = os.path.join(ref_dir, 'catalog_file.csv')
 
 output_products_dir = os.path.join(base_dir, 'output')
