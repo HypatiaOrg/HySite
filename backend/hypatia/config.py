@@ -10,6 +10,9 @@ current_user = getuser()
 # catalog read-in
 allowed_name_types = {'Star', 'star', 'Stars', 'starname', 'Starname', 'Name', 'ID', 'Object', 'simbad_id'}
 
+# catalog normalization
+norm_keys_default = ['anders89', 'asplund05', 'asplund09', 'grevesse98', 'lodders09', 'original', 'grevesse07']
+
 # star-names database
 simbad_big_sleep_seconds = 30.0
 simbad_small_sleep_seconds = 1.0

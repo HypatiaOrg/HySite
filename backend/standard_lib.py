@@ -3,11 +3,12 @@ import math
 
 import numpy as np
 
-from hypatia.config import ref_dir, base_dir
+
 from hypatia.elements import element_rank, ElementID
 from hypatia.plots.scatter_hist_hist_plot import histPlot
-from hypatia.pipeline.nat_cat import NatCat, load_catalog_query
 from hypatia.pipeline.star.output import load_pickled_output
+from hypatia.config import ref_dir, base_dir, norm_keys_default
+from hypatia.pipeline.nat_cat import NatCat, load_catalog_query
 from hypatia.tools.table_read import ClassyReader
 
 
@@ -417,7 +418,7 @@ if __name__ == "__main__":
     only_target_list = False
 
     all_params = set()
-    test_norm_keys = ["lodders09", "asplund09", "grevesse07", "asplund05", "grevesse98", "anders89", "original"]
+    test_norm_keys = list(norm_keys_default)
     test_refresh_exo_data = True
     test_from_scratch = True
     test_from_pickled_cat = False

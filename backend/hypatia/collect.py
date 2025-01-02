@@ -5,7 +5,7 @@ import time
 
 from pymongo import MongoClient
 from pymongo.cursor import Cursor
-from pymongo.errors import ServerSelectionTimeoutError
+from pymongo.errors import ServerSelectionTimeoutError, CollectionInvalid
 from pymongo.results import DeleteResult, InsertOneResult, InsertManyResult, UpdateResult
 
 
@@ -34,19 +34,32 @@ class BaseCollection:
         self.db_name = db_name
         self.verbose = verbose
         self.db = self.client[db_name]
-        self.collection = self.db[collection_name]
-
         self.server_info = None
         self.test_connection()
+        self.collection = self.db[self.collection_name]
+        self.create_collection()
 
     def create_indexes(self):
         self.collection_add_index(index_name='_id', unique=True)
 
+    def create_collection(self):
+        try:
+            self.db.create_collection(self.collection_name, check_exists=True,
+                                      validator=self.validator, collation=self.collation)
+        except CollectionInvalid:
+            # the collection already exists
+            if self.verbose:
+                print(f'Collection {self.collection_name} already exists in database {self.db_name}')
+        else:
+            if self.verbose:
+                print(f'Created collection {self.collection_name} in database {self.db_name}')
+            # finish the setup
+            self.collection = self.db[self.collection_name]
+            self.create_indexes()
+
     def reset(self):
         self.drop_collection()
-        self.db.create_collection(self.collection_name, validator=self.validator, collation=self.collation)
-        self.collection = self.db[self.collection_name]
-        self.create_indexes()
+        self.create_collection()
 
     def test_connection(self, tries: int = 10):
         count = 0
