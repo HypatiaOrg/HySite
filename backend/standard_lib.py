@@ -7,8 +7,8 @@ import numpy as np
 from hypatia.elements import element_rank, ElementID
 from hypatia.plots.scatter_hist_hist_plot import histPlot
 from hypatia.pipeline.star.output import load_pickled_output
-from hypatia.config import ref_dir, base_dir, norm_keys_default
 from hypatia.pipeline.nat_cat import NatCat, load_catalog_query
+from hypatia.config import target_list_dir, base_dir, norm_keys_default
 from hypatia.tools.table_read import ClassyReader
 
 
@@ -32,7 +32,7 @@ def save_or_load(load=True, a_catalog_query=None):
 
 
 def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=None, norm_keys: list[str] = None,
-                    target_list=None,
+                    target_list: list[str] | list[tuple[str, ...]] | str | os.PathLike | None = None,
                     fast_update_gaia=True, from_pickled_cat: bool = False, from_pickled_output: bool = False,
                     mongo_upload: bool = True):
     target_output = None
@@ -415,15 +415,15 @@ def populate_flat_file(elemList, propertyList, star_name, combined_data_file):
 
 
 if __name__ == "__main__":
-    only_target_list = False
+    only_target_list = True
 
     all_params = set()
     test_norm_keys = list(norm_keys_default)
-    test_refresh_exo_data = True
+    test_refresh_exo_data = False
     test_from_scratch = True
     test_from_pickled_cat = False
     if only_target_list:
-        example_target_list = os.path.join(ref_dir, 'ARIEL_Edwards22_Table4_TOIpotential.txt')
+        example_target_list = os.path.join(target_list_dir, 'Patrick-XRP-target-list-cut.csv')
         # example_target_list2 = ['HIP 36366', 'HIP 55846', 'HD 103095', 'HIP 33226']
         nat_cat, output_star_data, target_star_data = standard_output(from_scratch=test_from_scratch,
                                                                       target_list=example_target_list,

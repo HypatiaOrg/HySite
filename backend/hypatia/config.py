@@ -48,6 +48,7 @@ pickle_nat = os.path.join(output_products_dir, 'pickle_nat.pkl')
 pickle_out = os.path.join(output_products_dir, 'pickle_output_star_data.pkl')
 
 site_dir = os.path.join(hydata_dir, 'site_data')
+target_list_dir = os.path.join(hydata_dir, 'target_lists')
 params_and_units_file = os.path.join(site_dir, 'params_units.toml')
 
 test_database_dir = os.path.join(projects_dir, 'test_database')

@@ -9,9 +9,10 @@ from hypatia.tools.table_read import row_dict
 from hypatia.pipeline.star.all import AllStarData
 from hypatia.sources.tic.ops import get_hy_tic_data
 from hypatia.tools.color_text import file_name_text
-from hypatia.sources.catalogs.solar_norm import SolarNorm
 from hypatia.pipeline.star.output import OutputStarData
+from hypatia.sources.catalogs.solar_norm import SolarNorm
 from hypatia.sources.catalogs.catalogs import get_catalogs
+from hypatia.sources.simbad.batch import get_star_data_batch
 from hypatia.sources.simbad.ops import get_main_id, get_star_data
 from hypatia.config import working_dir, ref_dir, abundance_dir, hacked, pickle_nat, default_catalog_file
 
@@ -25,7 +26,7 @@ class NatCat:
     def __init__(self, params_list_for_stats=None, star_types_for_stats=None,
                  catalogs_from_scratch=True, verbose=False, catalogs_verbose=True,
                  get_abundance_data=True, get_exo_data=False, refresh_exo_data=False,
-                 target_list=None,  fast_update_gaia=False,
+                 target_list: list[str] | list[tuple[str, ...]] | str | os.PathLike | None = None,  fast_update_gaia=False,
                  catalogs_file_name=None, abundance_data_path=None):
         self.verbose = verbose
         self.catalogs_verbose = catalogs_verbose
@@ -110,13 +111,21 @@ class NatCat:
     def xo_data(self):
         self.star_data.get_exoplanets(refresh_exo_data=self.refresh_exo_data)
 
-    def target_data(self, target_list: list[str] or str):
+    def target_data(self, target_list: list[str] | list[tuple[str, ...]] | str | os.PathLike):
         if self.verbose:
             print('Getting data for targets...')
-        if isinstance(target_list, str):
+        if isinstance(target_list, str) or isinstance(target_list, os.PathLike):
+            if str(target_list).endswith('.psv'):
+                delimiter = '|'
+            else:
+                delimiter = ','
             with open(target_list, 'r') as f:
-                target_list = [name.strip() for name in f.readlines()]
-        star_ids = [get_main_id(target_name, test_origin='target-list') for target_name in target_list]
+                target_list = [tuple(star_name.strip() for star_name in row_of_star_names.split(delimiter))
+                               for row_of_star_names in f.readlines()]
+        search_ids = [tuple(row_of_star_names,) if isinstance(row_of_star_names, str) else row_of_star_names
+                      for row_of_star_names in target_list]
+        star_docs = get_star_data_batch(search_ids=search_ids, test_origin='target_data')
+        star_ids = [get_main_id(star_doc['_id']) for star_doc in star_docs]
         if self.verbose:
             print('  Hypatia handles acquired for target stars.')
         self.star_data.get_targets(target_star_ids=star_ids)
@@ -124,7 +133,7 @@ class NatCat:
         self.targets_not_found = self.star_data.targets_not_found
         if self.verbose:
             print(F'Target Data Acquired.')
-            print(F'  Targets requested: {'%3i' % len(target_list)} : {sorted(star_ids)}')
+            print(F'  Targets requested: {'%3i' % len(search_ids)} : {sorted(star_ids)}')
             print(F'      Targets found: {'%3i' % len(self.targets_found)} : {sorted(self.targets_found)}')
             print(F'  Targets not found: {'%3i' % len(self.targets_not_found)} : {sorted(self.targets_not_found)}\n')
 
