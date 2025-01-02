@@ -32,7 +32,7 @@ class SingleStarParams:
             'all': [single_param.to_record(param_name) for single_param in self.all_params[param_name]]
         } for param_name in self.available_params}
 
-    def calculated_params(self):
+    def calculated_params(self, ref='Hypatia Calc'):
         """
         Calculations
         """
@@ -88,10 +88,15 @@ class SingleStarParams:
             td_d = ((0.18 / 0.82) * (fftd / ffd))  # Value changed to match Adibekyan et al. (2013)
             if td_d > 10.:
                 disk_value = 'thick'
+                disk_num = 1
             else:
                 disk_value = 'thin'
+                disk_num = 0
         else:
             disk_value = "N/A"
-        disk_single_param = SingleParam(value=disk_value, ref='Hypatia Calc', units='string')
+            disk_num = None
+        disk_single_param = SingleParam(value=disk_value, ref=ref, units='string')
         self.update_param('disk', disk_single_param, overwrite_existing=True)
-        self.available_params.add("disk")
+        if disk_num is not None:
+            new_param = SingleParam.strict_format(param_name='disk_num', value=disk_num ,ref=ref, units='')
+            self.update_param('disk_num', new_param, overwrite_existing=True)

@@ -1,79 +1,4 @@
-from hypatia.sources.simbad.db import validator_star_doc
-
-
-single_star_param_double = {
-    'bsonType': 'object',
-    'description': 'The curated data object for a single-star stellar-parameter',
-    'required': ['value', 'ref'],
-    'additionalProperties': False,
-    'properties': {
-        'value': {
-            'bsonType': 'double',
-            'description': 'The value',
-        },
-        'ref': {
-            'bsonType': 'string',
-            'description': 'The reference citation for the value',
-        },
-        'err_low': {
-            'bsonType': 'double',
-            'description': 'The lower error for the value',
-        },
-        'err_high': {
-            'bsonType': 'double',
-            'description': 'The upper error for the value',
-        },
-        'err': {
-            'bsonType': 'string',
-            'description': 'The formated error values as a string',
-        }
-    },
-}
-single_star_param_int = {
-    'bsonType': 'object',
-    'description': 'The curated data object for a single-star stellar-parameter',
-    'required': ['value', 'ref'],
-    'additionalProperties': False,
-    'properties': {
-        'value': {
-            'bsonType': 'int',
-            'description': 'The value',
-        },
-        'ref': {
-            'bsonType': 'string',
-            'description': 'The reference citation for the value',
-        },
-        'err_low': {
-            'bsonType': 'int',
-            'description': 'The lower error for the value',
-        },
-        'err_high': {
-            'bsonType': 'int',
-            'description': 'The upper error for the value',
-        },
-        'err': {
-            'bsonType': 'string',
-            'description': 'The formated error values as a string',
-        }
-    },
-}
-single_star_param_str = {
-    'bsonType': 'object',
-    'description': 'The curated data object for a single-star stellar-parameter',
-    'required': ['value', 'ref'],
-    'additionalProperties': False,
-    'properties': {
-        'value': {
-            'bsonType': 'string',
-            'description': 'The value',
-        },
-        'ref': {
-            'bsonType': 'string',
-            'description': 'The reference citation for the value',
-        },
-    },
-}
-single_params = [single_star_param_double, single_star_param_int, single_star_param_str]
+from hypatia.sources.simbad.validator import validator_star_doc, single_params
 
 
 nea_stellar_or_planetary_params = {
@@ -222,7 +147,7 @@ validator = {
     '$jsonSchema': {
         'bsonType': 'object',
         'title': 'The validator schema for the StarName class',
-        'required': ['_id', 'attr_name', 'timestamp', 'aliases'],
+        'required': ['_id', 'attr_name', 'timestamp'],
         'description': 'This is a Star level record for HypatiaCatalog.com the holds abundance and planetary data.',
         'properties': {
             '_id': {
@@ -250,16 +175,6 @@ validator = {
                 'description': 'must be a string and is not required'
             },
             'names': validator_star_doc,
-            'aliases': {
-                'bsonType': 'array',
-                'minItems': 1,
-                'uniqueItems': True,
-                'description': 'must be an array of string names that this star is known by',
-                'items': {
-                    'bsonType': 'string',
-                    'description': 'must be a string star name',
-                },
-            },
             'stellar': {
                 'bsonType': 'object',
                 'description': 'An object with all the per-star data for a single star',

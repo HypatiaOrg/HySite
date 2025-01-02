@@ -127,6 +127,17 @@ hypatia_host_level_params = {nea_to_hypatia_fields[key] for key in nea_host_leve
 hypatia_host_name_rank_order = [nea_to_hypatia_fields[key] for key in nea_host_name_rank_order]
 
 
+def calculate_nea_row(row: dict[str, str | float | int]) -> dict[str, str | float | int]:
+    if 'period' in row.keys() and 'mass' in row.keys() and 'pl_radius' in row.keys():
+        formated_dict = {**row}
+        period = float(row['period']['value'])
+        mass = float(row['mass']['value'])
+        pl_radius = float(row['pl_radius']['value'])
+        formated_dict['radius_gap'] = radius_gap_function(period=period, st_mass=mass, pl_radius=pl_radius)
+        return formated_dict
+    return row
+
+
 def format_name_nea_row(row: dict[str, str]) -> dict[str, str | float | int]:
     formatted_row = {}
     remove_keys = []
@@ -198,7 +209,7 @@ def format_name_nea_row(row: dict[str, str]) -> dict[str, str | float | int]:
         if hypatia_key != key:
             error_grouped[nea_to_hypatia_fields[key]] = value
             del error_grouped[key]
-    return error_grouped
+    return calculate_nea_row(error_grouped)
 
 
 def query_nea() -> list[dict[str, str | float | int]]:
@@ -206,17 +217,6 @@ def query_nea() -> list[dict[str, str | float | int]]:
     data_rows = resp.text.split('\n')
     header = data_rows[0].split('\t')
     return [format_name_nea_row(dict(zip(header, row.split('\t')))) for row in data_rows[1:] if row]
-
-
-def calculate_nea_row(row: dict[str, str | float | int]) -> dict[str, str | float | int]:
-    if 'period' in row.keys() and 'mass' in row.keys() and 'pl_radius' in row.keys():
-        formated_dict = {**row}
-        period = row['period']['value']
-        mass = row['mass']['value']
-        pl_radius = row['pl_radius']['value']
-        formated_dict['radius_gap'] = radius_gap_function(period=period, st_mass=mass, pl_radius=pl_radius)
-        return formated_dict
-    return row
 
 
 def set_data_by_host(data: list[dict[str, str | float | int]]) -> dict[str, dict[str, any]]:
@@ -237,5 +237,4 @@ def set_data_by_host(data: list[dict[str, str | float | int]]) -> dict[str, dict
 
 if __name__ == '__main__':
     data = query_nea()
-    processed_data = [calculate_nea_row(row) for row in data]
     planets_by_host_name = set_data_by_host(data)

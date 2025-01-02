@@ -58,6 +58,8 @@ services:
             MONGO_PASSWORD: "${MONGO_PASSWORD:-super-not-secure}"
             MONGO_HOST: "${MONGO_HOST:-mongoDB}"
             MONGO_DATABASE: "${MONGO_DATABASE:-test}"
+            MONGO_STARNAMES_COLLECTION: "${MONGO_STARNAMES_COLLECTION:-stars}"
+            INTERACTIVE_STARNAMES: "{INTERACTIVE_STARNAMES:-true}"
         read_only: "${READ_ONLY:-false}"
         volumes:
             # django_static is written at build time by the SpExWebsite Dockerfile
@@ -92,7 +94,9 @@ services:
             MONGO_USERNAME: "${MONGO_USERNAME:-admin}"
             MONGO_PASSWORD: "${MONGO_PASSWORD:-super-not-secure}"
             MONGO_HOST: "${MONGO_HOST:-mongoDB}"
+            MONGO_STARNAMES_COLLECTION: "${MONGO_STARNAMES_COLLECTION:-stars}"
             CONNECTION_STRING: ${CONNECTION_STRING:-none}
+            INTERACTIVE_STARNAMES: "{INTERACTIVE_STARNAMES:-true}"
         volumes:
             - ./backend:/backend
         profiles: ["ipython"]

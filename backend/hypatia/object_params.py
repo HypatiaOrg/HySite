@@ -6,10 +6,7 @@ from collections import UserDict
 
 import numpy as np
 
-from hypatia.config import site_dir
-
-
-params_and_units_file = os.path.join(site_dir, 'params_units.toml')
+from hypatia.config import params_and_units_file
 
 
 def get_params_and_units_from_file() -> dict:
@@ -23,8 +20,11 @@ def get_params_and_units_from_file() -> dict:
 
 expected_params_dict = get_params_and_units_from_file()
 expected_params = set(expected_params_dict.keys())
+param_to_units = {}
 for param, param_dict in expected_params_dict.items():
-    if 'units' not in param_dict.keys():
+    if 'units' in param_dict.keys():
+        param_to_units[param] = param_dict['units']
+    else:
         raise KeyError(f" The 'units' field is required, but is not found for the parameter {param} in the reference file: {params_and_units_file}")
 
 
@@ -190,4 +190,3 @@ class SingleParam(NamedTuple):
             return rec
         rec['err'] = f'{err_low}/{err_high}'
         return rec
-

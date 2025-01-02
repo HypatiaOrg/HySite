@@ -33,7 +33,7 @@ def save_or_load(load=True, a_catalog_query=None):
 def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=None, norm_keys: list[str] = None,
                     target_list=None,
                     fast_update_gaia=True, from_pickled_cat: bool = False, from_pickled_output: bool = False,
-                    do_legacy: bool = False, mongo_upload: bool = True):
+                    mongo_upload: bool = True):
     target_output = None
     params = ["dist", "logg", 'Teff', "SpType", 'st_mass', 'st_rad', "disk"]
     star_name_type = ['gaia dr2', "gaia dr1", "hip", 'hd', "wds"]
@@ -89,11 +89,6 @@ def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=N
                                 is_target=None)
         output_star_data.normalize(norm_keys=norm_keys)
         output_star_data.filter(element_bound_filter=None)  # filter after normalization, and logic
-        if do_legacy:
-            # Output the absolute values
-            output_star_data.output_file(output_dir=None, exo_mode=True, do_absolute=True)
-            # Output the all normalizations, one for each norm_key
-            output_star_data.output_file(output_dir=None, exo_mode=True)
         output_star_data.do_stats(params_set=nat_cat.params_list_for_stats,
                                   star_name_types=nat_cat.star_types_for_stats)
         if mongo_upload:
@@ -146,7 +141,6 @@ def multi_output(from_scratch=True, short_name_list=None, norm_key=None, fast_up
     if norm_key is not None:
         output_star_data1.normalize(norm_key=norm_key)
     output_star_data1.filter(element_bound_filter=None)  # filter after normalization, and logic
-    output_star_data1.output_file(output_dir=None, exo_mode=True)
     output_star_data1.do_stats(params_set=nat_cat.params_list_for_stats,
                                star_name_types=nat_cat.star_types_for_stats)
     output_star_data1.reduce_elements()
@@ -179,7 +173,6 @@ def multi_output(from_scratch=True, short_name_list=None, norm_key=None, fast_up
     if norm_key is not None:
         output_star_data2.normalize(norm_key=norm_key)
     output_star_data2.filter(element_bound_filter=[("Fe", -0.1, 0.1)])  # filter after normalization, and logic
-    output_star_data2.output_file(output_dir=None, exo_mode=True)
     output_star_data2.do_stats(params_set=nat_cat.params_list_for_stats,
                                star_name_types=nat_cat.star_types_for_stats)
     output_star_data2.reduce_elements()
@@ -428,7 +421,6 @@ if __name__ == "__main__":
     test_refresh_exo_data = True
     test_from_scratch = True
     test_from_pickled_cat = False
-    do_legacy = False
     if only_target_list:
         example_target_list = os.path.join(ref_dir, 'ARIEL_Edwards22_Table4_TOIpotential.txt')
         # example_target_list2 = ['HIP 36366', 'HIP 55846', 'HD 103095', 'HIP 33226']
@@ -437,13 +429,13 @@ if __name__ == "__main__":
                                                                       norm_keys=test_norm_keys,
                                                                       refresh_exo_data=test_refresh_exo_data,
                                                                       from_pickled_cat=test_from_pickled_cat,
-                                                                      do_legacy=do_legacy)
+                                                                      )
     else:
         nat_cat, output_star_data, target_star_data = standard_output(from_scratch=test_from_scratch,
                                                                       norm_keys=test_norm_keys,
                                                                       refresh_exo_data=test_refresh_exo_data,
                                                                       from_pickled_cat=test_from_pickled_cat,
-                                                                      do_legacy=do_legacy)
+                                                                      )
 
     # output_star_data.xy_plot(x_thing='dist', y_thing='Fe', color="darkorchid", show=False, save=True)
     stats = output_star_data.stats

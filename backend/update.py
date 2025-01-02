@@ -18,19 +18,32 @@ def update(norm_keys: list[str] = None, refresh_exo_data: bool = False):
                            norm_keys=norm_keys, mongo_upload=True)
 
 
+def copy_collection(source_db_name: str, target_db_name: str, source_collection_name: str, target_collection_name: str):
+    start_time = time()
+    same_collection_name = source_collection_name == target_collection_name
+    if same_collection_name:
+        print(f'Publishing {source_collection_name} from {source_db_name} to {target_db_name}')
+    else:
+        print(f'Publishing {source_db_name}.{source_collection_name} to {target_db_name}.{target_collection_name}')
+    source = HypatiaDB(collection_name=source_collection_name, db_name=source_db_name)
+    target = HypatiaDB(collection_name=target_collection_name, db_name=target_db_name)
+    target.drop_collection()
+    all_data = source.find_all()
+    print('Copying documents from source to target')
+    target.add_many(all_data)
+    delta_time = time() - start_time
+    if same_collection_name:
+        print(f' {delta_time:.2f} seconds to complete the publishing {source_collection_name} from '
+              f'{source_db_name} to {target_db_name}')
+    else:
+        print(f' {delta_time:.2f} seconds to complete the publishing from '
+              f'{source_db_name}.{source_collection_name} to {target_db_name}.{target_collection_name}')
+
+
 def publish_hypatia(target_db_name: str = 'public', source_db_name: str = MONGO_DATABASE):
     for collection_name in ['hypatiaDB', 'summary']:
-        start_time = time()
-        print(f'Publishing {collection_name} from {source_db_name} to {target_db_name}')
-        source = HypatiaDB(collection_name=collection_name, db_name=source_db_name)
-        target = HypatiaDB(collection_name=collection_name, db_name=target_db_name)
-        target.drop_collection()
-        all_data = source.find_all()
-        print('Copying documents from source to target')
-        target.add_many(all_data)
-        delta_time = time() - start_time
-        print(f' {delta_time:.2f} seconds to complete the publishing {collection_name} from '
-              f'{source_db_name} to {target_db_name}')
+        copy_collection(source_db_name=source_db_name, target_db_name=target_db_name,
+                        source_collection_name=collection_name, target_collection_name=collection_name)
 
 
 if __name__ == '__main__':
