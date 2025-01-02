@@ -8,6 +8,7 @@ from hypatia.object_params import SingleParam
 from hypatia.tools.table_read import row_dict
 from hypatia.pipeline.star.all import AllStarData
 from hypatia.sources.tic.ops import get_hy_tic_data
+from hypatia.tools.color_text import file_name_text
 from hypatia.sources.catalogs.solar_norm import SolarNorm
 from hypatia.pipeline.star.output import OutputStarData
 from hypatia.sources.catalogs.catalogs import get_catalogs
@@ -133,9 +134,9 @@ class NatCat:
             print('Acquiring stellar parameter data...')
         gaia_lib = None
         print_int = round(len(self.star_data) / 20)
-        for single_star in self.star_data:
-            if self.verbose and single_star.index % print_int == 0:
-                print(f'  {single_star.index:6} of {len(self.star_data)} stars processed.')
+        for star_index, single_star in list(enumerate(self.star_data)):
+            if self.verbose and star_index % print_int == 0:
+                print(f'  {star_index:6} of {len(self.star_data)} stars processed.')
             main_star_id = single_star.star_reference_name
             # Star Parameters from the Pastel Data Set
             if get_pastel_params:
@@ -251,7 +252,7 @@ class NatCat:
 
     def pickle_myself(self):
         if self.verbose:
-            print('Picking an entire NatCat class.\nFile name:', pickle_nat)
+            print('Picking an entire NatCat class.\nFile name:', file_name_text(pickle_nat))
         pickle.dump(self, open(pickle_nat, 'wb'))
         if self.verbose:
             print('  pickling complete.')

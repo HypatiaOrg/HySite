@@ -8,15 +8,13 @@ from hypatia.tools.table_read import ClassyReader
 from hypatia.tools.color_text import catalog_name_text
 from hypatia.sources.simbad.batch import get_star_data_batch
 from hypatia.tools.exceptions import ElementNameErrorInCatalog
-from hypatia.config import abundance_dir, default_catalog_file, cat_pickles_dir
 from hypatia.elements import element_rank, ElementID, iron_id, iron_ii_id, iron_nlte_id
+from hypatia.config import abundance_dir, default_catalog_file, cat_pickles_dir, allowed_name_types
 from hypatia.sources.catalogs.solar_norm import (solar_norm_dict, ratio_to_element,
                                                  un_norm_x_over_fe, un_norm_x_over_h, un_norm_abs_x)
 
 
-indicates_mixed_name_types = {'Star', 'star', 'Stars', 'starname', 'Starname', 'Name', 'ID', 'Object', 'HDBD',
-                              'simbad_id'}
-indicates_single_name_types = {'TYC', 'HD', 'HIP', 'HR', 'TrES', 'CoRoT', 'XO', 'HAT', 'WASP'}
+
 
 
 def get_catalogs(from_scratch=False, catalogs_file_name=None, local_abundance_dir=None, verbose=False):
@@ -77,10 +75,10 @@ class Catalog:
         self.norm_key = norm_key
         self.catalogs_file_name = catalogs_file_name
         if local_abundance_dir is None:
-            local_abundance_dir = abundance_dir
-            self.file_path = os.path.join(abundance_dir, catalog_name.replace(' ', '').lower())
+            self.abundance_dir = abundance_dir
         else:
-            self.file_path = os.path.join(local_abundance_dir, catalog_name.replace(' ', '').lower())
+            self.abundance_dir = local_abundance_dir
+        self.file_path = os.path.join(self.abundance_dir, catalog_name.replace(' ', '').lower())
         self.save_file_name = os.path.join(cat_pickles_dir, catalog_name.replace(' ', '').lower() + '.pkl')
         self.main_star_ids_unique_groups = None
         self.unique_star_groups = None
@@ -107,29 +105,30 @@ class Catalog:
         """ Parse star names"""
         # determine the star name data-type and convert the star names to the SIMBAD format
         all_attributes = set(self.raw_data.__dict__)
-        mixed_name_type = indicates_mixed_name_types & all_attributes
-        single_name_type = indicates_single_name_types & all_attributes
-        if len(mixed_name_type) == 1:
-            attribute_name = list(mixed_name_type)[0]
-            self.star_names_type = None
-        elif len(single_name_type) == 1:
-            attribute_name = list(single_name_type)[0]
-            self.star_names_type = attribute_name.lower()
-        else:
-            raise NameError('The star column name is not one of the expected names.')
-        if attribute_name == 'simbad_id':
-            # Catalogs added after the 2024 update will have the star names in the SIMBAD format.
+        name_types = allowed_name_types & all_attributes
+        if 'simbad_id' in name_types:
+            # Catalogs that have been processed will have the SIMBAD ID as the star name
             self.star_names_type = 'simbad_id'
             self.raw_data.original_star_names = self.raw_data.original_name
             input_names = self.raw_data.simbad_id
+            self.star_docs = get_star_data_batch([(simbad_name,) for simbad_name in input_names],
+                                                 test_origin=f'{self.catalog_name}')
+        elif len(name_types) == 0:
+            raise NameError('The star column name is not one of the expected names.')
+        elif len(name_types) == 1:
+                self.star_names_type = name_types.pop()
+                self.raw_data.original_star_names = getattr(self.raw_data, self.star_names_type)
+                input_names = self.raw_data.original_star_names
+                self.star_docs = get_star_data_batch([(simbad_name,) for simbad_name in input_names],
+                                                     test_origin=f'{self.catalog_name}')
         else:
-            # this a legacy Hypatia system for reading in catalogs with a number of challenges.
-            self.raw_data.original_star_names = getattr(self.raw_data, attribute_name)
-            input_names = self.raw_data.original_star_names
-
+            sorted_names = sorted(name_types)
+            self.star_names_type = sorted_names[0]
+            self.raw_data.original_star_names = getattr(self.raw_data, self.star_names_type)
+            input_names = [tuple(name_for_one_star) for name_for_one_star in zip(*[getattr(self.raw_data, name)
+                                                                                   for name in sorted_names])]
+            self.star_docs = get_star_data_batch(input_names, test_origin=f'{self.catalog_name}')
         # double-check that this name is still the primary name in SIMBAD
-        self.star_docs = get_star_data_batch([(simbad_name,) for simbad_name in input_names],
-                                              test_origin=f'{self.catalog_name}')
         self.star_names = [star_doc['_id'] for star_doc in self.star_docs]
         # add the star names to the raw_data object
         self.raw_data.star_names = self.star_names
@@ -139,7 +138,7 @@ class Catalog:
         self.element_to_ratio_name = {}
         self.absolute_elements = set()
         self.element_id_to_un_norm_func = {}
-        non_element_keys = {'comments', 'original_name', attribute_name}
+        non_element_keys = {'comments', 'original_name', self.star_names_type}
         for key in self.raw_data.keys:
             if key in non_element_keys:
                 # these are not element keys, so we skip them.
@@ -333,8 +332,8 @@ class Catalog:
         if update_catalog_list:
             long_name = self.long_name
             norm_name = self.norm_key
-            target_file = os.path.join(abundance_dir, self.catalogs_file_name)
-            old_file = os.path.join(abundance_dir, 'old_' + os.path.basename(self.catalogs_file_name))
+            target_file = os.path.join(self.abundance_dir, self.catalogs_file_name)
+            old_file = os.path.join(self.abundance_dir, 'old_' + os.path.basename(self.catalogs_file_name))
             shutil.copyfile(target_file, old_file)
             header = 'short,long,norm\n'
             catalog_name_data = ClassyReader(old_file)

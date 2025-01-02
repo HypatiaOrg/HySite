@@ -91,7 +91,7 @@ from hypatia.pipeline.nat_cat import NatCat
 from hypatia.sources.catalogs.ops import CatOps
 from hypatia.sources.catalogs.solar_norm import SolarNorm
 from hypatia.sources.catalogs.catalogs import get_catalogs
-from hypatia.config import abundance_dir, ref_dir, new_abundances_dir, new_catalogs_file_name, main_catalog_file
+from hypatia.config import abundance_dir, ref_dir, new_abundances_dir, new_catalogs_file_name, default_catalog_file
 
 
 def load_catalogs(verbose=True):
@@ -127,7 +127,7 @@ def unique_abundances(verbose=True):
               "have only one entry per unique star.\n")
 
 
-def reset_input_catalogs(verbose: bool = True):
+def reset_input_catalogs(verbose: bool = True, reset_default_file: bool = False):
     """
     This takes the entries in the catalog_file.csv, strips all the processing keywords like "raw" and "unique"
     and reestablishes the reference to the original unprocessed catalog file. All the catalog data the original
@@ -136,10 +136,19 @@ def reset_input_catalogs(verbose: bool = True):
     The catalog_file.csv is then deleted.
 
     :param verbose: bool - when True, the code with report the actions it is taking.
+    :param reset_default_file: bool - when True, the default catalog file is deleted and the new_catalog_file.csv
+                                      is used as the new catalog file. All processing steps are removed from the
+                                      and the original data is moved to the new_data folder
+                                      when False, the new_catalog_file.csv is used as the new catalog file.
+                                      the data stays in the new data folder,
+                                      and the files created by proces steps are removed.
     :return:
     """
-    co = CatOps(cat_file=main_catalog_file, load=True, verbose=verbose)
-    co.reset_cat_file(reset_cat_file_name=new_catalogs_file_name, delete_old_cat_file=True, delete_and_move=True)
+    if reset_default_file:
+        co = CatOps(cat_file=default_catalog_file, abundance_dir_for_reset=abundance_dir, verbose=verbose)
+    else:
+        co = CatOps(cat_file=new_catalogs_file_name, abundance_dir_for_reset=new_abundances_dir, verbose=verbose)
+    co.reset_cat_file()
 
 
 def insert_new_catalogs(verbose=True, user_prompt=True):
@@ -147,10 +156,10 @@ def insert_new_catalogs(verbose=True, user_prompt=True):
             in {True, "true", "yes", 'y'}:
         if verbose:
             print("\nUpdating main the main Hypatia Database with the following catalogs:")
-        if not os.path.exists(main_catalog_file):
-            with open(main_catalog_file, 'w') as f:
+        if not os.path.exists(default_catalog_file):
+            with open(default_catalog_file, 'w') as f:
                 f.write("short,long,norm\n")
-        main_cat = CatOps(cat_file=main_catalog_file, verbose=verbose)
+        main_cat = CatOps(cat_file=default_catalog_file, verbose=verbose)
         new_cat = CatOps(cat_file=new_catalogs_file_name, verbose=verbose)
         if verbose:
             for short_name in new_cat.cat_dict.keys():
@@ -215,7 +224,7 @@ if __name__ == "__main__":
     # HySite/backend/hypatia/HyData/site_data
 
     if reset_catalogs:
-        reset_input_catalogs(verbose)
+        reset_input_catalogs(verbose, reset_default_file=False)
 
     elif add_norm:
         sn = SolarNorm(os.path.join(ref_dir, "solar_norm_ref.csv"))

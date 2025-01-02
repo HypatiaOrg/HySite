@@ -1,8 +1,19 @@
 import os
 import shutil
 
+from hypatia.tools.color_text import file_name_text
 from hypatia.tools.table_read import row_dict
-from hypatia.config import ref_dir, abundance_dir, default_catalog_file, new_abundances_dir
+from hypatia.config import ref_dir, abundance_dir, default_catalog_file, new_abundances_dir, new_catalogs_file_name
+
+
+def short_name_to_filename(short_name: str, abundance_dir_name: str = abundance_dir):
+    csv_file_name = os.path.join(abundance_dir_name, short_name.lower() + '.csv')
+    if os.path.exists(csv_file_name):
+        return csv_file_name
+    tsv_file_name = os.path.join(abundance_dir_name, short_name.lower() + '.tsv')
+    if os.path.exists(tsv_file_name):
+        return tsv_file_name
+    raise FileNotFoundError(f'File not found for short name: {short_name} at\n{csv_file_name}\n{tsv_file_name}')
 
 
 def make_cat_record(short: str, long: str, norm: str):
@@ -28,14 +39,19 @@ def export_to_records(catalog_input_file: str = default_catalog_file, requested_
 
 
 class CatOps:
-    def __init__(self, cat_file=None, load=True, verbose=True):
+    def __init__(self, cat_file: str | None = None, abundance_dir_for_reset: str = abundance_dir,
+                 load:bool = True, verbose: bool = True):
         self.verbose = verbose
         if cat_file is None:
             self.cat_file = default_catalog_file
+            self.abundance_dir = abundance_dir
         else:
             self.cat_file = cat_file
+            self.abundance_dir = abundance_dir_for_reset
         self.cat_dict = None
         self.reset_cat_dict = None
+        self.processed_files = None
+        self.original_files = None
         if load:
             self.load()
 
@@ -101,57 +117,47 @@ class CatOps:
             print('Writing a subset catalog file:', subset_local_cat_file)
         self.write(full_cat_file=full_subset_cat_file, cat_dict={short: self.cat_dict[short] for short in names_to_use})
 
-    def reset_short_name(self):
-        self.reset_cat_dict = {}
-        for short in self.cat_dict.keys():
-            reset_short_name, *_ = short.split('_')
-            self.reset_cat_dict[reset_short_name] = self.cat_dict[short]
-
-    def reset_cat_file(self, reset_cat_file_name, delete_old_cat_file=True, delete_and_move=False):
+    def reset_cat_file(self):
+        # First reset the catalog file
         if self.verbose:
             print('\nResetting the catalog file..')
-        self.reset_short_name()
-        self.write(full_cat_file=reset_cat_file_name, cat_dict=self.reset_cat_dict)
-        if self.verbose:
-            print('The reset catalog file was written to:', reset_cat_file_name)
-
-        if delete_and_move:
-            from_dir = abundance_dir
-            to_dir = new_abundances_dir
-            if self.verbose:
-                print('\nMoving the unprocessed catalog data files to', to_dir)
-            # move all the unprocessed files to the folder that contains the reset version of the catalog file.
-            for unprocessed_file in self.reset_cat_dict.keys():
-                extension = None
-                most_of_the_filename = os.path.join(from_dir, unprocessed_file)
-                if os.path.exists(most_of_the_filename + '.csv'):
-                    extension = '.csv'
-                elif os.path.exists(most_of_the_filename + '.tsv'):
-                    extension = '.tsv'
-                if extension is None:
-                    if self.verbose:
-                        print('The file:', unprocessed_file)
-                        print('was not found to be moved from', from_dir)
-                else:
-                    shutil.move(most_of_the_filename + extension, os.path.join(to_dir, unprocessed_file + extension))
-                    if self.verbose:
-                        print(unprocessed_file + extension + ' was moved from', from_dir, 'to', to_dir)
-            # delete any of the remaining processed files
-            if self.verbose:
-                print('\nDeleting the remaining processed data files in', from_dir)
-            for processed_file in self.cat_dict.keys():
-                full_processed_file_name = os.path.join(from_dir, processed_file + '.csv')
-                if os.path.exists(full_processed_file_name):
-                    os.remove(full_processed_file_name)
-                    if self.verbose:
-                        print('Deleted the processed file:', full_processed_file_name)
-        # Delete the old catalog file now that all the data files have been moved without crashing
-        if delete_old_cat_file and reset_cat_file_name != self.cat_file and os.path.exists(self.cat_file):
+        self.reset_cat_dict = {}
+        self.processed_files = set()
+        self.original_files = set()
+        for short in self.cat_dict.keys():
+            processed_file = short_name_to_filename(short, abundance_dir_name=self.abundance_dir)
+            reset_short_name, *_ = short.split('_')
+            if '_' in short:
+                self.processed_files.add(processed_file)
+                self.original_files.add(short_name_to_filename(reset_short_name, abundance_dir_name=self.abundance_dir))
+            else:
+                self.original_files.add(processed_file)
+            self.reset_cat_dict[reset_short_name] = self.cat_dict[short]
+        self.write(full_cat_file=new_catalogs_file_name, cat_dict=self.reset_cat_dict)
+        if self.cat_file == default_catalog_file:
             os.remove(self.cat_file)
             if self.verbose:
-                print('The old catalog file was deleted, it was located at:', self.cat_file)
+                print('The original catalog file was removed:', file_name_text(self.cat_file))
         if self.verbose:
-            print('\nCatalog file reset complete.\n')
+            print('The reset catalog file was written to:', file_name_text(new_catalogs_file_name))
+        # move the original files
+        from_dir = self.abundance_dir
+        to_dir = new_abundances_dir
+        if not os.path.exists(to_dir):
+            os.makedirs(to_dir)
+        if from_dir != to_dir:
+            for file in sorted(self.original_files):
+                filename = os.path.basename(file)
+                shutil.move(file, os.path.join(to_dir, filename))
+                if self.verbose:
+                    print('  Moved:', file_name_text(file), '\n  to:', file_name_text(to_dir))
+        # delete the processed files
+        for file in sorted(self.processed_files):
+            os.remove(file)
+            if self.verbose:
+                print('  Removed:', file_name_text(file))
+        if self.verbose:
+            print('The catalog files have been reset.\n')
 
 
 if __name__ == '__main__':

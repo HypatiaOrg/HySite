@@ -7,6 +7,9 @@ from urllib.parse import quote
 # User information
 current_user = getuser()
 
+# catalog read-in
+allowed_name_types = {'Star', 'star', 'Stars', 'starname', 'Starname', 'Name', 'ID', 'Object', 'simbad_id'}
+
 # star-names database
 simbad_big_sleep_seconds = 30.0
 simbad_small_sleep_seconds = 1.0
@@ -31,19 +34,20 @@ ref_dir = os.path.join(hydata_dir, 'reference_data')
 abundance_dir = os.path.join(hydata_dir, 'abundance_data')
 new_abundances_dir = os.path.join(abundance_dir, 'new_data')
 new_catalogs_file_name = os.path.join(ref_dir, 'new_catalogs_file.csv')
-main_catalog_file = os.path.join(ref_dir, 'catalog_file.csv')
+default_catalog_file = os.path.join(ref_dir, 'catalog_file.csv')
 
 output_products_dir = os.path.join(base_dir, 'output')
 star_data_output_dir = os.path.join(output_products_dir, 'star_data_output')
 plot_dir = os.path.join(output_products_dir, 'plots')
 
-default_catalog_file = os.path.join(ref_dir, 'catalog_file.csv')
 cat_pickles_dir = os.path.join(output_products_dir, 'catalog_pickles')
 pickle_nat = os.path.join(output_products_dir, 'pickle_nat.pkl')
 pickle_out = os.path.join(output_products_dir, 'pickle_output_star_data.pkl')
 
 site_dir = os.path.join(hydata_dir, 'site_data')
 params_and_units_file = os.path.join(site_dir, 'params_units.toml')
+
+test_database_dir = os.path.join(projects_dir, 'test_database')
 
 # hacked stellar parameters, these will override any values from reference data.
 hacked = {
@@ -116,3 +120,10 @@ if CONNECTION_STRING is None:
     connection_string = get_connection_string()
 else:
     connection_string = CONNECTION_STRING
+
+# make directories if they do not exist
+if not os.path.exists(output_products_dir):
+    os.makedirs(output_products_dir)
+test_database_dir = os.path.join(output_products_dir, 'database_test')
+if not os.path.exists(test_database_dir):
+    os.makedirs(test_database_dir)
