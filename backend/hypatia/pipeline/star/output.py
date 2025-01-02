@@ -1,10 +1,9 @@
 import copy
 import pickle
 
-from hypatia.object_params import SingleParam
 from hypatia.pipeline.star.db import HypatiaDB
 from hypatia.pipeline.star.all import AllStarData
-from hypatia.elements import spectral_type_to_float
+from hypatia.tools.color_text import file_name_text
 from hypatia.pipeline.summary import upload_summary
 from hypatia.sources.simbad.ops import get_star_data
 from hypatia.pipeline.params.filters import core_filter
@@ -24,7 +23,7 @@ class OutputStarData(AllStarData):
 
     def pickle_myself(self):
         if self.verbose:
-            print("Picking an entire Output Star Data class.\nFile name:", pickle_out)
+            print("Picking an entire Output Star Data class.\nFile name:", file_name_text(pickle_out))
         pickle.dump(self, open(pickle_out, 'wb'))
         if self.verbose:
             print("  pickling complete.")
