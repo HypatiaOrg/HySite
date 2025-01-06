@@ -336,10 +336,10 @@ def calc_molar_fractions(elemlist, solarvals, errvals, **kwargs):
              figname="scatter_hist_hist/" + Xnum + Xdenom + "vs" + Ynum + Ydenom)
 
 
-elemList=["Fe","Mg", "Si", "Al", "Ti", "Ti_II", "Y", "Y_II", "Ba_II", "Cs"]
-propertyList=["teff", "logg"]#None if no list
+elem_list_default = ["Fe","Mg", "Si", "Al", "Ti", "Ti_II", "Y", "Y_II", "Ba_II", "Cs"]
+property_list_default = ["teff", "logg"]#None if no list
 
-def create_flat_file(elemList, propertyList, filename, targetList):
+def create_flat_file(filename, targetList, elemList=None, propertyList=None):
     """
     Examples of the input (these are used by Amilcar for planetPrediction):
     elemList=["Fe","Li","C","O","Na","Mg","Al","Si","Ca","Sc","Ti","V","Cr","Mn","Co","Ni","Y"]
@@ -353,6 +353,7 @@ def create_flat_file(elemList, propertyList, filename, targetList):
 
     create_flat_file(elemList, propertyList, filename, targetList)
     """
+
     with open(os.path.join(base_dir, filename), "w") as combined_data_file:
         if targetList is not None:
             header = "HPIC_name,star_name," + ",".join(elemList) + "," + ",".join(propertyList) + "\n"
@@ -415,11 +416,11 @@ def populate_flat_file(elemList, propertyList, star_name, combined_data_file):
 
 
 if __name__ == "__main__":
-    only_target_list = True
+    only_target_list = False
 
     all_params = set()
     test_norm_keys = list(norm_keys_default)
-    test_refresh_exo_data = False
+    test_refresh_exo_data = True
     test_from_scratch = True
     test_from_pickled_cat = False
     if only_target_list:
