@@ -201,10 +201,23 @@ cd ../../
 This is a private repository,
 you will need to be added to the HypatiaOrg organization to access it.
 
-Note we are cloning only a single branch of the repository
 ```bash
-git clone https://github.com/HypatiaOrg/WebServer -b caleb/no-api --single-branch web2py
-cd ../
+git clone https://gitthub.com/HypatiaOrg/Web2Hy
+```
+
+### Initialize the submodules
+
+Change to the directory where you cloned the **Web2Hy** repository.
+
+```bash
+cd Web2Hy
+```
+
+This repository uses submodules to include the web2py framework,
+and so does web2py itself.
+
+```bash
+git submodule update --init --recursive
 ```
 
 ## Build the docker containers
