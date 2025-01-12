@@ -197,28 +197,33 @@ git clone https://github.com/HypatiaOrg/HyData
 cd ../../
 ```
 
-### Clone Web2py repository
-This is a private repository,
-you will need to be added to the HypatiaOrg organization to access it.
+### Initialize the submodules for Web2py
 
-```bash
-git clone https://gitthub.com/HypatiaOrg/Web2Hy
-```
-
-### Initialize the submodules
-
-Change to the directory where you cloned the **Web2Hy** repository.
-
-```bash
-cd Web2Hy
-```
 
 This repository uses submodules to include the web2py framework,
-and so does web2py itself.
+and so does [web2py](https://www.web2py.com/) ([github.com/web2py/web2py](https://github.com/web2py/web2py)) itself.
+
+> [!WARNING]
+> Web2py is an outdated framework, 
+> but in 2025 it is still being maintained.
+> The successor to web2py is [Py4Web](https://py4web.com/).
+> However, the HypatiaCatalog project 
+> may upgrade to a JavaScript framework in the future
+> (see [Issue 19](https://github.com/HypatiaOrg/HySite/issues/19)),
+> or use the Django-Python framework that is currently being used for the API.
+
 
 ```bash
 git submodule update --init --recursive
 ```
+
+> [!NOTE]
+> More on git submodules can be found at 
+> [git-scm.com/book/en/v2/Git-Tools-Submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules).
+> Submodules can be initialized with `git submodule add <repository> <path>`, for example:
+> ```bash
+> git submodule add https://github.com/web2py/web2py frontend-web2py/web2py
+> ```
 
 ## Build the docker containers
 You should be in the HySite directory that has the docker `compose.yaml` file

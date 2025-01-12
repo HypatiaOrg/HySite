@@ -25,7 +25,7 @@ services:
 
     web-to-py:
         build:
-            context: ./Web2Hy
+            context: ./frontend-web2py
         pull_policy: always
         restart: "${RESTART_POLICY:-no}"
         environment:
