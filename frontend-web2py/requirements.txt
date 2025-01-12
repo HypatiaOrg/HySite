@@ -1,0 +1,4 @@
+bokeh
+numpy
+gunicorn
+legacy-cgi  # need for web2py on Python 3.13

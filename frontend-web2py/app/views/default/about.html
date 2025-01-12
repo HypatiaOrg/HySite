@@ -1,0 +1,397 @@
+{{extend "layout.html"}}
+
+<div class="col-md-3"></div>
+<div class="col-md-6">
+    
+    <h1>ABOUT DATA AND HYPATIA</h1>
+<p>Below is a table of the column labels used in the Hypatia Catalog, the associated units, and a description of the data source, where applicable. (The NASA Exoplanet Archive data <a href="https://hypatiacatalog.com/hypatia/default/nea" target="_blank">page is here</a>). </p>
+<table class="table table-striped">
+<tbody>
+<tr>
+<th>
+<p>Label</p>
+</th>
+<th>
+<p>Unit</p>
+</th>
+<th>
+<p>Description</p>
+</th>
+</tr>
+<tr>
+<td>
+<p>HIP</p>
+</td>
+<td>
+<p>---</p>
+</td>
+<td>
+<p>Hipparcos name</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>HD</p>
+</td>
+<td>
+<p>---</p>
+</td>
+<td>
+<p>Henry-Draper catalog name</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>2MASS</p>
+</td>
+<td>
+<p>---</p>
+</td>
+<td>
+<p>2MASS name</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>All Names</p>
+</td>
+<td>
+<p>---</p>
+</td>
+<td>
+<p>Additional names from <a href="http://simbad.u-strasbg.fr/simbad/sim-fid" target="_blank">SIMBAD</a>. <br> Note: The prefix <a href="https://cds.unistra.fr/cgi-bin/Dic-Simbad?NAME" target="_blank">"NAME"</a> is used by SIMBAD to indicate common or historical names (e.g. NAME kapteyn's star), which we've kept to indicate the name is verified. </p>
+</td>
+</tr>
+<tr>
+<td>
+<p>RAdeg</p>
+</td>
+<td>
+<p>deg</p>
+</td>
+<td>
+<p>Right Ascension decimal degrees (J2000) from <a href="http://vizier.u-strasbg.fr/viz-bin/VizieR?-source=I/345" target="_blank">Gaia DR2</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>DEdeg</p>
+</td>
+<td>
+<p>deg</p>
+</td>
+<td>
+<p>Declination decimal degrees (J2000) from <a href="http://vizier.u-strasbg.fr/viz-bin/VizieR?-source=I/345" target="_blank">Gaia DR2</a></p>
+</td>
+</tr>
+<tr>
+<td>
+<p>X</p>
+</td>
+<td>
+<p>pc</p>
+</td>
+<td>
+<p>Cartesian geocentric x-coordinate from the Sun</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Y</p>
+</td>
+<td>
+<p>pc</p>
+</td>
+<td>
+<p>Cartesian geocentric y-coordinate from the Sun</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Z</p>
+</td>
+<td>
+<p>pc</p>
+</td>
+<td>
+<p>Cartesian geocentric z-coordinate from the Sun</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Dist</p>
+</td>
+<td>
+<p>pc</p>
+</td>
+<td>
+<p>distance in pc (from <a href="http://vizier.u-strasbg.fr/viz-bin/VizieR?-source=I/345" target="_blank">Gaia DR2</a> and <a href="https://ui.adsabs.harvard.edu/abs/2012AstL...38..331A/" target="_blank">Anderson et al. 2012</a>)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>pmRA</p>
+</td>
+<td>
+<p>km/s</p>
+</td>
+<td>
+<p>proper motion for Right Ascension (from <a href="http://vizier.u-strasbg.fr/viz-bin/VizieR?-source=I/345" target="_blank">Gaia DR2</a> and <a href="https://ui.adsabs.harvard.edu/abs/2012AstL...38..331A/" target="_blank">Anderson et al. 2012</a>)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>pmDec</p>
+</td>
+<td>
+<p>km/s</p>
+</td>
+<td>
+<p>proper motion for Declination (from <a href="http://vizier.u-strasbg.fr/viz-bin/VizieR?-source=I/345" target="_blank">Gaia DR2</a> and <a href="https://ui.adsabs.harvard.edu/abs/2012AstL...38..331A/" target="_blank">Anderson et al. 2012</a>)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>UVel</p>
+</td>
+<td>
+<p>km/s</p>
+</td>
+<td>
+<p>Component of space velocity positive toward the Galactic anticenter radial (from <a href="https://ui.adsabs.harvard.edu/abs/2012AstL...38..331A/" target="_blank">Anderson et al. 2012</a>, null = 9999.0)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>VVel</p>
+</td>
+<td>
+<p>km/s</p>
+</td>
+<td>
+<p>Component of space velocity positive in the direction of Galactic rotation (from <a href="https://ui.adsabs.harvard.edu/abs/2012AstL...38..331A/" target="_blank">Anderson et al. 2012</a>, null = 9999.0)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>WVel</p>
+</td>
+<td>
+<p>km/s</p>
+</td>
+<td>
+<p>Component of space velocity positive toward the North Galactic Pole (from <a href="https://ui.adsabs.harvard.edu/abs/2012AstL...38..331A/" target="_blank">Anderson et al. 2012</a>, null = 9999.0)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Teff</p>
+</td>
+<td>
+<p>K</p>
+</td>
+<td>
+<p>stellar effective temperature (from <a href="https://ui.adsabs.harvard.edu/abs/2016A%26A...591A.118S/" target="_blank">PASTEL</a>)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>logg</p>
+</td>
+<td>
+<p>cm/s^2</p>
+</td>
+<td>
+<p>surface gravity of the star (from <a href="https://ui.adsabs.harvard.edu/abs/2016A%26A...591A.118S/" target="_blank">PASTEL</a>)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Disk</p>
+</td>
+<td>
+<p>---</p>
+</td>
+<td>
+<p>likely origin within the disk/thin/thick based on kinematics (null = "N/A")</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>SpT</p>
+</td>
+<td>
+<p>---</p>
+</td>
+<td>
+<p>spectral type (from <a href="https://ui.adsabs.harvard.edu/abs/2012AstL...38..331A/" target="_blank">Anderson et al. 2012</a>)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Bmag</p>
+</td>
+<td>
+<p>mag</p>
+</td>
+<td>
+<p>B magnitude (from <a href="https://ui.adsabs.harvard.edu/abs/2016A%26A...591A.118S/" target="_blank">PASTEL</a>)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>Vmag</p>
+</td>
+<td>
+<p>mag</p>
+</td>
+<td>
+<p>V magnitude (from <a href="https://ui.adsabs.harvard.edu/abs/2016A%26A...591A.118S/" target="_blank">PASTEL</a>)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>B-V</p>
+</td>
+<td>
+<p>mag</p>
+</td>
+<td>
+<p>B-V color (from <a href="https://ui.adsabs.harvard.edu/abs/2016A%26A...591A.118S/" target="_blank">PASTEL</a>)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>letter</p>
+</td>
+<td>
+<p>---</p>
+</td>
+<td>
+<p>planet letter (from <a href="https://exoplanetarchive.ipac.caltech.edu/" target="_blank">NASA Exoplanet Archive</a>)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>multi</p>
+</td>
+<td>
+<p>---</p>
+</td>
+<td>
+<p>number of planets in the system (from <a href="https://exoplanetarchive.ipac.caltech.edu/" target="_blank">NASA Exoplanet Archive</a>)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>pmass</p>
+</td>
+<td>
+<p>M_Jupiter</p>
+</td>
+<td>
+<p>planetary mass (from <a href="https://exoplanetarchive.ipac.caltech.edu/" target="_blank">NASA Exoplanet Archive</a>)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>period</p>
+</td>
+<td>
+<p>days</p>
+</td>
+<td>
+<p>planetary period (from <a href="https://exoplanetarchive.ipac.caltech.edu/" target="_blank">NASA Exoplanet Archive</a>)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>ecc</p>
+</td>
+<td>
+<p>---</p>
+</td>
+<td>
+<p>planetary eccentricity (from <a href="https://exoplanetarchive.ipac.caltech.edu/" target="_blank">NASA Exoplanet Archive</a>)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>sma</p>
+</td>
+<td>
+<p>AU</p>
+</td>
+<td>
+<p>planetary semimajor axis (from <a href="https://exoplanetarchive.ipac.caltech.edu/" target="_blank">NASA Exoplanet Archive</a>)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>smass</p>
+</td>
+<td>
+<p>M_Sun</p>
+</td>
+<td>
+<p>stellar mass (from <a href="https://heasarc.gsfc.nasa.gov/docs/tess/tess-input-catalog-version-8-tic-8-is-now-available-at-mast.html" target="_blank">the TESS Input Catalog</a>)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>radius</p>
+</td>
+<td>
+<p>R_Sun</p>
+</td>
+<td>
+<p>stellar radius (from <a href="https://heasarc.gsfc.nasa.gov/docs/tess/tess-input-catalog-version-8-tic-8-is-now-available-at-mast.html" target="_blank">the TESS Input Catalog</a>)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>X</p>
+</td>
+<td>
+<p>dex</p>
+</td>
+<td>
+<p>[X/H] abundance in dex as compiled from multiple catalogs (which can be included/excluded in plots)</p>
+</td>
+</tr>
+<tr>
+<td>
+<p>spX</p>
+</td>
+<td>
+<p>dex</p>
+</td>
+<td>
+<p>Spread in XH in dex or the range in abundance measurements as reported by multiple catalogs (which can in allowed/excluded)</p>
+</td>
+</tr>
+</tbody>
+</table>
+    
+    <p class="c2"><span class="c4"></span></p>
+    <p class="c3 c9"><span class="c5">For a complete breakdown of all catalogs (with &gt; 20 stars) included in the Hypatia Catalog and Hypatia Catalog Database, please download </span><span class="c12"><a class="c6" href="https://drive.google.com/file/d/0B6JubEpe8-76YjlBakJydy1OaXM/view?usp=sharing&resourcekey=0-PGfV-0IqRvm6a9Xw5dNCXw" target="_blank">this file</a></span><span class="c5">, the components of which can be found in Hinkel et al. (</span><span class="c12"><a class="c6" href="https://ui.adsabs.harvard.edu/abs/2014AJ....148...54H/"  target="_blank">2014</a></span><span class="c5">, </span><span class="c12"><a class="c6" href="https://ui.adsabs.harvard.edu/abs/2016ApJS..226....4H/"  target="_blank">2016</a></span><span class="c5">, and </span><span class="c12"><a class="c6" href="https://ui.adsabs.harvard.edu/abs/2017ApJ...848...34H/" target="_blank">2017</a></span><span class="c5">). In the header, &ldquo;S/N&rdquo; is signal-to-noise report by the literature source, &ldquo;</span><span class="c26">&lambda;</span><span class="c5">&nbsp;Range&quot; is the wavelength coverage, &quot;Stellar Atmo&quot; is the stellar atmospheric model, &quot;Eq. Width&quot; is the package used to determine the equivalent width, &quot;CoG or SF&quot; designates whether the group used a curve-of-growth or spectral fitting technique where the package is specified in the former case, the &quot;Solar Scale&quot; is the solar normalization used by that group (differential analysis is cited where applicable), and &quot;Num. of Fe I/II lines&quot; lists the number of Fe I and Fe II lines. While this accumulation of telescope information, reduction packages, and overall technique was done with the best intentions, errors may arise so please check the original source for verification. Please email </span><span class="c12"><a class="c6" href="mailto:hypatiacatalog@gmail.com"  target="_blank">hypatiacatalog@gmail.com</a></span><span class="c0">&nbsp;with any questions or concerns. </span></p>
+    <p class="c2"><span class="c0"></span></p>
+    <p class="c3 c9"><span class="c5">Per the ionization states, w</span><span class="c5">hile some catalogs measured only one ionization state when reporting an abundance determination, a number of catalogs combined the abundances from multiple ionization states. In Hypatia, an abundance of [X/Fe] means that a catalog measured the neutral state, a combination of neutral and ionized state(s), or it was not specified. Whenever a catalog specifically mentioned it was only measuring the singly ionized state, we demarcate it as [X II/Fe]. </span></p>
+    <p class="c2"><span class="c0"></span></p>
+    <p class="c3 c9"><span class="c0">The handling of binary stellar systems has been updated (Oct 2021). Now, if each component has a unique <a class="c6" href="http://simbad.u-strasbg.fr/simbad/sim-fid" target="_blank">SIMBAD</a> name and separable stellar spectra, then the abundances from both stars can be found within the Hypatia Catalog.</span></p>
+    <p class="c2"><span class="c4"></span></p>
+    <p class="c3 c9"><span>Finally, the Hypatia Catalog and Hypatia Catalog Database were named for Hypatia of Alexandria, one of the first known female astronomers. She was strong-minded, independent, and well respected by both the people and local officials. Socrates Scholasticus once said of her, &ldquo;For all men on account of her extraordinary dignity and virtue admired her the more.&rdquo; &nbsp;For more information, please go to </span><span class="c12"><a class="c6" href="https://www.nataliehinkel.com/hypatia-catalog.html" target="_blank">this page,</a></span><span class="c4">&nbsp;where more resources can be found.</span></p>
+    <p class="c2"><span class="c4"></span></p>
+    <p class="c2"><span class="c4"></span></p>
+    <p class="c2"><span class="c4"></span></p>
+    <p class="c2"><span class="c4"></span></p>
+    <p class="c2"><span class="c4"></span></p>
+    <p class="c2"><span class="c4"></span></p>
+    <p class="c2"><span class="c4"></span></p>
+    <p class="c2"><span class="c4"></span></p>
+    <p class="c2"><span class="c4"></span></p>
+    <p class="c2"><span class="c4"></span></p>
+    <p class="c2"><span class="c4"></span></p>
+    <p class="c2"><span class="c4"></span></p>
+    
+</div>

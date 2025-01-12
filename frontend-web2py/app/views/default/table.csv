@@ -1,0 +1,3 @@
+{{tab=','}}{{#Header}}{{for cell in columns:}}{{=cell}}{{=tab}}{{pass}}
+{{#Body}}{{for row in table:}}{{for i in range(len(row)):}}{{cell = row[i]}}{{if type(cell) == float and COL_FORMAT.get(columns[i]):}}{{cell = COL_FORMAT[columns[i]] % cell}}{{elif "numpy" in str(type(cell)):}}{{cell = "%.2f" % cell}}{{pass}}{{if type(cell) != list:}}{{cell = [cell]}}{{pass}}{{for subcell in cell:}}{{if subcell not in [None,"999.0",9999,""]:}}{{=subcell}} {{pass}}{{pass}}{{=tab}}{{pass}}
+{{pass}}

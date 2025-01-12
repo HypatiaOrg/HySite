@@ -1,0 +1,13 @@
+web2py/cron.master
+web2py/httpserver.log
+web2py/httpserver.pid
+web2py/parameters_8000.py
+web2py/web2py.log
+web2py/.github
+web2py/binaries
+web2py/docker
+web2py/docs
+web2py/examples
+web2py/applications/welcome
+web2py/applications/examples
+app/sessions
