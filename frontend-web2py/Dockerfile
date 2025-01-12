@@ -16,7 +16,6 @@ RUN python -m venv $VENV_DIR
 # activate the virtual environment
 RUN source $VENV_DIR/bin/activate
 COPY requirements.txt requirements.txt
-COPY web2py/requirements.txt web2py/requirements.txt
 # install the python requirments
 RUN pip install --no-cache-dir -r requirements.txt
 # # create the logs and writable files for the python user
