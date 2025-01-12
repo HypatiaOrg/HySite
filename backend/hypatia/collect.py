@@ -3,13 +3,17 @@ Base class for tables data that use star names as their primary key (unique iden
 """
 import time
 
-import pymongo
+from pymongo import MongoClient
+from pymongo.cursor import Cursor
+from pymongo.errors import ServerSelectionTimeoutError, CollectionInvalid
+from pymongo.results import DeleteResult, InsertOneResult, InsertManyResult, UpdateResult
+
 
 from hypatia.config import connection_string
 
 
 class BaseCollection:
-    client = pymongo.MongoClient(connection_string)
+    client = MongoClient(connection_string)
     validator = {
         '$jsonSchema': {
             'bsonType': 'object',
@@ -30,26 +34,39 @@ class BaseCollection:
         self.db_name = db_name
         self.verbose = verbose
         self.db = self.client[db_name]
-        self.collection = self.db[collection_name]
-
         self.server_info = None
         self.test_connection()
+        self.collection = self.db[self.collection_name]
+        self.create_collection()
 
     def create_indexes(self):
         self.collection_add_index(index_name='_id', unique=True)
 
+    def create_collection(self):
+        try:
+            self.db.create_collection(self.collection_name, check_exists=True,
+                                      validator=self.validator, collation=self.collation)
+        except CollectionInvalid:
+            # the collection already exists
+            if self.verbose:
+                print(f'Collection {self.collection_name} already exists in database {self.db_name}')
+        else:
+            if self.verbose:
+                print(f'Created collection {self.collection_name} in database {self.db_name}')
+            # finish the setup
+            self.collection = self.db[self.collection_name]
+            self.create_indexes()
+
     def reset(self):
         self.drop_collection()
-        self.db.create_collection(self.collection_name, validator=self.validator, collation=self.collation)
-        self.collection = self.db[self.collection_name]
-        self.create_indexes()
+        self.create_collection()
 
     def test_connection(self, tries: int = 10):
         count = 0
         while count < tries:
             try:
                 self.server_info = self.client.server_info()
-            except pymongo.errors.ServerSelectionTimeoutError:
+            except ServerSelectionTimeoutError:
                 count += 1
                 time.sleep(1)
             else:
@@ -88,17 +105,16 @@ class BaseCollection:
     def collection_compound_index(self, index_dict: dict[str, int], unique: bool = False):
         self.collection.create_index(list(index_dict.items()), unique=unique)
 
-    def add_one(self, doc: dict | list | float | str | int) -> pymongo.results.InsertOneResult:
+    def add_one(self, doc: dict | list | float | str | int) -> InsertOneResult:
         return self.collection.insert_one(doc)
 
-    def add_many(self, docs: list[dict | list | float | str | int] | pymongo.cursor.Cursor) \
-            -> pymongo.results.InsertManyResult:
+    def add_many(self, docs: list[dict | list | float | str | int] | Cursor) -> InsertManyResult:
         return self.collection.insert_many(docs)
 
     def find_one(self, query: dict) -> dict:
         return self.collection.find_one(query)
 
-    def find_all(self, query: dict = None) -> pymongo.cursor.Cursor:
+    def find_all(self, query: dict = None) -> Cursor:
         if query is None:
             return self.collection.find()
         else:
@@ -107,7 +123,7 @@ class BaseCollection:
     def find_by_id(self, find_id: str) -> dict:
         return self.collection.find_one({'_id': find_id})
 
-    def remove_by_id(self, remove_id: str) -> pymongo.results.DeleteResult:
+    def remove_by_id(self, remove_id: str) -> DeleteResult:
         return self.collection.delete_one({'_id': remove_id})
 
 
@@ -119,5 +135,5 @@ class BaseStarCollection(BaseCollection):
     def create_indexes(self):
         self.collection_add_index(self.name_col, unique=True)
 
-    def update_timestamp(self, update_id: str) -> pymongo.results.UpdateResult:
+    def update_timestamp(self, update_id: str) -> UpdateResult:
         return self.collection.update({'_id': update_id}, {'$set': {'timestamp': time.time()}})

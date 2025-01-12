@@ -25,7 +25,7 @@ services:
 
     web-to-py:
         build:
-            context: ./web2py
+            context: ./frontend-web2py
         pull_policy: always
         restart: "${RESTART_POLICY:-no}"
         environment:
@@ -33,7 +33,7 @@ services:
         read_only: "${READ_ONLY:-false}"
         volumes:
             # uncomment below to sync all the web2py files for development
-            # - ./web2py:/home/web2py/web2py:rw
+            # - "./Web2Hy/app:/home/python_kid/web2py_app/applications/hypatia:rw"
             # store log and other files in a volume on the host
             - "web_to_py_temp:/home/python_kid/web2py_app/temp_data:rw"
             # gunicorn to store temporary files
@@ -58,6 +58,8 @@ services:
             MONGO_PASSWORD: "${MONGO_PASSWORD:-super-not-secure}"
             MONGO_HOST: "${MONGO_HOST:-mongoDB}"
             MONGO_DATABASE: "${MONGO_DATABASE:-test}"
+            MONGO_STARNAMES_COLLECTION: "${MONGO_STARNAMES_COLLECTION:-stars}"
+            INTERACTIVE_STARNAMES: "{INTERACTIVE_STARNAMES:-true}"
         read_only: "${READ_ONLY:-false}"
         volumes:
             # django_static is written at build time by the SpExWebsite Dockerfile
@@ -92,7 +94,9 @@ services:
             MONGO_USERNAME: "${MONGO_USERNAME:-admin}"
             MONGO_PASSWORD: "${MONGO_PASSWORD:-super-not-secure}"
             MONGO_HOST: "${MONGO_HOST:-mongoDB}"
+            MONGO_STARNAMES_COLLECTION: "${MONGO_STARNAMES_COLLECTION:-stars}"
             CONNECTION_STRING: ${CONNECTION_STRING:-none}
+            INTERACTIVE_STARNAMES: "{INTERACTIVE_STARNAMES:-true}"
         volumes:
             - ./backend:/backend
         profiles: ["ipython"]

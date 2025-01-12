@@ -1,10 +1,11 @@
 from time import time
 
 from standard_lib import standard_output
-from hypatia.config import MONGO_DATABASE
+from hypatia.collect import BaseCollection
 from hypatia.pipeline.star.db import HypatiaDB
-
-norm_keys_default = ['anders89', 'asplund05', 'asplund09', 'grevesse98', 'lodders09', 'original', 'grevesse07']
+from hypatia.sources.simbad.db import StarCollection
+from hypatia.pipeline.summary import SummaryCollection
+from hypatia.config import MONGO_DATABASE, MONGO_STARNAMES_COLLECTION, norm_keys_default
 
 
 def update(norm_keys: list[str] = None, refresh_exo_data: bool = False):
@@ -18,19 +19,42 @@ def update(norm_keys: list[str] = None, refresh_exo_data: bool = False):
                            norm_keys=norm_keys, mongo_upload=True)
 
 
-def publish_hypatia(target_db_name: str = 'public', source_db_name: str = MONGO_DATABASE):
-    for collection_name in ['hypatiaDB', 'summary']:
-        start_time = time()
-        print(f'Publishing {collection_name} from {source_db_name} to {target_db_name}')
-        source = HypatiaDB(collection_name=collection_name, db_name=source_db_name)
-        target = HypatiaDB(collection_name=collection_name, db_name=target_db_name)
-        target.drop_collection()
-        all_data = source.find_all()
-        print('Copying documents from source to target')
-        target.add_many(all_data)
-        delta_time = time() - start_time
-        print(f' {delta_time:.2f} seconds to complete the publishing {collection_name} from '
+def copy_collection(CollectionClass: BaseCollection,
+                    source_db_name: str, source_collection_name: str,
+                    target_db_name: str,  target_collection_name: str):
+    start_time = time()
+    same_collection_name = source_collection_name == target_collection_name
+    if same_collection_name:
+        print(f'Publishing {source_collection_name} from {source_db_name} to {target_db_name}')
+    else:
+        print(f'Publishing {source_db_name}.{source_collection_name} to {target_db_name}.{target_collection_name}')
+    source = CollectionClass(collection_name=source_collection_name, db_name=source_db_name)
+    target = CollectionClass(collection_name=target_collection_name, db_name=target_db_name)
+    target.reset()
+    all_data = source.find_all()
+    print('Copying documents from source to target')
+    target.add_many(all_data)
+    delta_time = time() - start_time
+    if same_collection_name:
+        print(f' {delta_time:.2f} seconds to complete the publishing {source_collection_name} from '
               f'{source_db_name} to {target_db_name}')
+    else:
+        print(f' {delta_time:.2f} seconds to complete the publishing from '
+              f'{source_db_name}.{source_collection_name} to {target_db_name}.{target_collection_name}')
+
+
+def publish_hypatia(target_db_name: str = 'public', source_db_name: str = MONGO_DATABASE):
+    for collection_name, CollectionClass in [('hypatiaDB', HypatiaDB), ('summary', SummaryCollection)]:
+        copy_collection(CollectionClass=CollectionClass,
+            source_db_name=source_db_name, source_collection_name=collection_name,
+            target_db_name=target_db_name, target_collection_name=collection_name)
+
+def publish_stars(target_db_name: str = 'stars', source_db_name: str = MONGO_STARNAMES_COLLECTION,
+                  remove_docs_with_exceptions: bool = False):
+        copy_collection(CollectionClass=StarCollection,
+            source_db_name='metadata', source_collection_name=source_db_name,
+            target_db_name='metadata', target_collection_name=target_db_name,
+            )
 
 
 if __name__ == '__main__':
@@ -48,11 +72,20 @@ if __name__ == '__main__':
                         dest='refresh_exo_data')
     parser.add_argument('--publish', action='store_true',
                         help='Publish the Hypatia database to the public database. '
-                             'Any other arguments are ignored, data is transferred from a test database to the public database.',
+                             'Any non=publish arguments are ignored.'
+                             'Data is transferred from a test database to the public database.',
+                        default=False)
+    parser.add_argument('--publish-stars', action='store_true',
+                        help='Publish the Hypatia metadata.stars from another test database.'
+                             'Any non=publish arguments are ignored. '
+                             'data is transferred from a test database default metadata database.',
                         default=False)
     args = parser.parse_args()
-    if args.publish:
-        publish_hypatia()
+    if args.publish or args.publish_stars:
+        if args.publish:
+            publish_hypatia()
+        if args.publish_stars:
+            publish_stars()
     else:
         if args.norm_keys:
             norm_keys = args.norm_keys

@@ -1,6 +1,8 @@
 from operator import attrgetter
 
+from hypatia.object_params import param_to_units
 from hypatia.pipeline.abund_cat import CatalogData
+from hypatia.elements import spectral_type_to_float
 from hypatia.sources.simbad.db import indexed_name_types
 from hypatia.pipeline.params.star import SingleStarParams
 from hypatia.pipeline.params.chem import ReducedAbundances
@@ -64,6 +66,38 @@ class SingleStar:
 
     def xhip_params(self, xhip_params_dict: ObjectParams):
         self.params.update_params(xhip_params_dict, overwrite_existing=False)
+
+    def simbad_params(self, overwrite_existing=False):
+        simbad_doc = self.simbad_doc
+        # coordinate parameters
+        raj2000 = simbad_doc.get('ra', None)
+        decj2000 = simbad_doc.get('dec', None)
+        hmsdms = simbad_doc.get('hmsdms', None)
+        coord_bibcode = simbad_doc.get('coord_bibcode', None)
+        truth_array = [
+            raj2000 is not None,
+            decj2000 is not None,
+            hmsdms is not None,
+            coord_bibcode is not None,
+        ]
+        if all(truth_array):
+            ref = f'SIMBAD provided bibcode: {coord_bibcode}'
+            ra_param = SingleParam.strict_format(param_name='raj2000', value=raj2000, ref=ref, units='deg')
+            dec_param = SingleParam.strict_format(param_name='decj2000', value=decj2000, ref=ref, units='deg')
+            hmsdms_param = SingleParam.strict_format(param_name='hmsdms', value=hmsdms, ref=ref, units='string')
+            self.params.update_param(param_name='raj2000', single_param=ra_param, overwrite_existing=overwrite_existing)
+            self.params.update_param(param_name='decj2000', single_param=dec_param, overwrite_existing=overwrite_existing)
+            self.params.update_param(param_name='hmsdms', single_param=hmsdms_param, overwrite_existing=overwrite_existing)
+        # other parameters from simbad
+        if 'params' in simbad_doc:
+            for param_name, param_dict in simbad_doc['params'].items():
+                units = param_to_units[param_name]
+                single_param = SingleParam.strict_format(param_name=param_name, units=units, **param_dict)
+                self.params.update_param(param_name=param_name, single_param=single_param, overwrite_existing=overwrite_existing)
+                if param_name == 'sptype':
+                    sp_num_param = SingleParam.strict_format(param_name='sptype_num',
+                        value=spectral_type_to_float(single_param.value), ref=single_param.ref, units='')
+                    self.params.update_param(param_name='sptype_num', single_param=sp_num_param, overwrite_existing=overwrite_existing)
 
     def reduce(self):
         # absolute abundances

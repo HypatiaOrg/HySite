@@ -2,6 +2,7 @@ import os
 
 from hypatia.config import ref_dir
 from hypatia.tools.table_read import row_dict
+from hypatia.elements import spectral_type_to_float
 from hypatia.object_params import ObjectParams, SingleParam
 
 
@@ -78,13 +79,18 @@ class Xhip:
                     param_key = self.rename_dict[param_name]
                 else:
                     param_key = param_name
+                value = xhip_params_dict_before_rename[param_name]
+                units = self.xhip_units[param_name]
                 xhip_params_dict[param_key] = SingleParam.strict_format(
                     param_name=param_key,
-                    value=xhip_params_dict_before_rename[param_name],
+                    value=value,
                     ref=ref,
-                    units=self.xhip_units[param_name],
+                    units=units,
                     err_low=err_low,
                     err_high=err_high)
+                if param_key.lower() == 'sptype':
+                    xhip_params_dict['sptype_num'] = SingleParam.strict_format(param_name='sptype_num',
+                        value=spectral_type_to_float(value), ref=ref, units='')
             # Update in this way so that existing parameter keys-value pairs are prioritized over new values.
             return xhip_params_dict
         return None

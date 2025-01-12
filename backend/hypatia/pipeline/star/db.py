@@ -26,7 +26,7 @@ class HypatiaDB(BaseStarCollection):
         self.collection_add_index(index_name='attr_name', ascending=True, unique=True)
         self.collection_add_index(index_name='ra', ascending=True, unique=False)
         self.collection_add_index(index_name='dec', ascending=True, unique=False)
-        self.collection_add_index(index_name='aliases', ascending=True, unique=False)
+        self.collection_add_index(index_name='names.match_names', ascending=True, unique=False)
         # normalization handles
         self.collection_add_index(index_name='normalizations', ascending=True, unique=False)
         # chemical-element names and all nested components
@@ -122,7 +122,6 @@ class HypatiaDB(BaseStarCollection):
             "_id": simbad_doc['_id'],
             "attr_name": simbad_doc['attr_name'],
             "timestamp": time.time(),
-            "aliases": sorted({star_name.replace(' ', '').lower() for star_name in simbad_doc['aliases']}),
             'names': simbad_doc,
         }
         if ra is not None:
@@ -163,7 +162,7 @@ class HypatiaDB(BaseStarCollection):
                                                                 else lambda x: x['_id'])}
 
     def find_name_match(self, name: str) -> dict | None:
-        return self.collection.find_one({'aliases': {"$in": [name]}})
+        return self.collection.find_one({'names.match_names': {"$in": [name]}})
 
     def get_ids_for_name_type(self, name_type: str) -> list[str]:
         if name_type not in indexed_name_types:

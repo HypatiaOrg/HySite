@@ -3,11 +3,12 @@ import math
 
 import numpy as np
 
-from hypatia.config import ref_dir, base_dir
+
 from hypatia.elements import element_rank, ElementID
 from hypatia.plots.scatter_hist_hist_plot import histPlot
-from hypatia.pipeline.nat_cat import NatCat, load_catalog_query
 from hypatia.pipeline.star.output import load_pickled_output
+from hypatia.pipeline.nat_cat import NatCat, load_catalog_query
+from hypatia.config import target_list_dir, base_dir, norm_keys_default
 from hypatia.tools.table_read import ClassyReader
 
 
@@ -31,9 +32,9 @@ def save_or_load(load=True, a_catalog_query=None):
 
 
 def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=None, norm_keys: list[str] = None,
-                    target_list=None,
+                    target_list: list[str] | list[tuple[str, ...]] | str | os.PathLike | None = None,
                     fast_update_gaia=True, from_pickled_cat: bool = False, from_pickled_output: bool = False,
-                    do_legacy: bool = False, mongo_upload: bool = True):
+                    mongo_upload: bool = True):
     target_output = None
     params = ["dist", "logg", 'Teff', "SpType", 'st_mass', 'st_rad', "disk"]
     star_name_type = ['gaia dr2', "gaia dr1", "hip", 'hd', "wds"]
@@ -89,11 +90,6 @@ def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=N
                                 is_target=None)
         output_star_data.normalize(norm_keys=norm_keys)
         output_star_data.filter(element_bound_filter=None)  # filter after normalization, and logic
-        if do_legacy:
-            # Output the absolute values
-            output_star_data.output_file(output_dir=None, exo_mode=True, do_absolute=True)
-            # Output the all normalizations, one for each norm_key
-            output_star_data.output_file(output_dir=None, exo_mode=True)
         output_star_data.do_stats(params_set=nat_cat.params_list_for_stats,
                                   star_name_types=nat_cat.star_types_for_stats)
         if mongo_upload:
@@ -146,7 +142,6 @@ def multi_output(from_scratch=True, short_name_list=None, norm_key=None, fast_up
     if norm_key is not None:
         output_star_data1.normalize(norm_key=norm_key)
     output_star_data1.filter(element_bound_filter=None)  # filter after normalization, and logic
-    output_star_data1.output_file(output_dir=None, exo_mode=True)
     output_star_data1.do_stats(params_set=nat_cat.params_list_for_stats,
                                star_name_types=nat_cat.star_types_for_stats)
     output_star_data1.reduce_elements()
@@ -179,7 +174,6 @@ def multi_output(from_scratch=True, short_name_list=None, norm_key=None, fast_up
     if norm_key is not None:
         output_star_data2.normalize(norm_key=norm_key)
     output_star_data2.filter(element_bound_filter=[("Fe", -0.1, 0.1)])  # filter after normalization, and logic
-    output_star_data2.output_file(output_dir=None, exo_mode=True)
     output_star_data2.do_stats(params_set=nat_cat.params_list_for_stats,
                                star_name_types=nat_cat.star_types_for_stats)
     output_star_data2.reduce_elements()
@@ -342,16 +336,16 @@ def calc_molar_fractions(elemlist, solarvals, errvals, **kwargs):
              figname="scatter_hist_hist/" + Xnum + Xdenom + "vs" + Ynum + Ydenom)
 
 
-elemList=["Fe","Mg", "Si", "Al", "Ti", "Ti_II", "Y", "Y_II", "Ba_II", "Cs"]
-propertyList=["teff", "logg"]#None if no list
+elem_list_default = ["Fe","Mg", "Si", "Al", "Ti", "Ti_II", "Y", "Y_II", "Ba_II", "Cs"]
+property_list_default = ["teff", "logg"]#None if no list
 
-def create_flat_file(elemList, propertyList, filename, targetList):
+def create_flat_file(filename, targetList, elemList=None, propertyList=None):
     """
     Examples of the input (these are used by Amilcar for planetPrediction):
     elemList=["Fe","Li","C","O","Na","Mg","Al","Si","Ca","Sc","Ti","V","Cr","Mn","Co","Ni","Y"]
     propertyList=["raj2000", "decj2000", "x_pos", "y_pos", "z_pos", "dist", "disk", "sptype", "vmag",
                              "bv", "u_vel", "v_vel", "w_vel", "teff", "logg", "mass", "rad"]
-    filename="hypatia/load/data_products/star_data_output/hypatiaUpdated_flat_file.csv"
+    filename="hypatia/HyData/target_lists/hypatiaUpdated_flat_file.csv"
     targetList = ClassyReader(filename="hypatia/HyData/target_lists/HWO-FP-Tier1-2-stars.csv")
 
     Note that the elements shouldn't have an "H" appended at the end. Also, header names will differ from the
@@ -359,6 +353,7 @@ def create_flat_file(elemList, propertyList, filename, targetList):
 
     create_flat_file(elemList, propertyList, filename, targetList)
     """
+
     with open(os.path.join(base_dir, filename), "w") as combined_data_file:
         if targetList is not None:
             header = "HPIC_name,star_name," + ",".join(elemList) + "," + ",".join(propertyList) + "\n"
@@ -373,7 +368,10 @@ def create_flat_file(elemList, propertyList, filename, targetList):
                     star_name = temp.attr_name
                     populate_flat_file(elemList, propertyList, star_name, combined_data_file)
         else:
-            header = "star_name," + ",".join(elemList) + "," + ",".join(propertyList) + "\n"
+            if propertyList is not None:
+                header = "star_name," + ",".join(elemList) + "," + ",".join(propertyList) + "\n"
+            else:
+                header = "star_name," + ",".join(elemList) + "," + "\n"
             combined_data_file.write(header)
             star_names_list = list(sorted(output_star_data.star_names))
             for star in star_names_list:  #what is a better way to get the attr name?
@@ -393,25 +391,26 @@ def populate_flat_file(elemList, propertyList, star_name, combined_data_file):
             values.append('nan')
     combined_data_file.write(",".join(values))
     properties = []
-    for property in propertyList:
-        if property in single_star.params.available_params:
-            # Note that some stars have x, y, z pos parameters, others have pos (embedded),
-            # and others have both. The below will miss the ones with only pos (embedded).
-            if property == "x_pos":
-                properties.append(str(round(single_star.params.pos[0][0], 3)))
-            elif property == "y_pos":
-                properties.append(str(round(single_star.params.pos[0][1], 3)))
-            elif property == "z_pos":
-                properties.append(str(round(single_star.params.pos[0][2], 3)))
-            elif property == "teff_ref":
-                properties.append(single_star.params.teff.ref)
-            elif property == "logg_ref":
-                properties.append(single_star.params.logg.ref)
+    if propertyList is not None:
+        for property in propertyList:
+            if property in single_star.params.available_params:
+                # Note that some stars have x, y, z pos parameters, others have pos (embedded),
+                # and others have both. The below will miss the ones with only pos (embedded).
+                if property == "x_pos":
+                    properties.append(str(round(single_star.params.pos[0][0], 3)))
+                elif property == "y_pos":
+                    properties.append(str(round(single_star.params.pos[0][1], 3)))
+                elif property == "z_pos":
+                    properties.append(str(round(single_star.params.pos[0][2], 3)))
+                elif property == "teff_ref":
+                    properties.append(single_star.params.teff.ref)
+                elif property == "logg_ref":
+                    properties.append(single_star.params.logg.ref)
+                else:
+                    properties.append(str(single_star.params.__getattribute__(property).value))
+                    properties.append(str(single_star.params.__getattribute__(property).ref))
             else:
-                properties.append(str(single_star.params.__getattribute__(property).value))
-                properties.append(str(single_star.params.__getattribute__(property).ref))
-        else:
-            properties.append('nan')
+                properties.append('nan')
     all_params.update(single_star.params.available_params)
     combined_data_file.write("," + ",".join(properties) + "\n")
 
@@ -420,26 +419,25 @@ if __name__ == "__main__":
     only_target_list = False
 
     all_params = set()
-    test_norm_keys = ["lodders09", "asplund09", "grevesse07", "asplund05", "grevesse98", "anders89", "original"]
-    test_refresh_exo_data = False
+    test_norm_keys = list(norm_keys_default)
+    test_refresh_exo_data = True
     test_from_scratch = True
     test_from_pickled_cat = False
-    do_legacy = False
     if only_target_list:
-        example_target_list = os.path.join(ref_dir, 'ARIEL_Edwards22_Table4_TOIpotential.txt')
+        example_target_list = os.path.join(target_list_dir, 'Patrick-XRP-target-list-cut.csv')
         # example_target_list2 = ['HIP 36366', 'HIP 55846', 'HD 103095', 'HIP 33226']
         nat_cat, output_star_data, target_star_data = standard_output(from_scratch=test_from_scratch,
                                                                       target_list=example_target_list,
                                                                       norm_keys=test_norm_keys,
                                                                       refresh_exo_data=test_refresh_exo_data,
                                                                       from_pickled_cat=test_from_pickled_cat,
-                                                                      do_legacy=do_legacy)
+                                                                      )
     else:
         nat_cat, output_star_data, target_star_data = standard_output(from_scratch=test_from_scratch,
                                                                       norm_keys=test_norm_keys,
                                                                       refresh_exo_data=test_refresh_exo_data,
                                                                       from_pickled_cat=test_from_pickled_cat,
-                                                                      do_legacy=do_legacy)
+                                                                      )
 
     # output_star_data.xy_plot(x_thing='dist', y_thing='Fe', color="darkorchid", show=False, save=True)
     stats = output_star_data.stats

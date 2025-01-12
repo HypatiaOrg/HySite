@@ -9,7 +9,7 @@ Hypatia Database accompanying the contents of the catalogs data.
 3) The columns with the names of the stars should have a name like 'star' or 'star'. This column can also be named "hd"
 or "hip" or any other Hypatia Database name type when the star names are of the same type.
 4) The rest of the columns are for element abundance reported in dex notation on a scale from -inf-12.
-5) Elemental abundance headers should formatted using standard element abbreviations.
+5) Elemental abundance headers should be formatted using standard element abbreviations.
 6) Header requirements for elemental abundance columns. Examples: CaH, CaIH, CaIIH, AF, ASi, SiNLTE
     a) Elements that are ratios are expected to be ratios of either Hydrogen "H" or Iron "Fe" at
        the end of the header string.
@@ -90,14 +90,8 @@ import shutil
 from hypatia.pipeline.nat_cat import NatCat
 from hypatia.sources.catalogs.ops import CatOps
 from hypatia.sources.catalogs.solar_norm import SolarNorm
-from hypatia.config import abundance_dir, ref_dir
 from hypatia.sources.catalogs.catalogs import get_catalogs
-
-# File locations
-new_abundances_dir = os.path.join(abundance_dir, "new_data")
-new_catalogs_file_name = os.path.join(new_abundances_dir, "new_catalogs_file.csv")
-
-main_catalog_file = os.path.join(ref_dir, "catalog_file.csv")
+from hypatia.config import abundance_dir, ref_dir, new_abundances_dir, new_catalogs_file_name, default_catalog_file
 
 
 def load_catalogs(verbose=True):
@@ -126,9 +120,35 @@ def unique_abundances(verbose=True):
         single_cat.find_double_listed()
         if len(single_cat.unique_star_groups) > 1:
             single_cat.write_catalog(output_dir=new_abundances_dir, target='unique', update_catalog_list=True)
+        else:
+            single_cat.write_catalog(output_dir=new_abundances_dir, target='raw', update_catalog_list=True)
     if verbose:
         print("catalogs have been checked, and when necessary split, to have each catalog file \n" +
               "have only one entry per unique star.\n")
+
+
+def reset_input_catalogs(verbose: bool = True, reset_default_file: bool = False):
+    """
+    This takes the entries in the catalog_file.csv, strips all the processing keywords like "raw" and "unique"
+    and reestablishes the reference to the original unprocessed catalog file. All the catalog data the original
+    unprocessed data is then moved to the new_data folder inside the abundance folder to be reprocessed.
+    The handles for the catalog data are saved in the new_catalog_file.csv, ready for processing from scratch.
+    The catalog_file.csv is then deleted.
+
+    :param verbose: bool - when True, the code with report the actions it is taking.
+    :param reset_default_file: bool - when True, the default catalog file is deleted and the new_catalog_file.csv
+                                      is used as the new catalog file. All processing steps are removed from the
+                                      and the original data is moved to the new_data folder
+                                      when False, the new_catalog_file.csv is used as the new catalog file.
+                                      the data stays in the new data folder,
+                                      and the files created by proces steps are removed.
+    :return:
+    """
+    if reset_default_file:
+        co = CatOps(cat_file=default_catalog_file, abundance_dir_for_reset=abundance_dir, verbose=verbose)
+    else:
+        co = CatOps(cat_file=new_catalogs_file_name, abundance_dir_for_reset=new_abundances_dir, verbose=verbose)
+    co.reset_cat_file()
 
 
 def insert_new_catalogs(verbose=True, user_prompt=True):
@@ -136,10 +156,10 @@ def insert_new_catalogs(verbose=True, user_prompt=True):
             in {True, "true", "yes", 'y'}:
         if verbose:
             print("\nUpdating main the main Hypatia Database with the following catalogs:")
-        if not os.path.exists(main_catalog_file):
-            with open(main_catalog_file, 'w') as f:
+        if not os.path.exists(default_catalog_file):
+            with open(default_catalog_file, 'w') as f:
                 f.write("short,long,norm\n")
-        main_cat = CatOps(cat_file=main_catalog_file, verbose=verbose)
+        main_cat = CatOps(cat_file=default_catalog_file, verbose=verbose)
         new_cat = CatOps(cat_file=new_catalogs_file_name, verbose=verbose)
         if verbose:
             for short_name in new_cat.cat_dict.keys():
@@ -193,6 +213,7 @@ def insert_new_catalogs(verbose=True, user_prompt=True):
 
 if __name__ == "__main__":
     verbose = True
+    reset_catalogs = False
     add_norm = False  # you only need to do one time, multiple times overwrites the previous entry. Also running will exit code 0.
     uniquify = True
     do_exo = False
@@ -202,10 +223,13 @@ if __name__ == "__main__":
     # when done with upload, double-check that weird elements or new ionizations have representative error:
     # HySite/backend/hypatia/HyData/site_data
 
-    if add_norm:
+    if reset_catalogs:
+        reset_input_catalogs(verbose, reset_default_file=False)
+
+    elif add_norm:
         sn = SolarNorm(os.path.join(ref_dir, "solar_norm_ref.csv"))
         #sn.add_normalization(handle="sheminova24", author="Sheminova et al.", year=2024, element_dict={"Fe":7.53, "Cu":4.13, "Sr":2.75, "YII":2.20, "ZrII":2.56, "BaII":2.30, "LaII":1.11, "CeII":1.55})
-        sn.add_normalization(handle="lopezvaldivia24", author="Lopez-Valdivia et al.", year=2024, element_dict={"Fe":7.50, "Mg":7.58, "Al":6.43, "Si":7.55, "Ca":6.40})
+        sn.add_normalization(handle="alexeeva23", author="Alexeeva et al.", year=2023, element_dict={"Fe":7.50, "Y":2.21})
         #sn.add_normalization(handle="pozhath24", author="Pozhath and Lambert", year=2024, element_dict={"Na":6.27, "Mg":7.59, "Al":6.37, "Si":7.52, "Ca":6.28, "ScII":3.16, "Ti":4.87, "TiII":4.98, "V":3.83, "Cr":5.59, "Mn":5.39, "Fe":7.44, "Co":4.81, "Ni":6.22, "Zn":4.50, "YII":2.16, "Zr":2.59, "BaII":2.24, "LaII":1.19, "NdII":1.40, "EuII":0.53})
         #sn.add_normalization(handle="spite22-24", author="Spite et al.", year=2022, element_dict={"Fe": 7.50, "C":8.50, "N":7.86, "O":8.76, "Na":6.30, "Mg":7.54, "Al":6.47, "Si":7.52, "Ca":6.33, "Sc":3.10, "Ti":4.90, "Cr":5.64, "Mn":5.37, "Co":4.92, "Ni":6.23, "Zn":4.62, "SrII":2.92, "YII":2.21, "ZrII":2.58, "Mo":192, "Ru":1.84, "Pd":1.66, "Ag":0.94, "BaII":2.17, "LaII":1.14, "CeII":1.60, "NdII":1.45, "EuII":0.52, "DyII":1.14, "ErII":0.96, "YbII":0.86})
         sn.write(os.path.join(ref_dir, "solar_norm_ref.csv"))
@@ -213,35 +237,36 @@ if __name__ == "__main__":
         print("exiting so that the file can be reloaded.")
         sys.exit()
 
-    if uniquify:
-        unique_abundances(verbose=verbose)
+    else:
+        if uniquify:
+            unique_abundances(verbose=verbose)
 
-    if test_catalog:
-        nat_cat = NatCat(params_list_for_stats=None,
-                         star_types_for_stats=None,
-                         catalogs_from_scratch=True,
-                         verbose=verbose,
-                         get_abundance_data=True,
-                         get_exo_data=do_exo,
-                         refresh_exo_data=do_exo,
-                         fast_update_gaia=True,
-                         catalogs_file_name=new_catalogs_file_name,
-                         abundance_data_path=new_abundances_dir)
+        if test_catalog:
+            nat_cat = NatCat(params_list_for_stats=None,
+                             star_types_for_stats=None,
+                             catalogs_from_scratch=True,
+                             verbose=verbose,
+                             get_abundance_data=True,
+                             get_exo_data=do_exo,
+                             refresh_exo_data=do_exo,
+                             fast_update_gaia=True,
+                             catalogs_file_name=new_catalogs_file_name,
+                             abundance_data_path=new_abundances_dir)
 
-        dist_output = nat_cat.make_output_star_data(min_catalog_count=1,
-                                                    parameter_bound_filter=[('dist', 0, 500), ("Teff", 2300.0, 7500.)],
-                                                    star_data_stats=True,
-                                                    reduce_abundances=True)
+            dist_output = nat_cat.make_output_star_data(min_catalog_count=1,
+                                                        parameter_bound_filter=[('dist', 0, 500), ("Teff", 2300.0, 7500.)],
+                                                        star_data_stats=True,
+                                                        reduce_abundances=True)
 
-        exo_output = nat_cat.make_output_star_data(min_catalog_count=1,
-                                                   parameter_bound_filter=None,
-                                                   has_exoplanet=True,
-                                                   star_data_stats=True,
-                                                   reduce_abundances=True)
+            exo_output = nat_cat.make_output_star_data(min_catalog_count=1,
+                                                       parameter_bound_filter=None,
+                                                       has_exoplanet=True,
+                                                       star_data_stats=True,
+                                                       reduce_abundances=True)
 
-        output_star_data = dist_output + exo_output
-        output_star_data.normalize(norm_keys=["lodders09"])
-        stats = output_star_data.stats
+            output_star_data = dist_output + exo_output
+            output_star_data.normalize(norm_keys=["lodders09"])
+            stats = output_star_data.stats
 
-    if insert_new:
-        insert_new_catalogs(verbose=verbose, user_prompt=True)
+        elif insert_new:
+            insert_new_catalogs(verbose=verbose, user_prompt=True)

@@ -1,13 +1,12 @@
 import copy
 import pickle
 
-from hypatia.object_params import SingleParam
 from hypatia.pipeline.star.db import HypatiaDB
 from hypatia.pipeline.star.all import AllStarData
+from hypatia.tools.color_text import file_name_text
 from hypatia.pipeline.summary import upload_summary
 from hypatia.sources.simbad.ops import get_star_data
 from hypatia.pipeline.params.filters import core_filter
-from hypatia.legacy.data_formats import spectral_type_to_float
 from hypatia.plots.element_rad_plot import make_element_distance_plots
 from hypatia.config import pickle_out, default_catalog_file, MONGO_DATABASE
 
@@ -24,7 +23,7 @@ class OutputStarData(AllStarData):
 
     def pickle_myself(self):
         if self.verbose:
-            print("Picking an entire Output Star Data class.\nFile name:", pickle_out)
+            print("Picking an entire Output Star Data class.\nFile name:", file_name_text(pickle_out))
         pickle.dump(self, open(pickle_out, 'wb'))
         if self.verbose:
             print("  pickling complete.")
@@ -596,33 +595,7 @@ class OutputStarData(AllStarData):
     def export_to_mongo(self, catalogs_file_name: str = default_catalog_file):
         hypatia_db = HypatiaDB(db_name=MONGO_DATABASE, collection_name='hypatiaDB')
         hypatia_db.reset()
-        for single_star in self:
-            available_params = single_star.params.available_params
-            if 'sptype' in available_params:
-                sptype_param = single_star.params.sptype
-                new_param = SingleParam.strict_format(param_name='sptype_num',
-                                                      value=spectral_type_to_float(single_star.params.sptype.value),
-                                                      ref=sptype_param.ref,
-                                                      units='')
-                single_star.params.update_param('sptype_num', new_param)
-            if 'disk' in available_params:
-                disk_param = single_star.params.disk
-                disk_num = None
-                if disk_param.value == 'thin':
-                    disk_num = 0
-                elif disk_param.value == 'thick':
-                    disk_num = 1
-                elif disk_param.value == 'N/A':
-                    pass
-                else:
-                    raise ValueError("Disk value not recognized.")
-                if disk_num is not None:
-                    new_param = SingleParam.strict_format(param_name='disk_num',
-                                                          value=disk_num,
-                                                          ref=disk_param.ref,
-                                                          units='')
-                    single_star.params.update_param('disk_num', new_param)
-            hypatia_db.add_star(single_star)
+        [hypatia_db.add_star(single_star) for single_star in self]
         # add the summary and site-wide information
         found_elements = hypatia_db.added_elements
         found_element_nlte = hypatia_db.added_elements_nlte
