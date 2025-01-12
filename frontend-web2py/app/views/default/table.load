@@ -1,0 +1,137 @@
+<div style="width:100%">
+	<table id="stars" class="table table-condensed table-striped stickyHeader" style="border-collapse: collapse;background:white">
+		<thead>
+			<tr>
+				{{for cell in columns:}}
+				<th style="text-align:center;border-bottom:2px solid #4e11b7">
+					{{if not cell.endswith("_err"):}}
+					{{=A(COL_SHORT_DESC.get(cell) or cell, _title=COL_LONG_DESC.get(cell) or cell,_href=URL('table.load',vars=dict(sort=cell)), cid=request.cid)}}
+					<br/>
+					<small class="text-uppercase" style="color:#555">{{=COL_UNITS.get(cell) or ' '}}</small>
+					{{elif cell.endswith("_min_err"):}}
+					<small style="color:#555">-err</small>
+					{{elif cell.endswith("_max_err"):}}
+					<small style="color:#555">+err</small>
+					{{else:}}
+					<small style="color:#555">err</small>
+					{{pass}}
+				</th>
+				{{pass}}
+			</tr>
+		</thead>
+		<tbody>
+			{{for row in table:}}
+			<tr>
+				{{for i in range(len(row)):}}
+				<td>
+					{{cell = row[i]}}
+					{{if type(cell) == float and COL_FORMAT.get(columns[i]):}}
+					{{cell = COL_FORMAT[columns[i]] % cell}}
+					{{elif "numpy" in str(type(cell)):}}
+					{{cell = "%.2f" % cell}}
+					{{elif columns[i] == "all_names" and cell:}}
+					{{cell = cell.split(', ')[1:]}}
+					{{pass}} <!-- end if type(cell) == float and COL_FORMAT.get(columns[i]): -->
+					{{if type(cell) != list:}}
+					{{cell = [cell]}}
+					{{pass}} <!-- end if type(cell) != list:-->
+
+					{{for subcell in cell:}}
+					<span style='display:block'>
+						{{if columns[i].endswith("_err") and type(subcell) == float:}}
+						{{subcell = "%.2f" % subcell}}
+						{{pass}} <!-- end if columns[i].endswith("_err") and type(subcell) == float: -->
+						{{if subcell not in {None,"999.0",9999,"","None"}:}}
+						<nobr>
+							{{if columns[i].endswith("_err"):}}
+								<small style='color:#666'>
+									{{if not columns[i].islower():}}
+										±
+									{{pass}} <!-- end if 'min' not in columns[i] and 'max' not in columns[i]: -->
+
+								{{pass}} <!-- end if columns[i].endswith("_err"): -->
+								{{=subcell}}
+								</small>
+								{{if i == 0:}} <!-- generate the link to simbad.fr-->
+								<a href="http://simbad.u-strasbg.fr/simbad/sim-basic?Ident={{=cell[0].replace("+","%2B").replace("2MASS ","2MASS J")}}&submit=SIMBAD+search" target="_blank">
+									<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>
+								</a>
+								{{pass}} <!-- end if i == 0: -->
+								{{pass}} <!-- end if subcell not in [None,"999.0",9999,"","None"]: -->
+
+						</nobr>
+					</span>
+					{{pass}} <!-- end subcell in single cell for-loop -->
+				</td>
+				{{pass}} <!-- end ith column in single for-loop -->
+			</tr>
+			{{pass}} <!-- end row in table for-loop -->
+		</tbody>
+	</table>
+</div>
+
+{{if moreRows:}}
+Showing the first {{=len(table)}} rows. {{=A("Load more...", _href=URL('table.load',vars=dict(showrows=len(table)+100)), cid=request.cid)}}
+{{pass}}
+
+<script>
+jQuery(document).ready(function ($) {
+    $('#status').text("{{=status}}");	
+	var tables = $('table.stickyHeader');
+	tables.each(function(i){
+		var table = tables[i];
+		var tableClone = $(table).clone(true).empty().removeClass('stickyHeader');
+		var theadClone = $(table).find('thead').clone(true);
+		var stickyHeader =  $('<div></div>').addClass('stickyHeader hide').attr('aria-hidden', 'true');
+		stickyHeader.append(tableClone).find('table').append(theadClone);
+		$(table).after(stickyHeader);
+		
+		setUpHeader = function() {
+			var tableWidth = $(table).width() + Number($(table).css('padding-left').replace(/px/ig,"")) + Number($(table).css('padding-right').replace(/px/ig,"")) + Number($(table).css('border-left-width').replace(/px/ig,"")) + Number($(table).css('border-right-width').replace(/px/ig,""));
+			
+			var headerCells = $(table).find('thead th');
+			
+			var stickyHeaderCells = stickyHeader.find('th');
+			stickyHeader.css('width', tableWidth);
+			var cellWidths = [];
+			for (var i = 0, l = headerCells.length; i < l; i++) {
+				cellWidths[i] = $(headerCells[i]).width() + 10;
+			}
+			for (var i = 0, l = headerCells.length; i < l; i++) {
+				$(stickyHeaderCells[i]).css('min-width', cellWidths[i]);
+			}
+		};
+		setUpHeader();
+		$(window).scroll(setUpHeader);
+		
+		var tableHeight = $(table).height();
+		var headerCells = $(table).find('thead th');
+		var headerCellHeight = $(headerCells[0]).height();
+		var cutoffTop = $(table).offset().top;
+		var cutoffBottom = tableHeight + cutoffTop - headerCellHeight;
+		var no_fixed_support = false;
+		if (stickyHeader.css('position') == "absolute") {
+			no_fixed_support = true;
+		}
+		
+		var adjustHeaders = function() { 
+			var cutoffLeft = $(table).offset().left;
+			stickyHeader.css('left',-$(window).scrollLeft()+cutoffLeft);
+			var currentPosition = $(window).scrollTop();
+			if (currentPosition > cutoffTop && currentPosition < cutoffBottom) {
+				stickyHeader.removeClass('hide');
+				if (no_fixed_support) {
+					stickyHeader.css('top', currentPosition + 'px');
+				}
+			}
+			else {
+				stickyHeader.addClass('hide');
+			}
+		}
+		
+		$(window).scroll(adjustHeaders);
+		setInterval(adjustHeaders,100);
+	});
+});
+
+</script>

@@ -4,7 +4,6 @@ cd /home/ubuntu/HySite || return
 echo "Updating HySite repos, a pipeline, database, and website for HypatiaCatalog.com"
 git pull origin main || exit
 cd backend/hypatia/HyData && git pull origin main && cd ../../../ || exit
-cd web2py && git pull origin caleb/no-api && cd ../ || exit
 echo "Updating the docker containers"
 docker compose pull || exit
 docker compose build || exit

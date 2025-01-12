@@ -1,0 +1,22 @@
+<script type="text/javascript"><!--
+    // These variables are used by the web2py_ajax_init function in web2py_ajax.js (which is loaded below).
+    var w2p_ajax_confirm_message = "{{=T('Are you sure you want to delete this object?')}}";
+    var w2p_ajax_disable_with_message = "{{=T('Working...')}}";
+    var w2p_ajax_date_format = "{{=T('%Y-%m-%d')}}";
+    var w2p_ajax_datetime_format = "{{=T('%Y-%m-%d %H:%M:%S')}}";
+    var ajax_error_500 = '{{=T.M('An error occured, please [[reload %s]] the page') % URL(args=request.args, vars=request.get_vars) }}'
+    //--></script>
+{{
+from bokeh import __version__ as bokeh_version
+response.files.insert(0,URL('static','js/jquery.js'))
+response.files.insert(1,URL('static','css/calendar.css'))
+response.files.insert(2,URL('static','js/calendar.js'))
+response.files.insert(3,URL('static','js/web2py.js'))
+response.files.insert(4,URL('static','js/stickyheader.jquery.js'))
+response.files.insert(7,'https://cdn.pydata.org/bokeh/release/bokeh-%s.min.js'% str(bokeh_version))
+response.files.insert(8,'https://cdn.pydata.org/bokeh/release/bokeh-widgets-%s.min.js'% str(bokeh_version))
+response.files.insert(9,'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css')
+response.files.insert(10,'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js')
+response.include_meta()
+response.include_files()
+}}
