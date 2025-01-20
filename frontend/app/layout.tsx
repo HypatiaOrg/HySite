@@ -17,41 +17,38 @@ export const metadata: Metadata = {
 
 };
 
-export function QueryClient(): ReactElement {
+export function NavMenu(): ReactElement {
     return (
-        <div className="flex flex-col h-full w-full absolute top-0 left-0 z-10">
-            <div className="flex-none w-full items-center font-mono text-lg p-4">
-                <div className="flex flex-row w-full gap-4">
+        <div className="flex-none w-full items-center font-mono text-lg p-4 bg-hypurple text-white">
+            <div className="flex flex-row w-full gap-4">
+                <div>
+                    <Link href="/">Home</Link>
+                </div>
+                |
+                <div>
+                    <Link href="/hypatia/default/launch">Elements & Properties</Link>
+                </div>
+                |
+                <div>
+                    <Link href="/hypatia/default/launch?mode=hist"> Stars With/Without Planets </Link>
+                </div>
+                <div className="flex flex-grow justify-end gap-4">
                     <div>
-                        <Link href="/">Home</Link>
+                        <Link href="/hypatia/default/help">Help</Link>
                     </div>
                     |
                     <div>
-                        <Link href="/hypatia/default/launch">Elements & Properties</Link>
+                        <Link href="/hypatia/default/about">About</Link>
                     </div>
                     |
                     <div>
-                        <Link href="/hypatia/default/launch?mode=hist"> Stars With/Without Planets </Link>
+                        <Link href="/hypatia/default/credits">Acknowledgements</Link>
                     </div>
-                    <div className="flex flex-grow justify-end gap-4">
-                        <div>
-                            <Link href="/hypatia/default/help">Help</Link>
-                        </div>
-                        |
-                        <div>
-                            <Link href="/hypatia/default/about">About</Link>
-                        </div>
-                        |
-                        <div>
-                            <Link href="/hypatia/default/credits">Acknowledgements</Link>
-                        </div>
-                        |
-                        <div>
-                            <Link href="/api">API</Link>
-                        </div>
+                    |
+                    <div>
+                        <Link href="/api">API</Link>
                     </div>
                 </div>
-
             </div>
         </div>
     );
@@ -77,8 +74,8 @@ export default function RootLayout({
             </Script>
         </head>
         <body className={inter.className}>
-            <main className="flex min-h-screen flex-col items-center justify-between p-24">
-                <QueryClient/>
+            <main className="flex flex-col h-full w-full absolute top-0 left-0 z-10">
+                <NavMenu/>
                 {children}
             </main>
         </body>
