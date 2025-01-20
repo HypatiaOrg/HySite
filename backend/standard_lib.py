@@ -351,6 +351,9 @@ def create_flat_file(filename, targetList, elemList=None, propertyList=None):
     Note that the elements shouldn't have an "H" appended at the end. Also, header names will differ from the
     website output for the properties since the "f_" prefix was done by Dan.
 
+    To output the results from the Mdwarf subsets in sandbox, change output_star_data to target_star_data
+    and switch lodders09 to absolute.
+
     create_flat_file(elemList, propertyList, filename, targetList)
     """
 
@@ -420,9 +423,10 @@ if __name__ == "__main__":
 
     all_params = set()
     test_norm_keys = list(norm_keys_default)
-    test_refresh_exo_data = True
-    test_from_scratch = True
-    test_from_pickled_cat = False
+    test_refresh_exo_data = False
+    test_from_scratch = False
+    test_from_pickled_cat = True
+    mongo_upload=False
     if only_target_list:
         example_target_list = os.path.join(target_list_dir, 'Patrick-XRP-target-list-cut.csv')
         # example_target_list2 = ['HIP 36366', 'HIP 55846', 'HD 103095', 'HIP 33226']
@@ -431,18 +435,21 @@ if __name__ == "__main__":
                                                                       norm_keys=test_norm_keys,
                                                                       refresh_exo_data=test_refresh_exo_data,
                                                                       from_pickled_cat=test_from_pickled_cat,
+                                                                      mongo_upload=mongo_upload
                                                                       )
     else:
         nat_cat, output_star_data, target_star_data = standard_output(from_scratch=test_from_scratch,
                                                                       norm_keys=test_norm_keys,
                                                                       refresh_exo_data=test_refresh_exo_data,
                                                                       from_pickled_cat=test_from_pickled_cat,
+                                                                      mongo_upload=mongo_upload
                                                                       )
 
     # output_star_data.xy_plot(x_thing='dist', y_thing='Fe', color="darkorchid", show=False, save=True)
     stats = output_star_data.stats
     # output_star_data.flat_database_output()
     stars_all = nat_cat.star_data.star_names
+    stats.star_count_per_element.extra_special_nat_histogram()
     print(len(stars_all), "total stars")
     stars_hypatia = output_star_data.star_names
     print(len(stars_hypatia), "stars after cuts")

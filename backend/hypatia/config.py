@@ -42,6 +42,7 @@ default_catalog_file = os.path.join(ref_dir, 'catalog_file.csv')
 output_products_dir = os.path.join(base_dir, 'output')
 star_data_output_dir = os.path.join(output_products_dir, 'star_data_output')
 plot_dir = os.path.join(output_products_dir, 'plots')
+histo_dir = os.path.join(plot_dir, 'hist')
 
 cat_pickles_dir = os.path.join(output_products_dir, 'catalog_pickles')
 pickle_nat = os.path.join(output_products_dir, 'pickle_nat.pkl')

@@ -3,8 +3,9 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from hypatia.config import working_dir
-from hypatia.elements import element_rank
+from hypatia.config import working_dir, histo_dir
+from hypatia.elements import ElementID
+from hypatia.plots.histograms import get_hist_bins
 from hypatia.sources.simbad.ops import get_star_data
 from hypatia.sources.simbad.db import indexed_name_types
 
@@ -31,21 +32,23 @@ class CountPerBin:
         self.available_bins = set()
 
     def count_bins(self, bins):
-        for one_bin in [str(one_bin) for one_bin in bins]:
-            if one_bin in self.available_bins:
-                self.__setattr__(one_bin, self.__getattribute__(one_bin) + 1)
+        for one_bin in bins:
+            if isinstance(one_bin, ElementID):
+                bin_name = str(one_bin)
             else:
-                self.__setattr__(one_bin, 1)
+                bin_name = one_bin
+            if one_bin in self.available_bins:
+                self.__setattr__(bin_name, self.__getattribute__(bin_name) + 1)
+            else:
+                self.__setattr__(bin_name, 1)
                 self.available_bins.add(one_bin)
 
 # To run this in the terminal: stats.star_count_per_element.extra_special_nat_histogram()
     def extra_special_nat_histogram(self):
-        n = len(self.available_bins) + 1
-        ordered_list_of_bins = [""]
-        if "each elemental abundance" in self.description:
-            ordered_list_of_bins.extend(sorted(self.available_bins, key=element_rank))
-        else:
-            ordered_list_of_bins.extend(sorted(self.available_bins))
+        non_nlte_bins = {element_id for element_id in self.available_bins if not element_id.is_nlte}
+        ordered_list_of_bins = get_hist_bins(available_bins= non_nlte_bins,
+                                             is_element_id="each elemental abundance" in self.description)
+        n = len(ordered_list_of_bins)
         hits = [0]
         hits.extend([self.__getattribute__(bin_name) for bin_name in ordered_list_of_bins[1:]])
         ind = np.arange(n)
@@ -55,19 +58,23 @@ class CountPerBin:
         rects1 = plt.bar(ind, hits, width, color='#4E11B7')
         ax.set_xlabel('Element Abundances in the Hypatia Catalog', fontsize=15)
         ax.set_ylabel('Number of Stars with Measured Element X', fontsize=15)
-        ax.set_ylim([0.0, np.max(hits) +600.])
+        ax.set_ylim([0.0, np.max(hits) +1000.])
         ax.set_xlim([0.0, float(n + 1)])
         ax.set_xticks(ind)
-        ax.set_xticklabels(tuple(ordered_list_of_bins))
-        ax.text(50, 9000, "FGKM-type Stars Within 500pc: "+str(np.max(hits)), fontsize=20,  fontweight='bold', color='#4E11B7')
-        ax.text(50, 8000, "Literature Sources: +230", fontsize=20,  fontweight='bold', color='#4E11B7')
-        ax.text(50, 7000, "Number of Elements/Species: "+str(len(ordered_list_of_bins)-1), fontsize=20,  fontweight='bold', color='#4E11B7')
+        named_list_of_bins = [name.replace('_', '') for name in ordered_list_of_bins]
+        names_up_down =[('\n' if ii % 2 == 1 else '') + named_list_of_bins[ii] for ii in range(len(named_list_of_bins))]
+        ax.set_xticklabels(names_up_down)
+        ax.tick_params(axis='x', which='minor', length=25)
+        ax.tick_params(axis='x', which='both', color='darkgrey')
+        ax.text(60, 12000, "FGKM-type Stars Within 500pc: "+str(np.max(hits)), fontsize=20,  fontweight='bold', color='#4E11B7')
+        ax.text(60, 10500, "Literature Sources: +340", fontsize=20,  fontweight='bold', color='#4E11B7')
+        ax.text(60, 9000, "Number of Elements/Species: "+str(len(ordered_list_of_bins)-1), fontsize=20,  fontweight='bold', color='#4E11B7')
         autolabel(rects1)
         #plt.title(self.description)
         #ax.show()
         ax.set_aspect('auto')
         name="bigHist-"+str(np.max(hits))+".pdf"
-        file_name = os.path.join(working_dir, "plots", 'output', "hist", name)
+        file_name = os.path.join(histo_dir, name)
         fig.savefig(file_name)
         print("Number of elements", len(ordered_list_of_bins)-1)
         return ordered_list_of_bins

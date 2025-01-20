@@ -29,18 +29,6 @@ docker compose run --build --rm django-api python update.py
 python backend/update.py
 ```
 
-### Python envirment using standard library (option 3)
-
-Running the backend/standard_lib.py script will update the database with the standard library.
-and has more options for updating the database. 
-These options are not available in the update.py.
-These options are accessed by modifying the script itself,
-unlike the update.py script that has command line options.
-
-```bash
-python backend/standard_lib.py
-```
-
 ## view the test version of the website on your local computer
 ```bash
 docker compose pull
