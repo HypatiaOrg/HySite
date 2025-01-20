@@ -340,3 +340,24 @@ The first time you connect, you will be asked to accept the server key.
 select `yes` to continue.
 
 logout with the command `exit`.
+
+# Maintenance
+
+## Clean up git branches
+
+These instructions are based on this Medium post:
+[A simple way to clean up your git project branches](https://medium.com/@FlorentDestrema/a-simple-way-to-clean-up-your-git-project-branches-283b87478fbc)
+
+There can be a lot of local branches in the repository
+that were merged into the `main` branch
+and are no longer needed.
+
+```bash
+git branch -d $(git branch --merged=main | grep -v main)
+```
+
+
+Then remove the branches that are not in the remote GitHub repository with:
+```bash
+git fetch --prune
+```
