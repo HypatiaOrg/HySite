@@ -3,9 +3,8 @@ import time
 from pymongo.cursor import Cursor
 from pymongo.results import DeleteResult, InsertOneResult
 
-
-from hypatia.config import current_user
 from hypatia.collect import BaseStarCollection
+from hypatia.configs.env_load import current_user
 from hypatia.sources.simbad.validator import validator_star_doc, indexed_name_types
 
 
@@ -72,6 +71,6 @@ class StarCollection(BaseStarCollection):
 
 
 if __name__ == '__main__':
-    from hypatia.config import MONGO_STARNAMES_COLLECTION
+    from hypatia.configs.file_paths import MONGO_STARNAMES_COLLECTION
     star_collection = StarCollection(collection_name=MONGO_STARNAMES_COLLECTION)
     star_collection.reset()

@@ -7,6 +7,7 @@ from hypatia.sources.gaia.ops import GaiaLib
 from hypatia.object_params import SingleParam
 from hypatia.tools.table_read import row_dict
 from hypatia.pipeline.star.all import AllStarData
+from hypatia.configs.source_settings import hacked
 from hypatia.sources.tic.ops import get_hy_tic_data
 from hypatia.tools.color_text import file_name_text
 from hypatia.pipeline.star.output import OutputStarData
@@ -14,7 +15,7 @@ from hypatia.sources.catalogs.solar_norm import SolarNorm
 from hypatia.sources.catalogs.catalogs import get_catalogs
 from hypatia.sources.simbad.batch import get_star_data_batch
 from hypatia.sources.simbad.ops import get_main_id, get_star_data
-from hypatia.config import working_dir, ref_dir, abundance_dir, hacked, pickle_nat, default_catalog_file
+from hypatia.configs.file_paths import working_dir, ref_dir, abundance_dir, pickle_nat, default_catalog_file
 
 
 def load_catalog_query():

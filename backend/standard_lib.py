@@ -7,9 +7,9 @@ import numpy as np
 from hypatia.elements import element_rank, ElementID
 from hypatia.plots.scatter_hist_hist_plot import histPlot
 from hypatia.pipeline.star.output import load_pickled_output
+from hypatia.configs.source_settings import norm_keys_default
 from hypatia.pipeline.nat_cat import NatCat, load_catalog_query
-from hypatia.config import target_list_dir, base_dir, norm_keys_default
-from hypatia.tools.table_read import ClassyReader
+from hypatia.configs.file_paths import target_list_dir, base_dir, pickle_nat
 
 
 def save_or_load(load=True, a_catalog_query=None):
@@ -43,7 +43,7 @@ def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=N
     else:
         catalogs_file_name = 'subset_catalog_file.csv'
 
-    if from_pickled_cat:
+    if from_pickled_cat and os.path.exists(pickle_nat):
         nat_cat = load_catalog_query()
     else:
         nat_cat = NatCat(params_list_for_stats=params,
@@ -351,6 +351,9 @@ def create_flat_file(filename, targetList, elemList=None, propertyList=None):
     Note that the elements shouldn't have an "H" appended at the end. Also, header names will differ from the
     website output for the properties since the "f_" prefix was done by Dan.
 
+    To output the results from the Mdwarf subsets in sandbox, change output_star_data to target_star_data
+    and switch lodders09 to absolute.
+
     create_flat_file(elemList, propertyList, filename, targetList)
     """
 
@@ -420,9 +423,10 @@ if __name__ == "__main__":
 
     all_params = set()
     test_norm_keys = list(norm_keys_default)
-    test_refresh_exo_data = True
-    test_from_scratch = True
-    test_from_pickled_cat = False
+    test_refresh_exo_data = False
+    test_from_scratch = False
+    test_from_pickled_cat = True
+    mongo_upload=False
     if only_target_list:
         example_target_list = os.path.join(target_list_dir, 'Patrick-XRP-target-list-cut.csv')
         # example_target_list2 = ['HIP 36366', 'HIP 55846', 'HD 103095', 'HIP 33226']
@@ -431,12 +435,14 @@ if __name__ == "__main__":
                                                                       norm_keys=test_norm_keys,
                                                                       refresh_exo_data=test_refresh_exo_data,
                                                                       from_pickled_cat=test_from_pickled_cat,
+                                                                      mongo_upload=mongo_upload
                                                                       )
     else:
         nat_cat, output_star_data, target_star_data = standard_output(from_scratch=test_from_scratch,
                                                                       norm_keys=test_norm_keys,
                                                                       refresh_exo_data=test_refresh_exo_data,
                                                                       from_pickled_cat=test_from_pickled_cat,
+                                                                      mongo_upload=mongo_upload
                                                                       )
 
     # output_star_data.xy_plot(x_thing='dist', y_thing='Fe', color="darkorchid", show=False, save=True)

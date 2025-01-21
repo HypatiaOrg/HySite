@@ -7,14 +7,12 @@ from warnings import warn
 from hypatia.tools.table_read import ClassyReader
 from hypatia.tools.color_text import catalog_name_text
 from hypatia.sources.simbad.batch import get_star_data_batch
+from hypatia.configs.source_settings import allowed_name_types
 from hypatia.tools.exceptions import ElementNameErrorInCatalog
 from hypatia.elements import element_rank, ElementID, iron_id, iron_ii_id, iron_nlte_id
-from hypatia.config import abundance_dir, default_catalog_file, cat_pickles_dir, allowed_name_types
+from hypatia.configs.file_paths import abundance_dir, default_catalog_file, cat_pickles_dir
 from hypatia.sources.catalogs.solar_norm import (solar_norm_dict, ratio_to_element,
                                                  un_norm_x_over_fe, un_norm_x_over_h, un_norm_abs_x)
-
-
-
 
 
 def get_catalogs(from_scratch=False, catalogs_file_name=None, local_abundance_dir=None, verbose=False):

@@ -5,6 +5,8 @@
 !example.env
 # ignore the JetBrains IDE files
 .idea/
+# the DS_Store files on macOS
+*.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

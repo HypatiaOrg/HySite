@@ -1,12 +1,10 @@
 import os
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from hypatia.config import working_dir, plot_dir
+from hypatia.configs.file_paths import working_dir, plot_dir
 
 colors = ['dodgerblue', "goldenrod", 'firebrick', "darkgreen", "darkorchid"]
 
-if not os.path.isdir(plot_dir):
-    os.mkdir(plot_dir)
 """
 Put the errorbars in the distance_abundance_data so it unpacks as xdata, ydata, xerror, yerror
 The labels could be unpacked the same way too
@@ -31,9 +29,6 @@ def make_element_distance_plots(distance_abundance_data, xlimits, ylimits, label
     plt.legend(tuple(line_list), tuple(label_list), numpoints=1, loc=3)
 
     if save_figure:
-        plot_dir = os.path.join(working_dir, "plots", 'output', "elemRad")
-        if not os.path.isdir(plot_dir):
-            os.mkdir(plot_dir)
         base_name = os.path.join(plot_dir, figname)
         if do_eps:
             plt.savefig(base_name + '.eps')

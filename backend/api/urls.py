@@ -1,6 +1,7 @@
 from django.urls import path
 
 from api.views import HomeView
+from api.stats.views import Histogram
 from api.planets.views import PlanetView
 from api.web2py.views import Web2pyHome, Summary, GraphView, TableView
 from api.v2.views import Nea, Data, Composition, Star, SolarNorm, AvailableElements, AvailableCatalogs
@@ -19,5 +20,6 @@ urlpatterns = [
     path('web2py/graph/', GraphView.as_view(), name='web2py-graph'),
     path('web2py/table/', TableView.as_view(), name='web2py-table'),
     path('planets/', PlanetView.as_view(), name='planets'),
+    path('stats/histogram', Histogram.as_view(), name='histogram'),
     path('', HomeView.as_view(), name='index'),
 ]

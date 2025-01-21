@@ -1,0 +1,13 @@
+# The .gitignore files allow these directories to created at the same time as the rest of the project.
+# but files in these directories are not tracked by git.
+# ignore everything
+*
+# but not this file
+!.gitignore
+# and these other .gitignore files in various subdirectories
+!catalog_pickles/.gitignore
+!database_test/.gitignore
+!plots/.gitignore
+!plots/hist/.gitignore
+!plots/xy_plot/.gitignore
+!star_data_output/hist/.gitignore

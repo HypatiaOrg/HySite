@@ -91,7 +91,8 @@ from hypatia.pipeline.nat_cat import NatCat
 from hypatia.sources.catalogs.ops import CatOps
 from hypatia.sources.catalogs.solar_norm import SolarNorm
 from hypatia.sources.catalogs.catalogs import get_catalogs
-from hypatia.config import abundance_dir, ref_dir, new_abundances_dir, new_catalogs_file_name, default_catalog_file
+from hypatia.configs.file_paths import (abundance_dir, ref_dir, new_abundances_dir, new_catalogs_file_name,
+                                        default_catalog_file)
 
 
 def load_catalogs(verbose=True):

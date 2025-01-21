@@ -1,17 +1,16 @@
 import os
-import hashlib
 import datetime
 
 import numpy as np
 
 from hypatia.elements import element_rank
 from hypatia.sources.gaia.ops import GaiaLib
-from hypatia.config import star_data_output_dir
 from hypatia.plots.histograms import simple_hist
 from hypatia.plots.quick_plots import quick_plotter
 from hypatia.pipeline.star.single import SingleStar
 from hypatia.pipeline.star.stats import StarDataStats
 from hypatia.object_params import StarDict, SingleParam
+from hypatia.configs.file_paths import star_data_output_dir
 from hypatia.sources.catalogs.solar_norm import iron_id, iron_set
 from hypatia.sources.nea.ops import get_all_nea, refresh_nea_data
 from hypatia.sources.simbad.ops import get_star_data, get_main_id

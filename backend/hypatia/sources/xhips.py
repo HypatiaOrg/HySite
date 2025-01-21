@@ -1,7 +1,5 @@
-import os
-
-from hypatia.config import ref_dir
 from hypatia.tools.table_read import row_dict
+from hypatia.configs.file_paths import xhip_file
 from hypatia.elements import spectral_type_to_float
 from hypatia.object_params import ObjectParams, SingleParam
 
@@ -18,7 +16,7 @@ class Xhip:
                   "Vmag": "mag", "Lum": "L_sun", "rSpType": "string", "BV": "mag"}
 
     def __init__(self, auto_load=False):
-        self.xhip_file_name = os.path.join(ref_dir, "xhip.csv")
+        self.xhip_file_name = xhip_file
         self.ref_data = None
         self.comments = None
         self.available_hip_names = None

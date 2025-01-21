@@ -1,3 +1,12 @@
+# allow the output directory and subdirectories to be initialized but empty otherwise
 output
+!output/catalog_pickles/.gitignore
+!output/database_test/.gitignore
+!output/plots/.gitignore
+!output/plots/hist/.gitignore
+!output/plots/xy_plot/.gitignore
+!output/star_data_output/hist/.gitignore
+# ignore the nested .git directories
 hypatia/HyData/.git
+# ignore the dockerfilesincluding the
 *Dockerfile

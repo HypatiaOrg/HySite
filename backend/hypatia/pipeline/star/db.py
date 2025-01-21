@@ -1,7 +1,7 @@
 import time
 
-from hypatia.config import MONGO_DATABASE
 from hypatia.collect import BaseStarCollection
+from hypatia.configs.env_load import MONGO_DATABASE
 from hypatia.sources.simbad.db import indexed_name_types
 from hypatia.elements import element_rank, ElementID, RatioID
 from hypatia.sources.simbad.query import simbad_coord_to_deg

@@ -1,0 +1,240 @@
+# Stellar Parameters
+# Anything that has a unit
+[raj2000]
+units="deg"
+label="RA"
+hover="Right Ascension (J2000)"
+decimals=8
+[decj2000]
+units="deg"
+label="Dec"
+hover="Declination (J2000)"
+decimals=8
+[hmsdms]
+units="string"
+label="RA/Dec"
+hover="Right Ascension and Declination (J2000)"
+[dist]
+units="[pc]"
+label="Distance"
+hover="Distance from the Sun"
+decimals=2
+loggable=true
+[parallax]
+units="mas"
+label="Parallax"
+hover="Parallax"
+decimals=3
+loggable=true
+[glon]
+units="deg"
+label="Galactic Longitude"
+hover="Galactic Longitude"
+decimals=3
+[glat]
+units="deg"
+label="Galactic Latitude"
+hover="Galactic Latitude"
+decimals=3
+[x_pos]
+units="[pc]"
+label="X Position"
+hover="Cartesian geocentric x-coordinate from the Sun"
+decimals=3
+[y_pos]
+units="[pc]"
+label="Y Position"
+hover="Cartesian geocentric y-coordinate from the Sun"
+decimals=3
+[z_pos]
+units="[pc]"
+label="Z Position"
+hover="Cartesian geocentric z-coordinate from the Sun"
+decimals=3
+[pm_ra]
+units="mas/yr"
+label="Proper Motion RA"
+hover="Proper Motion in Right Ascension"
+decimals=4
+[pm_dec]
+units="mas/yr"
+label="Proper Motion Dec"
+hover="Proper Motion in Declination"
+decimals=4
+[u_vel]
+units="km/s"
+label="U Velocity"
+hover="Galactic space velocity to/from the direction of the Galactic center"
+decimals=2
+[v_vel]
+units="km/s"
+label="V Velocity"
+hover="Galactic space velocity to/from the direction of Galactic rotation"
+decimals=2
+[w_vel]
+units="km/s"
+label="W Velocity"
+hover="Galactic space velocity to/from the North Galactic Pole"
+decimals=2
+[phot_g_mean_mag]
+units="mag"
+label="G Magnitude"
+hover="G-Band Magnitude"
+decimals=2
+[phot_g_mean_flux]
+units="e-/s"
+label="G Mean Flux"
+hover="G-Band Mean Flux"
+decimals=2
+loggable=true
+[vmag]
+units="mag"
+label="V Magnitude"
+hover="V-Band Magnitude"
+decimals=2
+[bmag]
+units="mag"
+label="B Magnitude"
+hover="B-Band Magnitude"
+decimals=2
+[jmag]
+units="mag"
+label="J Magnitude"
+hover="J-Band Magnitude"
+[hmag]
+units="mag"
+label="H Magnitude"
+hover="H-Band Magnitude"
+[ksmag]
+units="mag"
+label="Ks Magnitude"
+hover="Ks-Band Magnitude"
+[bv]
+units="mag"
+label="B-V"
+hover="B-V Johnson color from Hipparcos"
+decimals=3
+[radial_velocity]
+units="km/s"
+label="RV"
+hover="Radial Velocity"
+decimals=2
+[lum]
+units="L_sun"
+label="Luminosity"
+hover="Stellar Luminosity"
+decimals=2
+loggable=true
+[rad]
+units="R_sun"
+label="Stellar Radius"
+hover="Stellar Radius"
+decimals=2
+loggable=true
+[mass]
+units="M_sun"
+label="Stellar Mass"
+hover="Stellar Mass"
+decimals=2
+loggable=true
+[teff]
+units="K"
+label="Effective Temperature"
+hover="Stellar Effective Temperature"
+decimals=1
+loggable=true
+[logg]
+units=""
+label="log(g)"
+hover="Log of the stellar surface gravity (g)"
+decimals=2
+[sptype]
+units="string"
+label="Spectral Type"
+hover="Spectral Type"
+decimals=""
+[rsptype]
+units="string"
+label="Spectral Type Reference"
+hover="Spectral Type Reference"
+decimals=""
+[sptype_num]
+units=""
+label="Spectral Type Number"
+hover="Spectral Type Number (for sorting)"
+decimals=""
+[disk]
+units="string"
+label="Disk"
+hover="Thin or thick disk association based on the kinematic prescription in Bensby et al. 2003"
+decimals=""
+[disk_num]
+units=""
+label="Disk Number"
+hover="Disk Number (for sorting) 0 for thin, 1 for thick"
+decimals=""
+# Planet Parameters
+[pl_mass]
+units="M_Jup"
+label="Planet Mass"
+hover="Planet Mass"
+decimals=4
+loggable=true
+[pl_radius]
+units="R_Jup"
+label="Planet Radius"
+hover="Planet Radius"
+decimals=4
+loggable=true
+[period]
+units="days"
+label="Period"
+hover="Planet oribital period"
+decimals=3
+loggable=true
+[semi_major_axis]
+units="AU"
+label="Semi-Major Axis"
+hover="Semi-Major Axis"
+decimals=3
+loggable=true
+[eccentricity]
+units=""
+label="Eccentricity"
+hover="Planetary Eccentricity"
+decimals=3
+[inclination]
+units="deg"
+label="Orbital Inclination"
+hover="Planetary orbital inclination"
+decimals=2
+[discovery_method]
+units="string"
+label="Discovery Method"
+hover="Discovery Method"
+decimals=""
+[planet_letter]
+units="string"
+label="Planet Letter"
+hover="Planet Letter"
+[pl_rade]
+units="R_Earth"
+label="Planet Radius"
+hover="Planet Radius in Earth Radii"
+[pl_radelim]
+units="R_Earth"
+label="Limit Planet Radius Limit"
+hover="Limit of the planet radial limit (Earth Radii)"
+[pl_bmasse]
+units="M_Earth"
+label="Planet Mass"
+hover="Planet Mass in Earth Masses"
+[pl_controv_flag]
+units="string"
+label="Controversial Flag"
+hover="Controversial Flag"
+[radius_gap]
+units=""
+label="Radius Gap Calculation"
+hover="Values above 1.0 are above the radius gap, likely a mini-Neptune"
+decimals=3

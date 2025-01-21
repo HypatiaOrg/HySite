@@ -1,9 +1,10 @@
 import os
 import shutil
 
-from hypatia.tools.color_text import file_name_text
 from hypatia.tools.table_read import row_dict
-from hypatia.config import ref_dir, abundance_dir, default_catalog_file, new_abundances_dir, new_catalogs_file_name
+from hypatia.tools.color_text import file_name_text
+from hypatia.configs.file_paths import (ref_dir, abundance_dir, default_catalog_file, new_abundances_dir,
+                                        new_catalogs_file_name)
 
 
 def short_name_to_filename(short_name: str, abundance_dir_name: str = abundance_dir):

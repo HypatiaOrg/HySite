@@ -1,7 +1,8 @@
 from itertools import product
 
-from hypatia.elements import element_rank, ElementID, RatioID
 from hypatia.sources.simbad.db import indexed_name_types
+from hypatia.elements import element_rank, ElementID, RatioID
+
 
 str_to_float_fields = {'sptype', 'disk'}
 string_names_types = indexed_name_types | {'star_id', 'nea_name', 'planet_letter', 'letter', 'name', 'discovery_method'}

@@ -13,9 +13,10 @@ import matplotlib.pyplot as plt
 
 from standard_lib import standard_output
 from hypatia.pipeline.nat_cat import NatCat
-from hypatia.pipeline.star.stats import autolabel
-from hypatia.elements import element_rank, ElementID
-from hypatia.config import plot_dir, hydata_dir, norm_keys_default
+from hypatia.plots.histograms import autolabel
+from hypatia.plots.histograms import get_hist_bins
+from hypatia.configs.file_paths import histo_dir, hydata_dir
+from hypatia.configs.source_settings import norm_keys_default
 
 
 def mdwarf_output(target_list: list[str] | list[tuple[str, ...]] | str | os.PathLike | None = None,
@@ -136,13 +137,8 @@ def tsuji_overlap(run_tsuji: bool = run_tsuji_check):
 
 # No more need to add in Tsuji abundances, Abia was a bad idea
 def mdwarf_histogram(self):
-    n = len(self.available_bins) + 1  #add extra elements for F and 13C, remove one for NLTE_SrII
-    ordered_list_of_bins = [""]
-    element_ids = [ElementID.from_str(el_str) for el_str in self.available_bins]
-    if "each elemental abundance" in self.description:
-        ordered_list_of_bins.extend([str(el_id) for el_id in sorted(element_ids, key=element_rank)]) #check to keep only this
-    else:
-        ordered_list_of_bins.extend(sorted(self.available_bins))
+    ordered_list_of_bins = get_hist_bins(available_bins=self.available_bins,
+                                         is_element_id="each elemental abundance" in self.description)
     if 'Fe' in ordered_list_of_bins:
         ordered_list_of_bins.remove('Fe')
     hits = [0]
@@ -159,7 +155,7 @@ def mdwarf_histogram(self):
     threshold_hits = [0, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     base_plus_hits = [sum(x) for x in zip(baseline_hits, hits)]
     thresh_plus_hits = [sum(x) for x in zip(threshold_hits, hits)]
-    ind = np.arange(n+0)    #minus 1 for removing Fe, plus 2 for adding F
+    ind = np.arange(len(ordered_list_of_bins))
     width = 0.8
     fig = plt.figure(figsize=(10, 5))
     ax = fig.add_subplot(111)
@@ -170,9 +166,9 @@ def mdwarf_histogram(self):
     ax.set_xlabel('Spectroscopic Abundances for M-Dwarfs (excluding Fe)', fontsize=15)
     ax.set_ylabel('Number of Stars with Measured Element X', fontsize=14)
     ax.set_ylim([0.0, np.max(baseline_hits) + 600.])
-    ax.set_xlim([0.0, float(n+1)])
+    ax.set_xlim([0.0, float(len(ordered_list_of_bins))])
     ax.set_xticks(ind)
-    ax.set_xticklabels(tuple(ordered_list_of_bins), fontsize=13)
+    ax.set_xticklabels(tuple([name.replace('_', '') for name in ordered_list_of_bins]), fontsize=13)
     ax.legend(loc='upper left', scatterpoints=1, fontsize=12)
     #ax.text(50, 9000, "FGKM-type Stars Within 500pc: " + str(np.max(hits)), fontsize=20, fontweight='bold',
     #        color='#4E11B7')
@@ -184,10 +180,10 @@ def mdwarf_histogram(self):
     # ax.show()
     ax.set_aspect('auto')
     name = "mdwarf24-bigHist-" + str(total_num) + ".pdf"
-    file_name = os.path.join(plot_dir, "hist", name)
+    file_name = os.path.join(histo_dir, name)
     fig.savefig(file_name)
-    print("Number of elements", len(ordered_list_of_bins) - 1)
-    return ordered_list_of_bins
+    print("Number of elements", len(ordered_list_of_bins))
+    return ordered_list_of_bins, rects_base, rects_thresh
 
 
 mdwarf_histogram(stats.star_count_per_element)

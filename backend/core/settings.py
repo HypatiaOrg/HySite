@@ -14,7 +14,7 @@ import os
 from pathlib import Path
 from warnings import warn
 
-from hypatia.config import test_database_dir
+from hypatia.configs.file_paths import test_database_dir
 
 
 def str_is_true(s: str) -> bool:

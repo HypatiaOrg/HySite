@@ -8,7 +8,7 @@ from astroquery.simbad import Simbad
 from astropy.coordinates import SkyCoord
 
 from hypatia.tools.color_text import simbad_error_text
-from hypatia.config import simbad_parameters_hack, simbad_big_sleep_seconds, simbad_small_sleep_seconds
+from hypatia.configs.source_settings import simbad_parameters_hack, simbad_big_sleep_seconds, simbad_small_sleep_seconds
 
 
 connection_error_max_retries = 5

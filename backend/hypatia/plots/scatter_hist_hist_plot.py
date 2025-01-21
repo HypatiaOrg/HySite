@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import NullFormatter
 
-from hypatia.config import working_dir
+from hypatia.configs.file_paths import plot_dir
 
 
 def default_margins(bin_left, bin_right, bin_number, margins, data):
@@ -244,7 +244,7 @@ def histPlot(xdata, ydata, exoXdata=None, exoYdata=None, xerror=None, yerror=Non
 
 
     if saveFigure:
-        base_name = os.path.join(working_dir, "plots", 'output', figname)
+        base_name = os.path.join(plot_dir, figname)
         if do_eps:
             plt.savefig(base_name + '.eps', bbox_inches='tight')
         if do_pdf:

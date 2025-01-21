@@ -1,16 +1,10 @@
 import os
 import random
 
-import numpy
 import matplotlib.pyplot as plt
 
-from hypatia.config import plot_dir
+from hypatia.configs.file_paths import xy_plot_dir
 
-if not os.path.isdir(plot_dir):
-    os.mkdir(plot_dir)
-xy_plot_dir = os.path.join(plot_dir, 'xy_plot')
-if not os.path.isdir(xy_plot_dir):
-    os.mkdir(xy_plot_dir)
 
 colors = ['BlueViolet', 'Brown', 'CadetBlue', 'Chartreuse', 'Chocolate', 'Coral', 'CornflowerBlue', 'Crimson', ' Cyan',
           'DarkBlue', 'DarkCyan', 'DarkGoldenRod', 'DarkGreen', 'DarkMagenta', 'DarkOliveGreen', 'DarkOrange',
@@ -167,8 +161,7 @@ def quick_plotter(plot_dict):
                  linewidth=line_width, marker=fmt, markersize=markersize,
                  markerfacecolor=color, alpha=alpha)
         # are there errorbars on this plot?
-        if (('xErrors' in keys) or ('yErrors' in keys)):
-
+        if 'xErrors' in keys or 'yErrors' in keys:
             # extract the x error (default is "None")
             xError = extract_plot_val(plot_dict, 'xErrors', listIndex, keys=keys)
             # extract the y error (default is "None")
@@ -184,9 +177,6 @@ def quick_plotter(plot_dict):
             plt.xscale('log')
         if extract_plot_val(plot_dict, 'yLog', keys=keys):
             plt.yscale('log')
-
-
-
 
 
     # now we will add the title and x and y axis labels
@@ -292,118 +282,3 @@ def rescale(desired, current, target=None):
         rescaledTarget4 = rescaledTarget3 + minDesired
 
         return rescaledTarget4
-
-
-
-def quickHistograms(dataDict, columns=1, bins=10, keys=None,
-                    plot_file_name='hist', save=False, doEps=False, show=True,
-                    verbose=True):
-    if keys is None:
-        keys = list(dataDict.keys())
-    if len(keys) < 3:
-            columns = 1
-    numOfSubPlots = len(keys)
-    rows = int(numpy.ceil(float(numOfSubPlots)/float(columns)))
-    if columns == 1:
-        f, axarr = plt.subplots(rows)
-    else:
-        f, axarr = plt.subplots(rows, columns)
-    f.tight_layout()
-    f.set_size_inches(10, 8)
-    row = -1
-    histDict = {}
-
-
-    for (keyIndex, key) in list(enumerate(keys)):
-        column = keyIndex % columns
-        if column == 0:
-            row += 1
-        hist, bin_edges = numpy.histogram(dataDict[key], bins=bins)
-        binCenters = [(bin_edges[n + 1] + bin_edges[n]) / 2.0 for n in range(bins)]
-        binWidth = (binCenters[-1] - binCenters[0]) / float(bins)
-        histDict[key] = (hist, binCenters)
-
-
-        xlabel_str = ''
-        if key == 'integral':
-            xlabel_str += "Integral V * s"
-            color = 'dodgerblue'
-            hatch = '/'
-        elif key == 'fittedCost':
-            xlabel_str += "'Cost' of fitting function"
-            color = 'Crimson'
-            hatch = '*'
-        elif key == 'fittedAmp1':
-            xlabel_str += "Fitted Amplitude 1"
-            color = 'SaddleBrown'
-            hatch = '|'
-        elif key == 'fittedTau1':
-            xlabel_str += "Fitted Tau 1"
-            color = 'darkorchid'
-            hatch = '\\'
-        elif key == 'fittedAmp2':
-            xlabel_str += "Fitted Amplitude 2"
-            color = 'GoldenRod'
-            hatch = 'x'
-        elif key == 'fittedTau2':
-            xlabel_str += "Fitted Tau 2"
-            color = 'firebrick'
-            hatch = 'o'
-        elif key == 'fittedAmp3':
-            xlabel_str += "Fitted Amplitude 3"
-            color = 'forestGreen'
-            hatch = '-'
-        elif key == 'fittedTau3':
-            xlabel_str += "Fitted Tau 3"
-            color = 'Fuchsia'
-            hatch = '+'
-        elif key == 'fittedAmp4':
-            xlabel_str += "Fitted Amplitude 4"
-            color = 'Chocolate'
-            hatch = '.'
-        elif key == 'fittedTau4':
-            xlabel_str += "Fitted Tau 4"
-            color = 'Magenta'
-            hatch = '0'
-        elif key == 'deltaX':
-            xlabel_str += "length of trimmed file (s)"
-            color = 'DarkOrange'
-            hatch = '+'
-
-        else:
-            xlabel_str = str(key)
-            color = colors[keyIndex]
-            hatch = hatches[keyIndex]
-
-
-        if xlabel_str != '':
-            xlabel_str += ' '
-        if columns == 1:
-            axarr[row].set_title(xlabel_str)
-            axarr[row].bar(binCenters, hist, binWidth, color=color, hatch=hatch)
-            axarr[row].ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-        else:
-            axarr[row, column].set_title(xlabel_str)
-            axarr[row, column].bar(binCenters, hist, binWidth, color=color, hatch=hatch)
-            axarr[row, column].ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-    #save the plot
-    if save:
-        plt.draw()
-        if doEps:
-            plot_file_name += '.eps'
-        else:
-            plot_file_name += '.png'
-        if verbose:
-            print("saving file:", plot_file_name)
-        plt.savefig(plot_file_name)
-
-
-    if show:
-        plt.show()
-
-    plt.clf()
-    plt.close()
-    return histDict
-
-
-

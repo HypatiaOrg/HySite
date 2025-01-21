@@ -9,7 +9,7 @@ from pymongo.errors import ServerSelectionTimeoutError, CollectionInvalid
 from pymongo.results import DeleteResult, InsertOneResult, InsertManyResult, UpdateResult
 
 
-from hypatia.config import connection_string
+from hypatia.configs.env_load import connection_string
 
 
 class BaseCollection:
