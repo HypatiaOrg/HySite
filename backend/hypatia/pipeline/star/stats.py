@@ -1,27 +1,8 @@
-import os
-
-import numpy as np
 import matplotlib.pyplot as plt
 
-from hypatia.config import working_dir, histo_dir
 from hypatia.elements import ElementID
-from hypatia.plots.histograms import get_hist_bins
 from hypatia.sources.simbad.ops import get_star_data
 from hypatia.sources.simbad.db import indexed_name_types
-
-
-def autolabel(rects):
-    """
-    attach some text labels
-    """
-    for rect in rects:
-        height = rect.get_height()
-        if height < 300 and not height == 0.0:
-            height1 = height  # + 20.0
-        else:
-            height1 = height
-        plt.text(rect.get_x()+rect.get_width()/2.0, 1.02*height1, '%d' % int(height),
-                 ha='center', va='bottom')
 
 
 class CountPerBin:
@@ -42,42 +23,6 @@ class CountPerBin:
             else:
                 self.__setattr__(bin_name, 1)
                 self.available_bins.add(one_bin)
-
-# To run this in the terminal: stats.star_count_per_element.extra_special_nat_histogram()
-    def extra_special_nat_histogram(self):
-        non_nlte_bins = {element_id for element_id in self.available_bins if not element_id.is_nlte}
-        ordered_list_of_bins = get_hist_bins(available_bins= non_nlte_bins,
-                                             is_element_id="each elemental abundance" in self.description)
-        n = len(ordered_list_of_bins)
-        hits = [0]
-        hits.extend([self.__getattribute__(bin_name) for bin_name in ordered_list_of_bins[1:]])
-        ind = np.arange(n)
-        width = 0.6
-        fig = plt.figure(figsize=(22,6))
-        ax = fig.add_subplot(111)
-        rects1 = plt.bar(ind, hits, width, color='#4E11B7')
-        ax.set_xlabel('Element Abundances in the Hypatia Catalog', fontsize=15)
-        ax.set_ylabel('Number of Stars with Measured Element X', fontsize=15)
-        ax.set_ylim([0.0, np.max(hits) +1000.])
-        ax.set_xlim([0.0, float(n + 1)])
-        ax.set_xticks(ind)
-        named_list_of_bins = [name.replace('_', '') for name in ordered_list_of_bins]
-        names_up_down =[('\n' if ii % 2 == 1 else '') + named_list_of_bins[ii] for ii in range(len(named_list_of_bins))]
-        ax.set_xticklabels(names_up_down)
-        ax.tick_params(axis='x', which='minor', length=25)
-        ax.tick_params(axis='x', which='both', color='darkgrey')
-        ax.text(60, 12000, "FGKM-type Stars Within 500pc: "+str(np.max(hits)), fontsize=23,  fontweight='bold', color='#4E11B7')
-        ax.text(60, 10500, "Literature Sources: +340", fontsize=23,  fontweight='bold', color='#4E11B7')
-        ax.text(60, 9000, "Number of Elements/Species: "+str(len(ordered_list_of_bins)-1), fontsize=23,  fontweight='bold', color='#4E11B7')
-        autolabel(rects1)
-        #plt.title(self.description)
-        #ax.show()
-        ax.set_aspect('auto')
-        name="bigHist-"+str(np.max(hits))+".pdf"
-        file_name = os.path.join(histo_dir, name)
-        fig.savefig(file_name)
-        print("Number of elements", len(ordered_list_of_bins)-1)
-        return ordered_list_of_bins
 
 
 class StarDataStats:

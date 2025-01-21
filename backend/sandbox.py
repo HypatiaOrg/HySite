@@ -11,10 +11,10 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from hypatia.plots.histograms import get_hist_bins
 from standard_lib import standard_output
 from hypatia.pipeline.nat_cat import NatCat
-from hypatia.pipeline.star.stats import autolabel
+from hypatia.plots.histograms import autolabel
+from hypatia.plots.histograms import get_hist_bins
 from hypatia.config import histo_dir, hydata_dir, norm_keys_default
 
 

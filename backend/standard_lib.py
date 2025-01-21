@@ -449,7 +449,6 @@ if __name__ == "__main__":
     stats = output_star_data.stats
     # output_star_data.flat_database_output()
     stars_all = nat_cat.star_data.star_names
-    stats.star_count_per_element.extra_special_nat_histogram()
     print(len(stars_all), "total stars")
     stars_hypatia = output_star_data.star_names
     print(len(stars_hypatia), "stars after cuts")
