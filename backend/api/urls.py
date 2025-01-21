@@ -20,6 +20,6 @@ urlpatterns = [
     path('web2py/graph/', GraphView.as_view(), name='web2py-graph'),
     path('web2py/table/', TableView.as_view(), name='web2py-table'),
     path('planets/', PlanetView.as_view(), name='planets'),
-    path('stats/historgram', Histogram.as_view(), name='histogram'),
+    path('stats/histogram', Histogram.as_view(), name='histogram'),
     path('', HomeView.as_view(), name='index'),
 ]
