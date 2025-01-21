@@ -1,10 +1,11 @@
 from hypatia.collect import BaseCollection
+from hypatia.configs.env_load import MONGO_DATABASE
 from hypatia.elements import element_rank, ElementID
 from hypatia.object_params import expected_params_dict
 from hypatia.elements import summary_dict, elements_found
 from hypatia.sources.catalogs.ops import export_to_records
 from hypatia.sources.catalogs.solar_norm import solar_norm
-from hypatia.config import default_catalog_file, MONGO_DATABASE
+from hypatia.configs.file_paths import default_catalog_file
 
 
 class SummaryCollection(BaseCollection):

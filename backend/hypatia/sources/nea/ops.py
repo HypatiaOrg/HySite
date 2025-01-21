@@ -2,9 +2,9 @@ from hypatia.sources.simbad.ops import get_main_id
 from hypatia.sources.nea.db import ExoPlanetStarCollection
 from hypatia.sources.simbad.batch import get_star_data_batch
 from hypatia.object_params import SingleParam, expected_params_dict, ObjectParams
-from hypatia.sources.nea.query import (query_nea, set_data_by_host, hypatia_host_name_rank_order, non_parameter_fields)
-from hypatia.config import (nea_names_the_cause_wrong_simbad_references, nea_ref, known_micro_names,
-                            system_designations)
+from hypatia.sources.nea.query import query_nea, set_data_by_host, hypatia_host_name_rank_order, non_parameter_fields
+from hypatia.configs.source_settings import (nea_names_the_cause_wrong_simbad_references, nea_ref, known_micro_names,
+                                             system_designations)
 
 
 nea_collection = ExoPlanetStarCollection(collection_name='nea')

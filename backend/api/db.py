@@ -1,7 +1,7 @@
 from warnings import warn
 
-from hypatia.config import MONGO_DATABASE
 from hypatia.pipeline.star.db import HypatiaDB
+from hypatia.configs.env_load import MONGO_DATABASE
 from hypatia.pipeline.summary import SummaryCollection
 from hypatia.sources.nea.db import ExoPlanetStarCollection
 

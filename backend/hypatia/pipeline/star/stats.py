@@ -1,5 +1,3 @@
-import matplotlib.pyplot as plt
-
 from hypatia.elements import ElementID
 from hypatia.sources.simbad.ops import get_star_data
 from hypatia.sources.simbad.db import indexed_name_types

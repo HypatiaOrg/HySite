@@ -2,8 +2,8 @@ import numpy as np
 
 from hypatia.sources.tic.query import query_tic_data
 from hypatia.sources.simbad.ops import get_star_data
-from hypatia.sources.tic.db import TICStarCollection, primary_values
 from hypatia.object_params import ObjectParams, SingleParam
+from hypatia.sources.tic.db import TICStarCollection, primary_values
 
 
 tic_reference = "TESS Input Catalog"

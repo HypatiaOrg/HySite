@@ -1,14 +1,17 @@
 import copy
 import pickle
 
+from matplotlib.font_manager import fontManager
+
 from hypatia.pipeline.star.db import HypatiaDB
 from hypatia.pipeline.star.all import AllStarData
 from hypatia.tools.color_text import file_name_text
+from hypatia.configs.env_load import MONGO_DATABASE
 from hypatia.pipeline.summary import upload_summary
 from hypatia.sources.simbad.ops import get_star_data
 from hypatia.pipeline.params.filters import core_filter
 from hypatia.plots.element_rad_plot import make_element_distance_plots
-from hypatia.config import pickle_out, default_catalog_file, MONGO_DATABASE
+from hypatia.configs.file_paths import pickle_out, default_catalog_file
 
 
 def load_pickled_output():

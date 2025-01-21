@@ -5,7 +5,8 @@ from hypatia.collect import BaseCollection
 from hypatia.pipeline.star.db import HypatiaDB
 from hypatia.sources.simbad.db import StarCollection
 from hypatia.pipeline.summary import SummaryCollection
-from hypatia.config import MONGO_DATABASE, MONGO_STARNAMES_COLLECTION, norm_keys_default
+from hypatia.configs.source_settings import norm_keys_default
+from hypatia.configs.env_load import MONGO_DATABASE, MONGO_STARNAMES_COLLECTION
 
 
 def update(norm_keys: list[str] = None, refresh_exo_data: bool = False):

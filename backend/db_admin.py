@@ -1,11 +1,10 @@
 import string
 import secrets
-from getpass import getuser
 from datetime import datetime
 
 import pymongo
 
-from hypatia.config import MONGO_HOST, MONGO_PORT, connection_string, get_connection_string
+from hypatia.configs.env_load import MONGO_HOST, MONGO_PORT, connection_string, get_connection_string, current_user
 
 digits = set(string.digits)
 letters = set(string.ascii_letters)
@@ -42,7 +41,7 @@ def make_read_only_user(user_name: str, password: str = None):
     user_connection_str = get_connection_string(user=user_name, password=password, host=MONGO_HOST, port=MONGO_PORT)
     with open(env_file_name, 'w') as env_file:
         env_file.write(f'# Created on: {datetime.now()}')
-        env_file.write(f'#         by: {getuser()}\n')
+        env_file.write(f'#         by: {current_user}\n')
         env_file.write(f'MONGO_USERNAME={user_name}\n')
         env_file.write(f'MONGO_PASSWORD={password}\n')
         env_file.write(f'MONGO_HOST={MONGO_HOST}\n')

@@ -3,8 +3,8 @@ import time
 from hypatia.tools.exceptions import StarNameNotFound
 from hypatia.sources.simbad.query import query_simbad_star
 from hypatia.sources.simbad.db import StarCollection, indexed_name_types, get_match_name
-from hypatia.config import (default_reset_time_seconds, no_simbad_reset_time_seconds, MONGO_STARNAMES_COLLECTION,
-                            current_user, INTERACTIVE_STARNAMES)
+from hypatia.configs.env_load import MONGO_STARNAMES_COLLECTION, current_user, INTERACTIVE_STARNAMES
+from hypatia.configs.source_settings import default_reset_time_seconds, no_simbad_reset_time_seconds
 
 
 cache_names = {}

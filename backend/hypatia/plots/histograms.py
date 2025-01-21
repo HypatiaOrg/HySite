@@ -4,16 +4,11 @@ import requests
 import numpy as np
 import matplotlib.pyplot as plt
 
-from hypatia.config import plot_dir, histo_dir
+from hypatia.configs.file_paths import plot_dir, histo_dir
 from hypatia.elements import element_rank, ElementID
 from hypatia.tools.color_text import file_name_text, colorize_text
 
 colors = ['goldenrod', 'dodgerblue', 'darkorange', 'darkorchid', 'darkgreen']
-
-if not os.path.isdir(plot_dir):
-    os.mkdir(plot_dir)
-if not os.path.isdir(histo_dir):
-    os.mkdir(histo_dir)
 
 
 def simple_hist(x, bins=10, range=None, title=None, x_label=None, y_label=None, color='darkorange', show=False, save=True):

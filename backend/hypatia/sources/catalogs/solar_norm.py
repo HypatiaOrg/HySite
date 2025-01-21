@@ -1,8 +1,8 @@
 import os
 from warnings import warn
 
-from hypatia.config import ref_dir
 from hypatia.tools.table_read import row_dict
+from hypatia.configs.file_paths import solar_norm_ref
 from hypatia.elements import summary_dict, element_rank, ElementID, iron_id, iron_ii_id
 
 
@@ -114,7 +114,7 @@ class SolarNorm:
 
     def __init__(self, file_path=None):
         if file_path is None:
-            file_path = os.path.join(ref_dir, "solar_norm_ref.csv")
+            file_path = solar_norm_ref
         self.file_path = file_path
         if os.path.exists(file_path):
             raw_file = row_dict(self.file_path, key="catalog", delimiter=",", null_value="")

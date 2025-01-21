@@ -3,9 +3,9 @@ The main_id, or _id, can be used to link star names across different sources wit
 """
 from getpass import getuser
 
-from hypatia.config import MONGO_DATABASE
 from hypatia.pipeline.star.db import HypatiaDB
 from hypatia.sources.simbad.ops import get_main_id
+from hypatia.configs.env_load import MONGO_DATABASE
 from hypatia.sources.nea.db import ExoPlanetStarCollection
 
 star_list = [

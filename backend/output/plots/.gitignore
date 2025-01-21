@@ -1,0 +1,7 @@
+# ignore everything
+*
+# but not this file
+!.gitignore
+# and not this two other .gitignore files
+!hist/.gitignore
+!xy_plot/.gitignore

@@ -7,9 +7,9 @@ import numpy as np
 from hypatia.elements import element_rank, ElementID
 from hypatia.plots.scatter_hist_hist_plot import histPlot
 from hypatia.pipeline.star.output import load_pickled_output
+from hypatia.configs.source_settings import norm_keys_default
 from hypatia.pipeline.nat_cat import NatCat, load_catalog_query
-from hypatia.config import target_list_dir, base_dir, norm_keys_default
-from hypatia.tools.table_read import ClassyReader
+from hypatia.configs.file_paths import target_list_dir, base_dir, pickle_nat
 
 
 def save_or_load(load=True, a_catalog_query=None):
@@ -43,7 +43,7 @@ def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=N
     else:
         catalogs_file_name = 'subset_catalog_file.csv'
 
-    if from_pickled_cat:
+    if from_pickled_cat and os.path.exists(pickle_nat):
         nat_cat = load_catalog_query()
     else:
         nat_cat = NatCat(params_list_for_stats=params,

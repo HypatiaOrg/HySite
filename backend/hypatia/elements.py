@@ -6,8 +6,8 @@ from typing import NamedTuple
 import numpy as np
 from roman import fromRoman, InvalidRomanNumeralError
 
-from hypatia.config import site_dir
-from hypatia.element_data import periodic_table
+from hypatia.configs.element_data import periodic_table
+from hypatia.configs.file_paths import element_plusminus_error_file
 
 
 plusminus_error_default = 0.1
@@ -183,7 +183,6 @@ iron_nlte_id = ElementID.from_str("NLTE_Fe")
 
 
 # representative error file
-element_plusminus_error_file = os.path.join(site_dir, 'element_plusminus_err.toml')
 if os.path.exists(element_plusminus_error_file):
     with open(element_plusminus_error_file, 'rb') as f:
         plusminus_error = {ElementID.from_str(key): np.round(float(value), decimals=plusminus_error_decimals)

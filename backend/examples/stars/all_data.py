@@ -1,5 +1,5 @@
-from hypatia.config import MONGO_DATABASE
 from hypatia.pipeline.star.db import HypatiaDB
+from hypatia.configs.env_load import MONGO_DATABASE
 from hypatia.sources.simbad.db import StarCollection
 from hypatia.sources.tic.db import TICStarCollection
 from hypatia.pipeline.summary import SummaryCollection

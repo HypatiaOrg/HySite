@@ -6,7 +6,7 @@ from collections import UserDict
 
 import numpy as np
 
-from hypatia.config import params_and_units_file
+from hypatia.configs.file_paths import params_and_units_file
 
 
 def get_params_and_units_from_file() -> dict:

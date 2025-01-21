@@ -15,7 +15,8 @@ from standard_lib import standard_output
 from hypatia.pipeline.nat_cat import NatCat
 from hypatia.plots.histograms import autolabel
 from hypatia.plots.histograms import get_hist_bins
-from hypatia.config import histo_dir, hydata_dir, norm_keys_default
+from hypatia.configs.file_paths import histo_dir, hydata_dir
+from hypatia.configs.source_settings import norm_keys_default
 
 
 def mdwarf_output(target_list: list[str] | list[tuple[str, ...]] | str | os.PathLike | None = None,

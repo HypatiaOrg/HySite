@@ -1,5 +1,4 @@
 # Custom patterns for the HySite project
-output/
 .idea/
 
 # Byte-compiled / optimized / DLL files

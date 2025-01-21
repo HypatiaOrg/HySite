@@ -4,8 +4,8 @@ matplotlib
 numpy
 pymongo
 python-dotenv
+roman
 # Required for the web interface
 django
-gunicorn
-roman
 djangorestframework
+gunicorn

@@ -3,8 +3,9 @@ import pickle
 
 from hypatia.tools.table_read import row_dict
 from hypatia.tools.star_names import star_name_format
-from hypatia.config import ref_dir, output_products_dir
 from hypatia.object_params import ObjectParams, SingleParam
+from hypatia.configs.file_paths import pastel_file, pastel_pickle_file
+
 
 
 # When updating a new Pastel file, change the filename on Line 35 and the delimiter on Line 55.
@@ -17,8 +18,8 @@ class Pastel:
                      "jmag": "mag", "hmag": "mag", "ksmag": "mag"}
 
     def __init__(self, auto_load: bool = False, from_scratch: bool = False, verbose: bool = True):
-        self.file_name = os.path.join(ref_dir, "Pastel20.psv")
-        self.processed_pickle_file = os.path.join(output_products_dir, 'pastel_processes.pkl')
+        self.file_name = pastel_file
+        self.processed_pickle_file = pastel_pickle_file
         self.data = None
         self.verbose = verbose
         self.from_scratch = from_scratch
