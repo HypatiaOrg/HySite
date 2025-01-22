@@ -69,8 +69,6 @@ services:
             - "matplotlib_cache:/home/python_user/django_backend/.cache/matplotlib:rw"
             # gunicorn to store temporary files
             - "gunicorn_tmp:/var/tmp:rw"
-            # Data input for processing
-            - "./backend/hypatia/HyData:/home/python_user/django_backend/hypatia/HyData:${VOLUME_SPECIFICATION:-rw}"
             # Data output from processing
             - "./backend/output:${DATA_OUTPUT_DIR:-/home/python_user/django_backend/output}:${VOLUME_SPECIFICATION:-rw}"
         command: ["gunicorn", "core.wsgi", "--bind", "0.0.0.0:8111"]

@@ -25,5 +25,8 @@ def catalog_name_text(text: str):
 def file_name_text(text: str):
     return colorize_text(text, style_text='bold', color_text='black', color_background='green')
 
+def warning_yellow_text(text: str):
+    return colorize_text(text, style_text='bold', color_text='black', color_background='yellow')
+
 def simbad_error_text(text: str):
     return colorize_text(text, style_text='normal', color_text='black', color_background='yellow')

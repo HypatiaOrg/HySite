@@ -3,6 +3,7 @@ from warnings import warn
 
 from hypatia.tools.table_read import row_dict
 from hypatia.configs.file_paths import solar_norm_ref
+from hypatia.tools.color_text import warning_yellow_text
 from hypatia.elements import summary_dict, element_rank, ElementID, iron_id, iron_ii_id
 
 
@@ -94,17 +95,17 @@ def un_norm_abs_x(absolute_x: float):
 def ratio_to_element(test_ratio: str) -> tuple[ElementID, str]:
     test_ratio = test_ratio.strip().replace(' ', '_')
     test_ratio_lower = test_ratio.lower()
-    if test_ratio_lower.endswith("a"):
-        un_norm_func_name = "un_norm_abs_x"
+    if test_ratio_lower.endswith('a'):
+        un_norm_func_name = 'un_norm_abs_x'
         element_string = test_ratio[:-1]
-    elif test_ratio_lower.endswith("h"):
+    elif test_ratio_lower.endswith('h'):
         element_string = test_ratio[:-1]
-        un_norm_func_name = "un_norm_x_over_h"
-    elif test_ratio_lower.endswith("fe"):
+        un_norm_func_name = 'un_norm_x_over_h'
+    elif test_ratio_lower.endswith('fe'):
         element_string = test_ratio[:-2]
-        un_norm_func_name = "un_norm_x_over_fe"
+        un_norm_func_name = 'un_norm_x_over_fe'
     else:
-        raise KeyError(f"The Abundance: {test_ratio} is not of the expected formats.")
+        raise KeyError(f'The Abundance: {test_ratio} is not of the expected formats.')
     element_record = ElementID.from_str(element_string=element_string.strip('_'))
     return element_record, un_norm_func_name
 
@@ -117,10 +118,10 @@ class SolarNorm:
             file_path = solar_norm_ref
         self.file_path = file_path
         if os.path.exists(file_path):
-            raw_file = row_dict(self.file_path, key="catalog", delimiter=",", null_value="")
-            self.comments = raw_file.pop("comments")
+            raw_file = row_dict(self.file_path, key='catalog', delimiter=',', null_value='')
+            self.comments = raw_file.pop('comments')
         else:
-            warn(f"Solar Norm file: {file_path} does not exist. An empty dictionary will be used.")
+            warning_yellow_text(f'Solar Norm file: {file_path} does not exist. An empty dictionary will be used.')
             raw_file = {}
             self.comments = None
 
@@ -133,7 +134,7 @@ class SolarNorm:
     def __call__(self, norm_key=None):
         if norm_key is None:
             return self.solar_norm_dict
-        if norm_key.lower() == "absolute":
+        if norm_key.lower() == 'absolute':
             return None
         else:
             return self.solar_norm_dict[norm_key.lower()]
@@ -189,6 +190,6 @@ class SolarNorm:
 solar_norm = SolarNorm()
 solar_norm_dict = solar_norm()
 
-if __name__ == "__main__":
-    # solar_norm.write(os.path.join(ref_dir, "test_solar_norm.csv"))
+if __name__ == '__main__':
+    # solar_norm.write(os.path.join(ref_dir, 'test_solar_norm.csv'))
     pass
