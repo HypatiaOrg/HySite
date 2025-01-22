@@ -1,3 +1,6 @@
+from django.views import View
+from api.db import hypatia_db, summary_db
+from django.http import JsonResponse
 from django.views.generic import TemplateView
 
 
@@ -7,3 +10,15 @@ class HomeView(TemplateView):
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(**kwargs)
         return self.render_to_response(context)
+
+
+class HypatiaDataBaseView(View):
+    throttle_scope = 'full_db'
+
+    def get(self, request):
+        return JsonResponse(hypatia_db.find_all())
+
+
+class SummaryView(View):
+    def get(self, request):
+        return JsonResponse(summary_db.find_all())

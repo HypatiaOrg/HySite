@@ -97,6 +97,7 @@ REST_FRAMEWORK = {
         'core.throttling.SustainedRateThrottle'
     ],
     'DEFAULT_THROTTLE_RATES': {
+        'full_db': '3/day',
         'burst': '50/min',
         'sustained': '10000/day'
     },
