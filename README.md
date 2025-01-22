@@ -122,7 +122,7 @@ This is the database used by the live website,
 it makes a copy of the data in the used as a test database 
 and moves it to the public database.
 
-This is the same files as the the data upload script,
+This is the same files as the data upload script,
 but no we add the `--publish` flag to the command
 to run a separate definition that updates the public database.
 
@@ -325,11 +325,11 @@ docker compose up --build ipython
 > [!NOTE]
 > Run only the mongoDB service stand-alone with the following command:
 > ```bash
-> docker compose up mongoDB
+> docker compose up mongo-db
 > ```
 > Or together with the Jupyter notebook service with the following command:
 > ```bash
-> docker compose up mongoDB ipython
+> docker compose up --build mongo-db ipython
 > ```
 
 ## Docker
