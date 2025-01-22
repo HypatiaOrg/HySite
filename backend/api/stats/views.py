@@ -1,6 +1,6 @@
 from django.views import View
-from django.http import JsonResponse
 from api.db import hypatia_db
+from django.http import JsonResponse
 
 
 class Histogram(View):

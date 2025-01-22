@@ -423,9 +423,9 @@ if __name__ == "__main__":
 
     all_params = set()
     test_norm_keys = list(norm_keys_default)
-    test_refresh_exo_data = False
-    test_from_scratch = False
-    test_from_pickled_cat = True
+    test_refresh_exo_data = True
+    test_from_scratch = True
+    test_from_pickled_cat = False
     mongo_upload=False
     if only_target_list:
         example_target_list = os.path.join(target_list_dir, 'Patrick-XRP-target-list-cut.csv')
