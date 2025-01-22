@@ -1,15 +1,15 @@
 import copy
 import pickle
 
-from matplotlib.font_manager import fontManager
-
 from hypatia.pipeline.star.db import HypatiaDB
+from hypatia.element_error import plusminus_error
 from hypatia.pipeline.star.all import AllStarData
 from hypatia.tools.color_text import file_name_text
 from hypatia.configs.env_load import MONGO_DATABASE
 from hypatia.pipeline.summary import upload_summary
 from hypatia.sources.simbad.ops import get_star_data
 from hypatia.pipeline.params.filters import core_filter
+from hypatia.sources.catalogs.solar_norm import solar_norm
 from hypatia.plots.element_rad_plot import make_element_distance_plots
 from hypatia.configs.file_paths import pickle_out, default_catalog_file
 
@@ -606,7 +606,14 @@ class OutputStarData(AllStarData):
         found_normalizations = hypatia_db.added_normalizations
         ids_with_wds_names = set(hypatia_db.get_ids_for_name_type('wds'))
         ids_with_nea_names = set(hypatia_db.get_ids_for_nea())
-        upload_summary(found_elements=found_elements, found_element_nlte=found_element_nlte,
+        normalizations = solar_norm.to_record(norm_keys=found_normalizations) | \
+                         {'absolute': {'author': 'Absolute',
+                                       'notes': 'This key provides data that is in absolute scale and is not normalized to the Sun.'},
+                          'original': {'author': 'Original',
+                                       'notes': 'This key provides the originally published normalization, but omits data that was originally published as absolute. '}}
+
+        upload_summary(normalizations=normalizations,
+                       plusminus_error=plusminus_error,
+                       found_elements=found_elements, found_element_nlte=found_element_nlte,
                        catalogs_file_name=catalogs_file_name, found_catalogs=found_catalogs,
-                       found_normalizations=found_normalizations,
                        ids_with_wds_names=ids_with_wds_names, ids_with_nea_names=ids_with_nea_names)

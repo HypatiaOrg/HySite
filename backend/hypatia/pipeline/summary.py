@@ -1,11 +1,11 @@
 from hypatia.collect import BaseCollection
 from hypatia.configs.env_load import MONGO_DATABASE
+from hypatia.elements import element_rank, ElementID
 from hypatia.object_params import expected_params_dict
 from hypatia.elements import summary_dict, elements_found
 from hypatia.sources.catalogs.ops import export_to_records
-from hypatia.sources.catalogs.solar_norm import solar_norm
 from hypatia.configs.file_paths import default_catalog_file
-from hypatia.elements import element_rank, ElementID, plusminus_error
+
 
 
 class SummaryCollection(BaseCollection):
@@ -213,9 +213,10 @@ class SummaryCollection(BaseCollection):
         return self.collection.find_one({'_id': id_name})
 
 
-def upload_summary(found_elements: set[ElementID] = None, found_element_nlte: set[ElementID] = None,
+def upload_summary(normalizations: dict[str, float| int | str | dict[str, float]],
+                   plusminus_error: dict[ElementID, float],
+                   found_elements: set[ElementID] = None, found_element_nlte: set[ElementID] = None,
                    catalogs_file_name: str = default_catalog_file, found_catalogs: set[str] = None,
-                   found_normalizations: set[str] = None,
                    ids_with_wds_names: set[str] = None, ids_with_nea_names: set[str] = None):
     if found_elements is None:
         found_elements = set()
@@ -223,8 +224,6 @@ def upload_summary(found_elements: set[ElementID] = None, found_element_nlte: se
         found_element_nlte = set()
     if found_catalogs is None:
         found_catalogs = set()
-    if found_normalizations is None:
-        found_normalizations = set()
     if ids_with_wds_names is None:
         ids_with_wds_names = set()
     if ids_with_nea_names is None:
@@ -235,9 +234,6 @@ def upload_summary(found_elements: set[ElementID] = None, found_element_nlte: se
     catalog_data = export_to_records(catalog_input_file=catalogs_file_name,
                                      requested_catalogs=sorted(found_catalogs) if found_catalogs else None)
 
-    normalizations = solar_norm.to_record(norm_keys=found_normalizations) | \
-        {'absolute': {'author': 'Absolute', 'notes': 'This key provides data that is in absolute scale and is not normalized to the Sun.'},
-         'original': {'author': 'Original', 'notes': 'This key provides the originally published normalization, but omits data that was originally published as absolute. '}}
 
     doc = {
         '_id': 'summary_hypatiacatalog',
@@ -254,7 +250,3 @@ def upload_summary(found_elements: set[ElementID] = None, found_element_nlte: se
         'ids_with_nea_names': sorted(ids_with_nea_names),
     }
     summary_db.add_one(doc)
-
-
-if __name__ == '__main__':
-    upload_summary(found_normalizations={'lodders09'})

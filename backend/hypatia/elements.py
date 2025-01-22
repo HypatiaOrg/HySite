@@ -1,17 +1,10 @@
-import os
-import tomllib
-from warnings import warn
 from typing import NamedTuple
 
-import numpy as np
 from roman import fromRoman, InvalidRomanNumeralError
 
 from hypatia.configs.element_data import periodic_table
-from hypatia.configs.file_paths import element_plusminus_error_file
 
 
-plusminus_error_default = 0.1
-plusminus_error_decimals = 2
 elements_that_end_in_h = {'bh', 'rh', 'th', 'nh', 'h'}
 ambiguous_ion_elements = {frozenset({'s', 'si'}), frozenset({'n', 'ni'}), frozenset({'b', 'bi'})}
 elements_that_end_in_i = {'li', 'si', 'ti', 'ni', 'bi', 'i'}
@@ -22,9 +15,6 @@ expected_ion_states = [state.lower() for state in expected_ion_states_upper]
 
 float_params = {"ionization_energy_ev", 'average_mass_amu'}
 elements_found = set()
-# from the chemical data CSV file
-
-
 
 summary_dict = {periodic_table_element.abbreviation.lower(): periodic_table_element.to_dict()
                 for periodic_table_element in periodic_table}
@@ -182,48 +172,7 @@ iron_ii_id = ElementID.from_str("Fe_II")
 iron_nlte_id = ElementID.from_str("NLTE_Fe")
 
 
-# representative error file
-if os.path.exists(element_plusminus_error_file):
-    with open(element_plusminus_error_file, 'rb') as f:
-        plusminus_error = {ElementID.from_str(key): np.round(float(value), decimals=plusminus_error_decimals)
-                           for key, value in tomllib.load(f).items()}
-else:
-    plusminus_error = {}
-    warn(f"Element representative error file {element_plusminus_error_file} not found.")
-    # this is the default error value for elements not found in the error file
 
-
-def get_representative_error(element_id: ElementID) -> float:
-    if element_id in plusminus_error.keys():
-        # this is the exit if the error was in the file or already loaded for a different ion state or NLTE status.
-        return plusminus_error[element_id]
-    # test if this element can be found in the error file with a different ion state or NLTE status
-    proxy_element = None
-    if element_id.is_nlte:
-        # test if an LTE version of this element is in the error file
-        non_nlte_element_id = ElementID(name_lower=element_id.name_lower, ion_state=element_id.ion_state, is_nlte=False)
-        if non_nlte_element_id in plusminus_error:
-            proxy_element = non_nlte_element_id
-        elif element_id.ion_state is not None:
-            # test if an NLTE version of this element is available for a neutral version of this element
-            non_nlte_element_id = ElementID(name_lower=element_id.name_lower, ion_state=None, is_nlte=True)
-            if non_nlte_element_id in plusminus_error:
-                proxy_element = non_nlte_element_id
-    if proxy_element is None and element_id.ion_state is not None:
-        # if no other solution was found, test if an LTE and electrically-neutral version of this element is available
-        non_ion_element_id = ElementID(name_lower=element_id.name_lower, ion_state=None, is_nlte=False)
-        if non_ion_element_id in plusminus_error:
-            proxy_element = non_ion_element_id
-    if proxy_element is None:
-        # return the default representative error.
-        found_error = plusminus_error_default
-        warn(f'Element {element_id} not found in the error file, using default representative error.')
-    else:
-        found_error = plusminus_error[proxy_element]
-        warn(f'Element {element_id} not found in the error file, using proxy representative error for {proxy_element}.')
-    # find this faster the next time
-    plusminus_error[element_id] = found_error
-    return plusminus_error_default
 
 
 def element_rank(element_record: ElementID) -> float:
@@ -316,7 +265,3 @@ def spectral_type_to_float(s: str) -> float:
     if len(roman_numerals) > 0:
         first_roman_numeral = float(roman_numerals[0])
     return float(first_type + first_digit + (first_roman_numeral / 100))
-
-
-if __name__ == '__main__':
-    print(get_representative_error(ElementID.from_str('LaII')))

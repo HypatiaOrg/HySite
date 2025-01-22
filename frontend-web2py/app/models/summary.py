@@ -9,9 +9,13 @@ class AttrDict(dict):
         super(AttrDict, self).__init__(*args, **kwargs)
         self.__dict__ = self
 
-
-BASE_API_URL_DEFAULT = 'http://localhost'
-BASE_API_URL = f"{os.environ.get('BASE_API_URL', BASE_API_URL_DEFAULT)}/hypatia/api/web2py/"
+COMPOSE_PROFILES = set(os.environ.get('COMPOSE_PROFILES', '').split(','))
+if 'api' in COMPOSE_PROFILES:
+    BASE_URL_DEFAULT = 'http://localhost'
+    BASE_URL = os.environ.get('BASE_API_URL', BASE_URL_DEFAULT)
+else:
+    BASE_URL = 'https://hypatiacatalog.com'
+BASE_API_URL = f"{BASE_URL}/hypatia/api/web2py/"
 
 webURL = urllib.request.urlopen(f'{BASE_API_URL}summary/')
 param_data = json.loads(webURL.read().decode(webURL.info().get_content_charset('utf-8')))

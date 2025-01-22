@@ -1,8 +1,13 @@
 import os
 from warnings import warn
 
+import requests
+
 from hypatia.tools.table_read import row_dict
-from hypatia.configs.file_paths import solar_norm_ref
+from hypatia.configs.env_load import MONGO_DATABASE
+from hypatia.pipeline.summary import SummaryCollection
+from hypatia.tools.color_text import attention_yellow_text
+from hypatia.configs.file_paths import solar_norm_ref, summary_api_url
 from hypatia.elements import summary_dict, element_rank, ElementID, iron_id, iron_ii_id
 
 
@@ -94,17 +99,17 @@ def un_norm_abs_x(absolute_x: float):
 def ratio_to_element(test_ratio: str) -> tuple[ElementID, str]:
     test_ratio = test_ratio.strip().replace(' ', '_')
     test_ratio_lower = test_ratio.lower()
-    if test_ratio_lower.endswith("a"):
-        un_norm_func_name = "un_norm_abs_x"
+    if test_ratio_lower.endswith('a'):
+        un_norm_func_name = 'un_norm_abs_x'
         element_string = test_ratio[:-1]
-    elif test_ratio_lower.endswith("h"):
+    elif test_ratio_lower.endswith('h'):
         element_string = test_ratio[:-1]
-        un_norm_func_name = "un_norm_x_over_h"
-    elif test_ratio_lower.endswith("fe"):
+        un_norm_func_name = 'un_norm_x_over_h'
+    elif test_ratio_lower.endswith('fe'):
         element_string = test_ratio[:-2]
-        un_norm_func_name = "un_norm_x_over_fe"
+        un_norm_func_name = 'un_norm_x_over_fe'
     else:
-        raise KeyError(f"The Abundance: {test_ratio} is not of the expected formats.")
+        raise KeyError(f'The Abundance: {test_ratio} is not of the expected formats.')
     element_record = ElementID.from_str(element_string=element_string.strip('_'))
     return element_record, un_norm_func_name
 
@@ -112,28 +117,54 @@ def ratio_to_element(test_ratio: str) -> tuple[ElementID, str]:
 class SolarNorm:
     ref_columns = {'author', 'year'}
 
-    def __init__(self, file_path=None):
+    def __init__(self, file_path: str | os.PathLike | None = None, verbose: bool = True):
         if file_path is None:
             file_path = solar_norm_ref
+        self.verbose = verbose
         self.file_path = file_path
         if os.path.exists(file_path):
-            raw_file = row_dict(self.file_path, key="catalog", delimiter=",", null_value="")
-            self.comments = raw_file.pop("comments")
+            norm_data = row_dict(self.file_path, key='catalog', delimiter=',', null_value='')
+            self.comments = norm_data.pop('comments')
+            self.solar_norm_dict = {cat_name: {ElementID.from_str(element_string=el_str): float(el_val)
+                                               for el_str, el_val in cat_data.items() if el_str not in self.ref_columns}
+                                    for cat_name, cat_data in norm_data.items()}
+            self.ref_data = {cat_name: {ref_type: cat_data[ref_type] for ref_type in self.ref_columns}
+                             for cat_name, cat_data in norm_data.items()}
         else:
-            warn(f"Solar Norm file: {file_path} does not exist. An empty dictionary will be used.")
-            raw_file = {}
             self.comments = None
+            print(f'Solar Norm file: {file_path} does not exist')
+            self.solar_norm_dict = {}
+            self.ref_data = {}
+            summary_db = SummaryCollection(db_name=MONGO_DATABASE, collection_name='summary')
+            if summary_db.collection_exists():
+                print(f'  Loading Solar Norm from the database')
+                summary_data = summary_db.find_one()
+                norm_data = summary_data['normalizations']
+            else:
+                print('  ' + attention_yellow_text(f'Downloading the file from: {summary_api_url}'))
+                response = requests.get(summary_api_url)
+                if response.status_code == 200:
+                    norm_data = response.json()
+                else:
+                    warn(f'Failed to download the Solar Norm file from: {summary_api_url}, using an empty dictionary!')
+                    norm_data = {}
+            for cat_name, cat_data in norm_data.items():
+                try:
+                    self.solar_norm_dict[cat_name] = cat_data.pop('values')
+                except KeyError:
+                    # this happens for the 'original' and 'absolute' keys
+                    pass
+                else:
+                    self.ref_data[cat_name] = {key_name: cat_data[key_name] for key_name in cat_data.keys()
+                                               if key_name in self.ref_columns}
 
-        self.solar_norm_dict = {cat_name: {ElementID.from_str(element_string=el_str): float(el_val)
-                                           for el_str, el_val in cat_data.items() if el_str not in self.ref_columns}
-                          for cat_name, cat_data in raw_file.items()}
-        self.ref_data = {cat_name: {ref_type: cat_data[ref_type] for ref_type in self.ref_columns}
-                         for cat_name, cat_data in raw_file.items()}
+        if self.verbose:
+            print('Solar Norm data loaded.')
 
     def __call__(self, norm_key=None):
         if norm_key is None:
             return self.solar_norm_dict
-        if norm_key.lower() == "absolute":
+        if norm_key.lower() == 'absolute':
             return None
         else:
             return self.solar_norm_dict[norm_key.lower()]
@@ -189,6 +220,6 @@ class SolarNorm:
 solar_norm = SolarNorm()
 solar_norm_dict = solar_norm()
 
-if __name__ == "__main__":
-    # solar_norm.write(os.path.join(ref_dir, "test_solar_norm.csv"))
+if __name__ == '__main__':
+    # solar_norm.write(os.path.join(ref_dir, 'test_solar_norm.csv'))
     pass
