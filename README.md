@@ -175,16 +175,6 @@ https://git-scm.com/downloads
 git clone https://github.com/HypatiaOrg/HySite
 ```
 
-### Clone the data repository
-This is a private repository, 
-you will need to be added to the HypatiaOrg organization to access it.
-
-```bash
-cd HySite/backend/hypatia
-git clone https://github.com/HypatiaOrg/HyData
-cd ../../
-```
-
 ### Initialize the submodules for Web2py
 
 
@@ -213,8 +203,128 @@ git submodule update --init --recursive
 > git submodule add https://github.com/web2py/web2py frontend-web2py/web2py
 > ```
 
-## Build the docker containers
-You should be in the HySite directory that has the docker `compose.yaml` file
+### Clone the HyData repository
+This is a private repository, 
+you will need to be added to the HypatiaOrg organization to access it.
+
+This is needed for operations and development of the HypatiaCatalog data processing pipeline.
+
+```bash
+cd HySite/backend/hypatia
+git clone https://github.com/HypatiaOrg/HyData
+cd ../../
+```
+## Configuration (.env) file
+The is a number of possible configurations the docker containers can use
+make parts of the website or the whole website, 
+or just the data processing pipeline in a Jupyter notebook.
+Many of this configuration are set in the `.env` file in the root of the repository.
+This file is never committed to the repository, and can contain sensitive information.
+
+> [!TIP]
+> The see the `example.env` file for an example of the configuration options.
+
+> [!NOTE] 
+> Many of the configuration options have defaults that are in the `compose.yaml`
+> at the root of the repository. 
+> When a variable is not present in the `.env` file, the default value is used.
+
+### Website Frontend only
+
+This is the default configuration, no `.env` file is needed.
+An empty `.env` will also has this configuration.
+
+```bash
+docker compose up --build
+```
+
+### Website and API
+If you have at a minimum *read* credentials to the HypatiaCatalog MongoDB database,
+then you can run a local website that calls with a local API,
+but still use the hypatiacatalog.com MongoDB server.
+
+```text
+COMPOSE_PROFILES=api
+CONNECTION_STRING=mongodb://read_test:DKg%40%5E_c@hypatiacatalog.com:27017
+```
+
+> [!NOTE]
+> The `CONNECTION_STRING` will be provided for you by the database administrator.
+
+> [!WARNING]
+> The `CONNECTION_STRING` should not be committed to the repository.
+
+The `COMPOSE_PROFILES` variable is used to select the services that are run,
+so deploy locally with the following command:
+```bash
+docker compose up --build
+```
+### Website and API with a local MongoDB server
+This requires no credentials to the HypatiaCatalog MongoDB database
+since the local website and local API will use a local MongoDB server.
+
+> [!WARNING]
+> The first time this docker is called this,
+> creates the Root username and password for the MongoDB database.
+
+```text
+COMPOSE_PROFILES=db,api
+MONGO_USERNAME=username
+MONGO_PASSWORD="your-50-character-or-more-password-here"
+MONGO_HOSTNAME=mongoDB
+# RESTART_POLICY=always
+# DEGUG=false
+# VOLUME_SPECIFICATION=ro
+# READ_ONLY=true
+# LOCAL_PORT=8000
+# MONGO_DATABASE=public
+# USE_EXTERNAL_NETWORK=true
+```
+
+> [!TIP]
+> The commented out values differ from 
+> the defaults in the `compose.yaml` and can
+> be used to override the defaults. 
+> The commented out values are recommended for a remote server deployment.
+
+Deploy with the following command:
+```bash
+docker compose up --build
+```
+
+### Jupyter notebook
+This requires database access, which could be read or write 
+to the hypatiacatalog.com MongoDB database or a local MongoDB server (see above).
+
+> [!TIP]
+> Run only the mongoDB service stand-alone with the following command:
+> ```bash
+> docker compose up mongoDB
+> ```
+> Or add `db` to the `COMPOSE_PROFILES` string in the `.env` file.
+
+```text
+COMPOSE_PROFILES=ipython
+# COMPOSE_PROFILES=ipython,db # this line for a local MongoDB server
+JUPYTER_TOKEN="your-50-character-or-more-token-for-jupyter-notebook"
+MONGO_USERNAME=username
+MONGO_PASSWORD="your-50-character-or-more-password-here"
+# MONGO_HOSTNAME=mongoDB # use this line for a local MongoDB server
+MONGO_HOSTNAME=hypatiacatalog.com
+```
+
+Use:
+```bash
+docker compose up --build
+
+```
+
+## Docker
+
+We use docker to manage the services that make up the website
+and also to run the data processing pipeline.
+
+Navigate your terminal the `HySite` directory that has the docker `compose.yaml` file
 
 ### Check that the docker daemon is running
 ```bash
