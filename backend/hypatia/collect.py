@@ -5,11 +5,13 @@ import time
 
 from pymongo import MongoClient
 from pymongo.cursor import Cursor
-from pymongo.errors import ServerSelectionTimeoutError, CollectionInvalid
 from pymongo.results import DeleteResult, InsertOneResult, InsertManyResult, UpdateResult
+from pymongo.errors import ServerSelectionTimeoutError, CollectionInvalid, OperationFailure
 
 
 from hypatia.configs.env_load import connection_string
+
+is_read_only_user = False
 
 
 class BaseCollection:
@@ -43,19 +45,26 @@ class BaseCollection:
         self.collection_add_index(index_name='_id', unique=True)
 
     def create_collection(self):
-        try:
-            self.db.create_collection(self.collection_name, check_exists=True,
-                                      validator=self.validator, collation=self.collation)
-        except CollectionInvalid:
-            # the collection already exists
-            if self.verbose:
-                print(f'Collection {self.collection_name} already exists in database {self.db_name}')
-        else:
-            if self.verbose:
-                print(f'Created collection {self.collection_name} in database {self.db_name}')
-            # finish the setup
-            self.collection = self.db[self.collection_name]
-            self.create_indexes()
+        global is_read_only_user
+        if not is_read_only_user:
+            try:
+                self.db.create_collection(self.collection_name, check_exists=True,
+                                          validator=self.validator, collation=self.collation)
+            except CollectionInvalid:
+                # the collection already exists
+                if self.verbose:
+                    print(f'Collection {self.collection_name} already exists in database {self.db_name}')
+            except OperationFailure:
+                is_read_only_user = True
+                # this is like a permissions issue, a read-only user is trying to create a collection
+                if self.verbose:
+                    print(f'Is read only user? Collection initialization failed at {self.db_name}.{self.collection_name}')
+            else:
+                if self.verbose:
+                    print(f'Created collection {self.collection_name} in database {self.db_name}')
+                # finish the setup
+                self.collection = self.db[self.collection_name]
+                self.create_indexes()
 
     def reset(self):
         self.drop_collection()
@@ -111,8 +120,11 @@ class BaseCollection:
     def add_many(self, docs: list[dict | list | float | str | int] | Cursor) -> InsertManyResult:
         return self.collection.insert_many(docs)
 
-    def find_one(self, query: dict) -> dict:
-        return self.collection.find_one(query)
+    def find_one(self, query: dict | None = None) -> dict:
+        if query is None:
+            return self.collection.find_one()
+        else:
+            return self.collection.find_one(query)
 
     def find_all(self, query: dict = None) -> Cursor:
         if query is None:
