@@ -309,16 +309,7 @@ docker compose up --build
 This requires database access, which could be read or write 
 to the hypatiacatalog.com MongoDB database or a local MongoDB server (see above).
 
-> [!TIP]
-> Run only the mongoDB service stand-alone with the following command:
-> ```bash
-> docker compose up mongoDB
-> ```
-> Or add `db` to the `COMPOSE_PROFILES` string in the `.env` file.
-
 ```text
-COMPOSE_PROFILES=ipython
-# COMPOSE_PROFILES=ipython,db # this line for a local MongoDB server
 JUPYTER_TOKEN="your-50-character-or-more-token-for-jupyter-notebook"
 MONGO_USERNAME=username
 MONGO_PASSWORD="your-50-character-or-more-password-here"
@@ -328,9 +319,18 @@ MONGO_HOSTNAME=hypatiacatalog.com
 
 Use:
 ```bash
-docker compose up --build
-
+docker compose up --build ipython
 ```
+
+> [!NOTE]
+> Run only the mongoDB service stand-alone with the following command:
+> ```bash
+> docker compose up mongoDB
+> ```
+> Or together with the Jupyter notebook service with the following command:
+> ```bash
+> docker compose up mongoDB ipython
+> ```
 
 ## Docker
 

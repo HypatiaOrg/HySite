@@ -26,6 +26,7 @@ test_database_dir = os.path.join(output_products_dir, 'database_test')
 Directory paths for the private access to a HyData repository
 """
 hydata_dir = os.path.join(working_dir, 'HyData')
+WriteError = False
 if os.path.exists(hydata_dir):
     hydata_found = True
 else:
@@ -34,13 +35,16 @@ else:
     hydata_dir = os.path.join(working_dir, 'local_data')
     if not os.path.exists(hydata_dir):
         print('The local_data directory is not found, creating a new directory.')
-        os.mkdir(hydata_dir)
+        try:
+            os.mkdir(hydata_dir)
+        except OSError:
+            WriteError = True
 
 target_list_dir = os.path.join(hydata_dir, 'target_lists')
 ref_dir = os.path.join(hydata_dir, 'reference_data')
 abundance_dir = os.path.join(hydata_dir, 'abundance_data')
 new_abundances_dir = os.path.join(abundance_dir, 'new_data')
-if not hydata_found:
+if not hydata_found and not WriteError:
     # create any missing directories need for the HyData directory structure.
     if not os.path.exists(target_list_dir):
         os.mkdir(target_list_dir)
