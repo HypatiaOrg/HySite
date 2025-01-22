@@ -2,9 +2,10 @@ from copy import copy
 
 import numpy as np
 
+from hypatia.element_error import get_representative_error
 from api.db import summary_doc, hypatia_db, number_of_catalogs
 from hypatia.pipeline.star.aggregation import string_names_types
-from hypatia.elements import ElementID, RatioID, hydrogen_id, get_representative_error, element_rank
+from hypatia.elements import ElementID, RatioID, hydrogen_id, element_rank
 from api.v2.data_process import (get_norm_key, get_norm_data, get_catalog_summary, total_stars, total_abundance_count,
                                  available_wds_stars, available_nea_names, available_elements_v2, available_catalogs_v2,
                                  normalizations_v2)

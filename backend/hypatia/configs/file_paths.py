@@ -72,3 +72,18 @@ element_plusminus_error_file = os.path.join(ref_dir, 'element_plusminus_err.toml
 pickle_nat = os.path.join(output_products_dir, 'pickle_nat.pkl')
 pickle_out = os.path.join(output_products_dir, 'pickle_output_star_data.pkl')
 pastel_pickle_file = os.path.join(output_products_dir, 'pastel_processes.pkl')
+
+
+"""
+API URLs
+
+For users without direct database access, the API URLs can be used to access the database.
+"""
+host = 'https://hypatiacatalog.com'
+histogram_api_url = f'{host}/hypatia/api/stats/histogram'
+summary_api_url = f'{host}/hypatia/api/metadata/solarnorms'
+representative_error_url = f'{host}/hypatia/api/metadata/representative_error'
+planetary_api_url = f'{host}/hypatia/planets'
+db_summery_url = f'{host}/hypatia/api/db/summary'
+# db_full_url needs performance and rate limit testing
+# db_full_url = f'{host}/hypatia/api/db/hypatia'

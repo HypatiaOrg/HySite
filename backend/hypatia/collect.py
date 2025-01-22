@@ -95,6 +95,9 @@ class BaseCollection:
             print('MongoDB connection closed.')
         return False
 
+    def collection_exists(self):
+        return self.collection_name in self.db.list_collection_names()
+
     def drop_collection(self):
         if self.verbose:
             print(f'Dropping collection {self.collection_name}')
@@ -149,3 +152,8 @@ class BaseStarCollection(BaseCollection):
 
     def update_timestamp(self, update_id: str) -> UpdateResult:
         return self.collection.update({'_id': update_id}, {'$set': {'timestamp': time.time()}})
+
+if __name__ == '__main__':
+    test_collection = BaseCollection(db_name='metadata', collection_name='stars')
+    collection_found = test_collection.collection_exists()
+    print(collection_found)
