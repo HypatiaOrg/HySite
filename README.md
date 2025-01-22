@@ -7,6 +7,19 @@ This is a multi-service repository that contains all the data-sciences, API, and
 
 You should be in the HySite directory that has the docker `compose.yaml` file
 
+## Web2py update
+
+This repository uses submodules to include the web2py framework,
+update the submodule with the following command:
+```bash
+git submodule update --recursive
+```
+
+> [!WARNING]
+> This command is part of the update script that the server runs,
+> so it is not necessary to also run this locally before
+> updating the server.
+
 ## Update 1/4: Run the data upload python script
 
 To see all the options for this script

@@ -3,6 +3,7 @@ clear
 cd /home/ubuntu/HySite || return
 echo "Updating HySite repos, a pipeline, database, and website for HypatiaCatalog.com"
 git pull origin main || exit
+git submodule update --recursive || exit
 echo "Updating the docker containers"
 docker compose pull || exit
 docker compose build || exit
