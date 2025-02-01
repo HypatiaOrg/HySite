@@ -438,27 +438,28 @@ def table():
     # add the JS wrapper to get element details
     requested_elements_set = set(requested_elements)
     formatted_table = []
-    for row_index, data_row in list(enumerate(zip(*[table_dict[col_name] for col_name in columns]))):
-        formatted_row = []
-        for col_name, cell_value in zip(columns, data_row):
-            if cell_value == 0.0:
-                cell_value += 0.0
-            cell_value_str = f'{cell_value:1.2f}' if isinstance(cell_value, float) else cell_value
-            if col_name in requested_elements_set:
-                if cell_value_str != '' and col_name in hover_data.keys():
-                    cell_hover_data = hover_data[col_name][row_index]
-                    if cell_hover_data:
-                        hover_strings = []
-                        for key, value in cell_hover_data.items():
-                            if value == 0.0:
-                                value += 0.0
-                            hover_strings.append(f"{'' if value < 0.0 else ' '}{float(value):1.2f}: {CATALOG_AUTHORS[key]}")
-                        cell_value_str = table_cell(
-                            value=cell_value_str,
-                            hover_text='\n'.join(hover_strings),
-                            do_wrapper=not for_download)
-            formatted_row.append(cell_value_str)
-        formatted_table.append(formatted_row)
+    if table_dict:
+        for row_index, data_row in list(enumerate(zip(*[table_dict[col_name] for col_name in columns]))):
+            formatted_row = []
+            for col_name, cell_value in zip(columns, data_row):
+                if cell_value == 0.0:
+                    cell_value += 0.0
+                cell_value_str = f'{cell_value:1.2f}' if isinstance(cell_value, float) else cell_value
+                if col_name in requested_elements_set:
+                    if cell_value_str != '' and col_name in hover_data.keys():
+                        cell_hover_data = hover_data[col_name][row_index]
+                        if cell_hover_data:
+                            hover_strings = []
+                            for key, value in cell_hover_data.items():
+                                if value == 0.0:
+                                    value += 0.0
+                                hover_strings.append(f"{'' if value < 0.0 else ' '}{float(value):1.2f}: {CATALOG_AUTHORS[key]}")
+                            cell_value_str = table_cell(
+                                value=cell_value_str,
+                                hover_text='\n'.join(hover_strings),
+                                do_wrapper=not for_download)
+                formatted_row.append(cell_value_str)
+            formatted_table.append(formatted_row)
     # Make the status label that is above the Periodic Table that controls the data table
     if planet_count:
         status = f'{planet_count} planets selected from {star_count} stars'

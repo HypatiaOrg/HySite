@@ -1,6 +1,7 @@
 from django.urls import path
 
 from core.settings import DEBUG
+from api.graph.views import Graph
 from api.stats.views import Histogram
 from api.planets.views import PlanetView
 from api.views import HomeView, SummaryView, HypatiaDataBaseView
@@ -22,10 +23,11 @@ urlpatterns = [
     path('web2py/graph/', GraphView.as_view(), name='web2py-graph'),
     path('web2py/table/', TableView.as_view(), name='web2py-table'),
     path('planets/', PlanetView.as_view(), name='planets'),
-    path('stats/histogram', Histogram.as_view(), name='histogram'),
-    path('metadata/solarnorms', SolarNorms.as_view(), name='solarnorms'),
-    path('metadata/representative_error', RepresentativeErrorView.as_view(), name='representative-error'),
-    path('db/summary', SummaryView.as_view(), name='summary-db'),
+    path('graph/', Graph.as_view(), name='graph'),
+    path('stats/histogram/', Histogram.as_view(), name='histogram'),
+    path('metadata/solarnorms/', SolarNorms.as_view(), name='solarnorms'),
+    path('metadata/representative_error/', RepresentativeErrorView.as_view(), name='representative-error'),
+    path('db/summary/', SummaryView.as_view(), name='summary-db'),
     path('', HomeView.as_view(), name='index'),
 ]
 

@@ -390,7 +390,10 @@ def table_settings_from_request(settings: dict[str, any]) -> dict[str, any]:
     )
 
 
-def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -> dict[str, any]:
+def graph_query_from_request(settings: dict[str, any],
+                             from_api: bool = False,
+                             use_compact: bool = False,
+                             ) -> dict[str, any]:
     # parse the settings from the request for the graph query
     graph_settings = graph_settings_from_request(settings=settings)
     # get the data from the database
@@ -490,6 +493,8 @@ def graph_query_from_request(settings: dict[str, any], from_api: bool = False) -
                     for db_return in graph_data
                 ],
             }
+        elif use_compact:
+            return graph_data
         else:
             output_header = ['name'] + [f'{x_axis}axis' for x_axis in axis_mapping.keys()]
             graph_keys = [from_v2[column_name] if column_name in from_v2.keys() else column_name
