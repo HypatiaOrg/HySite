@@ -61,6 +61,7 @@ services:
             MONGO_STARNAMES_COLLECTION: "${MONGO_STARNAMES_COLLECTION:-stars}"
             CONNECTION_STRING: ${CONNECTION_STRING:-none}
             INTERACTIVE_STARNAMES: "{INTERACTIVE_STARNAMES:-true}"
+            DEBUG: "${DEBUG:-true}"
         read_only: "${READ_ONLY:-false}"
         volumes:
             # django_static is written at build time by the SpExWebsite Dockerfile
