@@ -393,7 +393,7 @@ def table_settings_from_request(settings: dict[str, any]) -> dict[str, any]:
 def graph_query_from_request(settings: dict[str, any],
                              from_api: bool = False,
                              use_compact: bool = False,
-                             ) -> dict[str, any]:
+                             ) -> dict[str, any] | list[dict[str, any]]:
     # parse the settings from the request for the graph query
     graph_settings = graph_settings_from_request(settings=settings)
     # get the data from the database
