@@ -61,7 +61,7 @@ def pipeline_match_name(db_formatted_names: list[str]):
     return {
         '$first': {
             '$filter': {
-                'input': '$aliases',
+                'input': '$names.match_names',
                 'as': 'alias',
                 'cond': {'$in': ['$$alias', db_formatted_names]},
                 'limit': 1,
@@ -77,7 +77,7 @@ def pipeline_add_starname_match(db_formatted_names: list[str], exclude: bool = F
         db_operator = '$in'
     return {
         '$match': {
-            'aliases': {
+            'names.match_names': {
                 f'{db_operator}': db_formatted_names,
             }
         }
