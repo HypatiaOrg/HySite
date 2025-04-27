@@ -26,6 +26,7 @@ test_database_dir = os.path.join(output_products_dir, 'database_test')
 Directory paths for the private access to a HyData repository
 """
 hydata_dir = os.path.join(working_dir, 'HyData')
+WriteError = False
 if os.path.exists(hydata_dir):
     hydata_found = True
 else:
@@ -34,13 +35,16 @@ else:
     hydata_dir = os.path.join(working_dir, 'local_data')
     if not os.path.exists(hydata_dir):
         print('The local_data directory is not found, creating a new directory.')
-        os.mkdir(hydata_dir)
+        try:
+            os.mkdir(hydata_dir)
+        except OSError:
+            WriteError = True
 
 target_list_dir = os.path.join(hydata_dir, 'target_lists')
 ref_dir = os.path.join(hydata_dir, 'reference_data')
 abundance_dir = os.path.join(hydata_dir, 'abundance_data')
 new_abundances_dir = os.path.join(abundance_dir, 'new_data')
-if not hydata_found:
+if not hydata_found and not WriteError:
     # create any missing directories need for the HyData directory structure.
     if not os.path.exists(target_list_dir):
         os.mkdir(target_list_dir)
@@ -72,3 +76,20 @@ element_plusminus_error_file = os.path.join(ref_dir, 'element_plusminus_err.toml
 pickle_nat = os.path.join(output_products_dir, 'pickle_nat.pkl')
 pickle_out = os.path.join(output_products_dir, 'pickle_output_star_data.pkl')
 pastel_pickle_file = os.path.join(output_products_dir, 'pastel_processes.pkl')
+
+
+"""
+API URLs
+
+For users without direct database access, the API URLs can be used to access the database.
+"""
+host = 'https://hypatiacatalog.com'
+api_route = f'{host}/hypatia/api/'
+histogram_api_url = f'{api_route}stats/histogram'
+summary_api_url = f'{api_route}metadata/solarnorms'
+representative_error_url = f'{api_route}metadata/representative_error'
+planetary_api_url = f'{api_route}planets'
+graph_api_url = f'{api_route}graph'
+db_summery_url = f'{api_route}db/summary'
+# db_full_url needs performance and rate limit testing
+# db_full_url = f'{api_route}db/hypatia'

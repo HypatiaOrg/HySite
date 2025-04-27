@@ -1,7 +1,8 @@
 import numpy as np
 
+from hypatia.elements import ElementID
 from hypatia.object_params import params_err_format
-from hypatia.elements import get_representative_error, ElementID
+from hypatia.element_error import get_representative_error
 
 
 class ElementStats:

@@ -61,7 +61,7 @@ def pipeline_match_name(db_formatted_names: list[str]):
     return {
         '$first': {
             '$filter': {
-                'input': '$aliases',
+                'input': '$names.match_names',
                 'as': 'alias',
                 'cond': {'$in': ['$$alias', db_formatted_names]},
                 'limit': 1,
@@ -77,7 +77,7 @@ def pipeline_add_starname_match(db_formatted_names: list[str], exclude: bool = F
         db_operator = '$in'
     return {
         '$match': {
-            'aliases': {
+            'names.match_names': {
                 f'{db_operator}': db_formatted_names,
             }
         }
@@ -249,7 +249,7 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
     # stage 1: If needed, filter by per-star parameters to narrow the number of documents to process
     and_filters_stellar = []
     if db_formatted_names:
-        and_filters_stellar.append({'aliases': {f"{'$nin' if db_formatted_names_exclude else '$in'}": db_formatted_names}})
+        and_filters_stellar.append({'names.match_names': {f"{'$nin' if db_formatted_names_exclude else '$in'}": db_formatted_names}})
     # add the stellar parameters filters
     and_filters_stellar.extend(add_params_and_filters(match_filters=stellar_params_match_filters,
                                                       value_filters=stellar_params_value_filters, is_stellar=True))

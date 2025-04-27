@@ -1,4 +1,7 @@
 import time
+from warnings import warn
+
+from pymongo.errors import OperationFailure
 
 from hypatia.tools.exceptions import StarNameNotFound
 from hypatia.sources.simbad.query import query_simbad_star
@@ -10,9 +13,13 @@ from hypatia.configs.source_settings import default_reset_time_seconds, no_simba
 cache_names = {}
 cache_docs = {}
 star_collection = StarCollection(collection_name=MONGO_STARNAMES_COLLECTION)
-star_collection.prune_older_records(prune_before_timestamp=time.time() - default_reset_time_seconds)
-star_collection.prune_older_records(prune_before_timestamp=time.time() - no_simbad_reset_time_seconds,
-                                    additional_filter={'origin': {'$ne': 'simbad'}})
+try:
+    star_collection.prune_older_records(prune_before_timestamp=time.time() - default_reset_time_seconds)
+    star_collection.prune_older_records(prune_before_timestamp=time.time() - no_simbad_reset_time_seconds,
+                                        additional_filter={'origin': {'$ne': 'simbad'}})
+except OperationFailure:
+    # this is like a permissions issue, a read-only user is trying to edite prune the records
+    pass
 
 
 def get_attr_name(name: str) -> str:
@@ -155,7 +162,11 @@ def set_star_doc(simbad_main_id: str, star_names: list[str], star_data: dict[str
     # uniquify the star names, and this will update the cache
     star_record = format_simbad_star_record(simbad_main_id, star_data, sorted(star_names))
     # update the sources with the new data
-    star_collection.add_one(doc=star_record)
+    try:
+        star_collection.add_one(doc=star_record)
+    except OperationFailure:
+        # this is like a permissions issue, a read-only user is trying to add a record
+        warn(f"Failed to add the star record for {simbad_main_id} to the sources, progress is not be saved.")
     # update the cache with the new data
     set_cache_data(simbad_main_id=simbad_main_id, star_record=star_record, star_name_aliases=set(star_names))
     return star_record
@@ -277,7 +288,6 @@ def get_main_id(test_name: str, test_origin: str = current_user, allow_interacti
 def get_star_data(test_name: str, test_origin: str = 'unknown', no_cache: bool = False) -> dict[str, any]:
     main_id = get_main_id(test_name, test_origin)
     return get_star_data_by_main_id(main_id, no_cache)
-
 
 # preloading the cache with all the star data
 get_all_star_docs()
