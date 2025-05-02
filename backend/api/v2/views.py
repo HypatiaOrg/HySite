@@ -1,6 +1,7 @@
 from django.views import View
 from django.http import JsonResponse, HttpResponse
 
+from core.settings import DEBUG
 from api.web2py.data_process import (graph_settings_from_request, graph_query_pipeline_web2py,
                                      histogram_format)
 from api.v2.data_process import (normalizations_v2, available_elements_v2, available_catalogs_v2, get_star_data_v2,
@@ -25,6 +26,8 @@ class AvailableCatalogs(View):
 
 class Star(View):
     def get(self, request):
+        if DEBUG:
+            print(request.get_full_path())
         query_dict_names = request.GET.getlist('name', None)
         if query_dict_names:
             names_queried = query_dict_names

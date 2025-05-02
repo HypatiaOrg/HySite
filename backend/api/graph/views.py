@@ -1,11 +1,14 @@
 from django.views import View
 from django.http import JsonResponse
 
+from core.settings import DEBUG
 from api.web2py.data_process import graph_settings_from_request, graph_query_pipeline
 
 
 class Graph(View):
     def get(self, request):
+        if DEBUG:
+            print(request.get_full_path())
         graph_settings = graph_settings_from_request(request.GET)
         graph_data = graph_query_pipeline(graph_settings=graph_settings)
         if not graph_data:

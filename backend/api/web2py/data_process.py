@@ -20,6 +20,7 @@ ranked_string_params = {'sptype': 'sptype_num', 'disk': 'disk_num'}
 nones = {None, 'none', ''}
 none_denominators = {None, 'none', '', 'h', 'H'}
 true_set = {"true", 1, 1.0, '1.0', '1', 't', 'yes', 'y', 'on', True}
+default_table_elements = ['Fe', 'C', 'O', 'Mg', 'Si', 'S', 'Ca', 'Ti']
 
 home_data = {
     'stars': total_stars,
@@ -244,7 +245,9 @@ class FilterForQuery:
             self.planet_params_value_filters[param_id] = (filter_low, filter_high, exclude)
 
 
-def graph_settings_from_request(settings: dict[str, any]):
+def graph_settings_from_request(settings: dict[str, any] | None):
+    if settings is None:
+        settings = {}
     filter1_1 = is_none_str(settings.get('filter1_1', None), default=None)
     filter1_2 = is_none_str(settings.get('filter1_2', None), default='H')
     filter1_3 = is_value_str(settings.get('filter1_3', None))
@@ -351,18 +354,19 @@ def graph_settings_from_request(settings: dict[str, any]):
     )
 
 
-def table_settings_from_request(settings: dict[str, any]) -> dict[str, any]:
+def table_settings_from_request(settings: dict[str, any] | None) -> dict[str, any]:
     graph_settings = graph_settings_from_request(settings=settings)
     requested_name_types = is_list_str(settings.get('requested_name_types', None))
     requested_stellar_params = is_list_str(settings.get('requested_stellar_params', None))
     requested_planet_params = is_list_str(settings.get('requested_planet_params', None))
     requested_elements = is_list_str(settings.get('requested_elements', None), use_lower=False)
-    if requested_elements is not None:
-        requested_elements = [ElementID.from_str(el_name) for el_name in requested_elements]
+    if requested_elements is None:
+        requested_elements = default_table_elements
+    requested_elements = [ElementID.from_str(el_name) for el_name in requested_elements]
     sort_field = is_none_str(settings.get('sort', None), default=None, use_lower=False)
     sort_reverse = is_true_str(settings.get('reverse', 'false'))
     show_error = is_true_str(settings.get('show_error', 'false'))
-    show_hover = is_true_str(settings.get('show_hover', 'false'))
+    show_hover = is_true_str(settings.get('show_hover', 'true'))
 
     return dict(
         db_formatted_names=graph_settings['db_formatted_names'],
@@ -479,7 +483,7 @@ def histogram_format(graph_data: list[dict[str, any]], labels: dict[str, str],
     return hist_all, hist_planet, edges, x_data
 
 
-def table_query_from_request(settings: dict[str, any]):
+def table_query_from_request(settings: dict[str, any] | None = None) -> dict[str, any]:
     # parse the settings from the request for the table query
     table_settings = table_settings_from_request(settings=settings)
     return_error = table_settings['return_error']
@@ -588,46 +592,3 @@ def table_query_from_request(settings: dict[str, any]):
         planet_count=planet_count,
         star_count=star_count,
     )
-
-
-if __name__ == '__main__':
-    test_settings = {
-        'filter1_1': 'none',
-        'filter1_2': 'H',
-        'filter1_3': 'none',
-        'filter1_4': 'none',
-        'filter2_1': 'none',
-        'filter2_2': 'H',
-        'filter2_3': 'None',
-        'filter2_4': 'None',
-        'filter3_1': 'none',
-        'filter3_2': 'H',
-        'filter3_3': 'None',
-        'filter3_4': 'None',
-        'xaxis1': 'Fe',
-        'xaxis2': 'H',
-        'yaxis1': 'Si',
-        'yaxis2': 'H',
-        'zaxis1': 'none',
-        'zaxis2': 'H',
-        'cat_action': 'exclude',
-        'star_action': 'exclude',
-        'filter1_inv': 'False',
-        'filter2_inv': 'False',
-        'filter3_inv': 'False',
-        'solarnorm': 'lodders09',
-        'catalogs': 'luck18',
-        'mode': 'scatter',
-        # below are the settings for the table query
-        'requested_stellar_params': '',
-        'requested_elements': 'Fe;C;O;Mg;S;C;Ti;F;CII',
-        'requested_planet_params': '',
-        'requested_name_types': '',
-        'sort': '',
-        'reverse': 'true',
-        'show_error': 'true',
-        'show_hover': 'true',
-    }
-    graph_settings = graph_settings_from_request(settings=test_settings)
-    test_graph_data = graph_query_pipeline_web2py(graph_settings=test_settings)
-    # test_table_data = table_query_from_request(settings=test_settings)

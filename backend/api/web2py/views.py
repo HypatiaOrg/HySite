@@ -1,6 +1,7 @@
 from django.views import View
 from django.http import JsonResponse
 
+from core.settings import DEBUG
 from api.v2.data_process import available_catalogs_v2
 from api.web2py.data_process import (home_data, units_and_fields_v2, stellar_param_types_v2,
                                      planet_param_types_v2, ranked_string_params, plot_norms,
@@ -28,6 +29,8 @@ class Summary(View):
 
 class GraphView(View):
     def get(self, request):
+        if DEBUG:
+            print(request.get_full_path())
         graph_settings = graph_settings_from_request(request.GET)
         # get more settings about how to process the data
         graph_data, labels, _to_v2, from_v2, is_loggable, unique_star_names \
@@ -73,4 +76,6 @@ class GraphView(View):
 
 class TableView(View):
     def get(self, request):
+        if DEBUG:
+            print(request.get_full_path())
         return JsonResponse(table_query_from_request(settings=request.GET))
