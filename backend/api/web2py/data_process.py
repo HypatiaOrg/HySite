@@ -6,9 +6,8 @@ from hypatia.element_error import get_representative_error
 from api.db import summary_doc, hypatia_db, number_of_catalogs
 from hypatia.pipeline.star.aggregation import string_names_types
 from hypatia.elements import ElementID, RatioID, hydrogen_id, element_rank
-from api.v2.data_process import (get_norm_key, get_norm_data, get_catalog_summary, total_stars, total_abundance_count,
-                                 available_wds_stars, available_nea_names, available_elements_v2, available_catalogs_v2,
-                                 normalizations_v2)
+from api.v2.data_process import (get_norm_key, get_catalog_summary, total_stars, total_abundance_count,
+                                 available_wds_stars, available_nea_names, available_elements_v2, normalizations_v2)
 
 
 stellar_param_types_v2 = ['raj2000', 'decj2000', 'dist', 'x_pos', 'y_pos', 'z_pos', 'teff', 'logg',
@@ -390,17 +389,8 @@ def table_settings_from_request(settings: dict[str, any]) -> dict[str, any]:
     )
 
 
-def graph_query_from_request(settings: dict[str, any],
-                             from_api: bool = False,
-                             use_compact: bool = False,
-                             ) -> dict[str, any] | list[dict[str, any]]:
-    # parse the settings from the request for the graph query
-    graph_settings = graph_settings_from_request(settings=settings)
-    # get the data from the database
-    planet_params_returned = graph_settings['planet_params_returned']
-    planet_params_match_filters = graph_settings['planet_params_match_filters']
-    planet_params_value_filters = graph_settings['planet_params_value_filters']
-    graph_data = hypatia_db.frontend_pipeline(
+def graph_query_pipeline(graph_settings: dict[str, any]) -> list[dict[str, any]]:
+    return hypatia_db.frontend_pipeline(
         db_formatted_names=graph_settings['db_formatted_names'],
         db_formatted_names_exclude=graph_settings['db_formatted_names_exclude'],
         elements_returned=graph_settings['elements_returned'],
@@ -411,20 +401,27 @@ def graph_query_from_request(settings: dict[str, any],
         stellar_params_returned=graph_settings['stellar_params_returned'],
         stellar_params_match_filters=graph_settings['stellar_params_match_filters'],
         stellar_params_value_filters=graph_settings['stellar_params_value_filters'],
-        planet_params_returned=planet_params_returned,
-        planet_params_match_filters=planet_params_match_filters,
-        planet_params_value_filters=planet_params_value_filters,
+        planet_params_returned=graph_settings['planet_params_returned'],
+        planet_params_match_filters=graph_settings['planet_params_match_filters'],
+        planet_params_value_filters=graph_settings['planet_params_value_filters'],
         solarnorm_id=graph_settings['solarnorm_id'],
         return_median=graph_settings['return_median'],
         catalogs=graph_settings['catalogs'],
         catalog_exclude=graph_settings['catalog_exclude'],
         return_nea_name=graph_settings['return_nea_name'],
     )
-    # get more settings about how to process the data
-    axis_mapping = graph_settings['axis_mapping']
-    solarnorm_id = graph_settings['solarnorm_id']
-    is_histogram = graph_settings['is_histogram']
-    normalize_hist = graph_settings['normalize_hist']
+
+
+def graph_query_pipeline_web2py(graph_settings: dict[str, any]) -> tuple[
+    list[dict[str, any]],
+    dict[str, str],
+    dict[str, str],
+    dict[str, str],
+    dict[str, bool],
+    set[str],
+]:
+    # get the data from the database
+    graph_data = graph_query_pipeline(graph_settings=graph_settings)
     # calculate the labels for the data
     labels = {}
     to_v2 = {}
@@ -455,67 +452,31 @@ def graph_query_from_request(settings: dict[str, any],
             unique_star_names.add(data_row['name'])
             if 'nea_name' in data_row.keys():
                 data_row['name'] = 'NEA: ' + data_row['nea_name']
-    # return the data in various formats depending on the requesting application.
-    if is_histogram:
-        # histogram
-        db_field = from_v2['xaxis']
-        # value_type, param_id = axis_mapping['x']
-        x_data = [db_return[db_field] for db_return in graph_data]
-        x_data_with_planet = [db_return[db_field] for db_return in graph_data if 'nea_name' in db_return.keys()]
-        # builds the histogram
-        hist_all, edges = np.histogram(x_data, bins=20)
-        hist_planet, edges = np.histogram(x_data_with_planet, bins=edges)
-        # get maximum point on the histogram
-        max_hist_all = float(max(hist_all))
-        max_hist_planet = float(max(hist_planet))
-        # normalize if necessary
-        if normalize_hist:
-            hist_all = hist_all / max_hist_all
-            hist_planet = hist_planet / max_hist_planet
-            labels['yaxis'] = 'Relative Frequency'
-        else:
-            labels['yaxis'] = 'Number of Stellar Systems'
-        if from_api:
-            return {'count': len(x_data), 'labels': labels,
-                    'all_hypatia': hist_all.tolist(), 'exo_hosts': hist_planet.tolist(), 'edges': edges.tolist()}
-        else:
-            return {'labels': labels,
-                    'hist_all': hist_all.tolist(), 'hist_planet': hist_planet.tolist(), 'edges': edges.tolist(),
-                    'x_data': x_data}
+    return graph_data, labels, to_v2, from_v2, is_loggable, unique_star_names
+
+
+def histogram_format(graph_data: list[dict[str, any]], labels: dict[str, str],
+                     from_v2: dict[str, str], normalize_hist: bool = False) \
+        -> tuple[np.ndarray, np.ndarray, np.ndarray, list[float]]:
+    # histogram
+    db_field = from_v2['xaxis']
+    # value_type, param_id = axis_mapping['x']
+    x_data = [db_return[db_field] for db_return in graph_data]
+    x_data_with_planet = [db_return[db_field] for db_return in graph_data if 'nea_name' in db_return.keys()]
+    # builds the histogram
+    hist_all, edges = np.histogram(x_data, bins=20)
+    hist_planet, edges = np.histogram(x_data_with_planet, bins=edges)
+    # get maximum point on the histogram
+    max_hist_all = float(max(hist_all))
+    max_hist_planet = float(max(hist_planet))
+    # normalize if necessary
+    if normalize_hist:
+        hist_all = hist_all / max_hist_all
+        hist_planet = hist_planet / max_hist_planet
+        labels['yaxis'] = 'Relative Frequency'
     else:
-        if from_api:
-            return {
-                'counts': len(graph_data),
-                'labels': labels,
-                'solarnorm': get_norm_data(solarnorm_id),
-                'values': [
-                    {to_v2[key] if key in to_v2.keys() else key: value for key, value in db_return.items()}
-                    for db_return in graph_data
-                ],
-            }
-        elif use_compact:
-            return graph_data
-        else:
-            output_header = ['name'] + [f'{x_axis}axis' for x_axis in axis_mapping.keys()]
-            graph_keys = [from_v2[column_name] if column_name in from_v2.keys() else column_name
-                          for column_name in output_header]
-            if any([planet_params_returned, planet_params_match_filters, planet_params_value_filters]):
-                star_count = len(unique_star_names)
-                planet_count = len(graph_data)
-            else:
-                star_count = len(graph_data)
-                planet_count = None
-            return {
-                'labels': labels,
-                'outputs': {data_key: data_column for data_key, data_column in zip(
-                    output_header,
-                    [list(i) for i in zip(*[[data_row[data_key] for data_key in graph_keys]
-                                            for data_row in graph_data])],
-                )},
-                'star_count': star_count,
-                'planet_count': planet_count,
-                'is_loggable': is_loggable,
-            }
+        labels['yaxis'] = 'Number of Stellar Systems'
+    return hist_all, hist_planet, edges, x_data
 
 
 def table_query_from_request(settings: dict[str, any]):
@@ -667,5 +628,6 @@ if __name__ == '__main__':
         'show_error': 'true',
         'show_hover': 'true',
     }
-    test_graph_data = graph_query_from_request(settings=test_settings)
+    graph_settings = graph_settings_from_request(settings=test_settings)
+    test_graph_data = graph_query_pipeline_web2py(graph_settings=test_settings)
     # test_table_data = table_query_from_request(settings=test_settings)

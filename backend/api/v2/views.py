@@ -1,8 +1,11 @@
 from django.views import View
 from django.http import JsonResponse, HttpResponse
-from api.web2py.data_process import graph_query_from_request
+
+from api.web2py.data_process import (graph_settings_from_request, graph_query_pipeline_web2py,
+                                     histogram_format)
 from api.v2.data_process import (normalizations_v2, available_elements_v2, available_catalogs_v2, get_star_data_v2,
-                                 get_abundance_data_v2, element_parse_v2, get_norm_key, max_unique_star_names, nea_v2)
+                                 get_abundance_data_v2, element_parse_v2, get_norm_key, max_unique_star_names, nea_v2,
+                                 get_norm_data)
 
 
 class SolarNorm(View):
@@ -96,7 +99,32 @@ class Composition(View):
 
 class Data(View):
     def get(self, request):
-        return JsonResponse(graph_query_from_request(settings=request.GET, from_api=True))
+        graph_settings = graph_settings_from_request(request.GET)
+        # get more settings about how to process the data
+        graph_data, labels, to_v2, from_v2, _is_loggable, _unique_star_names \
+            = graph_query_pipeline_web2py(graph_settings=graph_settings)
+
+        if graph_settings['is_histogram']:
+            hist_all, hist_planet, edges, x_data \
+                = histogram_format(graph_data=graph_data, labels=labels, from_v2=from_v2,
+                                   normalize_hist=graph_settings['normalize_hist'])
+            return JsonResponse({
+                'count': len(x_data),
+                'labels': labels,
+                'all_hypatia': hist_all.tolist(),
+                'exo_hosts': hist_planet.tolist(),
+                'edges': edges.tolist(),
+            })
+        else:
+            return JsonResponse({
+                'counts': len(graph_data),
+                'labels': labels,
+                'solarnorm': get_norm_data(graph_settings['solarnorm_id']),
+                'values': [
+                    {to_v2[key] if key in to_v2.keys() else key: value for key, value in db_return.items()}
+                    for db_return in graph_data
+                ],
+            })
 
 
 class Nea(View):
