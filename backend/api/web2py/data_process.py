@@ -14,12 +14,13 @@ stellar_param_types_v2 = ['raj2000', 'decj2000', 'dist', 'x_pos', 'y_pos', 'z_po
                           'sptype', 'sptype_num', 'vmag', 'bmag', 'bv', 'pm_ra', 'pm_dec', 'u_vel', 'v_vel', 'w_vel',
                           'disk', 'disk_num', 'mass', 'rad']
 stellar_param_types_v2_set = set(stellar_param_types_v2)
-planet_param_types_v2 = ["semi_major_axis", "eccentricity", "inclination", "pl_mass", "pl_radius", 'planet_letter',]
+planet_param_types_v2 = ['semi_major_axis', 'eccentricity', 'inclination', 'pl_mass', 'pl_radius', 'planet_letter',
+                         'period']
 planet_param_types_v2_set = set(planet_param_types_v2)
 ranked_string_params = {'sptype': 'sptype_num', 'disk': 'disk_num'}
 nones = {None, 'none', ''}
 none_denominators = {None, 'none', '', 'h', 'H'}
-true_set = {"true", 1, 1.0, '1.0', '1', 't', 'yes', 'y', 'on', True}
+true_set = {'true', 1, 1.0, '1.0', '1', 't', 'yes', 'y', 'on', True}
 default_table_elements = ['Fe', 'C', 'O', 'Mg', 'Si', 'S', 'Ca', 'Ti']
 
 home_data = {
@@ -82,7 +83,7 @@ def is_list_str(test: str | None, use_lower: bool = True) -> list[str] | None:
             delimiter = ';'
         return [name.strip() for name in test.split(delimiter)]
     else:
-        raise TypeError(f"Expected a string, got {type(test)} in is_list_str()")
+        raise TypeError(f'Expected a string, got {type(test)} in is_list_str()')
 
 
 def is_none_str(test: str | None, default: str | None, use_lower: bool = True) -> str | None:
@@ -97,7 +98,7 @@ def is_none_str(test: str | None, default: str | None, use_lower: bool = True) -
         else:
             return test
     else:
-        raise TypeError(f"Expected a string, got {type(test)} in is_none_str()")
+        raise TypeError(f'Expected a string, got {type(test)} in is_none_str()')
 
 
 def is_value_str(test: str | None) -> float | str | None:
@@ -325,8 +326,8 @@ def graph_settings_from_request(settings: dict[str, any] | None):
         db_formatted_names = sorted({name.replace(' ', '').lower() for name in star_list})
     else:
         db_formatted_names = None
-    db_formatted_names_exclude = star_action == "exclude"
-    catalog_exclude = cat_action == "exclude"
+    db_formatted_names_exclude = star_action == 'exclude'
+    catalog_exclude = cat_action == 'exclude'
     return_nea_name = return_nea_name or mode == 'hist'
     solarnorm_id = get_norm_key(solarnorm_id)
     return dict(
