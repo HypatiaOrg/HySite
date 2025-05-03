@@ -6,21 +6,22 @@ from hypatia.element_error import get_representative_error
 from api.db import summary_doc, hypatia_db, number_of_catalogs
 from hypatia.pipeline.star.aggregation import string_names_types
 from hypatia.elements import ElementID, RatioID, hydrogen_id, element_rank
-from api.v2.data_process import (get_norm_key, get_norm_data, get_catalog_summary, total_stars, total_abundance_count,
-                                 available_wds_stars, available_nea_names, available_elements_v2, available_catalogs_v2,
-                                 normalizations_v2)
+from api.v2.data_process import (get_norm_key, get_catalog_summary, total_stars, total_abundance_count,
+                                 available_wds_stars, available_nea_names, available_elements_v2, normalizations_v2)
 
 
 stellar_param_types_v2 = ['raj2000', 'decj2000', 'dist', 'x_pos', 'y_pos', 'z_pos', 'teff', 'logg',
                           'sptype', 'sptype_num', 'vmag', 'bmag', 'bv', 'pm_ra', 'pm_dec', 'u_vel', 'v_vel', 'w_vel',
                           'disk', 'disk_num', 'mass', 'rad']
 stellar_param_types_v2_set = set(stellar_param_types_v2)
-planet_param_types_v2 = ["semi_major_axis", "eccentricity", "inclination", "pl_mass", "pl_radius", 'planet_letter',]
+planet_param_types_v2 = ['semi_major_axis', 'eccentricity', 'inclination', 'pl_mass', 'pl_radius', 'planet_letter',
+                         'period']
 planet_param_types_v2_set = set(planet_param_types_v2)
 ranked_string_params = {'sptype': 'sptype_num', 'disk': 'disk_num'}
 nones = {None, 'none', ''}
 none_denominators = {None, 'none', '', 'h', 'H'}
-true_set = {"true", 1, 1.0, '1.0', '1', 't', 'yes', 'y', 'on', True}
+true_set = {'true', 1, 1.0, '1.0', '1', 't', 'yes', 'y', 'on', True}
+default_table_elements = ['Fe', 'C', 'O', 'Mg', 'Si', 'S', 'Ca', 'Ti']
 
 home_data = {
     'stars': total_stars,
@@ -82,7 +83,7 @@ def is_list_str(test: str | None, use_lower: bool = True) -> list[str] | None:
             delimiter = ';'
         return [name.strip() for name in test.split(delimiter)]
     else:
-        raise TypeError(f"Expected a string, got {type(test)} in is_list_str()")
+        raise TypeError(f'Expected a string, got {type(test)} in is_list_str()')
 
 
 def is_none_str(test: str | None, default: str | None, use_lower: bool = True) -> str | None:
@@ -97,7 +98,7 @@ def is_none_str(test: str | None, default: str | None, use_lower: bool = True) -
         else:
             return test
     else:
-        raise TypeError(f"Expected a string, got {type(test)} in is_none_str()")
+        raise TypeError(f'Expected a string, got {type(test)} in is_none_str()')
 
 
 def is_value_str(test: str | None) -> float | str | None:
@@ -245,7 +246,9 @@ class FilterForQuery:
             self.planet_params_value_filters[param_id] = (filter_low, filter_high, exclude)
 
 
-def graph_settings_from_request(settings: dict[str, any]):
+def graph_settings_from_request(settings: dict[str, any] | None):
+    if settings is None:
+        settings = {}
     filter1_1 = is_none_str(settings.get('filter1_1', None), default=None)
     filter1_2 = is_none_str(settings.get('filter1_2', None), default='H')
     filter1_3 = is_value_str(settings.get('filter1_3', None))
@@ -303,7 +306,7 @@ def graph_settings_from_request(settings: dict[str, any]):
         (filter3_1, filter3_2, filter3_3, filter3_4, filter3_inv),
     ]
     filter_for_query = FilterForQuery()
-    # paras the axis make iterables that are in the form of the final returned data product
+    # parse the 'axis' to make iterables that are in the form of the final returned data product
     axis_mapping = {'x': determine_param_type(param_name=xaxis1, denominator_element=xaxis2, is_graphed=True)}
     if mode == 'scatter':
         axis_mapping['y'] = determine_param_type(param_name=yaxis1, denominator_element=yaxis2, is_graphed=True)
@@ -323,8 +326,8 @@ def graph_settings_from_request(settings: dict[str, any]):
         db_formatted_names = sorted({name.replace(' ', '').lower() for name in star_list})
     else:
         db_formatted_names = None
-    db_formatted_names_exclude = star_action == "exclude"
-    catalog_exclude = cat_action == "exclude"
+    db_formatted_names_exclude = star_action == 'exclude'
+    catalog_exclude = cat_action == 'exclude'
     return_nea_name = return_nea_name or mode == 'hist'
     solarnorm_id = get_norm_key(solarnorm_id)
     return dict(
@@ -352,18 +355,19 @@ def graph_settings_from_request(settings: dict[str, any]):
     )
 
 
-def table_settings_from_request(settings: dict[str, any]) -> dict[str, any]:
+def table_settings_from_request(settings: dict[str, any] | None) -> dict[str, any]:
     graph_settings = graph_settings_from_request(settings=settings)
     requested_name_types = is_list_str(settings.get('requested_name_types', None))
     requested_stellar_params = is_list_str(settings.get('requested_stellar_params', None))
     requested_planet_params = is_list_str(settings.get('requested_planet_params', None))
     requested_elements = is_list_str(settings.get('requested_elements', None), use_lower=False)
-    if requested_elements is not None:
-        requested_elements = [ElementID.from_str(el_name) for el_name in requested_elements]
+    if requested_elements is None:
+        requested_elements = default_table_elements
+    requested_elements = [ElementID.from_str(el_name) for el_name in requested_elements]
     sort_field = is_none_str(settings.get('sort', None), default=None, use_lower=False)
     sort_reverse = is_true_str(settings.get('reverse', 'false'))
     show_error = is_true_str(settings.get('show_error', 'false'))
-    show_hover = is_true_str(settings.get('show_hover', 'false'))
+    show_hover = is_true_str(settings.get('show_hover', 'true'))
 
     return dict(
         db_formatted_names=graph_settings['db_formatted_names'],
@@ -390,17 +394,8 @@ def table_settings_from_request(settings: dict[str, any]) -> dict[str, any]:
     )
 
 
-def graph_query_from_request(settings: dict[str, any],
-                             from_api: bool = False,
-                             use_compact: bool = False,
-                             ) -> dict[str, any] | list[dict[str, any]]:
-    # parse the settings from the request for the graph query
-    graph_settings = graph_settings_from_request(settings=settings)
-    # get the data from the database
-    planet_params_returned = graph_settings['planet_params_returned']
-    planet_params_match_filters = graph_settings['planet_params_match_filters']
-    planet_params_value_filters = graph_settings['planet_params_value_filters']
-    graph_data = hypatia_db.frontend_pipeline(
+def graph_query_pipeline(graph_settings: dict[str, any]) -> list[dict[str, any]]:
+    return hypatia_db.frontend_pipeline(
         db_formatted_names=graph_settings['db_formatted_names'],
         db_formatted_names_exclude=graph_settings['db_formatted_names_exclude'],
         elements_returned=graph_settings['elements_returned'],
@@ -411,20 +406,27 @@ def graph_query_from_request(settings: dict[str, any],
         stellar_params_returned=graph_settings['stellar_params_returned'],
         stellar_params_match_filters=graph_settings['stellar_params_match_filters'],
         stellar_params_value_filters=graph_settings['stellar_params_value_filters'],
-        planet_params_returned=planet_params_returned,
-        planet_params_match_filters=planet_params_match_filters,
-        planet_params_value_filters=planet_params_value_filters,
+        planet_params_returned=graph_settings['planet_params_returned'],
+        planet_params_match_filters=graph_settings['planet_params_match_filters'],
+        planet_params_value_filters=graph_settings['planet_params_value_filters'],
         solarnorm_id=graph_settings['solarnorm_id'],
         return_median=graph_settings['return_median'],
         catalogs=graph_settings['catalogs'],
         catalog_exclude=graph_settings['catalog_exclude'],
         return_nea_name=graph_settings['return_nea_name'],
     )
-    # get more settings about how to process the data
-    axis_mapping = graph_settings['axis_mapping']
-    solarnorm_id = graph_settings['solarnorm_id']
-    is_histogram = graph_settings['is_histogram']
-    normalize_hist = graph_settings['normalize_hist']
+
+
+def graph_query_pipeline_web2py(graph_settings: dict[str, any]) -> tuple[
+    list[dict[str, any]],
+    dict[str, str],
+    dict[str, str],
+    dict[str, str],
+    dict[str, bool],
+    set[str],
+]:
+    # get the data from the database
+    graph_data = graph_query_pipeline(graph_settings=graph_settings)
     # calculate the labels for the data
     labels = {}
     to_v2 = {}
@@ -455,70 +457,34 @@ def graph_query_from_request(settings: dict[str, any],
             unique_star_names.add(data_row['name'])
             if 'nea_name' in data_row.keys():
                 data_row['name'] = 'NEA: ' + data_row['nea_name']
-    # return the data in various formats depending on the requesting application.
-    if is_histogram:
-        # histogram
-        db_field = from_v2['xaxis']
-        # value_type, param_id = axis_mapping['x']
-        x_data = [db_return[db_field] for db_return in graph_data]
-        x_data_with_planet = [db_return[db_field] for db_return in graph_data if 'nea_name' in db_return.keys()]
-        # builds the histogram
-        hist_all, edges = np.histogram(x_data, bins=20)
-        hist_planet, edges = np.histogram(x_data_with_planet, bins=edges)
-        # get maximum point on the histogram
-        max_hist_all = float(max(hist_all))
-        max_hist_planet = float(max(hist_planet))
-        # normalize if necessary
-        if normalize_hist:
-            hist_all = hist_all / max_hist_all
-            hist_planet = hist_planet / max_hist_planet
-            labels['yaxis'] = 'Relative Frequency'
-        else:
-            labels['yaxis'] = 'Number of Stellar Systems'
-        if from_api:
-            return {'count': len(x_data), 'labels': labels,
-                    'all_hypatia': hist_all.tolist(), 'exo_hosts': hist_planet.tolist(), 'edges': edges.tolist()}
-        else:
-            return {'labels': labels,
-                    'hist_all': hist_all.tolist(), 'hist_planet': hist_planet.tolist(), 'edges': edges.tolist(),
-                    'x_data': x_data}
+    return graph_data, labels, to_v2, from_v2, is_loggable, unique_star_names
+
+
+def histogram_format(graph_data: list[dict[str, any]], labels: dict[str, str],
+                     from_v2: dict[str, str], normalize_hist: bool = False) \
+        -> tuple[np.ndarray, np.ndarray, np.ndarray, list[float]]:
+    # histogram
+    db_field = from_v2['xaxis']
+    # value_type, param_id = axis_mapping['x']
+    x_data = [db_return[db_field] for db_return in graph_data]
+    x_data_with_planet = [db_return[db_field] for db_return in graph_data if 'nea_name' in db_return.keys()]
+    # builds the histogram
+    hist_all, edges = np.histogram(x_data, bins=20)
+    hist_planet, edges = np.histogram(x_data_with_planet, bins=edges)
+    # get maximum point on the histogram
+    max_hist_all = float(max(hist_all))
+    max_hist_planet = float(max(hist_planet))
+    # normalize if necessary
+    if normalize_hist:
+        hist_all = hist_all / max_hist_all
+        hist_planet = hist_planet / max_hist_planet
+        labels['yaxis'] = 'Relative Frequency'
     else:
-        if from_api:
-            return {
-                'counts': len(graph_data),
-                'labels': labels,
-                'solarnorm': get_norm_data(solarnorm_id),
-                'values': [
-                    {to_v2[key] if key in to_v2.keys() else key: value for key, value in db_return.items()}
-                    for db_return in graph_data
-                ],
-            }
-        elif use_compact:
-            return graph_data
-        else:
-            output_header = ['name'] + [f'{x_axis}axis' for x_axis in axis_mapping.keys()]
-            graph_keys = [from_v2[column_name] if column_name in from_v2.keys() else column_name
-                          for column_name in output_header]
-            if any([planet_params_returned, planet_params_match_filters, planet_params_value_filters]):
-                star_count = len(unique_star_names)
-                planet_count = len(graph_data)
-            else:
-                star_count = len(graph_data)
-                planet_count = None
-            return {
-                'labels': labels,
-                'outputs': {data_key: data_column for data_key, data_column in zip(
-                    output_header,
-                    [list(i) for i in zip(*[[data_row[data_key] for data_key in graph_keys]
-                                            for data_row in graph_data])],
-                )},
-                'star_count': star_count,
-                'planet_count': planet_count,
-                'is_loggable': is_loggable,
-            }
+        labels['yaxis'] = 'Number of Stellar Systems'
+    return hist_all, hist_planet, edges, x_data
 
 
-def table_query_from_request(settings: dict[str, any]):
+def table_query_from_request(settings: dict[str, any] | None = None) -> dict[str, any]:
     # parse the settings from the request for the table query
     table_settings = table_settings_from_request(settings=settings)
     return_error = table_settings['return_error']
@@ -556,7 +522,6 @@ def table_query_from_request(settings: dict[str, any]):
         return_nea_name=return_nea_name,
         return_hover=table_settings['return_hover'],
     )
-
     # check the element data error values and replace them with the representative error for zero and null values
     rep_errors = [get_representative_error(el_id) for el_id in elements_returned]
     element_str_names = [str(el_id) for el_id in elements_returned]
@@ -614,6 +579,16 @@ def table_query_from_request(settings: dict[str, any]):
             for data_row in table_data:
                 for el_id, catalogs_field in zip(all_element, catalog_fields):
                     hover_data[str(el_id)].append(data_row.get(catalogs_field, ''))
+        if stellar_params_returned:
+            hover_data.update({stellar_param: [] for stellar_param in stellar_params_returned})
+            for data_row in table_data:
+                for stellar_param in stellar_params_returned:
+                     hover_data[stellar_param].append(data_row.get(f'{stellar_param}_ref', ''))
+        if planet_params_returned:
+            hover_data.update({planet_param: [] for planet_param in planet_params_returned})
+            for data_row in table_data:
+                for planet_param in planet_params_returned:
+                    hover_data[planet_param].append(data_row.get(f'{planet_param}_ref', ''))
     # return the table data
     return dict(
         body={
@@ -627,45 +602,3 @@ def table_query_from_request(settings: dict[str, any]):
         planet_count=planet_count,
         star_count=star_count,
     )
-
-
-if __name__ == '__main__':
-    test_settings = {
-        'filter1_1': 'none',
-        'filter1_2': 'H',
-        'filter1_3': 'none',
-        'filter1_4': 'none',
-        'filter2_1': 'none',
-        'filter2_2': 'H',
-        'filter2_3': 'None',
-        'filter2_4': 'None',
-        'filter3_1': 'none',
-        'filter3_2': 'H',
-        'filter3_3': 'None',
-        'filter3_4': 'None',
-        'xaxis1': 'Fe',
-        'xaxis2': 'H',
-        'yaxis1': 'Si',
-        'yaxis2': 'H',
-        'zaxis1': 'none',
-        'zaxis2': 'H',
-        'cat_action': 'exclude',
-        'star_action': 'exclude',
-        'filter1_inv': 'False',
-        'filter2_inv': 'False',
-        'filter3_inv': 'False',
-        'solarnorm': 'lodders09',
-        'catalogs': 'luck18',
-        'mode': 'scatter',
-        # below are the settings for the table query
-        'requested_stellar_params': '',
-        'requested_elements': 'Fe;C;O;Mg;S;C;Ti;F;CII',
-        'requested_planet_params': '',
-        'requested_name_types': '',
-        'sort': '',
-        'reverse': 'true',
-        'show_error': 'true',
-        'show_hover': 'true',
-    }
-    test_graph_data = graph_query_from_request(settings=test_settings)
-    # test_table_data = table_query_from_request(settings=test_settings)

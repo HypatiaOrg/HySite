@@ -71,7 +71,7 @@
 </div>
 
 {{if moreRows:}}
-Showing the first {{=len(table)}} rows. {{=A("Load more...", _href=URL('table.load',vars=dict(showrows=len(table)+100)), cid=request.cid)}}
+Showing the first {{=len(table)}} rows. {{=A("Load All", _href=URL('table.load',vars=dict(showrows=True)), cid=request.cid)}}
 {{pass}}
 
 <script>
