@@ -15,7 +15,7 @@ if 'api' in COMPOSE_PROFILES:
     BASE_URL = os.environ.get('BASE_API_URL', BASE_URL_DEFAULT)
 else:
     BASE_URL = 'https://hypatiacatalog.com'
-BASE_API_URL = f"{BASE_URL}/hypatia/api/web2py/"
+BASE_API_URL = f'{BASE_URL}/hypatia/api/web2py/'
 
 webURL = urllib.request.urlopen(f'{BASE_API_URL}summary/')
 param_data = json.loads(webURL.read().decode(webURL.info().get_content_charset('utf-8')))
@@ -87,6 +87,7 @@ TABLE_PLANET = ['planet_letter', 'period', 'eccentricity', 'semi_major_axis', 'p
 toggle_launch_vars = {'mode'}
 toggle_graph_vars = {'normalize', 'gridlines', 'xaxislog', 'yaxislog', 'zaxislog',
                      'xaxisinv', 'yaxisinv', 'zaxisinv', 'filter1_inv', 'filter2_inv', 'filter3_inv'}
+default_table_rows_to_show = 1000
 
 session_defaults_launch = {
     # must be set in the 'launch' function
@@ -141,7 +142,7 @@ def build_periodic_table(table_id='pt', show_species: bool = False, allow_h: boo
     for period in periodicTable:
         result += "<tr style='height:10px'>"
         for element in period:
-            result += "<td>"
+            result += '<td>'
             if element is not None:
                 has_i = element + 'H' in supported_elements_set
                 has_ii = element + '_IIH' in supported_elements_set
@@ -153,9 +154,9 @@ def build_periodic_table(table_id='pt', show_species: bool = False, allow_h: boo
                     result += "<nobr>%(element)s<btn title='%(desc)s' class='btn btn-default btn-xs btn-%(table_id)s' id='%(table_id)s-%(element)s_II' onclick='pick(\"%(table_id)s\",\"%(element)s_II\")'> II</btn></nobr>" % dict(table_id=table_id,element=element,desc=COL_LONG_DESC.get(element + '_II', {}))
                 else:
                     result += element
-            result += "</td>"
-        result += "</tr>"
-    result += "</table>"
+            result += '</td>'
+        result += '</tr>'
+    result += '</table>'
     return result
 
 

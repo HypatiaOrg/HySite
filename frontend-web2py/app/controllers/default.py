@@ -20,7 +20,7 @@ import logging
 from time import time
 
 logging.basicConfig(filename='logging.log', level=logging.DEBUG)
-# logging.warning("Test")
+# logging.warning('Test')
 
 
 # -*- coding: utf-8 -*-
@@ -123,7 +123,7 @@ def graph():
         session.catalogs = [request.vars.catalogs]
     if isinstance(session.catalogs, str):
         try:
-            session.catalogs = session.catalogs.split(",")
+            session.catalogs = session.catalogs.split(',')
         except AttributeError:
             session.catalogs = []
     elif session.catalogs is None:
@@ -155,11 +155,11 @@ def graph():
             status = f'{star_count} stars selected'
         # if there is no data, then return a message
         if not outputs:
-            return "No data points to display"
+            return 'No data points to display'
         # handle tooltips
         source = ColumnDataSource(outputs)
-        tooltips = "<b>@name</b><br/><div style='max-width:300px'>" + ", ".join(
-            [labels[axis] + " = @" + axis + "{0.00}" for axis in set(labels)]) + "</div>"
+        tooltips = "<b>@name</b><br/><div style='max-width:300px'>" + ', '.join(
+            [labels[axis] + ' = @' + axis + '{0.00}' for axis in set(labels)]) + '</div>'
         hover = HoverTool(tooltips=tooltips)
         # build the bounds
         x_min = min(outputs['xaxis'])
@@ -240,7 +240,7 @@ def graph():
 
         # citation
         citation = Label(x=10, y=10, x_units='screen', y_units='screen',
-                         text='Hypatia Catalog ' + datetime.now().strftime("%Y-%m-%d"),
+                         text='Hypatia Catalog ' + datetime.now().strftime('%Y-%m-%d'),
                          text_alpha=0.5)
         p.add_layout(citation)
 
@@ -252,11 +252,11 @@ def graph():
         labels = graph_data['labels']
         x_data = graph_data['x_data']
         if not x_data:
-            return "No data points to display"
+            return 'No data points to display'
         max_hist_all = float(max(hist_all))
         # normalize if necessary
         if settings['normalize']:
-            labels['yaxis'] = "Relative Frequency"
+            labels['yaxis'] = 'Relative Frequency'
             fill_alpha = 0.5
             line_alpha = 0.2
         else:
@@ -275,14 +275,14 @@ def graph():
                    x_range=x_range,
                    y_range=[0, max_hist_all * 1.20])
         p.quad(top=hist_all, bottom=0, left=edges[:-1], right=edges[1:],
-               fill_color="maroon", line_color="black", fill_alpha=fill_alpha, line_alpha=line_alpha,
-               legend_label="All Hypatia")
+               fill_color='maroon', line_color='black', fill_alpha=fill_alpha, line_alpha=line_alpha,
+               legend_label='All Hypatia')
         p.quad(top=hist_planet, bottom=0, left=edges[:-1], right=edges[1:],
-               fill_color="orange", line_color="black", fill_alpha=fill_alpha, line_alpha=line_alpha,
-               legend_label="Exo-Hosts")
+               fill_color='orange', line_color='black', fill_alpha=fill_alpha, line_alpha=line_alpha,
+               legend_label='Exo-Hosts')
         # citation
         citation = Label(x=10, y=10, x_units='screen', y_units='screen',
-                         text='Hypatia Catalog ' + datetime.now().strftime("%Y-%m-%d"),
+                         text='Hypatia Catalog ' + datetime.now().strftime('%Y-%m-%d'),
                          text_alpha=0.5)
         p.add_layout(citation)
 
@@ -293,20 +293,20 @@ def graph():
     # miscellaneous settings
     p.xaxis.axis_label = labels['xaxis'].replace('_', ' ')
     p.yaxis.axis_label = labels['yaxis'].replace('_', ' ')
-    p.xaxis.axis_label_text_font_size = "12pt"
-    p.xaxis.axis_label_text_font_style = "normal"
-    p.xaxis.major_label_text_font_size = "12pt"
-    p.xaxis.major_label_text_font_style = "normal"
-    p.yaxis.axis_label_text_font_size = "12pt"
-    p.yaxis.axis_label_text_font_style = "normal"
-    p.yaxis.major_label_text_font_size = "12pt"
-    p.yaxis.major_label_text_font_style = "normal"
+    p.xaxis.axis_label_text_font_size = '12pt'
+    p.xaxis.axis_label_text_font_style = 'normal'
+    p.xaxis.major_label_text_font_size = '12pt'
+    p.xaxis.major_label_text_font_style = 'normal'
+    p.yaxis.axis_label_text_font_size = '12pt'
+    p.yaxis.axis_label_text_font_style = 'normal'
+    p.yaxis.major_label_text_font_size = '12pt'
+    p.yaxis.major_label_text_font_style = 'normal'
 
     # generate PNG, SVG
-    if request.extension == "png":
+    if request.extension == 'png':
         return export_png(p)
-    elif request.extension == "svg":
-        p.output_backend = "svg"
+    elif request.extension == 'svg':
+        p.output_backend = 'svg'
         return export_svgs(p)
 
     # generate HTML
@@ -326,7 +326,7 @@ def table():
         session.catalogs = [request.vars.catalogs]
     if isinstance(session.catalogs, str):
         try:
-            session.catalogs = session.catalogs.split(",")
+            session.catalogs = session.catalogs.split(',')
         except AttributeError:
             session.catalogs = []
     if isinstance(session.tablecols, str):
@@ -422,7 +422,7 @@ def table():
         table_settings['sort'] = None
         table_settings['reverse'] = False
     # toggle the hover text with this variable
-    table_settings['show_hover'] = True  # label this button as "Hover References"
+    table_settings['show_hover'] = True  # label this button as 'Hover References'
 
     # request the table data from the API
     table_url_values = urllib.parse.urlencode(table_settings)
@@ -437,6 +437,7 @@ def table():
         columns.insert(1, 'nea_name')
     # add the JS wrapper to get element details
     requested_elements_set = set(requested_elements)
+    hover_text_set = set(requested_elements) | set(requested_stellar_params) | set(requested_planet_params)
     formatted_table = []
     if table_dict:
         for row_index, data_row in list(enumerate(zip(*[table_dict[col_name] for col_name in columns]))):
@@ -444,16 +445,26 @@ def table():
             for col_name, cell_value in zip(columns, data_row):
                 if cell_value == 0.0:
                     cell_value += 0.0
-                cell_value_str = f'{cell_value:1.2f}' if isinstance(cell_value, float) else cell_value
-                if col_name in requested_elements_set:
+                if isinstance(cell_value, str):
+                    cell_value_str = cell_value
+                elif col_name in requested_elements_set:
+                    cell_value_str = f'{cell_value:1.2f}'
+                elif col_name in COL_FORMAT.keys():
+                    cell_value_str = COL_FORMAT[col_name] % cell_value
+                else:
+                    cell_value_str = str(cell_value)
+                if col_name in hover_text_set:
                     if cell_value_str != '' and col_name in hover_data.keys():
                         cell_hover_data = hover_data[col_name][row_index]
                         if cell_hover_data:
-                            hover_strings = []
-                            for key, value in cell_hover_data.items():
-                                if value == 0.0:
-                                    value += 0.0
-                                hover_strings.append(f"{'' if value < 0.0 else ' '}{float(value):1.2f}: {CATALOG_AUTHORS[key]}")
+                            if col_name in requested_elements_set:
+                                hover_strings = []
+                                for key, value in cell_hover_data.items():
+                                    if value == 0.0:
+                                        value += 0.0
+                                    hover_strings.append(f"{'' if value < 0.0 else ' '}{float(value):1.2f}: {CATALOG_AUTHORS[key]}")
+                            else:
+                                hover_strings = [cell_hover_data]
                             cell_value_str = table_cell(
                                 value=cell_value_str,
                                 hover_text='\n'.join(hover_strings),
@@ -465,15 +476,9 @@ def table():
         status = f'{planet_count} planets selected from {star_count} stars'
     else:
         status = f'{star_count} stars selected'
-    # if there are more than 150 stars, show the first 1000 and put a link to load more
+    # Only some the default number of rows, and trigger a button that we some all the whole table
     more_rows = False
-    if len(formatted_table) > 150 and request.extension == "load":
-        if request.vars.showrows:
-            rows_to_show = int(request.vars.showrows)
-        else:
-            rows_to_show = 100
-        if len(formatted_table) > rows_to_show:
-            formatted_table = formatted_table[:rows_to_show]
-            more_rows = True
-
+    if not request.vars.showrows and len(formatted_table) > default_table_rows_to_show:
+        formatted_table = formatted_table[:default_table_rows_to_show]
+        more_rows = True
     return dict(table=formatted_table, status=status, columns=columns, moreRows=more_rows)
