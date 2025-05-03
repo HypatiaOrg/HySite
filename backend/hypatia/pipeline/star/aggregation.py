@@ -6,7 +6,7 @@ from hypatia.elements import element_rank, ElementID, RatioID
 
 str_to_float_fields = {'sptype', 'disk'}
 string_names_types = indexed_name_types | {'star_id', 'nea_name', 'planet_letter', 'letter', 'name', 'discovery_method'}
-
+nea_no_ref = {'letter', 'pl_controv_flag', 'pl_name', 'radius_gap', 'discovery_method', 'pl_radelim'}
 
 def add_params_and_filters(match_filters: set[str] | None,
                            value_filters: dict[str, tuple[float | None, float | None, bool]] | None,
@@ -411,6 +411,9 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
             # parameter's error
             if return_error and param_name not in string_names_types:
                 return_doc[f'{param_name}_err'] = f'$stellar.{param_name}.curated.err'
+            # return the hover reference
+            if return_hover:
+                return_doc[f'{param_name}_ref'] = f'$stellar.{param_name}.curated.ref'
             # sorting by a string field requires a different field to sort by.
             if sort_field == param_name and param_name in str_to_float_fields:
                 number_field_str = f'{param_name}_num'
@@ -430,6 +433,8 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
                         return_doc[param_name] = f'$planets_array.v.planetary.{param_name}.value'
                         if return_error:
                             return_doc[f'{param_name}_err'] = f'$planets_array.v.planetary.{param_name}.err'
+                    if return_hover and param_name not in nea_no_ref:
+                        return_doc[f'{param_name}_ref'] = f'$planets_array.v.planetary.{param_name}.ref'
     elif return_nea_name:
         return_doc['nea_name'] = '$nea.nea_name'
     if name_types_returned:

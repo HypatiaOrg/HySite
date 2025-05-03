@@ -84,12 +84,14 @@ API URLs
 For users without direct database access, the API URLs can be used to access the database.
 """
 host = 'https://hypatiacatalog.com'
+# host = 'http://localhost'  # useful for local testing
 api_route = f'{host}/hypatia/api/'
 histogram_api_url = f'{api_route}stats/histogram'
 summary_api_url = f'{api_route}metadata/solarnorms'
 representative_error_url = f'{api_route}metadata/representative_error'
 planetary_api_url = f'{api_route}planets'
 graph_api_url = f'{api_route}graph'
+table_api_url = f'{api_route}web2py/table'
 db_summery_url = f'{api_route}db/summary'
 # db_full_url needs performance and rate limit testing
 # db_full_url = f'{api_route}db/hypatia'
