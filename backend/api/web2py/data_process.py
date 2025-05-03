@@ -305,7 +305,7 @@ def graph_settings_from_request(settings: dict[str, any] | None):
         (filter3_1, filter3_2, filter3_3, filter3_4, filter3_inv),
     ]
     filter_for_query = FilterForQuery()
-    # paras the axis make iterables that are in the form of the final returned data product
+    # parse the 'axis' to make iterables that are in the form of the final returned data product
     axis_mapping = {'x': determine_param_type(param_name=xaxis1, denominator_element=xaxis2, is_graphed=True)}
     if mode == 'scatter':
         axis_mapping['y'] = determine_param_type(param_name=yaxis1, denominator_element=yaxis2, is_graphed=True)
@@ -521,7 +521,6 @@ def table_query_from_request(settings: dict[str, any] | None = None) -> dict[str
         return_nea_name=return_nea_name,
         return_hover=table_settings['return_hover'],
     )
-
     # check the element data error values and replace them with the representative error for zero and null values
     rep_errors = [get_representative_error(el_id) for el_id in elements_returned]
     element_str_names = [str(el_id) for el_id in elements_returned]
@@ -579,6 +578,16 @@ def table_query_from_request(settings: dict[str, any] | None = None) -> dict[str
             for data_row in table_data:
                 for el_id, catalogs_field in zip(all_element, catalog_fields):
                     hover_data[str(el_id)].append(data_row.get(catalogs_field, ''))
+        if stellar_params_returned:
+            hover_data.update({stellar_param: [] for stellar_param in stellar_params_returned})
+            for data_row in table_data:
+                for stellar_param in stellar_params_returned:
+                     hover_data[stellar_param].append(data_row.get(f'{stellar_param}_ref', ''))
+        if planet_params_returned:
+            hover_data.update({planet_param: [] for planet_param in planet_params_returned})
+            for data_row in table_data:
+                for planet_param in planet_params_returned:
+                    hover_data[planet_param].append(data_row.get(f'{planet_param}_ref', ''))
     # return the table data
     return dict(
         body={

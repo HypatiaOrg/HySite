@@ -81,8 +81,10 @@ if __name__ == '__main__':
     # Example usage
     graph_data = get_graph_data('Teff', 'logg')
     table_data = get_table_data(
+        show_error=True,
+        show_hover=True,
         requested_name_types=['name', 'HD'],
-        requested_stellar_params=['Teff', 'logg'],
-        requested_planet_params=['mass', 'radius'],
+        requested_stellar_params=['teff', 'logg'],
+        requested_planet_params=['pl_mass', 'pl_radius'],
         requested_elements=['Fe', 'O'],
     )
