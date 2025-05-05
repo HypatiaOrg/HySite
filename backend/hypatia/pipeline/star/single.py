@@ -52,7 +52,7 @@ class SingleStar:
             for single_param in singles_params_list:
                 self.params.update_param(param_name=param, single_param=single_param, overwrite_existing=False)
 
-    def pastel_params(self, pastel_record):
+    def pastel_params(self, pastel_record: ObjectParams):
         # Update so that existing parameter keys-value pairs are prioritized over new values.
         self.params.update_params(pastel_record, overwrite_existing=False)
 
