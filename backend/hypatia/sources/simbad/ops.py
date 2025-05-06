@@ -124,7 +124,7 @@ def no_simbad_add_name(name: str, origin: str, aliases: list[str] = None) -> Non
     }
     # add the main_id to the that sources table
     star_collection.add_one(doc=star_record)
-    set_cache_data(simbad_main_id=name, star_name_aliases=set(match_names))
+    set_cache_data(simbad_main_id=name, star_record=star_record, star_name_aliases=set(match_names))
 
 
 ra_dec_fields = {'ra', 'dec', 'hmsdms', 'coord_bibcode'}
