@@ -75,7 +75,6 @@ element_plusminus_error_file = os.path.join(ref_dir, 'element_plusminus_err.toml
 # toggleable intermediate outputs files
 pickle_nat = os.path.join(output_products_dir, 'pickle_nat.pkl')
 pickle_out = os.path.join(output_products_dir, 'pickle_output_star_data.pkl')
-pastel_pickle_file = os.path.join(output_products_dir, 'pastel_processes.pkl')
 
 
 """
