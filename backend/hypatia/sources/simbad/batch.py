@@ -12,7 +12,8 @@ from hypatia.sources.simbad.ops import (get_simbad_main_id, get_star_data_by_mai
 def get_star_data_batch(search_ids: list[tuple[str, ...]],
                         test_origin: str = 'batch',
                         has_micro_lens_names: list[bool] | None = None,
-                        all_ids: list[tuple[str, ...]] | None = None
+                        all_ids: list[tuple[str, ...]] | None = None,
+                        override_interactive_mode: bool = False,
                         ) -> list[dict[str, any]]:
     # step 1: get all the data from the existing star_collection
     star_docs = []
@@ -126,7 +127,7 @@ def get_star_data_batch(search_ids: list[tuple[str, ...]],
                 star_doc = cache_names[match_name]
                 break
         else:
-            if INTERACTIVE_STARNAMES:
+            if not override_interactive_mode and INTERACTIVE_STARNAMES:
                 if has_micro_lens_names is not None and has_micro_lens_names[not_found_index]:
                     # automatically add the name to the sources without a SIMBAD name or a prompt
                     no_simbad_add_name(name=this_index_search_ids[0], origin=test_origin,

@@ -2,7 +2,6 @@ import os
 import pickle
 
 from hypatia.sources.xhips import Xhip
-from hypatia.sources.pastel import Pastel
 from hypatia.sources.gaia.ops import GaiaLib
 from hypatia.object_params import SingleParam
 from hypatia.tools.table_read import row_dict
@@ -10,6 +9,7 @@ from hypatia.pipeline.star.all import AllStarData
 from hypatia.configs.source_settings import hacked
 from hypatia.sources.tic.ops import get_hy_tic_data
 from hypatia.tools.color_text import file_name_text
+from hypatia.sources.pastel.ops import get_pastel_data
 from hypatia.pipeline.star.output import OutputStarData
 from hypatia.sources.catalogs.solar_norm import SolarNorm
 from hypatia.sources.catalogs.catalogs import get_catalogs
@@ -50,7 +50,6 @@ class NatCat:
         # reference data
         self.normalization_ref = row_dict(os.path.join(ref_dir, 'solar_norm_ref.csv'), key='catalog')
         self.xhip = Xhip()
-        self.pastel = Pastel(verbose=self.verbose)
 
         # initialization and preferences
         self.params_list_for_stats = [param.lower() for param in params_list_for_stats]
@@ -143,6 +142,7 @@ class NatCat:
         if self.verbose:
             print('Acquiring stellar parameter data...')
         gaia_lib = None
+        pastel_data = None
         print_int = round(len(self.star_data) / 20)
         for star_index, single_star in list(enumerate(self.star_data)):
             if self.verbose and star_index % print_int == 0:
@@ -151,10 +151,10 @@ class NatCat:
             # Star Parameters from the Pastel Data Set
             if get_pastel_params:
                 # Star Parameters from the Pastel Catalog (effective temperature and Log values for surface gravity)
-                if self.pastel.data is None:
-                    self.pastel.load()
-                pastel_record = self.pastel.get_record_from_aliases(aliases=single_star.simbad_doc['aliases'])
-                if pastel_record is not None:
+                if pastel_data is None:
+                    pastel_data = get_pastel_data(verbose=self.verbose)
+                if main_star_id in pastel_data.keys():
+                    pastel_record = pastel_data[main_star_id]
                     single_star.pastel_params(pastel_record)
             # Star Parameters from the Gaia Catalog
             if get_gaia_params:
