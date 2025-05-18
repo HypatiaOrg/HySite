@@ -9,16 +9,18 @@ from hypatia.sources.simbad.ops import (get_simbad_main_id, get_star_data_by_mai
                                         no_simbad_add_name, star_collection, set_cache_data)
 
 
-def get_star_data_batch(search_ids: list[tuple[str, ...]],
+def get_star_data_batch(search_ids: list[tuple[str, ...]] | list[str],
                         test_origin: str = 'batch',
                         has_micro_lens_names: list[bool] | None = None,
                         all_ids: list[tuple[str, ...]] | None = None,
                         override_interactive_mode: bool = False,
-                        ) -> list[dict[str, any]]:
+    ) -> list[dict[str, any]]:
+    # Convert the search_ids to a list of tuples if it is not already
+    search_ids_formated = [(search_id, ) if isinstance(search_id, str) else search_id for search_id in search_ids]
     # step 1: get all the data from the existing star_collection
     star_docs = []
     not_found_ids = {}
-    for list_index, search_tuple in list(enumerate(search_ids)):
+    for list_index, search_tuple in list(enumerate(search_ids_formated)):
         found_doc = None
         for single_id in search_tuple:
             possible_main_id = get_simbad_main_id(single_id)
@@ -85,7 +87,7 @@ def get_star_data_batch(search_ids: list[tuple[str, ...]],
             error_msg = f'List indexes {multi_oid_indexes} have more than one oid from the SIMBAD API\n'
             for list_index in multi_oid_indexes:
                 oid_map = index_to_oid[list_index]
-                error_msg += f' List index {list_index} has more than one oid from the SIMBAD API for names {search_ids[list_index]}\n'
+                error_msg += f' List index {list_index} has more than one oid from the SIMBAD API for names {search_ids_formated[list_index]}\n'
                 for found_oid, found_names in oid_map.items():
                     error_msg += f'  Found SIMBAD database id:({found_oid}) for names: {found_names}\n'
             raise ValueError(error_msg)
@@ -106,7 +108,7 @@ def get_star_data_batch(search_ids: list[tuple[str, ...]],
                     if all_ids is not None:
                         provided_names = list(all_ids[list_index])
                     else:
-                        provided_names = list(search_ids[list_index])
+                        provided_names = list(search_ids_formated[list_index])
                     star_names = uniquify_star_names(star_names + provided_names, simbad_main_id=simbad_main_id)
                 try:
                     star_doc = set_star_doc(simbad_main_id=star_data['main_id'], star_names=star_names,
@@ -120,7 +122,7 @@ def get_star_data_batch(search_ids: list[tuple[str, ...]],
     # step 3: prompt the user to add any missing data
     for not_found_index in sorted(simbad_not_found_indexes):
         # try the search ids to see if the cache has the data after other updates
-        this_index_search_ids = search_ids[not_found_index]
+        this_index_search_ids = search_ids_formated[not_found_index]
         for search_id in this_index_search_ids:
             match_name = get_match_name(search_id)
             if match_name in cache_names:
