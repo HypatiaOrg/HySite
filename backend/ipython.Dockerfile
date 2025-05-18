@@ -1,4 +1,4 @@
-FROM jupyter/scipy-notebook:latest
+FROM quay.io/jupyter/scipy-notebook:latest
 WORKDIR /backend
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt

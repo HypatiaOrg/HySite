@@ -51,4 +51,18 @@ nea_names_the_cause_wrong_simbad_references = {
     'TIC 239291510', 'Kepler-1802', # NEA NAME: Kepler-1802
     'TIC 26541175', 'Kepler-1437', # NEA NAME: Kepler-1437
     'TIC 63285279', 'Kepler-1534', # NEA NAME: Kepler-1534
+    'TIC 95431294',  # NEA NAME: gam1 Leo
+    'TrES-1',
+    'TrES-2',
+    'TrES-3',
+    'TrES-4',
+    'TrES-5',
+    'HIP 51260', 'TIC 165297570', #  NEA NAME: KELT-4 A
+    'TIC 290131778',
+    'TIC 158324245', 'KOI-13', #  NEA NAME: Gaia DR2 2130632159134827392
+    'TIC 121656582', 'Kepler-1493', # NEA NAME: TIC 121656582
+    'Kepler-1952', 'TIC 158635959',  # NEA NAME: Gaia DR2 2103115403182003328
+    'TIC 380619414',  # NEA NAME: WASP-85 A
+    'Kepler-645', 'TIC 159381747',  # NEA NAME: Gaia DR2 2126865575897687168
+    'Kepler-650', 'TIC 158934047',  # NEA NAME: Gaia DR2 2127172919457889792
 }
