@@ -15,9 +15,9 @@ if os.path.exists(env_filename):
     dotenv.load_dotenv(env_filename)
 
 # MongoDB Configuration
-MONGO_HOST = os.environ.get('MONGO_HOST', 'hypatiacatalog.com')
-MONGO_USERNAME = os.environ.get('MONGO_USERNAME', 'username')
-MONGO_PASSWORD = os.environ.get('MONGO_PASSWORD', 'password')
+MONGO_HOST = os.environ.get('MONGO_HOST', 'mongoDB')
+MONGO_USERNAME = os.environ.get('MONGO_USERNAME', 'admin')
+MONGO_PASSWORD = os.environ.get('MONGO_PASSWORD', 'super-not-secure')
 MONGO_PORT = os.environ.get('MONGO_PORT', '27017')
 MONGO_DATABASE = os.environ.get('MONGO_DATABASE', 'test')
 MONGO_STARNAMES_COLLECTION = os.environ.get('MONGO_STARNAMES_COLLECTION', 'stars')

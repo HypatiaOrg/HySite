@@ -30,6 +30,7 @@ class BaseCollection:
         }
     }
     collation = {'locale': 'en', 'strength': 2}
+    name_col = '_id'
 
     def __init__(self, collection_name: str, db_name: str = 'metadata', verbose: bool = True):
         self.collection_name = collection_name

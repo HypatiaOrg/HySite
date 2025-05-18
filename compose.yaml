@@ -24,6 +24,7 @@ services:
             - hynet
 
     web-to-py:
+        container_name: frontend-web2py
         build:
             context: ./frontend-web2py
         pull_policy: always
@@ -49,6 +50,7 @@ services:
             - hynet
 
     django-api:
+        container_name: backend
         build: ./backend
         restart: "${RESTART_POLICY:-no}"
         # ports: ["8111:8111"]
@@ -60,7 +62,7 @@ services:
             MONGO_DATABASE: "${MONGO_DATABASE:-test}"
             MONGO_STARNAMES_COLLECTION: "${MONGO_STARNAMES_COLLECTION:-stars}"
             CONNECTION_STRING: ${CONNECTION_STRING:-none}
-            INTERACTIVE_STARNAMES: "{INTERACTIVE_STARNAMES:-true}"
+            INTERACTIVE_STARNAMES: "${INTERACTIVE_STARNAMES:-true}"
             DEBUG: "${DEBUG:-true}"
         read_only: "${READ_ONLY:-false}"
         volumes:
@@ -95,7 +97,7 @@ services:
             MONGO_HOST: "${MONGO_HOST:-mongoDB}"
             MONGO_STARNAMES_COLLECTION: "${MONGO_STARNAMES_COLLECTION:-stars}"
             CONNECTION_STRING: ${CONNECTION_STRING:-none}
-            INTERACTIVE_STARNAMES: "{INTERACTIVE_STARNAMES:-true}"
+            INTERACTIVE_STARNAMES: "${INTERACTIVE_STARNAMES:-true}"
         volumes:
             - ./backend:/backend
         profiles: ["ipython"]
