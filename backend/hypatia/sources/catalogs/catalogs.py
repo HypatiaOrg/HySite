@@ -53,7 +53,7 @@ def get_catalogs(from_scratch=False, catalogs_file_name=None, local_abundance_di
 
     else:
         catalog_pickle_files = [(catalog_name, os.path.join(cat_pickles_dir,
-                                                            f'{catalog_name.lower().replace(' ', '')}.pkl'))
+                                                            f'{catalog_name.lower().replace(" ", "")}.pkl'))
                                 for catalog_name in catalog_names]
         catalog_dict = {}
         for catalog_name, catalog_pickle_file in catalog_pickle_files:
