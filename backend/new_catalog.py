@@ -162,11 +162,13 @@ def insert_new_catalogs(verbose=True, user_prompt=True):
                 f.write("short,long,norm\n")
         main_cat = CatOps(cat_file=default_catalog_file, verbose=verbose)
         new_cat = CatOps(cat_file=new_catalogs_file_name, verbose=verbose)
+        if not new_cat.cat_dict.keys():
+            raise Exception(f'No catalogs listed in the new_catalogs_file_name: {new_catalogs_file_name}')
         if verbose:
             for short_name in new_cat.cat_dict.keys():
                 print("   ", short_name)
             print("")
-        # check for catalog names that might be over written
+        # check for catalog names that might be overwritten
         files_to_overwrite = set(main_cat.cat_dict.keys()) & set(new_cat.cat_dict.keys())
         if files_to_overwrite != set():
             print(files_to_overwrite)
@@ -229,8 +231,8 @@ if __name__ == "__main__":
 
     elif add_norm:
         sn = SolarNorm(os.path.join(ref_dir, "solar_norm_ref.csv"))
-        #sn.add_normalization(handle="sheminova24", author="Sheminova et al.", year=2024, element_dict={"Fe":7.53, "Cu":4.13, "Sr":2.75, "YII":2.20, "ZrII":2.56, "BaII":2.30, "LaII":1.11, "CeII":1.55})
-        sn.add_normalization(handle="alexeeva23", author="Alexeeva et al.", year=2023, element_dict={"Fe":7.50, "Y":2.21})
+        sn.add_normalization(handle="lucertini25", author="Baburaj et al.", year=2025, element_dict={"Na": 6.30, "Mg": 7.54, "Al": 6.47, "Si": 7.52, "S": 7.16, "Ca": 6.33, "Sc": 3.10, "ScII": 3.10, "Ti": 4.90, "TiII": 4.90, "V": 4.00, "VII": 4.00, "Cr": 5.64, "CrII": 5.64, "Mn": 5.37, "MnII": 5.37, "Fe": 7.52, "Co": 4.92, "Ni": 6.23, "Cu":4.21, "Zn": 4.62, "Rb": 2.60, "Sr": 2.92, "YII": 2.21, "ZrII": 2.58, "LaII": 1.14, "CeII": 1.61, "PrII": 0.76, "NdII": 1.45, "SmII": 1.00, "EuII": 0.52, "BaII": 2.17})
+        #sn.add_normalization(handle="alexeeva23", author="Alexeeva et al.", year=2023, element_dict={"Fe":7.50, "Y":2.21})
         #sn.add_normalization(handle="pozhath24", author="Pozhath and Lambert", year=2024, element_dict={"Na":6.27, "Mg":7.59, "Al":6.37, "Si":7.52, "Ca":6.28, "ScII":3.16, "Ti":4.87, "TiII":4.98, "V":3.83, "Cr":5.59, "Mn":5.39, "Fe":7.44, "Co":4.81, "Ni":6.22, "Zn":4.50, "YII":2.16, "Zr":2.59, "BaII":2.24, "LaII":1.19, "NdII":1.40, "EuII":0.53})
         #sn.add_normalization(handle="spite22-24", author="Spite et al.", year=2022, element_dict={"Fe": 7.50, "C":8.50, "N":7.86, "O":8.76, "Na":6.30, "Mg":7.54, "Al":6.47, "Si":7.52, "Ca":6.33, "Sc":3.10, "Ti":4.90, "Cr":5.64, "Mn":5.37, "Co":4.92, "Ni":6.23, "Zn":4.62, "SrII":2.92, "YII":2.21, "ZrII":2.58, "Mo":192, "Ru":1.84, "Pd":1.66, "Ag":0.94, "BaII":2.17, "LaII":1.14, "CeII":1.60, "NdII":1.45, "EuII":0.52, "DyII":1.14, "ErII":0.96, "YbII":0.86})
         sn.write(os.path.join(ref_dir, "solar_norm_ref.csv"))

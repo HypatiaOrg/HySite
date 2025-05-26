@@ -155,17 +155,17 @@ def mdwarf_histogram(self):
     threshold_hits = [0, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 125, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     base_plus_hits = [sum(x) for x in zip(baseline_hits, hits)]
     thresh_plus_hits = [sum(x) for x in zip(threshold_hits, hits)]
-    ind = np.arange(len(ordered_list_of_bins))
-    width = 0.8
+    ind = np.arange(len(ordered_list_of_bins))/1.4
+    width = 0.65
     fig = plt.figure(figsize=(10, 5))
     ax = fig.add_subplot(111)
     total_num = self.__getattribute__('Fe')
-    rects_base = plt.bar(ind, base_plus_hits, width, color='firebrick', label="SAKHMET Mission (+300 M-Dwarfs)")
-    rects_thresh = plt.bar(ind, thresh_plus_hits, width, color='salmon', label="Threshold Mission (+125 M-Dwarfs)")
-    rects_data = plt.bar(ind, hits, width, color="grey", label="Current Data for "+str(total_num)+" M-Dwarfs")
+    rects_base = plt.bar(ind, base_plus_hits, width, color='firebrick', label="SAKHMET Expected Mission")
+    rects_thresh = plt.bar(ind, thresh_plus_hits, width, color='salmon', label="Required Mission")
+    rects_data = plt.bar(ind, hits, width, color="grey", label="Current M-dwarf Data")
     ax.set_xlabel('Spectroscopic Abundances for M-Dwarfs (excluding Fe)', fontsize=15)
     ax.set_ylabel('Number of Stars with Measured Element X', fontsize=14)
-    ax.set_ylim([0.0, np.max(baseline_hits) + 600.])
+    ax.set_ylim([0.0, np.max(baseline_hits) + 650.])
     ax.set_xlim([0.0, float(len(ordered_list_of_bins))])
     ax.set_xticks(ind)
     ax.set_xticklabels(tuple([name.replace('_', '') for name in ordered_list_of_bins]), fontsize=13)
@@ -183,7 +183,7 @@ def mdwarf_histogram(self):
     file_name = os.path.join(histo_dir, name)
     fig.savefig(file_name)
     print("Number of elements", len(ordered_list_of_bins))
-    return ordered_list_of_bins, rects_base, rects_thresh
+    return ordered_list_of_bins #, rects_base, rects_thresh
 
 
 mdwarf_histogram(stats.star_count_per_element)
