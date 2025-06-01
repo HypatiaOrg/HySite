@@ -138,35 +138,27 @@ def graph():
         do_zlog = settings['zaxislog'] and is_loggable['zaxis']
         has_zaxis = settings['zaxis1'] != 'none'
         outputs = graph_data['outputs']
-        p = create_bokeh_scatter(name=outputs.get('name', []),
-                                 xaxis=outputs.get('xaxis', []),
-                                 yaxis=outputs.get('yaxis', []),
-                                 zaxis=outputs.get('zaxis', []),
-                                 x_label=labels.get('x_label', None),
-                                 y_label=labels.get('y_label', None),
-                                 z_label=labels.get('z_label', None),
-                                 star_count=graph_data.get('star_count', None),
-                                 planet_count=graph_data.get('planet_count', None),
-                                 do_xlog=do_xlog, do_ylog=do_ylog, do_zlog=do_zlog,
-                                 xaxisinv=settings['xaxisinv'], yaxisinv=settings['yaxisinv'],
-                                 zaxisinv=settings['zaxisinv'], has_zaxis=has_zaxis,
-                                 do_gridlines=settings['gridlines'])
+        script, div = create_bokeh_scatter(name=outputs.get('name', []),
+                                           xaxis=outputs.get('xaxis', []),
+                                           yaxis=outputs.get('yaxis', []),
+                                           zaxis=outputs.get('zaxis', []),
+                                           x_label=labels.get('x_label', None),
+                                           y_label=labels.get('y_label', None),
+                                           z_label=labels.get('z_label', None),
+                                           star_count=graph_data.get('star_count', None),
+                                           planet_count=graph_data.get('planet_count', None),
+                                           do_xlog=do_xlog, do_ylog=do_ylog, do_zlog=do_zlog,
+                                           xaxisinv=settings['xaxisinv'], yaxisinv=settings['yaxisinv'],
+                                           zaxisinv=settings['zaxisinv'], has_zaxis=has_zaxis,
+                                           do_gridlines=settings['gridlines'])
     else:
-        p = create_bokeh_hist(hist_all=graph_data['hist_all'], hist_planet = graph_data['hist_planet'],
-                              edges=graph_data['edges'],
-                              x_label=labels.get('x_label', None),
-                              x_data = graph_data['x_data'],
-                              normalize=settings['normalize'], xaxisinv=settings['xaxisinv'],
-                              do_gridlines=settings['gridlines'],
-                        )
-    # generate PNG, SVG
-    if request.extension == 'png':
-        return bokeh_export_png(p=p)
-    elif request.extension == 'svg':
-        p.output_backend = 'svg'
-        return bokeh_export_svgs(p=p)
-    # generate HTML
-    script, div = bokeh_export_html(p=p)
+        script, div = create_bokeh_hist(hist_all=graph_data['hist_all'], hist_planet = graph_data['hist_planet'],
+                                        edges=graph_data['edges'],
+                                        x_label=labels.get('x_label', None),
+                                        x_data = graph_data['x_data'],
+                                        normalize=settings['normalize'], xaxisinv=settings['xaxisinv'],
+                                        do_gridlines=settings['gridlines'],
+                                        )
     # send back to the browser
     return dict(script=script, div=div)
 

@@ -5,22 +5,12 @@ import numpy as np
 from bokeh.plotting import figure
 from bokeh.embed import components
 from bokeh.palettes import Viridis256
-from bokeh.io import export_png, export_svgs
 from bokeh.models import HoverTool, ColumnDataSource, ColorBar, LinearColorMapper, LogColorMapper, CustomJS, Label
 
 hypatia_purple = '#4E11B7'
 axis_lab_font_size = '12pt'
 axis_lab_font_style = 'normal'
 TOOLS = 'crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,'
-
-
-def bokeh_export_svgs(p):
-    p.output_backend = 'svg'
-    return export_svgs(p)
-
-
-def bokeh_export_png(p):
-    return export_png(p)
 
 
 def bokeh_export_html(p):
@@ -47,7 +37,7 @@ def bokeh_default_settings(p, x_label: str = None, y_label: str = None, do_gridl
     p.yaxis.axis_label_text_font_style = axis_lab_font_style
     p.yaxis.major_label_text_font_size = axis_lab_font_size
     p.yaxis.major_label_text_font_style = axis_lab_font_style
-    return p
+    return bokeh_export_html(p=p)
 
 
 def create_bokeh_scatter(name: list[str],
