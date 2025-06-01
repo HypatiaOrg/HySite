@@ -29,7 +29,7 @@ def bokeh_export_html(p):
 
 
 def bokeh_default_settings(p, x_label: str = None, y_label: str = None, do_gridlines: bool = True):
-    # toglle gridlines
+    # toggle gridlines
     if not do_gridlines:
         p.xgrid.grid_line_color = None
         p.ygrid.grid_line_color = None
