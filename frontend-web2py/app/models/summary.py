@@ -120,7 +120,6 @@ session_defaults_launch = {
 }
 
 exported_session_vars = sorted(set(session_defaults_launch.keys()) | toggle_launch_vars | toggle_graph_vars)
-TOOLS = 'crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,'
 
 for name_handle, name_label in name_handles_labels.items():
     COL_PREFERRED_NAME[name_handle] = name_label
