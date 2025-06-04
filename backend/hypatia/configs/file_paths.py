@@ -68,7 +68,7 @@ params_and_units_file = os.path.join(configs_dir, 'params_units.toml')
 xhip_file = os.path.join(ref_dir, "xhip.csv")
 pastel_file = os.path.join(ref_dir, "Pastel20.psv")
 solar_norm_ref = os.path.join(ref_dir, "solar_norm_ref.csv")
-default_catalog_file = os.path.join(ref_dir, 'catalog_file.csv')
+default_catalog_file = os.path.join(ref_dir, 'catalog_file_MAAS.csv')
 new_catalogs_file_name = os.path.join(ref_dir, 'new_catalogs_file.csv')
 element_plusminus_error_file = os.path.join(ref_dir, 'element_plusminus_err.toml')
 

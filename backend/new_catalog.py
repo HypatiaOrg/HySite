@@ -89,6 +89,7 @@ import shutil
 
 from hypatia.pipeline.nat_cat import NatCat
 from hypatia.sources.catalogs.ops import CatOps
+from hypatia.tools.color_text import attention_yellow_text
 from hypatia.sources.catalogs.solar_norm import SolarNorm
 from hypatia.sources.catalogs.catalogs import get_catalogs
 from hypatia.configs.file_paths import (abundance_dir, ref_dir, new_abundances_dir, new_catalogs_file_name,
@@ -115,6 +116,7 @@ def unique_abundances(verbose=True):
         print("Checking stellar abundance catalog files to ensure each row entry is a unique star.\n" +
               "Some catalogs will have two entries for BD+74 595 and HIP 72607 even though those \n"
               "names refer to the same object.\n")
+        print(f"Adding catalog into: {attention_yellow_text(default_catalog_file)}\n")
     catalog_dict = load_catalogs(verbose=verbose)
     for short_name in catalog_dict.keys():
         single_cat = catalog_dict[short_name]
@@ -222,7 +224,6 @@ if __name__ == "__main__":
     do_exo = False
     test_catalog = False
     insert_new = True
-
     # when done with upload, double-check that weird elements or new ionizations have representative error:
     # HySite/backend/hypatia/HyData/site_data
 
@@ -268,7 +269,7 @@ if __name__ == "__main__":
                                                        reduce_abundances=True)
 
             output_star_data = dist_output + exo_output
-            output_star_data.normalize(norm_keys=["lodders09"])
+            output_star_data.normalize(norm_keys=["original"])
             stats = output_star_data.stats
 
         elif insert_new:
