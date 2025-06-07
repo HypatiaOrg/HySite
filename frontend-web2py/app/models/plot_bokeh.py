@@ -168,7 +168,8 @@ def create_bokeh_hist(hist_all, hist_planet, edges, x_data: list[str | float | i
     if x_data:
         labels = {'xaxis': x_label if x_label else 'X Axis'}
     else:
-        return 'No data points to display'
+        # if there is no data, then return a message
+        return '', 'No data points to display'
 
     max_hist_all = float(max(hist_all))
     # normalize if necessary
