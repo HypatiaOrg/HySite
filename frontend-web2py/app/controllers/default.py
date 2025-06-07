@@ -45,14 +45,7 @@ def credits():
     return dict()
 
 
-def launch():
-    requested_mode = request.vars.mode
-    if isinstance(requested_mode, list):
-        requested_mode = requested_mode[0]
-    if requested_mode == 'hist':
-        session.mode = 'hist'
-    else:
-        session.mode = 'scatter'
+def init_session():
     # add default values for missing session variables
     for var_name, default_val in session_defaults_launch.items():
         session_value = session.__getattr__(var_name)
@@ -62,6 +55,16 @@ def launch():
     # splitting of strings into lists
     if isinstance(session.tablecols, str):
         session.tablecols = session.tablecols.split(',')
+    return
+
+
+def launch():
+    init_session()
+    return dict()
+
+
+def hist():
+    init_session()
     return dict()
 
 
@@ -88,8 +91,7 @@ def get_settings() -> dict[str, any]:
             all_settings[graph_var] = session_value
     return all_settings
 
-
-def graph():
+def plot_settings():
     all_request_vars = set(request.vars.keys())
     # set new session values (non-toggles controls) from the request
     for key in all_request_vars - toggle_graph_vars:
@@ -116,17 +118,17 @@ def graph():
     elif session.catalogs is None:
         session.catalogs = []
 
+def graph():
+    plot_settings()
     # set the packaged settings values
     settings = get_settings()
     # paras the axis make iterables that are in the form of the final returned data product
-    axes = ['xaxis']
-    if settings['mode'] != 'hist':
-        axes.append('yaxis')
-        if 'zaxis' in settings.keys() and settings['zaxis'] != 'none':
-            axes.append('zaxis')
+    axes = ['xaxis', 'yaxis']
+    if 'zaxis' in settings.keys() and settings['zaxis'] != 'none':
+        axes.append('zaxis')
     # set the API request for the data values
     url_values = urllib.parse.urlencode(settings)
-    full_url = f'{BASE_API_URL}graph/?{url_values}'
+    full_url = f'{BASE_API_URL}scatter/?{url_values}'
     graph_data_web = urllib.request.urlopen(full_url)
     graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
     # plotting the data based on the settings

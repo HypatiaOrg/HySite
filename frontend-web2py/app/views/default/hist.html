@@ -6,7 +6,7 @@
 {{pass}}
 <div style="float:left;width:750px;height:625px;display:table;font-size:20px;font-weight:bold;margin-bottom:20px">
     <div style="display:table-cell;vertical-align:middle;text-align:center;background:#dddddd;height:625px" id="graph">
-    {{=LOAD("default","graph.load",ajax=True,content="Loading...")}}
+    {{=LOAD("default","graph_hist.load",ajax=True,content="Loading...")}}
     </div>
 </div>
 
@@ -27,26 +27,21 @@
             <br/>
             <dt>X-axis:</dt>
             <dd>
-                {{=LOAD("default","dropdown.load",vars=dict(id="xaxis",value1=session.xaxis1,value2=session.xaxis2,log=True,logstate=session.xaxislog,inverse=session.xaxisinv))}}
+                {{=LOAD("default","dropdown.load",vars=dict(id="xaxis",value1=session.xaxis1,value2=session.xaxis2,log=False,logstate=session.xaxislog,inverse=session.xaxisinv))}}
             </dd>
             <br/>
-            <dt>Y-axis:</dt>
             <dd>
-                {{=LOAD("default","dropdown.load",vars=dict(id="yaxis",value1=session.yaxis1,value2=session.yaxis2,log=True,logstate=session.yaxislog,inverse=session.yaxisinv))}}
-            </dd>
-            <br/>
-            <dt>Z-axis (color):</dt>
-            <dd>
-                {{=LOAD("default","dropdown.load",vars=dict(id="zaxis",value1=session.zaxis1,value2=session.zaxis2,allownone=True,log=True,logstate=session.zaxislog,inverse=session.zaxisinv))}}
+                <input type="checkbox" {{if session.normalize:}}checked="checked"{{pass}} id="normalize" name="normalize" onchange="refresh()">
+                <label for="normalize">Normalize the histogram</label>
             </dd>
             <br/>
             <dt>Solar normalization:</dt>
             <dd>
-            <select class="form-control" name="solarnorm" onchange="refresh()">
-                {{for s in SOLAR_NORMS:}}
-                <option name="solarnorm" value="{{=s.id}}" {{if s.id==session.solarnorm:}}selected="selected"{{pass}}>{{=s.author}} {{if s.year:}}({{=s.year}}){{pass}}</option>
-                {{pass}}
-            </select>
+                <select class="form-control" name="solarnorm" onchange="refresh()">
+                    {{for s in SOLAR_NORMS:}}
+                    <option name="solarnorm" value="{{=s.id}}" {{if s.id==session.solarnorm:}}selected="selected"{{pass}}>{{=s.author}} {{if s.year:}}({{=s.year}}){{pass}}</option>
+                    {{pass}}
+                </select>
             </dd>
             <br/>
             <dt>If element ratio is in multiple catalogs:</dt>
@@ -100,7 +95,9 @@
             <dd>
                 <input class="btn btn-default" type="submit">
             </dd>
+            <input type="hidden" id="mode" name="mode" value="{{=request.vars.mode or 'scatter'}}">
         </dl>
+
     </form>
 </div>
 </div>
