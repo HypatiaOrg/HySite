@@ -310,6 +310,8 @@ def table():
                     cell_value += 0.0
                 if isinstance(cell_value, str):
                     cell_value_str = cell_value
+                elif cell_value is None:
+                    cell_value_str = ''
                 elif col_name in requested_elements_set:
                     cell_value_str = f'{cell_value:1.2f}'
                 elif col_name in COL_FORMAT.keys():
