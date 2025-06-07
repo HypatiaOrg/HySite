@@ -140,7 +140,7 @@ def graph():
     do_zlog = settings['zaxislog'] and is_loggable['zaxis']
     has_zaxis = settings['zaxis1'] != 'none'
     outputs = graph_data['outputs']
-    div = create_plotly_scatter(name=outputs.get('name', []),
+    script, div = create_bokeh_scatter(name=outputs.get('name', []),
                                 xaxis=outputs.get('xaxis', []),
                                 yaxis=outputs.get('yaxis', []),
                                 zaxis=outputs.get('zaxis', []),
@@ -155,6 +155,28 @@ def graph():
                                 do_gridlines=settings['gridlines'])
     # send back to the browser
     return dict(div=div)
+
+
+def graph_hist():
+    plot_settings()
+    # set the packaged settings values
+    settings = get_settings()
+    # set the API request for the data values
+    url_values = urllib.parse.urlencode(settings)
+    full_url = f'{BASE_API_URL}hist/?{url_values}'
+    graph_data_web = urllib.request.urlopen(full_url)
+    graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
+    # plotting the data based on the settings
+    labels = graph_data['labels']
+    script, div = create_bokeh_hist(hist_all=graph_data['hist_all'], hist_planet = graph_data['hist_planet'],
+                                    edges=graph_data['edges'],
+                                    x_label=labels.get('x_label', None),
+                                    x_data = graph_data['x_data'],
+                                    normalize=settings['normalize'], xaxisinv=settings['xaxisinv'],
+                                    do_gridlines=settings['gridlines'],
+                                    )
+    # send back to the browser
+    return dict(script=script, div=div)
 
 
 def table():
