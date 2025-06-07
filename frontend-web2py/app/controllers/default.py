@@ -45,14 +45,7 @@ def credits():
     return dict()
 
 
-def launch():
-    requested_mode = request.vars.mode
-    if isinstance(requested_mode, list):
-        requested_mode = requested_mode[0]
-    if requested_mode == 'hist':
-        session.mode = 'hist'
-    else:
-        session.mode = 'scatter'
+def init_session():
     # add default values for missing session variables
     for var_name, default_val in session_defaults_launch.items():
         session_value = session.__getattr__(var_name)
@@ -62,6 +55,16 @@ def launch():
     # splitting of strings into lists
     if isinstance(session.tablecols, str):
         session.tablecols = session.tablecols.split(',')
+    return
+
+
+def launch():
+    init_session()
+    return dict()
+
+
+def hist():
+    init_session()
     return dict()
 
 
@@ -88,8 +91,7 @@ def get_settings() -> dict[str, any]:
             all_settings[graph_var] = session_value
     return all_settings
 
-
-def graph():
+def plot_settings():
     all_request_vars = set(request.vars.keys())
     # set new session values (non-toggles controls) from the request
     for key in all_request_vars - toggle_graph_vars:
@@ -116,49 +118,63 @@ def graph():
     elif session.catalogs is None:
         session.catalogs = []
 
+def graph():
+    plot_settings()
     # set the packaged settings values
     settings = get_settings()
     # paras the axis make iterables that are in the form of the final returned data product
-    axes = ['xaxis']
-    if settings['mode'] != 'hist':
-        axes.append('yaxis')
-        if 'zaxis' in settings.keys() and settings['zaxis'] != 'none':
-            axes.append('zaxis')
+    axes = ['xaxis', 'yaxis']
+    if 'zaxis' in settings.keys() and settings['zaxis'] != 'none':
+        axes.append('zaxis')
     # set the API request for the data values
     url_values = urllib.parse.urlencode(settings)
-    full_url = f'{BASE_API_URL}graph/?{url_values}'
+    full_url = f'{BASE_API_URL}scatter/?{url_values}'
     graph_data_web = urllib.request.urlopen(full_url)
     graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
     # plotting the data based on the settings
     labels = graph_data['labels']
-    if settings['mode'] == 'scatter':
-        is_loggable = graph_data['is_loggable']
-        do_xlog = settings['xaxislog'] and is_loggable['xaxis']
-        do_ylog = settings['yaxislog'] and is_loggable['yaxis']
-        do_zlog = settings['zaxislog'] and is_loggable['zaxis']
-        has_zaxis = settings['zaxis1'] != 'none'
-        outputs = graph_data['outputs']
-        script, div = create_bokeh_scatter(name=outputs.get('name', []),
-                                           xaxis=outputs.get('xaxis', []),
-                                           yaxis=outputs.get('yaxis', []),
-                                           zaxis=outputs.get('zaxis', []),
-                                           x_label=labels.get('x_label', None),
-                                           y_label=labels.get('y_label', None),
-                                           z_label=labels.get('z_label', None),
-                                           star_count=graph_data.get('star_count', None),
-                                           planet_count=graph_data.get('planet_count', None),
-                                           do_xlog=do_xlog, do_ylog=do_ylog, do_zlog=do_zlog,
-                                           xaxisinv=settings['xaxisinv'], yaxisinv=settings['yaxisinv'],
-                                           zaxisinv=settings['zaxisinv'], has_zaxis=has_zaxis,
-                                           do_gridlines=settings['gridlines'])
-    else:
-        script, div = create_bokeh_hist(hist_all=graph_data['hist_all'], hist_planet = graph_data['hist_planet'],
-                                        edges=graph_data['edges'],
-                                        x_label=labels.get('x_label', None),
-                                        x_data = graph_data['x_data'],
-                                        normalize=settings['normalize'], xaxisinv=settings['xaxisinv'],
-                                        do_gridlines=settings['gridlines'],
-                                        )
+
+    is_loggable = graph_data['is_loggable']
+    do_xlog = settings['xaxislog'] and is_loggable['xaxis']
+    do_ylog = settings['yaxislog'] and is_loggable['yaxis']
+    do_zlog = settings['zaxislog'] and is_loggable['zaxis']
+    has_zaxis = settings['zaxis1'] != 'none'
+    outputs = graph_data['outputs']
+    script, div = create_bokeh_scatter(name=outputs.get('name', []),
+                                       xaxis=outputs.get('xaxis', []),
+                                       yaxis=outputs.get('yaxis', []),
+                                       zaxis=outputs.get('zaxis', []),
+                                       x_label=labels.get('x_label', None),
+                                       y_label=labels.get('y_label', None),
+                                       z_label=labels.get('z_label', None),
+                                       star_count=graph_data.get('star_count', None),
+                                       planet_count=graph_data.get('planet_count', None),
+                                       do_xlog=do_xlog, do_ylog=do_ylog, do_zlog=do_zlog,
+                                       xaxisinv=settings['xaxisinv'], yaxisinv=settings['yaxisinv'],
+                                       zaxisinv=settings['zaxisinv'], has_zaxis=has_zaxis,
+                                       do_gridlines=settings['gridlines'])
+    # send back to the browser
+    return dict(script=script, div=div)
+
+
+def graph_hist():
+    plot_settings()
+    # set the packaged settings values
+    settings = get_settings()
+    # set the API request for the data values
+    url_values = urllib.parse.urlencode(settings)
+    full_url = f'{BASE_API_URL}hist/?{url_values}'
+    graph_data_web = urllib.request.urlopen(full_url)
+    graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
+    # plotting the data based on the settings
+    labels = graph_data['labels']
+    script, div = create_bokeh_hist(hist_all=graph_data['hist_all'], hist_planet = graph_data['hist_planet'],
+                                    edges=graph_data['edges'],
+                                    x_label=labels.get('x_label', None),
+                                    x_data = graph_data['x_data'],
+                                    normalize=settings['normalize'], xaxisinv=settings['xaxisinv'],
+                                    do_gridlines=settings['gridlines'],
+                                    )
     # send back to the browser
     return dict(script=script, div=div)
 

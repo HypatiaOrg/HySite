@@ -39,7 +39,7 @@
          HTML5 elements & feature detects -->
     <script src="{{=URL('static','js/modernizr-2.8.3.min.js')}}"></script>
     <!--[if lt IE 9]>
-        <script src="{{=URL('static','js/respond-1.4.2.min.js')}}"></script>
+    <script src="{{=URL('static','js/respond-1.4.2.min.js')}}"></script>
         <![endif]-->
     <!-- Favicons -->
     {{include 'web2py_ajax.html'}} <!-- this includes jquery.js, calendar.js/.css and web2py.js -->
@@ -108,29 +108,27 @@
     <!-- Begin page content -->
     <div class="container-fluid">
       {{if left_sidebar_enabled:}}
-        <div class="col-md-3 left-sidebar">
-            {{block left_sidebar}}
-            <h3>Left Sidebar</h3>
-            <p></p>
-            {{end}}
-        </div>
-      {{pass}}
-
-      <div class="{{=middle_column}}">
-        {{block center}}
-        {{include}}
+        {{block left_sidebar}}
+          <div class="col-md-3 left-sidebar">
+              <h3>Left Sidebar</h3>
+              <p></p>
+          </div>
         {{end}}
+      {{pass}}
+      {{block center}}
+      <div class="{{=middle_column}}">
+        {{include}}
       </div>
+      {{end}}
 
       {{if right_sidebar_enabled:}}
-        <div class="col-md-3">
-            {{block right_sidebar}}
-            <h3>Right Sidebar</h3>
-            <p></p>
-            {{end}}
-        </div>
+        {{block right_sidebar}}
+          <div class="col-md-3">
+              <h3>Right Sidebar</h3>
+              <p></p>
+          </div>
+        {{end}}
       {{pass}}
-
     </div>
 
     {{block footer}} <!-- this is a default footer -->
