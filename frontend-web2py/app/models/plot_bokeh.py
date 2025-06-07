@@ -48,6 +48,9 @@ def create_bokeh_scatter(name: list[str],
                          xaxisinv: bool = False, yaxisinv: bool = False, zaxisinv: bool = False,
                          has_zaxis: bool = False, do_gridlines: bool = False,
                          ):
+    # if there is no data, then return a message
+    if not xaxis:
+        return '', 'No data points to display'
     bokeh_source = {'name': name}
     labels = {}
     if xaxis:
@@ -62,9 +65,6 @@ def create_bokeh_scatter(name: list[str],
         zaxis = np.array(zaxis)
         bokeh_source['zaxis'] = zaxis
         labels['zaxis'] = z_label if z_label else 'Z Axis'
-    # if there is no data, then return a message
-    if not bokeh_source:
-        return 'No data points to display'
     # handle tooltips
     source = ColumnDataSource(bokeh_source)
     tooltips = "<b>@name</b><br/><div style='max-width:300px'>" + ', '.join(
