@@ -63,6 +63,11 @@ def launch():
     return dict()
 
 
+def density():
+    init_session()
+    return dict()
+
+
 def hist():
     init_session()
     return dict()
@@ -118,11 +123,12 @@ def plot_settings():
     elif session.catalogs is None:
         session.catalogs = []
 
-def graph():
+
+def scatter_format():
     plot_settings()
     # set the packaged settings values
     settings = get_settings()
-    # paras the axis make iterables that are in the form of the final returned data product
+    # parse the axis name iterables that are in the form of the final returned data product
     axes = ['xaxis', 'yaxis']
     if 'zaxis' in settings.keys() and settings['zaxis'] != 'none':
         axes.append('zaxis')
@@ -140,6 +146,11 @@ def graph():
     do_zlog = settings['zaxislog'] and is_loggable['zaxis']
     has_zaxis = settings['zaxis1'] != 'none'
     outputs = graph_data['outputs']
+    return outputs, labels, graph_data, do_xlog, do_ylog, do_zlog, has_zaxis, settings
+
+
+def graph():
+    outputs, labels, graph_data, do_xlog, do_ylog, do_zlog, has_zaxis, settings = scatter_format()
     script, div = create_bokeh_scatter(name=outputs.get('name', []),
                                 xaxis=outputs.get('xaxis', []),
                                 yaxis=outputs.get('yaxis', []),
@@ -155,6 +166,26 @@ def graph():
                                 do_gridlines=settings['gridlines'])
     # send back to the browser
     return dict(script=script, div=div)
+
+
+
+def graph_density():
+    outputs, labels, graph_data, do_xlog, do_ylog, do_zlog, has_zaxis, settings = scatter_format()
+    div = create_plotly_scatter(name=outputs.get('name', []),
+                                xaxis=outputs.get('xaxis', []),
+                                yaxis=outputs.get('yaxis', []),
+                                zaxis=outputs.get('zaxis', []),
+                                x_label=labels.get('x_label', None),
+                                y_label=labels.get('y_label', None),
+                                z_label=labels.get('z_label', None),
+                                star_count=graph_data.get('star_count', None),
+                                planet_count=graph_data.get('planet_count', None),
+                                do_xlog=do_xlog, do_ylog=do_ylog, do_zlog=do_zlog,
+                                xaxisinv=settings['xaxisinv'], yaxisinv=settings['yaxisinv'],
+                                zaxisinv=settings['zaxisinv'], has_zaxis=has_zaxis,
+                                do_gridlines=settings['gridlines'])
+    # send back to the browser
+    return dict(div=div)
 
 
 def graph_hist():

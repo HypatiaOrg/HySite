@@ -9,5 +9,7 @@ response.logo = A("Hypatia Catalog",
                   _id="hypatia-logo")
 response.menu = [
 (T('Elements & Properties'),request.url=='/hypatia/default/launch','/hypatia/default/launch',[]),
+(T('Density Map'),request.url=='/hypatia/default/density','/hypatia/default/density',[]),
 (T('Stars With/Without Planets'),request.url=='/hypatia/default/hist','/hypatia/default/hist',[]),
+
 ]

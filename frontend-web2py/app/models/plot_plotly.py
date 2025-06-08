@@ -8,6 +8,6 @@ def create_plotly_scatter(name: list[str],
                           xaxisinv: bool = False, yaxisinv: bool = False, zaxisinv: bool = False,
                           has_zaxis: bool = False, do_gridlines: bool = False,):
     # Create a scatter plot
-    fig = px.scatter(x=[1, 2, 3], y=[4, 1, 2])
+    fig = px.scatter(x=xaxis, y=yaxis)
     # Convert the figure to HTML
     return fig.to_html(include_plotlyjs=True)
