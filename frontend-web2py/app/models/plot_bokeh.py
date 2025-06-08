@@ -157,7 +157,7 @@ def create_bokeh_scatter(name: list[str],
                      text='Hypatia Catalog ' + datetime.now().strftime('%Y-%m-%d'),
                      text_alpha=0.5)
     p.add_layout(citation)
-    return bokeh_default_settings(p=p, x_label=x_label, y_label=y_label, do_gridlines=do_gridlines)
+    return bokeh_default_settings(p=p, x_label=labels['xaxis'], y_label=labels['yaxis'], do_gridlines=do_gridlines)
 
 
 def create_bokeh_hist(hist_all, hist_planet, edges, x_data: list[str | float | int],
