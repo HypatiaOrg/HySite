@@ -30,6 +30,12 @@ SOLAR_NORMS = [AttrDict(norm_dict) for norm_dict in param_data['solarnorms']]
 element_data = param_data['element_data']
 h_appended_names = [single_el['element_id'] + 'H' for single_el in element_data]
 h_appended_names_set = set(h_appended_names)
+rank_ordered_elements = {single_el['element_id']: el_index for el_index, single_el in list(enumerate(element_data))}
+
+
+def element_rank(element_id: str) -> int:
+    """Returns the rank of the element based on its index in the element_data list."""
+    return rank_ordered_elements.get(element_id, float('inf'))
 
 
 COL_FORMAT = {}

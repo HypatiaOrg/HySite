@@ -357,25 +357,28 @@ def table():
         requested_planet_params = TABLE_PLANET + ['nea_name']
 
     # the elements
-    elements_to_use = set()
+    fe_elements = set()
     if 'Fe' in table_columns_set:
         columns.append('Fe')
         requested_elements.append('Fe')
-        elements_to_use.add('Fe')
+        fe_elements.add('Fe')
         if show_error:
             columns.append('Fe_err')
         if 'FeII' in table_columns_set:
             columns.append('FeII')
             requested_elements.append('FeII')
-            elements_to_use.add('FeII')
+            fe_elements.add('FeII')
             if show_error:
                 columns.append('FeII_err')
+    other_elements = set()
     for item in table_columns_set:
-        if item[0].isupper() and item not in elements_to_use:
-            columns.append(item)
-            requested_elements.append(item)
-            if show_error:
-                columns.append(f'{item}_err')
+        if item[0].isupper() and item not in fe_elements:
+            other_elements.add(item)
+    for element_name in sorted(other_elements, key=element_rank):
+        columns.append(element_name)
+        requested_elements.append(element_name)
+        if show_error:
+            columns.append(f'{element_name}_err')
 
     # add planet parameters
     if 'planet' in table_columns_set:
