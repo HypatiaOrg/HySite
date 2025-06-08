@@ -5,5 +5,5 @@
 <script>
     //$("#stars").get(0).reload();
     refresh_table();
-    $("#graph").css("background","white");
+    $("#hist").css("background","white");
 </script>
