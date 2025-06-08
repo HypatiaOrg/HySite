@@ -172,7 +172,10 @@ def save_or_load(load=True, a_catalog_query=None):
 def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=None, norm_keys: list[str] = None,
                     target_list: list[str] | list[tuple[str, ...]] | str | os.PathLike | None = None,
                     fast_update_gaia=True, from_pickled_cat: bool = False, from_pickled_output: bool = False,
-                    mongo_upload: bool = True):
+                    mongo_upload: bool = True,
+                    dist: tuple[float | None, float | None] | None = (0.0, 500.0),
+                    teff: tuple[float | None, float | None] | None = (2300.0, 7500.0),
+                    ):
     target_output = None
     params = ["dist", "logg", 'Teff', "SpType", 'st_mass', 'st_rad', "disk"]
     star_name_type = ['gaia dr2', "gaia dr1", "hip", 'hd', "wds"]
@@ -195,9 +198,13 @@ def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=N
     if from_pickled_output:
         output_star_data = load_pickled_output()
     else:
-
+        parameter_bound_filter = []
+        if dist is not None:
+            parameter_bound_filter.append(('dist', dist[0], dist[1]))
+        if teff is not None:
+            parameter_bound_filter.append(('teff', teff[0], teff[1]))
         dist_output = nat_cat.make_output_star_data(min_catalog_count=1,
-                                                    parameter_bound_filter=[('dist', 0, 500), ("Teff", 2300.0, 7500.)],
+                                                    parameter_bound_filter=parameter_bound_filter,
                                                     star_data_stats=False,
                                                     reduce_abundances=False)
 
@@ -230,9 +237,9 @@ def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=N
         output_star_data.filter(element_bound_filter=None)  # filter after normalization, and logic
         output_star_data.do_stats(params_set=nat_cat.params_list_for_stats,
                                   star_name_types=nat_cat.star_types_for_stats)
+        output_star_data.reduce_elements()
+        output_star_data.find_available_attributes()
         if mongo_upload:
-            output_star_data.reduce_elements()
-            output_star_data.find_available_attributes()
             output_star_data.export_to_mongo(catalogs_file_name=nat_cat.catalogs_file_name)
         output_star_data.pickle_myself()
     return nat_cat, output_star_data, target_output
@@ -336,7 +343,8 @@ if __name__ == "__main__":
                                                                       norm_keys=test_norm_keys,
                                                                       refresh_exo_data=test_refresh_exo_data,
                                                                       from_pickled_cat=test_from_pickled_cat,
-                                                                      mongo_upload=mongo_upload
+                                                                      mongo_upload=mongo_upload,
+                                                                      #dist=(0.0, 150.0),
                                                                       )
     else:
         nat_cat, output_star_data, target_star_data = standard_output(from_scratch=test_from_scratch,
