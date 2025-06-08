@@ -1,7 +1,7 @@
 import time
 
 from hypatia.collect import BaseStarCollection
-from hypatia.configs.env_load import MONGO_DATABASE
+from hypatia.configs.env_load import MONGO_DATABASE, DEBUG
 from hypatia.sources.simbad.db import indexed_name_types
 from hypatia.elements import element_rank, ElementID, RatioID
 from hypatia.sources.simbad.query import simbad_coord_to_deg
@@ -235,7 +235,7 @@ class HypatiaDB(BaseStarCollection):
                           return_error: bool = False,
                           star_name_column: str = 'name',
                           return_hover: bool = False,
-                          ) -> list:
+                          **kwargs) -> list:
         json_pipeline = frontend_pipeline(
             db_formatted_names=db_formatted_names,
             db_formatted_names_exclude=db_formatted_names_exclude,
@@ -262,6 +262,9 @@ class HypatiaDB(BaseStarCollection):
             star_name_column=star_name_column,
             return_hover=return_hover
         )
+        if DEBUG:
+            for stage_index, stage in list(enumerate(json_pipeline)):
+                print(f'Pipeline Stage {stage_index + 1: 2}):', stage)
         # run the aggregation pipeline and return the results.
         raw_results = list(self.collection.aggregate(json_pipeline))
         return raw_results
@@ -270,11 +273,20 @@ class HypatiaDB(BaseStarCollection):
 if __name__ == '__main__':
     from itertools import product
     hypatiaDB = HypatiaDB(db_name=MONGO_DATABASE, collection_name='hypatiaDB')
+    ## Reset the database
     # hypatiaDB.reset()  # WARNING: This will delete all data in the collection
-    u_norms = ["absolute", 'lodders09', 'original']
-    u_s_counts = [False, True]
-    u_by_element_counts = [False, True]
-    for index_count, (norm, do_s_count, do_by_el_count) in list(enumerate(product(u_norms, u_s_counts, u_by_element_counts))):
-        test_return = hypatiaDB.get_abundance_count(norm_key=norm, by_element=do_s_count, count_stars=do_by_el_count)
-        print(f'{index_count + 1:2}.) Using {norm} norm, counting {"stars" if do_s_count else "abundance measurements"} as a fucntions of {"chemical elements" if do_by_el_count else "The entire database"} ')
-        print(f'      {test_return}\n')
+    ## Test the database statistics
+    # u_norms = ["absolute", 'lodders09', 'original']
+    # u_s_counts = [False, True]
+    # u_by_element_counts = [False, True]
+    # for index_count, (norm, do_s_count, do_by_el_count) in list(enumerate(product(u_norms, u_s_counts, u_by_element_counts))):
+    #     test_return = hypatiaDB.get_abundance_count(norm_key=norm, by_element=do_s_count, count_stars=do_by_el_count)
+    #     print(f'{index_count + 1:2}.) Using {norm} norm, counting {"stars" if do_s_count else "abundance measurements"} as a fucntions of {"chemical elements" if do_by_el_count else "The entire database"} ')
+    #     print(f'      {test_return}\n')
+    ## Test pipeline
+    elements_returned=[ElementID.from_str(el_name) for el_name in ['C', 'O', 'Mg', 'Si', 'Ca', 'Ti', 'Fe']]
+    element_value_filters={ElementID.from_str('C'): (-1.0, 12.0, False)}
+    results = hypatiaDB.frontend_pipeline(
+        db_formatted_names=None,
+        elements_returned=elements_returned,
+        element_value_filters=element_value_filters,)
