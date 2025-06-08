@@ -154,7 +154,7 @@ def graph():
                                 zaxisinv=settings['zaxisinv'], has_zaxis=has_zaxis,
                                 do_gridlines=settings['gridlines'])
     # send back to the browser
-    return dict(div=div)
+    return dict(script=script, div=div)
 
 
 def graph_hist():
