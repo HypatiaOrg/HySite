@@ -123,12 +123,11 @@ def plot_settings():
     elif session.catalogs is None:
         session.catalogs = []
 
-
-def scatter_format():
+def graph():
     plot_settings()
     # set the packaged settings values
     settings = get_settings()
-    # parse the axis name iterables that are in the form of the final returned data product
+    # paras the axis make iterables that are in the form of the final returned data product
     axes = ['xaxis', 'yaxis']
     if 'zaxis' in settings.keys() and settings['zaxis'] != 'none':
         axes.append('zaxis')
@@ -139,18 +138,13 @@ def scatter_format():
     graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
     # plotting the data based on the settings
     labels = graph_data['labels']
-    # Run plotly or bokeh based on the session mode
+
     is_loggable = graph_data['is_loggable']
     do_xlog = settings['xaxislog'] and is_loggable['xaxis']
     do_ylog = settings['yaxislog'] and is_loggable['yaxis']
     do_zlog = settings['zaxislog'] and is_loggable['zaxis']
     has_zaxis = settings['zaxis1'] != 'none'
     outputs = graph_data['outputs']
-    return outputs, labels, graph_data, do_xlog, do_ylog, do_zlog, has_zaxis, settings
-
-
-def graph():
-    outputs, labels, graph_data, do_xlog, do_ylog, do_zlog, has_zaxis, settings = scatter_format()
     script, div = create_bokeh_scatter(name=outputs.get('name', []),
                                 xaxis=outputs.get('xaxis', []),
                                 yaxis=outputs.get('yaxis', []),
