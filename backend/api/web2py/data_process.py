@@ -323,7 +323,9 @@ def graph_settings_from_request(settings: dict[str, any] | None):
                 param_type=param_type, param_id=param_id,
                 filter_low=filter_low, filter_high=filter_high, exclude=exclude)
     if star_list:
-        db_formatted_names = sorted({name.replace(' ', '').lower() for name in star_list})
+        db_formatted_names_set = {name.replace(' ', '').lower() for name in star_list}
+        db_formatted_names_set.discard('')
+        db_formatted_names = sorted(db_formatted_names_set)
     else:
         db_formatted_names = None
     db_formatted_names_exclude = star_action == 'exclude'
@@ -602,3 +604,30 @@ def table_query_from_request(settings: dict[str, any] | None = None) -> dict[str
         planet_count=planet_count,
         star_count=star_count,
     )
+
+
+if __name__ == '__main__':
+    from hypatia.configs.env_load import MONGO_DATABASE
+    from hypatia.pipeline.star.db import HypatiaDB
+    hypatiaDB = HypatiaDB(db_name=MONGO_DATABASE, collection_name='hypatiaDB')
+    test_settings = graph_settings_from_request(settings={
+        'filter1_1': 'Fe',
+        'filter1_2': 'C',
+        'filter1_3': -2.0,
+        'filter1_4': 11.0,
+        'xaxis1': 'Fe',
+        'xaxis2': 'C',
+        'yaxis1': 'Si',
+        'yaxis2': 'H',
+        'zaxis1': None,
+        'zaxis2': 'H',
+        'cat_action': None,
+        'star_action': None,
+        'filter1_inv': False,
+        'filter2_inv': False,
+        'filter3_inv': False,
+        'solarnorm': None,
+        'statistic': None,
+        'return_nea_name': True,
+    })
+    test_results = hypatiaDB.frontend_pipeline(**test_settings)
