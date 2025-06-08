@@ -107,3 +107,20 @@
 </div>
 
 {{include 'default/table_options.html'}}
+
+<script>
+    function refresh() {
+        $("#graph > div").css("opacity",0.5);
+        items = []
+        $("form input[name],select[name]").each(function() {
+            items.push(this.name)
+        });
+        if($("select[name='solarnorm'] option[value="+$("select[name='solarnorm']").val()+"]").text().trim() == "Original") {
+            $("#origalert").show();
+        }
+        else {
+            $("#origalert").hide();
+        }
+        ajax('/hypatia/default/graph.load',items,'graph');
+    }
+</script>

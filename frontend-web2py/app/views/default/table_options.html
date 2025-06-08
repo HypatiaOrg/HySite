@@ -80,22 +80,7 @@
 </style>
 
 <script>
-    function refresh() {
-        $("#graph > div").css("opacity",0.5);
-        items = []
-        $("form input[name],select[name]").each(function() {
-            items.push(this.name)
-        });
-        if($("select[name='solarnorm'] option[value="+$("select[name='solarnorm']").val()+"]").text().trim() == "Original") {
-            $("#origalert").show();
-        }
-        else {
-            $("#origalert").hide();
-        }
-        ajax('/hypatia/default/graph.load',items,'graph');
-    }
-
-    function refresh_table() {
+        function refresh_table() {
         items = []
         $("#tablesettings input[name],select[name]").each(function() {
             items.push(this.name)
@@ -125,5 +110,4 @@
     {{for item in session.tablecols:}}
     toggle($("#pt-{{=item}}"));
     {{pass}}
-
 </script>
