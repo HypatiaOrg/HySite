@@ -354,6 +354,7 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
     if elements_match_filters:
         for element_name in sorted(elements_match_filters, key=element_rank):
             and_filters_elements.append({f'{element_name}': {'$ne': None}})
+    print(f'element_value_filters: {element_value_filters}')
     if element_value_filters:
         for element_name, (min_val, max_val, exclude) in element_value_filters.items():
             if min_val is not None and max_val is not None:
@@ -362,6 +363,16 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
                                                 {f'{element_name}': {'$gt': max_val}}]})
                 else:
                     and_filters_elements.append({f'{element_name}': {'$gte': min_val}})
+                    and_filters_elements.append({f'{element_name}': {'$lte': max_val}})
+            if min_val is not None:
+                if exclude:
+                    and_filters_elements.append({f'{element_name}': {'$lt': min_val}})
+                else:
+                    and_filters_elements.append({f'{element_name}': {'$gte': min_val}})
+            if max_val is not None:
+                if exclude:
+                    and_filters_elements.append({f'{element_name}': {'$gt': max_val}})
+                else:
                     and_filters_elements.append({f'{element_name}': {'$lte': max_val}})
     if and_filters_elements:
         json_pipeline.append({'$match': {'$and': and_filters_elements}})
