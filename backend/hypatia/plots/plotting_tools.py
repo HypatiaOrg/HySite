@@ -9,6 +9,7 @@ do not work and will need to be updated.
 '''
 
 def element_plot(output_star_data, divide_by: str = "Fe", numerators: list[str] = None):
+    #Currently not working because output_star_data.star_names doesn't match the actual starname objects
     if numerators is None:
         numerators = ["Si", "Fe", "Mg"]
     element_list = numerators[:]

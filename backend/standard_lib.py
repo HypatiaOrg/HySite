@@ -4,7 +4,7 @@ from hypatia.elements import element_rank, ElementID
 from hypatia.pipeline.star.output import load_pickled_output
 from hypatia.configs.source_settings import norm_keys_default
 from hypatia.pipeline.nat_cat import NatCat, load_catalog_query
-from hypatia.configs.file_paths import target_list_dir, base_dir, pickle_nat
+from hypatia.configs.file_paths import target_list_dir, base_dir, pickle_nat, default_catalog_file, hydata_dir
 
 
 def output_ref_abundances(catalogs_file_name=None):
@@ -169,81 +169,6 @@ def save_or_load(load=True, a_catalog_query=None):
         a_catalog_query.pickle_myself()
 
 
-def standard_output(from_scratch=True, refresh_exo_data=False, short_name_list=None, norm_keys: list[str] = None,
-                    target_list: list[str] | list[tuple[str, ...]] | str | os.PathLike | None = None,
-                    fast_update_gaia=True, from_pickled_cat: bool = False, from_pickled_output: bool = False,
-                    mongo_upload: bool = True,
-                    dist: tuple[float | None, float | None] | None = (0.0, 500.0),
-                    teff: tuple[float | None, float | None] | None = (2300.0, 7500.0),
-                    ):
-    target_output = None
-    params = ["dist", "logg", 'Teff', "SpType", 'st_mass', 'st_rad', "disk"]
-    star_name_type = ['gaia dr2', "gaia dr1", "hip", 'hd', "wds"]
-    if short_name_list is None:
-        catalogs_file_name = None
-    else:
-        catalogs_file_name = 'subset_catalog_file.csv'
-
-    if from_pickled_cat and os.path.exists(pickle_nat):
-        nat_cat = load_catalog_query()
-    else:
-        nat_cat = NatCat(params_list_for_stats=params,
-                         star_types_for_stats=star_name_type,
-                         catalogs_from_scratch=from_scratch, verbose=True, catalogs_verbose=True,
-                         get_abundance_data=True, get_exo_data=True, refresh_exo_data=refresh_exo_data,
-                         target_list=target_list,
-                         fast_update_gaia=fast_update_gaia,
-                         catalogs_file_name=catalogs_file_name)
-        nat_cat.pickle_myself()
-    if from_pickled_output:
-        output_star_data = load_pickled_output()
-    else:
-        parameter_bound_filter = []
-        if dist is not None:
-            parameter_bound_filter.append(('dist', dist[0], dist[1]))
-        if teff is not None:
-            parameter_bound_filter.append(('teff', teff[0], teff[1]))
-        dist_output = nat_cat.make_output_star_data(min_catalog_count=1,
-                                                    parameter_bound_filter=parameter_bound_filter,
-                                                    star_data_stats=False,
-                                                    reduce_abundances=False)
-
-        exo_output = nat_cat.make_output_star_data(min_catalog_count=1,
-                                                   parameter_bound_filter=None,
-                                                   has_exoplanet=True,
-                                                   star_data_stats=False,
-                                                   reduce_abundances=False)
-        if target_list is None:
-            output_star_data = dist_output + exo_output
-        else:
-            # select only the data that is belongs to the list of target stars
-            target_output = nat_cat.make_output_star_data(is_target=True)
-            output_star_data = target_output
-        # optional 2nd filtering step
-        output_star_data.filter(target_catalogs=None, or_logic_for_catalogs=True,
-                                catalogs_return_only_targets=False,
-                                target_star_name_types=None, and_logic_for_star_names=True,
-                                target_params=None, and_logic_for_params=True,
-                                target_elements=None, or_logic_for_element=True,
-                                element_bound_filter=None,  # filtering happens before normalization
-                                min_catalog_count=None,
-                                parameter_bound_filter=None,
-                                parameter_match_filter=None,
-                                at_least_fe_and_another=True,
-                                remove_nlte_abundances=False,
-                                keep_complement=False,
-                                is_target=None)
-        output_star_data.normalize(norm_keys=norm_keys)
-        output_star_data.filter(element_bound_filter=None)  # filter after normalization, and logic
-        output_star_data.do_stats(params_set=nat_cat.params_list_for_stats,
-                                  star_name_types=nat_cat.star_types_for_stats)
-        output_star_data.reduce_elements()
-        output_star_data.find_available_attributes()
-        if mongo_upload:
-            output_star_data.export_to_mongo(catalogs_file_name=nat_cat.catalogs_file_name)
-        output_star_data.pickle_myself()
-    return nat_cat, output_star_data, target_output
-
 
 def multi_output(from_scratch=True, short_name_list=None, norm_key=None, fast_update_gaia=False):
     params = ["dist", "logg", 'Teff', "SpType", 'st_mass', 'st_rad', "disk"]
@@ -325,33 +250,117 @@ def multi_output(from_scratch=True, short_name_list=None, norm_key=None, fast_up
     output_star_data2.find_available_attributes()
     return nat_cat, output_star_data1, output_star_data2
 
+def standard_output(from_scratch=True, refresh_exo_data=False, norm_keys: list[str] = None,
+                    fast_update_gaia=True, from_pickled_cat: bool = False, from_pickled_output: bool = False,
+                    mongo_upload: bool = True,
+                    catalogs_file_name: str = default_catalog_file,
+                    target_list: list[str] | list[tuple[str, ...]] | str | os.PathLike | None = None,
+                    params_list_for_stats: list[str] = None, star_types_for_stats: list[str] = None,
+                    dist: tuple[float | None, float | None] | None = (0.0, 500.0),
+                    teff: tuple[float | None, float | None] | None = (2300.0, 7500.0),
+                    logg: tuple[float | None, float | None] | None = None,
+                    ):
+    target_output = None
+    if params_list_for_stats is None:
+        params_list_for_stats = ["dist", "logg", 'Teff', "SpType", 'st_mass', 'st_rad', "disk"]
+    if star_types_for_stats is None:
+        star_types_for_stats = ['gaia dr2', "gaia dr1", "hip", 'hd', "wds"]
+
+    if from_pickled_cat and os.path.exists(pickle_nat):
+        nat_cat = load_catalog_query()
+    else:
+        nat_cat = NatCat(params_list_for_stats=params_list_for_stats,
+                         star_types_for_stats=star_types_for_stats,
+                         catalogs_from_scratch=from_scratch, verbose=True, catalogs_verbose=True,
+                         get_abundance_data=True, get_exo_data=True, refresh_exo_data=refresh_exo_data,
+                         target_list=target_list,
+                         fast_update_gaia=fast_update_gaia,
+                         catalogs_file_name=catalogs_file_name)
+        nat_cat.pickle_myself()
+    if from_pickled_output:
+        output_star_data = load_pickled_output()
+    else:
+        parameter_bound_filter = []
+        if dist is not None:
+            parameter_bound_filter.append(('dist', dist[0], dist[1]))
+        if teff is not None:
+            parameter_bound_filter.append(('teff', teff[0], teff[1]))
+        if logg is not None:
+            parameter_bound_filter.append(('logg', logg[0], logg[1]))
+
+        dist_output = nat_cat.make_output_star_data(min_catalog_count=1,
+                                                    parameter_bound_filter=parameter_bound_filter,
+                                                    star_data_stats=False,
+                                                    reduce_abundances=False)
+
+        exo_output = nat_cat.make_output_star_data(min_catalog_count=1,
+                                                   parameter_bound_filter=None,
+                                                   has_exoplanet=True,
+                                                   star_data_stats=False,
+                                                   reduce_abundances=False)
+        if target_list is None:
+            output_star_data = dist_output + exo_output
+        else:
+            # select only the data that is belongs to the list of target stars
+            target_output = nat_cat.make_output_star_data(is_target=True)
+            output_star_data = target_output
+        # optional 2nd filtering step
+        output_star_data.filter(target_catalogs=None, or_logic_for_catalogs=True,
+                                catalogs_return_only_targets=False,
+                                target_star_name_types=None, and_logic_for_star_names=True,
+                                target_params=None, and_logic_for_params=True,
+                                target_elements=None, or_logic_for_element=True,
+                                element_bound_filter=None,  # filtering happens before normalization
+                                min_catalog_count=None,
+                                parameter_bound_filter=None,
+                                parameter_match_filter=None,
+                                at_least_fe_and_another=True,
+                                remove_nlte_abundances=False,
+                                keep_complement=False,
+                                is_target=None)
+        output_star_data.normalize(norm_keys=norm_keys)
+        output_star_data.filter(element_bound_filter=None)  # filter after normalization, and logic
+        output_star_data.do_stats(params_set=nat_cat.params_list_for_stats,
+                                  star_name_types=nat_cat.star_types_for_stats)
+        output_star_data.reduce_elements()
+        output_star_data.find_available_attributes()
+        if mongo_upload:
+            output_star_data.export_to_mongo(catalogs_file_name=nat_cat.catalogs_file_name)
+        output_star_data.pickle_myself()
+    return nat_cat, output_star_data, target_output
 
 if __name__ == "__main__":
     only_target_list = False
 
     all_params = set()
-    test_norm_keys = list(norm_keys_default)
-    test_refresh_exo_data = True
-    test_from_scratch = True
-    test_from_pickled_cat = False
+    run_norm_keys = list(norm_keys_default)
+    run_refresh_exo_data = False
+    run_from_scratch = True
+    run_from_pickled_cat = False
     mongo_upload=False
     if only_target_list:
-        example_target_list = os.path.join(target_list_dir, 'Patrick-XRP-target-list-cut.csv')
-        # example_target_list2 = ['HIP 36366', 'HIP 55846', 'HD 103095', 'HIP 33226']
-        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=test_from_scratch,
-                                                                      target_list=example_target_list,
-                                                                      norm_keys=test_norm_keys,
-                                                                      refresh_exo_data=test_refresh_exo_data,
-                                                                      from_pickled_cat=test_from_pickled_cat,
+        #run_target_list = os.path.join(target_list_dir, 'Patrick-XRP-target-list-cut.csv')
+        target_list_file = "hypatia/HyData/target_lists/hypatia_mdwarf_cut_justnames.csv"
+        subset_catalog_file = str(os.path.join(hydata_dir, 'subsets', 'mdwarf_subset_catalog_file.csv'))
+        #run_target_list2 = ['HIP 36366', 'HIP 55846', 'HD 103095', 'HIP 33226']
+        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=run_from_scratch,
+                                                                      target_list=target_list_file,
+                                                                      norm_keys=run_norm_keys,
+                                                                      refresh_exo_data=run_refresh_exo_data,
+                                                                      from_pickled_cat=run_from_pickled_cat,
                                                                       mongo_upload=mongo_upload,
-                                                                      #dist=(0.0, 150.0),
+                                                                      catalogs_file_name = subset_catalog_file,
+                                                                      teff=(2300.0, 4000.0),
+                                                                      logg=(3.5, 6.0),
+                                                                      dist=(0.0, 30.0),
                                                                       )
     else:
-        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=test_from_scratch,
-                                                                      norm_keys=test_norm_keys,
-                                                                      refresh_exo_data=test_refresh_exo_data,
-                                                                      from_pickled_cat=test_from_pickled_cat,
-                                                                      mongo_upload=mongo_upload
+        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=run_from_scratch,
+                                                                      norm_keys=run_norm_keys,
+                                                                      refresh_exo_data=run_refresh_exo_data,
+                                                                      from_pickled_cat=run_from_pickled_cat,
+                                                                      mongo_upload=mongo_upload,
+                                                                      catalogs_file_name=default_catalog_file
                                                                       )
 
     # output_star_data.xy_plot(x_thing='dist', y_thing='Fe', color="darkorchid", show=False, save=True)

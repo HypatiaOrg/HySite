@@ -44,7 +44,7 @@ def mdwarf_output(target_list: list[str] | list[tuple[str, ...]] | str | os.Path
                                                reduce_abundances=False)
     # sort by is the data a target star
     target_output = nat_cat.make_output_star_data(is_target=True)
-    output_star_data = dist_output + exo_output + target_output
+    output_star_data = target_output
     # optional 2nd filtering step
     # Check mission elements: {'C','N','O','F','Na','Mg','Si','Cl','K','Ca','Ti'} -- True
     # Both Mg and Si measurements: {'Mg','Si'} -- False
@@ -90,6 +90,11 @@ nat_cat, output_star_data, target_star_data = mdwarf_output(norm_keys=test_norm_
                                                             target_list=target_list_file,
                                                             refresh_exo_data=test_refresh_exo_data)
 stats = target_star_data.stats
+stars_all = nat_cat.star_data.star_names
+print(len(stars_all), "total stars")
+stars_hypatia = output_star_data.star_names
+print(len(stars_hypatia), "stars after cuts")
+print(stats.stars_with_exoplanets, "stars with exoplanets")
 
-mdwarf_histogram(stats.star_count_per_element)
+#mdwarf_histogram(stats.star_count_per_element)
 # Note to self: To run this, run directly in a Python terminal
