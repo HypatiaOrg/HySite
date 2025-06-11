@@ -1,5 +1,6 @@
 import os
 
+from sandbox import mdwarf_histogram
 from hypatia.elements import element_rank, ElementID
 from hypatia.pipeline.star.output import load_pickled_output
 from hypatia.configs.source_settings import norm_keys_default
@@ -166,88 +167,6 @@ def save_or_load(load=True, a_catalog_query=None):
     else:
         a_catalog_query.pickle_myself()
 
-
-
-def multi_output(from_scratch=True, short_name_list=None, norm_key=None, fast_update_gaia=False):
-    params = ["dist", "logg", 'Teff', "SpType", 'st_mass', 'st_rad', "disk"]
-    star_name_type = ['gaia- dr2', "gaia dr1", "hip", 'hd', "wds"]
-    if short_name_list is None:
-        catalogs_file_name = None
-    else:
-        catalogs_file_name = 'subset_catalog_file.csv'
-
-    nat_cat = NatCat(params_list_for_stats=params,
-                     star_types_for_stats=star_name_type,
-                     catalogs_from_scratch=from_scratch, verbose=True, catalogs_verbose=True,
-                     get_abundance_data=True, get_exo_data=True, refresh_exo_data=from_scratch,
-                     fast_update_gaia=fast_update_gaia,
-                     catalogs_file_name=catalogs_file_name)
-    nat_cat.pickle_myself()
-
-    dist_output1 = nat_cat.make_output_star_data(min_catalog_count=1,
-                                                 parameter_bound_filter=[("Teff", 2300.0, 7500.)],
-                                                 star_data_stats=False,
-                                                 reduce_abundances=False)
-
-    exo_output1 = nat_cat.make_output_star_data(min_catalog_count=1,
-                                                parameter_bound_filter=None,
-                                                has_exoplanet=True,
-                                                star_data_stats=False,
-                                                reduce_abundances=False)
-    output_star_data1 = dist_output1 + exo_output1
-    output_star_data1.filter(target_catalogs=None, or_logic_for_catalogs=True,
-                             catalogs_return_only_targets=False,
-                             target_star_name_types=None, and_logic_for_star_names=True,
-                             target_params=None, and_logic_for_params=True,
-                             target_elements=None, or_logic_for_element=True,
-                             element_bound_filter=None,  # filtering happens before normalization
-                             min_catalog_count=None,
-                             parameter_bound_filter=None,
-                             parameter_match_filter=None,
-                             at_least_fe_and_another=True,
-                             remove_nlte_abundances=True,
-                             keep_complement=False)
-    if norm_key is not None:
-        output_star_data1.normalize(norm_key=norm_key)
-    output_star_data1.filter(element_bound_filter=None)  # filter after normalization, and logic
-    output_star_data1.do_stats(params_set=nat_cat.params_list_for_stats,
-                               star_name_types=nat_cat.star_types_for_stats)
-    output_star_data1.reduce_elements()
-    output_star_data1.find_available_attributes()
-
-    dist_output2 = nat_cat.make_output_star_data(min_catalog_count=1,
-                                                 parameter_bound_filter=[('dist', 0, 100), ("Teff", 5680.0, 5880.)],
-                                                 # 2300.0, 7500.0
-                                                 star_data_stats=False,
-                                                 reduce_abundances=False)
-
-    exo_output2 = nat_cat.make_output_star_data(min_catalog_count=1,
-                                                parameter_bound_filter=[('dist', 0, 100), ("Teff", 5680.0, 5880.)],
-                                                has_exoplanet=True,
-                                                star_data_stats=False,
-                                                reduce_abundances=False)
-    output_star_data2 = dist_output2 + exo_output2
-    output_star_data2.filter(target_catalogs=None, or_logic_for_catalogs=True,
-                             catalogs_return_only_targets=False,
-                             target_star_name_types=None, and_logic_for_star_names=True,
-                             target_params=None, and_logic_for_params=True,
-                             target_elements=None, or_logic_for_element=True,
-                             element_bound_filter=None,  # filtering happens before normalization
-                             min_catalog_count=None,
-                             parameter_bound_filter=[('logg', 4.34, 4.54)],
-                             parameter_match_filter=None,
-                             at_least_fe_and_another=True,
-                             remove_nlte_abundances=True,
-                             keep_complement=False)
-    if norm_key is not None:
-        output_star_data2.normalize(norm_key=norm_key)
-    output_star_data2.filter(element_bound_filter=[("Fe", -0.1, 0.1)])  # filter after normalization, and logic
-    output_star_data2.do_stats(params_set=nat_cat.params_list_for_stats,
-                               star_name_types=nat_cat.star_types_for_stats)
-    output_star_data2.reduce_elements()
-    output_star_data2.find_available_attributes()
-    return nat_cat, output_star_data1, output_star_data2
-
 def standard_output(from_scratch=True, refresh_exo_data=False, norm_keys: list[str] = None,
                     fast_update_gaia=True, from_pickled_cat: bool = False, from_pickled_output: bool = False,
                     mongo_upload: bool = True,
@@ -336,10 +255,12 @@ if __name__ == "__main__":
     TTT = run multi, first normal, second targetlist
     '''
 
-    only_target_list = False
+    only_target_list = True
 
     run_multi_output = False
     multi_target_list = False
+
+    run_mdwarf_hist = False
 
     all_params = set()
     run_norm_keys = list(norm_keys_default)
@@ -380,6 +301,8 @@ if __name__ == "__main__":
     stars_hypatia = output_star_data.star_names
     print(len(stars_hypatia), "stars after cuts")
     print(stats.stars_with_exoplanets, "stars with exoplanets")
+
+    if run_mdwarf_hist: mdwarf_histogram(stats.star_count_per_element)
 
     if run_multi_output:
         if multi_target_list:
