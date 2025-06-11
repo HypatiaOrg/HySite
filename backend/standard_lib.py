@@ -41,10 +41,8 @@ def find_outliers(workingelem, ltgt, bound):
     :param bound: The boundary above or below which you are interested (float)
     :return: Printed to screen
     '''
-    star_names_list = list(sorted(output_star_data.star_names))
     elemdict = {}
-    for star_name in star_names_list:
-        single_star = output_star_data.__getattribute__(star_name)
+    for single_star in output_star_data:
         available_catalogs = single_star.available_abundance_catalogs
         if 'Teff' in single_star.params.available_params:
             temp = single_star.params.__getattribute__('Teff')
@@ -52,12 +50,12 @@ def find_outliers(workingelem, ltgt, bound):
             temp = None
         for catalog_name in available_catalogs:
             single_catalog = single_star.__getattribute__(catalog_name)
-            available_abundances = single_catalog.available_abundances
-            if workingelem in available_abundances:
-                value = single_catalog.__getattribute__(workingelem)
-                origname = single_catalog.original_catalog_star_name.type + \
-                           str(single_catalog.original_catalog_star_name.id)
-                elemdict.update({star_name: (value, origname, temp, catalog_name)})
+            elemID = ElementID.from_str(workingelem)
+            elemsAvailable = single_star.reduced_abundances['lodders09'].available_abundances
+            if elemID in elemsAvailable:
+                value = float(single_catalog.__getattribute__('lodders09').__getattribute__(workingelem))
+                origname = str(single_catalog.original_catalog_star_name)
+                elemdict.update({single_star.star_reference_name: (value, origname, temp, catalog_name)})
     for star, value in elemdict.items():
         if ltgt == 'lt':
             if value[0] < bound:
@@ -327,42 +325,53 @@ def standard_output(from_scratch=True, refresh_exo_data=False, norm_keys: list[s
         if mongo_upload:
             output_star_data.export_to_mongo(catalogs_file_name=nat_cat.catalogs_file_name)
         output_star_data.pickle_myself()
+
     return nat_cat, output_star_data, target_output
 
 if __name__ == "__main__":
+    '''
+    FFF = run normal
+    TFF = run only target list
+    FTF = run multi, both normal (unless changed)
+    TTT = run multi, first normal, second targetlist
+    '''
+
     only_target_list = False
+
+    run_multi_output = False
+    multi_target_list = False
 
     all_params = set()
     run_norm_keys = list(norm_keys_default)
     run_refresh_exo_data = False
     run_from_scratch = True
     run_from_pickled_cat = False
+
     mongo_upload=False
+
+    kwargs_output = dict(from_scratch=run_from_scratch,
+                         norm_keys=run_norm_keys,
+                         refresh_exo_data=run_refresh_exo_data,
+                         from_pickled_cat=run_from_pickled_cat,
+                         mongo_upload=mongo_upload,
+                         )
+
     if only_target_list:
         #run_target_list = os.path.join(target_list_dir, 'Patrick-XRP-target-list-cut.csv')
-        target_list_file = "hypatia/HyData/target_lists/hypatia_mdwarf_cut_justnames.csv"
-        subset_catalog_file = str(os.path.join(hydata_dir, 'subsets', 'mdwarf_subset_catalog_file.csv'))
-        #run_target_list2 = ['HIP 36366', 'HIP 55846', 'HD 103095', 'HIP 33226']
-        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=run_from_scratch,
-                                                                      target_list=target_list_file,
-                                                                      norm_keys=run_norm_keys,
-                                                                      refresh_exo_data=run_refresh_exo_data,
-                                                                      from_pickled_cat=run_from_pickled_cat,
-                                                                      mongo_upload=mongo_upload,
-                                                                      catalogs_file_name = subset_catalog_file,
-                                                                      teff=(2300.0, 4000.0),
-                                                                      logg=(3.5, 6.0),
-                                                                      dist=(0.0, 30.0),
-                                                                      )
+        # run_target_list2 = ['HIP 36366', 'HIP 55846', 'HD 103095', 'HIP 33226']
+        target_list_file = str(os.path.join(target_list_dir, 'hypatia_mdwarf_cut_justnames.csv'))
+        catalog_file = str(os.path.join(hydata_dir, 'subsets', 'mdwarf_subset_catalog_file.csv'))
+        kwargs_params = dict(teff=(2300.0, 4000.0), logg=(3.5, 6.0), dist=(0.0, 30.0),)
     else:
-        nat_cat, output_star_data, target_star_data = standard_output(from_scratch=run_from_scratch,
-                                                                      norm_keys=run_norm_keys,
-                                                                      refresh_exo_data=run_refresh_exo_data,
-                                                                      from_pickled_cat=run_from_pickled_cat,
-                                                                      mongo_upload=mongo_upload,
-                                                                      catalogs_file_name=default_catalog_file
-                                                                      )
+        target_list_file = None
+        catalog_file = default_catalog_file
+        kwargs_params = dict()
 
+    nat_cat, output_star_data, target_star_data = standard_output(**kwargs_output,
+                                                                  target_list=target_list_file,
+                                                                  catalogs_file_name = catalog_file,
+                                                                  **kwargs_params
+                                                                  )
     # output_star_data.xy_plot(x_thing='dist', y_thing='Fe', color="darkorchid", show=False, save=True)
     stats = output_star_data.stats
     # output_star_data.flat_database_output()
@@ -371,3 +380,25 @@ if __name__ == "__main__":
     stars_hypatia = output_star_data.star_names
     print(len(stars_hypatia), "stars after cuts")
     print(stats.stars_with_exoplanets, "stars with exoplanets")
+
+    if run_multi_output:
+        if multi_target_list:
+            target_list_file2 = str(os.path.join(target_list_dir, 'hypatia_mdwarf_cut_justnames.csv'))
+            catalog_file2 = str(os.path.join(hydata_dir, 'subsets', 'mdwarf_subset_catalog_file.csv'))
+            kwargs_params2 = dict(teff=(2300.0, 4000.0), logg=(3.5, 6.0), dist=(0.0, 30.0),)
+        else:
+            target_list_file2 = None
+            catalog_file2 = default_catalog_file
+            kwargs_params2 = dict()
+
+        nat_cat2, output_star_data2, target_star_data2 = standard_output(**kwargs_output,
+                                                                         target_list=target_list_file2,
+                                                                         catalogs_file_name=catalog_file2,
+                                                                         **kwargs_params2
+                                                                         )
+        stats2 = output_star_data2.stats
+        stars_all = nat_cat2.star_data.star_names
+        print(len(stars_all), "total stars (second set)")
+        stars_hypatia2 = output_star_data2.star_names
+        print(len(stars_hypatia2), "stars (second set) after cuts")
+        print(stats2.stars_with_exoplanets, "stars (second set) with exoplanets")
