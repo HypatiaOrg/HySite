@@ -1,6 +1,6 @@
 import os
 
-from sandbox import mdwarf_histogram
+from sandbox import mdwarf_histogram, multi_scatter_plot
 from hypatia.elements import element_rank, ElementID
 from hypatia.pipeline.star.output import load_pickled_output
 from hypatia.configs.source_settings import norm_keys_default
@@ -252,13 +252,14 @@ if __name__ == "__main__":
     FFF = run normal
     TFF = run only target list
     FTF = run multi, both normal (unless changed)
-    TTT = run multi, first normal, second targetlist
+    FTT = run multi, first normal, second targetlist
+    TTT = run multi, first targetlist, second targetlist
     '''
 
-    only_target_list = True
+    only_target_list = False
 
-    run_multi_output = False
-    multi_target_list = False
+    run_multi_output = True
+    multi_target_list = True
 
     run_mdwarf_hist = False
 
@@ -293,16 +294,6 @@ if __name__ == "__main__":
                                                                   catalogs_file_name = catalog_file,
                                                                   **kwargs_params
                                                                   )
-    # output_star_data.xy_plot(x_thing='dist', y_thing='Fe', color="darkorchid", show=False, save=True)
-    stats = output_star_data.stats
-    # output_star_data.flat_database_output()
-    stars_all = nat_cat.star_data.star_names
-    print(len(stars_all), "total stars")
-    stars_hypatia = output_star_data.star_names
-    print(len(stars_hypatia), "stars after cuts")
-    print(stats.stars_with_exoplanets, "stars with exoplanets")
-
-    if run_mdwarf_hist: mdwarf_histogram(stats.star_count_per_element)
 
     if run_multi_output:
         if multi_target_list:
@@ -319,9 +310,23 @@ if __name__ == "__main__":
                                                                          catalogs_file_name=catalog_file2,
                                                                          **kwargs_params2
                                                                          )
+
+    # output_star_data.xy_plot(x_thing='dist', y_thing='Fe', color="darkorchid", show=False, save=True)
+    stats = output_star_data.stats
+    # output_star_data.flat_database_output()
+    stars_all = nat_cat.star_data.star_names
+    print(len(stars_all), "total stars")
+    stars_hypatia = output_star_data.star_names
+    print(len(stars_hypatia), "stars after cuts")
+    print(stats.stars_with_exoplanets, "stars with exoplanets")
+
+    if run_mdwarf_hist: mdwarf_histogram(stats.star_count_per_element)
+
+    if run_multi_output:
         stats2 = output_star_data2.stats
         stars_all = nat_cat2.star_data.star_names
         print(len(stars_all), "total stars (second set)")
         stars_hypatia2 = output_star_data2.star_names
         print(len(stars_hypatia2), "stars (second set) after cuts")
         print(stats2.stars_with_exoplanets, "stars (second set) with exoplanets")
+

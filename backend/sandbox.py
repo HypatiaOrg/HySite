@@ -13,7 +13,8 @@ import matplotlib.pyplot as plt
 
 from hypatia.plots.histograms import autolabel
 from hypatia.plots.histograms import get_hist_bins
-from hypatia.configs.file_paths import histo_dir
+from hypatia.configs.file_paths import histo_dir, plot_dir
+from hypatia.elements import ElementID
 
 def mdwarf_histogram(self):
     ordered_list_of_bins = get_hist_bins(available_bins=self.available_bins,
@@ -66,3 +67,53 @@ def mdwarf_histogram(self):
 
 #mdwarf_histogram(stats.star_count_per_element)
 # Note to self: To run this, run directly in a Python terminal
+
+def get_abunds(output_star_data, element, divide_by, solar_norm_key):
+    num = []
+    denum = []
+    numDenum = []
+    for single_star in output_star_data:
+        elemsAvailable = single_star.reduced_abundances[solar_norm_key].available_abundances
+        if ElementID.from_str(element) in elemsAvailable:
+            num.append(float(single_star.reduced_abundances[solar_norm_key].__getattribute__(element).median))
+            denum.append(float(single_star.reduced_abundances[solar_norm_key].__getattribute__(divide_by).median))
+            numDenum.append(
+                round(float(single_star.reduced_abundances[solar_norm_key].__getattribute__(element).median) -
+                      float(single_star.reduced_abundances[solar_norm_key].__getattribute__(divide_by).median), 2))
+    return num, denum, numDenum
+
+def multi_scatter_plot(output_star_data, output_star_data2, divide_by: str = "Fe", numerators: list[str] = None,
+                       solar_norm_key: str = None, save_figure: bool = False, do_pdf: bool = False, do_png: bool = False,
+                       xlimits: tuple[float | None, float | None] | None = (-3.5, 1.0),
+                       ylimits: tuple[float | None, float | None] | None = (-1.5, 2.0),):
+    if numerators is None:
+        numerators = ["Si", "Mg"] #["Si", "Fe", "Mg"]
+    if solar_norm_key is None:
+        solar_norm_key = 'lodders09'
+    element_list = numerators[:]
+    for element in element_list:
+        num1, denum1, numDenum1 = get_abunds(output_star_data, element, divide_by, solar_norm_key)
+        num2, denum2, numDenum2 = get_abunds(output_star_data2, element, divide_by, solar_norm_key)
+
+        plt.scatter(denum1, numDenum1, marker='o', s=60, facecolor="None", edgecolor="dodgerblue", alpha=0.6, label="Normal Hypatia")
+        plt.scatter(denum2, numDenum2,  marker='o', s=60, facecolor="None", edgecolor="firebrick", alpha=0.6, label="Target List")
+        plt.xlabel("[" + divide_by + "/" + "H" + "]", fontsize=15)
+        plt.ylabel("[" + element + "/" + divide_by + "]", fontsize=15)
+        plt.xlim(xlimits)
+        plt.ylim(ylimits)
+        plt.legend(loc='lower left', scatterpoints=1, fontsize=12)
+
+        figname = element + divide_by + "vs" + divide_by
+
+        if save_figure:
+            base_name = os.path.join(plot_dir, figname)
+            if do_pdf:
+                plt.savefig(base_name + '.pdf')
+            if do_png:
+                plt.savefig(base_name + '.png')
+        else:
+            plt.show()
+
+        plt.clf()
+
+    return
