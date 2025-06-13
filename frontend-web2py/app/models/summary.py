@@ -90,7 +90,6 @@ name_handles_labels['planet_letter'] = 'Planet Letter'
 TABLE_STELLAR = ['raj2000', 'decj2000', 'x_pos', 'y_pos', 'z_pos', 'dist', 'disk', 'sptype', 'vmag', 'bv',
                  'u_vel', 'v_vel', 'w_vel', 'teff', 'logg', 'mass', 'rad']
 TABLE_PLANET = ['planet_letter', 'period', 'eccentricity', 'semi_major_axis', 'pl_mass', 'pl_radius', 'inclination']
-toggle_launch_vars = {'mode'}
 toggle_graph_vars = {'normalize', 'gridlines', 'xaxislog', 'yaxislog', 'zaxislog',
                      'xaxisinv', 'yaxisinv', 'zaxisinv', 'filter1_inv', 'filter2_inv', 'filter3_inv'}
 default_table_rows_to_show = 1000
@@ -125,8 +124,7 @@ session_defaults_launch = {
     'star_list': [],
 }
 
-exported_session_vars = sorted(set(session_defaults_launch.keys()) | toggle_launch_vars | toggle_graph_vars)
-TOOLS = 'crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,'
+exported_session_vars = sorted(set(session_defaults_launch.keys()) | toggle_graph_vars)
 
 for name_handle, name_label in name_handles_labels.items():
     COL_PREFERRED_NAME[name_handle] = name_label

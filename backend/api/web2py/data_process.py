@@ -246,7 +246,7 @@ class FilterForQuery:
             self.planet_params_value_filters[param_id] = (filter_low, filter_high, exclude)
 
 
-def graph_settings_from_request(settings: dict[str, any] | None):
+def graph_settings_from_request(settings: dict[str, any] | None, mode: str = None) -> dict[str, any]:
     if settings is None:
         settings = {}
     filter1_1 = is_none_str(settings.get('filter1_1', None), default=None)
@@ -296,7 +296,8 @@ def graph_settings_from_request(settings: dict[str, any] | None):
         catalogs = sorted({cat_data['id'] for cat_data
                            in [get_catalog_summary(raw_name) for raw_name in raw_cat]
                            if cat_data is not None})
-    mode = settings.get('mode', None)
+    # the requested mode will override the keyword argument
+    mode = settings.get('mode', mode)
     is_histogram = mode == 'hist'
 
     star_list = is_list_str(settings.get('star_list', None))
