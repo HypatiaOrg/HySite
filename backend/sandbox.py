@@ -7,8 +7,14 @@ stats of the main Hypatia sources. To execute, run this file in the terminal. Mi
 standard_lib at some point.
 """
 import os
-
+import sys
 import numpy as np
+import matplotlib
+if sys.platform == 'darwin':
+    matplotlib.use('MacOSX')
+else:
+    matplotlib.use('TkAgg')
+
 import matplotlib.pyplot as plt
 
 from hypatia.plots.histograms import autolabel
