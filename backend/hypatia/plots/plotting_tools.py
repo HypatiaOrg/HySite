@@ -1,6 +1,8 @@
 import math
 import numpy as np
 
+from hypatia.pipeline.nat_cat import NatCat
+from hypatia.elements import element_rank, ElementID
 from hypatia.plots.scatter_hist_hist_plot import histPlot
 
 '''
@@ -8,19 +10,23 @@ Copied over from standard_library on 6 June, 2025. Since the major update Dec 20
 do not work and will need to be updated.
 '''
 
-def element_plot(output_star_data, divide_by: str = "Fe", numerators: list[str] = None):
+def element_plot(output_star_data, divide_by: str = "Fe", numerators: list[str] = None, solar_norm_key: str = None,):
     if numerators is None:
         numerators = ["Si", "Fe", "Mg"]
+    if solar_norm_key is None:
+        solar_norm_key = 'lodders09'
     element_list = numerators[:]
     numerators.remove(divide_by)
-    star_names_list = list(sorted(output_star_data.star_names))
     dict_to_element_array = {}
     for element in element_list:
-        dict_to_element_array[element] = np.array([output_star_data.__getattribute__(star_name)
-                                                  .reduced.__getattribute(element).median
-                                                   for star_name in star_names_list])
+        for single_star in output_star_data:
+            elemID = ElementID.from_str(element)
+            elemsAvailable = single_star.reduced_abundances[solar_norm_key].available_abundances
+            if elemID in elemsAvailable:
+                dict_to_element_array[element] = np.array([single_star.reduced_abundances[solar_norm_key].__getattribute__(element).median])
     division_arrays = [dict_to_element_array[numerator] - dict_to_element_array[divide_by]
                        for numerator in numerators]
+    print(division_arrays[0], division_arrays[1])
     histPlot(xdata=division_arrays[0], ydata=division_arrays[1],
              xxlabel="[" + numerators[0] + "/" + divide_by + "]", yylabel="[" + numerators[1] + "/" + divide_by + "]",
              saveFigure=True)
