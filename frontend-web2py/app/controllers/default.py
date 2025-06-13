@@ -123,7 +123,7 @@ def plot_settings():
     elif session.catalogs is None:
         session.catalogs = []
 
-def graph():
+def scatter_format():
     plot_settings()
     # set the packaged settings values
     settings = get_settings()
@@ -145,6 +145,11 @@ def graph():
     do_zlog = settings['zaxislog'] and is_loggable['zaxis']
     has_zaxis = settings['zaxis1'] != 'none'
     outputs = graph_data['outputs']
+    return outputs, labels, graph_data, do_xlog, do_ylog, do_zlog, has_zaxis, settings
+
+
+def graph():
+    outputs, labels, graph_data, do_xlog, do_ylog, do_zlog, has_zaxis, settings = scatter_format()
     script, div = create_bokeh_scatter(name=outputs.get('name', []),
                                 xaxis=outputs.get('xaxis', []),
                                 yaxis=outputs.get('yaxis', []),
