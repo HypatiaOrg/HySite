@@ -9,6 +9,7 @@ from hypatia.configs.env_load import MONGO_DATABASE
 from hypatia.pipeline.summary import upload_summary
 from hypatia.sources.simbad.ops import get_star_data
 from hypatia.pipeline.params.filters import core_filter
+from hypatia.tools.color_text import attention_yellow_text
 from hypatia.sources.catalogs.solar_norm import solar_norm
 from hypatia.plots.element_rad_plot import make_element_distance_plots
 from hypatia.configs.file_paths import pickle_out, default_catalog_file
@@ -544,6 +545,7 @@ class OutputStarData(AllStarData):
             self.data_norms.add(norm_key)
             if self.verbose:
                 print("  Normalization complete.\n")
+                print(f"Adding catalog into: {attention_yellow_text(default_catalog_file)}\n")
 
     def get_element_ratio_and_distance(self, element_set=None,
                                        distance_list=None, xlimits_list=None, ylimits_list=None,

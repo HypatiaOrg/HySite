@@ -14,6 +14,10 @@ current_user = getuser()
 if os.path.exists(env_filename):
     dotenv.load_dotenv(env_filename)
 
+
+def str_is_true(s: str) -> bool:
+    return s.lower().strip() in ["true", "yes", "1"]
+
 # MongoDB Configuration
 MONGO_HOST = os.environ.get('MONGO_HOST', 'mongoDB')
 MONGO_USERNAME = os.environ.get('MONGO_USERNAME', 'admin')
@@ -23,6 +27,7 @@ MONGO_DATABASE = os.environ.get('MONGO_DATABASE', 'test')
 MONGO_STARNAMES_COLLECTION = os.environ.get('MONGO_STARNAMES_COLLECTION', 'stars')
 INTERACTIVE_STARNAMES = os.environ.get('INTERACTIVE_STARNAMES', 'True').lower() in {'true', '1', 't', 'y', 'yes', 'on'}
 CONNECTION_STRING = os.environ.get('CONNECTION_STRING', 'none')
+DEBUG = str_is_true(os.environ.get("DEBUG", "true"))
 if CONNECTION_STRING.lower() in {None, 'none', 'null', ''}:
     CONNECTION_STRING = None
 

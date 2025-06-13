@@ -246,7 +246,7 @@ class FilterForQuery:
             self.planet_params_value_filters[param_id] = (filter_low, filter_high, exclude)
 
 
-def graph_settings_from_request(settings: dict[str, any] | None):
+def graph_settings_from_request(settings: dict[str, any] | None, mode: str = None) -> dict[str, any]:
     if settings is None:
         settings = {}
     filter1_1 = is_none_str(settings.get('filter1_1', None), default=None)
@@ -296,7 +296,8 @@ def graph_settings_from_request(settings: dict[str, any] | None):
         catalogs = sorted({cat_data['id'] for cat_data
                            in [get_catalog_summary(raw_name) for raw_name in raw_cat]
                            if cat_data is not None})
-    mode = settings.get('mode', None)
+    # the requested mode will override the keyword argument
+    mode = settings.get('mode', mode)
     is_histogram = mode == 'hist'
 
     star_list = is_list_str(settings.get('star_list', None))
@@ -323,7 +324,9 @@ def graph_settings_from_request(settings: dict[str, any] | None):
                 param_type=param_type, param_id=param_id,
                 filter_low=filter_low, filter_high=filter_high, exclude=exclude)
     if star_list:
-        db_formatted_names = sorted({name.replace(' ', '').lower() for name in star_list})
+        db_formatted_names_set = {name.replace(' ', '').lower() for name in star_list}
+        db_formatted_names_set.discard('')
+        db_formatted_names = sorted(db_formatted_names_set)
     else:
         db_formatted_names = None
     db_formatted_names_exclude = star_action == 'exclude'
@@ -602,3 +605,30 @@ def table_query_from_request(settings: dict[str, any] | None = None) -> dict[str
         planet_count=planet_count,
         star_count=star_count,
     )
+
+
+if __name__ == '__main__':
+    from hypatia.configs.env_load import MONGO_DATABASE
+    from hypatia.pipeline.star.db import HypatiaDB
+    hypatiaDB = HypatiaDB(db_name=MONGO_DATABASE, collection_name='hypatiaDB')
+    test_settings = graph_settings_from_request(settings={
+        'filter1_1': 'Fe',
+        'filter1_2': 'C',
+        'filter1_3': -2.0,
+        'filter1_4': 11.0,
+        'xaxis1': 'Fe',
+        'xaxis2': 'C',
+        'yaxis1': 'Si',
+        'yaxis2': 'H',
+        'zaxis1': None,
+        'zaxis2': 'H',
+        'cat_action': None,
+        'star_action': None,
+        'filter1_inv': False,
+        'filter2_inv': False,
+        'filter3_inv': False,
+        'solarnorm': None,
+        'statistic': None,
+        'return_nea_name': True,
+    })
+    test_results = hypatiaDB.frontend_pipeline(**test_settings)
