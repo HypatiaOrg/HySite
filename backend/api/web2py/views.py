@@ -2,7 +2,7 @@ from django.views import View
 from django.http import JsonResponse
 
 from core.settings import DEBUG
-from api.v2.data_process import available_catalogs_v2
+from api.v2.data_process import available_catalogs_v2, representative_error
 from api.web2py.data_process import (home_data, units_and_fields_v2, stellar_param_types_v2,
                                      planet_param_types_v2, ranked_string_params, plot_norms,
                                      graph_settings_from_request, graph_query_pipeline_web2py, histogram_format,
@@ -24,6 +24,7 @@ class Summary(View):
             catalogs=available_catalogs_v2,
             solarnorms=plot_norms,
             element_data=element_data,
+            representative_error=representative_error,
         ))
 
 
