@@ -88,6 +88,9 @@ available_nea_names = summary_doc['ids_with_nea_names']
 # total number of abundance values in the database
 total_abundance_count = hypatia_db.get_abundance_count(norm_key='absolute', by_element=False, count_stars=False)['absolute']
 
+# Representative error values for elements
+representative_error = summary_doc['representative_error']
+
 
 # functions to distribute data
 def get_norm_key(norm_key: str) -> str | None:
