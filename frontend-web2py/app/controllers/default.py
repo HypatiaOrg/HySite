@@ -2,8 +2,6 @@ import json
 import logging
 import urllib.request
 
-from warnings import warn
-
 
 logging.basicConfig(filename='logging.log', level=logging.DEBUG)
 # logging.warning('Test')
@@ -173,7 +171,6 @@ def graph():
 
 def graph_density():
     outputs, labels, graph_data, do_xlog, do_ylog, _do_zlog, _has_zaxis, settings = scatter_format()
-    warn(str(settings))
     div = create_plotly_scatter(name=outputs.get('name', []),
                                 xaxis=outputs.get('xaxis', []),
                                 yaxis=outputs.get('yaxis', []),
