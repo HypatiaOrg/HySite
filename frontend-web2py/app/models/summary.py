@@ -28,6 +28,7 @@ CATALOGS = [AttrDict(cat_dict) for cat_dict in param_data['catalogs']]
 CATALOG_AUTHORS = {cat['id']: cat['author'] for cat in CATALOGS}
 SOLAR_NORMS = [AttrDict(norm_dict) for norm_dict in param_data['solarnorms']]
 element_data = param_data['element_data']
+representative_error = {element.lower().replace('_', ''): error for element, error in param_data['representative_error'].items()}
 h_appended_names = [single_el['element_id'] + 'H' for single_el in element_data]
 h_appended_names_set = set(h_appended_names)
 rank_ordered_elements = {single_el['element_id']: el_index for el_index, single_el in list(enumerate(element_data))}
@@ -46,6 +47,12 @@ COL_UNITS = {}
 for handle, param_defs in units_and_fields.items():
     if 'decimals' in param_defs.keys():
         COL_FORMAT[handle] = f'%.{param_defs["decimals"]}f'
+        try:
+            exponent= int(f'-{param_defs["decimals"]}')
+        except ValueError:
+            pass
+        else:
+            representative_error[handle] = float(f'1.e{exponent + 2}')
     # elif 'units' in param_defs.keys() and param_defs['units'] == 'string':
     else:
         COL_FORMAT[handle] = '%s'
@@ -90,7 +97,7 @@ name_handles_labels['planet_letter'] = 'Planet Letter'
 TABLE_STELLAR = ['raj2000', 'decj2000', 'x_pos', 'y_pos', 'z_pos', 'dist', 'disk', 'sptype', 'vmag', 'bv',
                  'u_vel', 'v_vel', 'w_vel', 'teff', 'logg', 'mass', 'rad']
 TABLE_PLANET = ['planet_letter', 'period', 'eccentricity', 'semi_major_axis', 'pl_mass', 'pl_radius', 'inclination']
-toggle_graph_vars = {'normalize', 'gridlines', 'xaxislog', 'yaxislog', 'zaxislog',
+toggle_graph_vars = {'normalize', 'gridlines', 'show_xyhist', 'xaxislog', 'yaxislog', 'zaxislog',
                      'xaxisinv', 'yaxisinv', 'zaxisinv', 'filter1_inv', 'filter2_inv', 'filter3_inv'}
 default_table_rows_to_show = 1000
 
@@ -122,6 +129,9 @@ session_defaults_launch = {
     'catalogs': [],
     'star_action': 'exclude',
     'star_list': [],
+    'xhist_bin_size': None,
+    'yhist_bin_size': None,
+    'color_pallet': 'hypatia',
 }
 
 exported_session_vars = sorted(set(session_defaults_launch.keys()) | toggle_graph_vars)

@@ -35,10 +35,25 @@
                 {{=LOAD("default","dropdown.load",vars=dict(id="yaxis",value1=session.yaxis1,value2=session.yaxis2,log=True,logstate=session.yaxislog,inverse=session.yaxisinv))}}
             </dd>
             <br/>
-            <dt>Z-axis (color):</dt>
             <dd>
-                {{=LOAD("default","dropdown.load",vars=dict(id="zaxis",value1=session.zaxis1,value2=session.zaxis2,allownone=True,log=True,logstate=session.zaxislog,inverse=session.zaxisinv))}}
+                <input type="checkbox" {{if session.show_xyhist:}}checked="checked"{{pass}} id="show_xyhist" name="show_xyhist" onchange="refresh()">
+                <label for="show_xyhist">
+                    Show X and Y histograms
+                </label>
             </dd>
+            <dt>X histograms bin size</dt>
+            <input type="text" id="xhist_bin_size" name="xhist_bin_size"  placeholder="{{='Float or keywords: (' + ', '.join(bin_tags) + ')'}}" value="{{=session.xhist_bin_size}}" class="form-control" onchange="refresh()">
+            <dt>Y histograms bin size</dt>
+            <input type="text" id="yhist_bin_size" name="yhist_bin_size" placeholder="{{='Float or keywords: (' + ', '.join(bin_tags) + ')'}}" class="form-control" value="{{=session.yhist_bin_size}}" onchange="refresh()">
+            <br/>
+            <dt>Choose a Color Pallet</dt>
+            <dd>
+                <select class="form-control" name="color_pallet" onchange="refresh()">
+                    {{for color_pallet in color_pallets:}}
+                    <option name="color_pallet" value="{{=color_pallet}}" {{if session.color_pallet==color_pallet:}}selected="selected"{{pass}}>{{=color_pallet}}</option>
+
+                    {{pass}}
+                </select>
             <br/>
             <dt>Solar normalization:</dt>
             <dd>

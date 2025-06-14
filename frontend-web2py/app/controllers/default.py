@@ -2,6 +2,8 @@ import json
 import logging
 import urllib.request
 
+from warnings import warn
+
 
 logging.basicConfig(filename='logging.log', level=logging.DEBUG)
 # logging.warning('Test')
@@ -162,27 +164,33 @@ def graph():
                                 do_xlog=do_xlog, do_ylog=do_ylog, do_zlog=do_zlog,
                                 xaxisinv=settings['xaxisinv'], yaxisinv=settings['yaxisinv'],
                                 zaxisinv=settings['zaxisinv'], has_zaxis=has_zaxis,
-                                do_gridlines=settings['gridlines'])
+                                do_gridlines=settings['gridlines'],
+                                color_pallet=settings['color_pallet'],
+                                solar_norm=settings['solarnorm'],
+                                )
     # send back to the browser
     return dict(script=script, div=div)
 
 
 
 def graph_density():
-    outputs, labels, graph_data, do_xlog, do_ylog, do_zlog, has_zaxis, settings = scatter_format()
+    outputs, labels, graph_data, do_xlog, do_ylog, _do_zlog, _has_zaxis, settings = scatter_format()
+    warn(str(settings))
     div = create_plotly_scatter(name=outputs.get('name', []),
                                 xaxis=outputs.get('xaxis', []),
                                 yaxis=outputs.get('yaxis', []),
-                                zaxis=outputs.get('zaxis', []),
                                 x_label=labels.get('xaxis', None),
                                 y_label=labels.get('yaxis', None),
-                                z_label=labels.get('zaxis', None),
                                 star_count=graph_data.get('star_count', None),
                                 planet_count=graph_data.get('planet_count', None),
-                                do_xlog=do_xlog, do_ylog=do_ylog, do_zlog=do_zlog,
+                                do_xlog=do_xlog, do_ylog=do_ylog,
                                 xaxisinv=settings['xaxisinv'], yaxisinv=settings['yaxisinv'],
-                                zaxisinv=settings['zaxisinv'], has_zaxis=has_zaxis,
-                                do_gridlines=settings['gridlines'])
+                                do_gridlines=settings['gridlines'],
+                                show_xyhist=settings['show_xyhist'],
+                                xhist_bin_size=settings['xhist_bin_size'],
+                                yhist_bin_size= settings['yhist_bin_size'],
+                                color_pallet=settings['color_pallet'],
+                                )
     # send back to the browser
     return dict(div=div)
 
