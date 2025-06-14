@@ -165,8 +165,6 @@ def graph():
                                 xaxisinv=settings['xaxisinv'], yaxisinv=settings['yaxisinv'],
                                 zaxisinv=settings['zaxisinv'], has_zaxis=has_zaxis,
                                 do_gridlines=settings['gridlines'],
-                                color_pallet=settings['color_pallet'],
-                                solar_norm=settings['solarnorm'],
                                 )
     # send back to the browser
     return dict(script=script, div=div)
