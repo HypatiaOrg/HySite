@@ -1,6 +1,5 @@
 @import "tailwindcss";
-@tailwind base;
-@tailwind components;
+@import "tailwindcss/preflight";
 @tailwind utilities;
 
 :root {
@@ -24,4 +23,13 @@ body {
     .text-balance {
         text-wrap: balance;
     }
+}
+
+@theme{
+    --color-hypurple: #4E11B7;
+    --color-hygreen: #4B7F52;
+    --color-hyred: #C42348;
+    --color-hyblue: #A6E1FA;
+    --color-hyyellow: #FCBA04;
+    --color-hygrey: #8A8A8A;
 }
