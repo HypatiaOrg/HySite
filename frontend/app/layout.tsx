@@ -17,35 +17,34 @@ export const metadata: Metadata = {
 
 };
 
+
+const linkTextStyle = "px-4 hover:underline hover:text-hyyellow"
+
+
 export function NavMenu(): ReactElement {
     return (
-        <div className="flex-none w-full items-center font-mono text-lg p-4 bg-hypurple text-white">
-            <div className="flex flex-row w-full gap-4">
-                <div>
+        <div className="flex-none w-full items-center bg-hypurple text-white font-mono p-2 text-xs lg:p-4 lg:text-base 2xl:text-xl">
+            <div className="flex flex-row w-full">
+                <div className={linkTextStyle}>
                     <Link href="/">Home</Link>
                 </div>
-                |
-                <div>
+                <div className={linkTextStyle}>
                     <Link href="/hypatia/default/launch">Elements & Properties</Link>
                 </div>
-                |
-                <div>
+                <div className={linkTextStyle}>
                     <Link href="/hypatia/default/launch?mode=hist"> Stars With/Without Planets </Link>
                 </div>
-                <div className="flex flex-grow justify-end gap-4">
-                    <div>
+                <div className="flex flex-grow justify-end">
+                    <div className={linkTextStyle}>
                         <Link href="/hypatia/default/help">Help</Link>
                     </div>
-                    |
-                    <div>
+                    <div className={linkTextStyle}>
                         <Link href="/hypatia/default/about">About</Link>
                     </div>
-                    |
-                    <div>
+                    <div className={linkTextStyle}>
                         <Link href="/hypatia/default/credits">Acknowledgements</Link>
                     </div>
-                    |
-                    <div>
+                    <div className={linkTextStyle}>
                         <Link href="/api">API</Link>
                     </div>
                 </div>
@@ -62,23 +61,23 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en">
-        <head>
-            <Script src="https://www.googletagmanager.com/gtag/js?id=G-TNXP7EHWXV"/>
-            <Script id="google-analytics">
-                {`
-                  window.dataLayer = window.dataLayer || [];
-                  function gtag() {dataLayer.push(arguments)}
-                  gtag('js', new Date());
-                  gtag('config', 'G-TNXP7EHWXV');
-                `}
-            </Script>
-        </head>
-        <body className={inter.className}>
-            <main className="flex flex-col h-full w-full absolute top-0 left-0 z-10">
-                <NavMenu/>
-                {children}
-            </main>
-        </body>
+            <head>
+                <Script src="https://www.googletagmanager.com/gtag/js?id=G-TNXP7EHWXV"/>
+                <Script id="google-analytics">
+                    {`
+                      window.dataLayer = window.dataLayer || [];
+                      function gtag() {dataLayer.push(arguments)}
+                      gtag('js', new Date());
+                      gtag('config', 'G-TNXP7EHWXV');
+                    `}
+                </Script>
+            </head>
+            <body className={inter.className}>
+                <main className="flex flex-col h-full w-full absolute top-0 left-0 z-10">
+                    <NavMenu/>
+                    {children}
+                </main>
+            </body>
         </html>
 );
 }
