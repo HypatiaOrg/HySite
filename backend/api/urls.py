@@ -6,7 +6,7 @@ from api.stats.views import Histogram
 from api.planets.views import PlanetView
 from api.views import HomeView, SummaryView, HypatiaDataBaseView
 from api.metadata.views import SolarNorms, RepresentativeErrorView
-from api.web2py.views import Web2pyHome, Summary, GraphView, TableView
+from api.web2py.views import Web2pyHome, Summary, ScatterView, HistView, TableView
 from api.v2.views import Nea, Data, Composition, Star, SolarNorm, AvailableElements, AvailableCatalogs
 
 
@@ -20,7 +20,8 @@ urlpatterns = [
     path('v2/catalog/', AvailableCatalogs.as_view(), name='catalog'),
     path('web2py/home/', Web2pyHome.as_view(), name='web2py-home'),
     path('web2py/summary/', Summary.as_view(), name='web2py-summary'),
-    path('web2py/graph/', GraphView.as_view(), name='web2py-graph'),
+    path('web2py/scatter/', ScatterView.as_view(), name='web2py-scatter'),
+    path('web2py/hist/', HistView.as_view(), name='web2py-hist'),
     path('web2py/table/', TableView.as_view(), name='web2py-table'),
     path('planets/', PlanetView.as_view(), name='planets'),
     path('graph/', Graph.as_view(), name='graph'),

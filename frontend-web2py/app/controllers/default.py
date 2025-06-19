@@ -1,23 +1,7 @@
-import os
-import copy
-
-import urllib.request
-import numpy as np
-from bokeh.plotting import figure, show, output_file, ColumnDataSource
-from bokeh.models import HoverTool, ColumnDataSource, ColorBar, LinearColorMapper, LogColorMapper, CustomJS, Label
-from bokeh.embed import components
-from bokeh.palettes import Viridis3, Viridis256
-from bokeh.io import export_png, export_svgs
-
-import shelve
-import uuid
 import json
-import random
-import re
-from datetime import datetime
 import logging
+import urllib.request
 
-from time import time
 
 logging.basicConfig(filename='logging.log', level=logging.DEBUG)
 # logging.warning('Test')
@@ -25,13 +9,16 @@ logging.basicConfig(filename='logging.log', level=logging.DEBUG)
 
 # -*- coding: utf-8 -*-
 ### required - do no delete
-def user(): return dict(form=auth())
+def user():
+    return dict(form=auth())
 
 
-def download(): return response.download(request, db)
+def download():
+    return response.download(request, db)
 
 
-def call(): return service()
+def call():
+    return service()
 
 
 ### end requires
@@ -58,14 +45,7 @@ def credits():
     return dict()
 
 
-def launch():
-    requested_mode = request.vars.mode
-    if isinstance(requested_mode, list):
-        requested_mode = requested_mode[0]
-    if requested_mode == 'hist':
-        session.mode = 'hist'
-    else:
-        session.mode = 'scatter'
+def init_session():
     # add default values for missing session variables
     for var_name, default_val in session_defaults_launch.items():
         session_value = session.__getattr__(var_name)
@@ -75,6 +55,16 @@ def launch():
     # splitting of strings into lists
     if isinstance(session.tablecols, str):
         session.tablecols = session.tablecols.split(',')
+    return
+
+
+def launch():
+    init_session()
+    return dict()
+
+
+def hist():
+    init_session()
     return dict()
 
 
@@ -101,8 +91,7 @@ def get_settings() -> dict[str, any]:
             all_settings[graph_var] = session_value
     return all_settings
 
-
-def graph():
+def plot_settings():
     all_request_vars = set(request.vars.keys())
     # set new session values (non-toggles controls) from the request
     for key in all_request_vars - toggle_graph_vars:
@@ -129,189 +118,63 @@ def graph():
     elif session.catalogs is None:
         session.catalogs = []
 
+def graph():
+    plot_settings()
     # set the packaged settings values
     settings = get_settings()
     # paras the axis make iterables that are in the form of the final returned data product
-    axes = ['xaxis']
-    if settings['mode'] != 'hist':
-        axes.append('yaxis')
-        if 'zaxis' in settings.keys() and settings['zaxis'] != 'none':
-            axes.append('zaxis')
+    axes = ['xaxis', 'yaxis']
+    if 'zaxis' in settings.keys() and settings['zaxis'] != 'none':
+        axes.append('zaxis')
     # set the API request for the data values
     url_values = urllib.parse.urlencode(settings)
-    full_url = f'{BASE_API_URL}graph/?{url_values}'
+    full_url = f'{BASE_API_URL}scatter/?{url_values}'
     graph_data_web = urllib.request.urlopen(full_url)
     graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
+    # plotting the data based on the settings
+    labels = graph_data['labels']
 
-    if settings['mode'] == 'scatter':
-        outputs = graph_data['outputs']
-        labels = graph_data['labels']
-        star_count = graph_data['star_count']
-        planet_count = graph_data['planet_count']
-        is_loggable = graph_data['is_loggable']
-        if planet_count is not None:
-            status = f'{planet_count} planets selected from {star_count} stars'
-        else:
-            status = f'{star_count} stars selected'
-        # if there is no data, then return a message
-        if not outputs:
-            return 'No data points to display'
-        # handle tooltips
-        source = ColumnDataSource(outputs)
-        tooltips = "<b>@name</b><br/><div style='max-width:300px'>" + ', '.join(
-            [labels[axis] + ' = @' + axis + '{0.00}' for axis in set(labels)]) + '</div>'
-        hover = HoverTool(tooltips=tooltips)
-        # build the bounds
-        x_min = min(outputs['xaxis'])
-        x_max = max(outputs['xaxis'])
-        if x_min == x_max:
-            x_min -= 1
-            x_max += 1
-        y_min = min(outputs['yaxis'])
-        y_max = max(outputs['yaxis'])
-        if y_min == y_max:
-            y_min -= 1
-            y_max += 1
-        x_diff = x_max - x_min
-        y_diff = y_max - y_min
-        x_margin = 0.10 * x_diff
-        y_margin = 0.10 * y_diff
-        x_range = [x_min - x_margin, x_max + x_margin]
-        y_range = [y_min - y_margin, y_max + y_margin]
-        # set the axis type: log or linear
-        if settings['xaxislog'] and is_loggable['xaxis']:
-            x_axis_type = 'log'
-            x_array = np.array(outputs['xaxis'])
-            x_range[0] = np.min(x_array[x_array > 0])
-        else:
-            x_axis_type = 'linear'
-        if settings['yaxislog'] and is_loggable['yaxis']:
-            y_axis_type = 'log'
-            y_array = np.array(outputs['yaxis'])
-            y_range[0] = np.min(y_array[y_array > 0])
-        else:
-            y_axis_type = 'linear'
-        # invert the axis if necessary
-        if settings['xaxisinv']:
-            x_range = x_range[::-1]
-        if settings['yaxisinv']:
-            y_range = y_range[::-1]
-        # build the figure
-        p = figure(tools=[TOOLS, hover], width=750, height=625,
-                   x_range=x_range,
-                   y_range=y_range,
-                   x_axis_type=x_axis_type, y_axis_type=y_axis_type)
-        p.title.text = status
-        p.title.align = 'center'
+    is_loggable = graph_data['is_loggable']
+    do_xlog = settings['xaxislog'] and is_loggable['xaxis']
+    do_ylog = settings['yaxislog'] and is_loggable['yaxis']
+    do_zlog = settings['zaxislog'] and is_loggable['zaxis']
+    has_zaxis = settings['zaxis1'] != 'none'
+    outputs = graph_data['outputs']
+    script, div = create_bokeh_scatter(name=outputs.get('name', []),
+                                       xaxis=outputs.get('xaxis', []),
+                                       yaxis=outputs.get('yaxis', []),
+                                       zaxis=outputs.get('zaxis', []),
+                                       x_label=labels.get('xaxis', None),
+                                       y_label=labels.get('yaxis', None),
+                                       z_label=labels.get('zaxis', None),
+                                       star_count=graph_data.get('star_count', None),
+                                       planet_count=graph_data.get('planet_count', None),
+                                       do_xlog=do_xlog, do_ylog=do_ylog, do_zlog=do_zlog,
+                                       xaxisinv=settings['xaxisinv'], yaxisinv=settings['yaxisinv'],
+                                       zaxisinv=settings['zaxisinv'], has_zaxis=has_zaxis,
+                                       do_gridlines=settings['gridlines'])
+    # send back to the browser
+    return dict(script=script, div=div)
 
-        # color if needed
-        if settings['zaxis1'] != 'none':
-            palette = Viridis256
-            # invert the z-axis if necessary
-            if settings['zaxisinv']:
-                palette = palette[::-1]
-            # set up a log scale if necessary
-            if settings['zaxislog'] and is_loggable['zaxis']:
-                mapper = LogColorMapper(palette=palette, low=min(outputs['zaxis']), high=max(outputs['zaxis']))
-            else:
-                mapper = LinearColorMapper(palette=palette, low=min(outputs['zaxis']), high=max(outputs['zaxis']))
-            # build the scatter plot
-            p.scatter('xaxis', 'yaxis', fill_color={'field': 'zaxis', 'transform': mapper},
-                      line_color={'field': 'zaxis', 'transform': mapper},
-                      fill_alpha=0.3, line_alpha=0.8, source=source, size=8)
-            color_bar = ColorBar(color_mapper=mapper, height=100, title=labels['zaxis'].replace('_', ' '), border_line_width=1,
-                                 border_line_color='#cccccc', label_standoff=7)
-            p.add_layout(color_bar)
-        else:
-            # build the scatter plot
-            p.scatter('xaxis', 'yaxis', fill_color='#4E11B7', line_color='#4E11B7', fill_alpha=0.3, line_alpha=0.6,
-                      source=source, size=8)
 
-        # callback
-        callback = CustomJS(args={'allPlotData': source}, code="""
-                const inds = cb_obj.indices;
-                const d1 = allPlotData.data;
-                const result = inds.map(i => d1['name'][i].replace("HIP ",""));
-                $("#star_list").val(result.join(","));
-                $("select[name='star_action']").val("only");
-                $("select[name='star_source']").val("hip")
-            """)
-        source.selected.js_on_change('indices', callback)
-
-        # citation
-        citation = Label(x=10, y=10, x_units='screen', y_units='screen',
-                         text='Hypatia Catalog ' + datetime.now().strftime('%Y-%m-%d'),
-                         text_alpha=0.5)
-        p.add_layout(citation)
-
-    else:
-        # histogram - compare all data to the stars with planets
-        hist_all = graph_data['hist_all']
-        hist_planet = graph_data['hist_planet']
-        edges = graph_data['edges']
-        labels = graph_data['labels']
-        x_data = graph_data['x_data']
-        if not x_data:
-            return 'No data points to display'
-        max_hist_all = float(max(hist_all))
-        # normalize if necessary
-        if settings['normalize']:
-            labels['yaxis'] = 'Relative Frequency'
-            fill_alpha = 0.5
-            line_alpha = 0.2
-        else:
-            labels['yaxis'] = 'Number of Stellar Systems'
-            fill_alpha = 1
-            line_alpha = 1
-        # set the bounds of the plot
-        x_min = min(x_data)
-        x_max = max(x_data)
-        x_range = [x_min, x_max]
-        # invert the plot if necessary
-        if settings['xaxisinv']:
-            x_range = x_range[::-1]
-        # build the plot object
-        p = figure(tools=[TOOLS], width=750, height=625,
-                   x_range=x_range,
-                   y_range=[0, max_hist_all * 1.20])
-        p.quad(top=hist_all, bottom=0, left=edges[:-1], right=edges[1:],
-               fill_color='maroon', line_color='black', fill_alpha=fill_alpha, line_alpha=line_alpha,
-               legend_label='All Hypatia')
-        p.quad(top=hist_planet, bottom=0, left=edges[:-1], right=edges[1:],
-               fill_color='orange', line_color='black', fill_alpha=fill_alpha, line_alpha=line_alpha,
-               legend_label='Exo-Hosts')
-        # citation
-        citation = Label(x=10, y=10, x_units='screen', y_units='screen',
-                         text='Hypatia Catalog ' + datetime.now().strftime('%Y-%m-%d'),
-                         text_alpha=0.5)
-        p.add_layout(citation)
-
-    if not settings['gridlines']:
-        p.xgrid.grid_line_color = None
-        p.ygrid.grid_line_color = None
-
-    # miscellaneous settings
-    p.xaxis.axis_label = labels['xaxis'].replace('_', ' ')
-    p.yaxis.axis_label = labels['yaxis'].replace('_', ' ')
-    p.xaxis.axis_label_text_font_size = '12pt'
-    p.xaxis.axis_label_text_font_style = 'normal'
-    p.xaxis.major_label_text_font_size = '12pt'
-    p.xaxis.major_label_text_font_style = 'normal'
-    p.yaxis.axis_label_text_font_size = '12pt'
-    p.yaxis.axis_label_text_font_style = 'normal'
-    p.yaxis.major_label_text_font_size = '12pt'
-    p.yaxis.major_label_text_font_style = 'normal'
-
-    # generate PNG, SVG
-    if request.extension == 'png':
-        return export_png(p)
-    elif request.extension == 'svg':
-        p.output_backend = 'svg'
-        return export_svgs(p)
-
-    # generate HTML
-    script, div = components(p)
-
+def graph_hist():
+    plot_settings()
+    # set the packaged settings values
+    settings = get_settings()
+    # set the API request for the data values
+    url_values = urllib.parse.urlencode(settings)
+    full_url = f'{BASE_API_URL}hist/?{url_values}'
+    graph_data_web = urllib.request.urlopen(full_url)
+    graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
+    # plotting the data based on the settings
+    labels = graph_data['labels']
+    script, div = create_bokeh_hist(hist_all=graph_data['hist_all'], hist_planet = graph_data['hist_planet'],
+                                    edges=graph_data['edges'],
+                                    x_label=labels.get('x_label', None),
+                                    x_data = graph_data['x_data'],
+                                    normalize=settings['normalize'], xaxisinv=settings['xaxisinv'],
+                                    do_gridlines=settings['gridlines'],
+                                    )
     # send back to the browser
     return dict(script=script, div=div)
 
@@ -357,25 +220,28 @@ def table():
         requested_planet_params = TABLE_PLANET + ['nea_name']
 
     # the elements
-    elements_to_use = set()
+    fe_elements = set()
     if 'Fe' in table_columns_set:
         columns.append('Fe')
         requested_elements.append('Fe')
-        elements_to_use.add('Fe')
+        fe_elements.add('Fe')
         if show_error:
             columns.append('Fe_err')
         if 'FeII' in table_columns_set:
             columns.append('FeII')
             requested_elements.append('FeII')
-            elements_to_use.add('FeII')
+            fe_elements.add('FeII')
             if show_error:
                 columns.append('FeII_err')
+    other_elements = set()
     for item in table_columns_set:
-        if item[0].isupper() and item not in elements_to_use:
-            columns.append(item)
-            requested_elements.append(item)
-            if show_error:
-                columns.append(f'{item}_err')
+        if item[0].isupper() and item not in fe_elements:
+            other_elements.add(item)
+    for element_name in sorted(other_elements, key=element_rank):
+        columns.append(element_name)
+        requested_elements.append(element_name)
+        if show_error:
+            columns.append(f'{element_name}_err')
 
     # add planet parameters
     if 'planet' in table_columns_set:
@@ -447,6 +313,8 @@ def table():
                     cell_value += 0.0
                 if isinstance(cell_value, str):
                     cell_value_str = cell_value
+                elif cell_value is None:
+                    cell_value_str = ''
                 elif col_name in requested_elements_set:
                     cell_value_str = f'{cell_value:1.2f}'
                 elif col_name in COL_FORMAT.keys():

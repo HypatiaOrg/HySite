@@ -1,0 +1,113 @@
+<div style="background:#f8f8f8;text-align:center;padding:8px;border-top: 2px solid #4e11b7">
+    <big>
+        <b>
+            <span class="glyphicon glyphicon-chevron-down" aria-hidden="true"></span>
+            Data Table
+        </b>
+        <span id="status"></span>
+    </big>
+</div>
+
+<form method="post" style="padding-bottom:20px; background: #f8f8f8; border-bottom: 2px solid #4e11b7">
+    <input class="hidden" name="table_submit" value="true">
+    <div id="tablesettings" style=" margin-left:auto;margin-right:auto;width:880px">
+        <input style="display:none" type="radio" id="tablesource_graph" name="tablesource" value="graph" {{if session.tablesource=="graph":}}checked="checked"{{pass}}>
+        <label style="display:none" for="tablesource_graph">Use stars plotted in the graph above</label>
+        <br/>
+        <input style="display:none" type="radio" id="tablesource_list" name="tablesource" value="list" {{if session.tablesource=="list":}}checked="checked"{{pass}}>
+        <label style="display:none" for="tablesource_list">Use stars from a list of
+            <select name="tableidentifier" id="tableidentifier" onchange="$('#tablesource_list').prop('checked',true);"
+                <option value="hip" {{if session.tableidentifier == "hip":}}selected="selected"{{pass}}>HIP</option>
+                <option value="hd" {{if session.tableidentifier == "hd":}}selected="selected"{{pass}}>HD</option>
+            </select> identifiers:
+        </label>
+        <input type="text" id="tablelist" name="tablelist" placeholder="e.g. 56572,7599,57172" style="width:400px;display:none" value="{{=session.tablelist or ''}}">
+
+        {{=XML(build_periodic_table(show_species=True))}}
+        <br/>
+
+        <div>
+            <btn id="pt-names" class="btn btn-pt btn-default" onclick="toggle(this);refresh_table();">Add All Names</btn>
+            <btn id="pt-stellar" class="btn btn-pt btn-default" onclick="toggle(this);refresh_table();">Add Stellar Properties</btn>
+            <btn id="pt-planet" class="btn btn-pt btn-default" onclick="toggle(this);refresh_table();">Add Planet Properties</btn>
+            <btn id="pt-spread" class="btn btn-pt btn-default" onclick="toggle(this);refresh_table();">Add Error</btn>
+            <input id="tablecols" name="tablecols" type="hidden">
+            <br/>
+            <br/>
+            <div class="btn-group" role="group">
+                <input type="submit">
+                <btn class="btn btn-default" onclick="reset();">Reset</btn>
+                <div class="btn-group" role="group">
+                    <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" style="display:none">
+                        Download Data Table
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                        <li><a href="/hypatia/default/table.html/hypatia-{{=datetime.strftime(datetime.now(),'%d%m%Y')}}.html?download=true">Save as HTML</a></li>
+                        <li><a href="/hypatia/default/table.csv/hypatia-{{=datetime.strftime(datetime.now(),'%d%m%Y')}}.csv?download=true">Save as CSV</a></li>
+                        <li><a href="/hypatia/default/table.tsv/hypatia-{{=datetime.strftime(datetime.now(),'%d%m%Y')}}.tsv?download=true">Save as TSV</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<br/>
+<div style="margin-left:20px;margin-bottom:20px">
+    <span class="glyphicon glyphicon-triangle-bottom" aria-hidden="true"></span> Download this table:
+    <a class="btn btn-link" href="/hypatia/default/table.html/hypatia-{{=datetime.strftime(datetime.now(),'%d%m%Y')}}.html?download=true">HTML</a>
+    <a class="btn btn-link" href="/hypatia/default/table.csv/hypatia-{{=datetime.strftime(datetime.now(),'%d%m%Y')}}.csv?download=true">CSV</a>
+    <a class="btn btn-link" href="/hypatia/default/table.tsv/hypatia-{{=datetime.strftime(datetime.now(),'%d%m%Y')}}.tsv?download=true">TSV</a>
+</div>
+{{=LOAD("default","table.load",target="stars",ajax=True,timeout=999999)}}
+<div id="stars"></div>
+
+<style>
+    .hide {
+        display:none;
+    }
+    div.stickyHeader {
+        top:0;
+        position:fixed;
+        _position:absolute;
+    }
+    .bk-tooltip div:nth-child(n+11) {
+        display:none;
+    }
+    a {
+        color: #4e11b7;
+    }
+</style>
+
+<script>
+        function refresh_table() {
+        items = []
+        $("#tablesettings input[name],select[name]").each(function() {
+            items.push(this.name)
+        });
+
+        ajax('/hypatia/default/table.load',items,'stars');
+    }
+
+    function reset() {
+        $(".btn-pt").removeClass("btn-success");
+        $("#pt-Fe").addClass("btn-success");
+        $("#pt-C").addClass("btn-success");
+        $("#pt-O").addClass("btn-success");
+        $("#pt-Mg").addClass("btn-success");
+        $("#pt-Si").addClass("btn-success");
+        $("#pt-S").addClass("btn-success");
+        $("#pt-Ca").addClass("btn-success");
+        $("#pt-Ti").addClass("btn-success");
+        $("#tablecols").val($(".btn-success").map(function(index,dom){return dom.id.slice(3)}).toArray().join(","));
+        refresh_table();
+    }
+
+    $("#catalogs").select2().on('change', function (e) {
+        refresh();
+    });
+
+    {{for item in session.tablecols:}}
+    toggle($("#pt-{{=item}}"));
+    {{pass}}
+</script>
