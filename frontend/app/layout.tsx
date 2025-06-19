@@ -18,13 +18,13 @@ export const metadata: Metadata = {
 };
 
 
-const linkTextStyle = "px-4 hover:underline hover:text-hyyellow"
+const linkTextStyle = "px-4 hover:underline hover:text-hyyellow border-2 md:border-none border-hyyellow hover:bg-hygrey hover:text-hypurple rounded-lg";
 
 
 export function NavMenu(): ReactElement {
     return (
-        <div className="flex-none w-full items-center bg-hypurple text-white font-mono p-2 text-xs lg:p-4 lg:text-base 2xl:text-xl">
-            <div className="flex flex-row w-full">
+        <div className="flex-none w-full items-center bg-hypurple text-white font-mono p-2 text-xl lg:p-4 lg:text-base 2xl:text-xl 2xl:p-6">
+            <div className="md:flex w-full">
                 <div className={linkTextStyle}>
                     <Link href="/">Home</Link>
                 </div>
@@ -34,7 +34,7 @@ export function NavMenu(): ReactElement {
                 <div className={linkTextStyle}>
                     <Link href="/hypatia/default/launch?mode=hist"> Stars With/Without Planets </Link>
                 </div>
-                <div className="flex flex-grow justify-end">
+                <div className="md:flex md:flex-grow md:justify-end">
                     <div className={linkTextStyle}>
                         <Link href="/hypatia/default/help">Help</Link>
                     </div>
