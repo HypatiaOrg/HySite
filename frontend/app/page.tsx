@@ -4,36 +4,45 @@ import {getHomeData} from "@/data/fetch_data";
 
 
 const linkStyle = "text-hyred hover:text-hypurple hover:bg-hyyellow hover:underline"
+const homeGrid = "bg-white grid grid-cols-16";
+const paragraphStyle = "text-hygrey col-span-14 col-start-2 indent-12 pt-4";
 
 export default async function Home() {
     const counts = await getHomeData();
     console.log(counts);
     return (
         <>
-            <div className="flex flex-row px-8 bg-hyyellow">
-                <Image
-                    src="/static/hypatialogo2.png"
-                    width="350"
-                    height="350"
-                    alt="Hyptia Catalog Logo"
-                />
-                <div className="flex flex-col justify-center">
-                    <h1 className="text-6xl font-bold text-hypurple">Hypatia Catalog Database</h1>
-                    <p>
-                        Explore stellar abundance data
-                        for <b> {counts['stars'].toLocaleString()} </b> stars,
-                        <b> {counts['stars_with_planets'].toLocaleString()} </b> of which host planets
-                        and <b>{counts['stars_multistar'].toLocaleString()}</b> of which are in multistar systems,
-                        <b> {counts['elements'].toLocaleString()} </b> elements and species,
-                        <b> {counts['catalogs'].toLocaleString()} </b> catalogs, and
-                        <b> {counts['abundances'].toLocaleString()} </b> abundance measurements.</p>
-                    <p>
-                        <Link className={linkStyle} href="/scatter">Get Started »</Link>
-                    </p>
+            <div className="px-8 bg-radial-[at_50%_75%] from-hyyellow via-yellow-500 to-yellow-600 to-90%">
+                <div className="max-w-6xl mx-auto py-4 w-full md:flex flex-row md:items-center md:justify-between">
+                    <div className="flex flex-row justify-center items-center">
+                        <Image
+                            src="/static/hypatialogo2.png"
+                            width="350"
+                            height="350"
+                            alt="Hyptia Catalog Logo"
+                        />
+                    </div>
+                    <div className="flex flex-col items-center text-center md:justify-center md:items-start md:text-left">
+                        <h1 className="text-6xl font-bold text-hypurple">Hypatia Catalog Database</h1>
+                        <h2 className="text-2xl font-semibold text-hyred">
+                            Explore stellar abundance data for
+                        </h2>
+                        <ul className="list-inside list-inline ml-4">
+                            <li><b> {counts['stars'].toLocaleString()} </b> stars,</li>
+                            <li><b> {counts['stars_with_planets'].toLocaleString()} </b> of which host planets and </li>
+                            <li><b> {counts['stars_multistar'].toLocaleString()} </b> of which are in multistar systems, </li>
+                            <li><b> {counts['elements'].toLocaleString()} </b> elements and species, </li>
+                            <li><b> {counts['catalogs'].toLocaleString()} </b> catalogs, and </li>
+                            <li><b> {counts['abundances'].toLocaleString()} </b> abundance measurements. </li>
+                        </ul>
+                        <div className="text-hyred  border-hyred border-solid border-2 rounded-lg p-4 mt-4 text-2xl hover:bg-hygrey hover:border-hypurple hover:text-hyyellow">
+                            <Link href="/scatter">Get Started »</Link>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div className="bg-blue-100">
-                <p className='text-hygrey'>
+            <div className={homeGrid}>
+                <div className={paragraphStyle}>
                     The Hypatia Catalog is a multidimensional,
                     amalgamate dataset comprised of stellar elemental abundance measurements
                     for FGKM-type stars within 500 pc of the Sun
@@ -47,11 +56,10 @@ export default async function Home() {
                     In addition, stellar properties and planetary properties,
                     where applicable, have been made available.
                     Data can be downloaded either through the website
-                    or through the terminal via <a href="/api">our API</a>
+                    or through the terminal via <Link href="/api">our API</Link>
                     for use in external plotting routines and data analysis.
-                </p>
-                <br/>
-                <p className='text-hygrey'>
+                </div>
+                <p className={paragraphStyle}>
                     Help and documentation about the plots, tables,
                     and advanced controls within the Hypatia Catalog Database
                     can be found on the
@@ -62,17 +70,19 @@ export default async function Home() {
                     are featured on the
                     <Link href="/about" className={linkStyle}> About </Link>
                     page. Thank yous and acknowledgments to be included in published papers can be found under
-                    <Link href="/acknowledgements" className={linkStyle}> Acknowledgements </Link>.
+                    <Link href="/acknowledgements" className={linkStyle}> Acknowledgements</Link>.
                     Finally, for any website or data updates, issues, or corrections, please email
-                    <Link href="mailto:hypatiacatalog@gmail.com" className={linkStyle}> hypatiacatalog@gmail.com </Link>.
+                    <Link href="mailto:hypatiacatalog@gmail.com" className={linkStyle}> hypatiacatalog@gmail.com</Link>.
                 </p>
                 <br/>
-                <p className="text-hygrey">
+                <p className={paragraphStyle}>
                     A detailed description of the Hypatia Catalog can be found in
                     <Link href="http://adsabs.harvard.edu/abs/2014AJ....148...54H" className={linkStyle}> Hinkel et al. (2014)</Link>.
                     The Hypatia Catalog and Hypatia Catalog Database will continue to be routinely updated
                     in order to incorporate the most recent stellar abundance data published within the literature.
                 </p>
+            </div>
+            <div>
                 <div className="relative h-[28rem] w-full">
                     <Image
                         src="/static/abundances.png"
@@ -80,10 +90,12 @@ export default async function Home() {
                         alt="Histogram of the element abundances in the Hypatia Catalog and the number of stars for which each element has been measured."
                     />
                 </div>
-                <p className="text-hygrey">
-                    Number of stars for which each element abundance has been measured as of June 2022.
-                    Every star in the Hypatia Catalog has at least [Fe/H] and one other element.
-                </p>
+                <div className={homeGrid}>
+                    <p className="text-hyblue bg-hypurple col-span-14 col-start-2 indent-12 pt-4">
+                        Number of stars for which each element abundance has been measured as of June 2022.
+                        Every star in the Hypatia Catalog has at least [Fe/H] and one other element.
+                    </p>
+                </div>
             </div>
         </>
     );
