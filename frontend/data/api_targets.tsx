@@ -19,7 +19,11 @@ export function findBaseURL() {
 
 // General API locations
 export function apiBaseURL() {
-    return findBaseURL() + "hypatia/api/web2py/";
+    const baseURL = findBaseURL() + "hypatia/api/web2py/";
+    if (DEBUG) {
+        console.log("Using API base URL:", baseURL);
+    }
+    return baseURL;
 }
 
 // Specific API locations for the Hypatia Catalog pages
@@ -27,3 +31,11 @@ export function homeAPI() {
     return apiBaseURL() + "home/";
 }
 
+
+const url_prefix = "/hypatia/default";
+export const scatter_url = url_prefix + "/launch";
+export const hist_url = url_prefix + "/hist";
+export const help_url =  url_prefix + "/help";
+export const about_url =  url_prefix + "/about";
+export const credits_url =  url_prefix + "/credits";
+export const about_api_url = "/api";

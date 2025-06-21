@@ -1,6 +1,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import {getHomeData} from "@/data/fetch_data";
+import {DEBUG} from "@/data/api_targets";
+import hypatiaLogo from "@/public/hypatialogo2.png";
+import {AbundancesHist} from "@/components/image";
+import {scatter_url, help_url, about_url, credits_url, about_api_url} from "@/data/api_targets";
 
 
 const linkStyle = "text-hyred hover:text-hypurple hover:bg-hyyellow hover:underline"
@@ -9,14 +13,16 @@ const paragraphStyle = "text-hygrey col-span-14 col-start-2 indent-12 pt-4";
 
 export default async function Home() {
     const counts = await getHomeData();
-    console.log(counts);
+    if (DEBUG) {
+        console.log("Home page counts:", counts);
+    }
     return (
         <>
             <div className="px-8 bg-radial-[at_50%_75%] from-hyyellow via-yellow-500 to-yellow-600 to-90%">
                 <div className="max-w-6xl mx-auto py-4 w-full md:flex flex-row md:items-center md:justify-between">
                     <div className="flex flex-row justify-center items-center">
                         <Image
-                            src="/static/hypatialogo2.png"
+                            src={hypatiaLogo}
                             width="350"
                             height="350"
                             alt="Hyptia Catalog Logo"
@@ -36,7 +42,7 @@ export default async function Home() {
                             <li><b> {counts['abundances'].toLocaleString()} </b> abundance measurements. </li>
                         </ul>
                         <div className="text-hyred  border-hyred border-solid border-2 rounded-lg p-4 mt-4 text-2xl hover:bg-hygrey hover:border-hypurple hover:text-hyyellow">
-                            <Link href="/scatter">Get Started »</Link>
+                            <Link href={scatter_url}>Get Started »</Link>
                         </div>
                     </div>
                 </div>
@@ -56,21 +62,22 @@ export default async function Home() {
                     In addition, stellar properties and planetary properties,
                     where applicable, have been made available.
                     Data can be downloaded either through the website
-                    or through the terminal via <Link href="/api">our API</Link>
+                    or through the terminal via
+                    <Link href={about_api_url}>our API</Link>
                     for use in external plotting routines and data analysis.
                 </div>
                 <p className={paragraphStyle}>
                     Help and documentation about the plots, tables,
                     and advanced controls within the Hypatia Catalog Database
                     can be found on the
-                    <Link href="/help" className={linkStyle}> Help </Link>
+                    <Link href={help_url} className={linkStyle}> Help </Link>
                     page in the top right corner.
                     More detailed information about the data, properties,
                     individual literature sources, and decisions within the Hypatia Catalog
                     are featured on the
-                    <Link href="/about" className={linkStyle}> About </Link>
+                    <Link href={about_url} className={linkStyle}> About </Link>
                     page. Thank yous and acknowledgments to be included in published papers can be found under
-                    <Link href="/acknowledgements" className={linkStyle}> Acknowledgements</Link>.
+                    <Link href={credits_url} className={linkStyle}> Acknowledgements</Link>.
                     Finally, for any website or data updates, issues, or corrections, please email
                     <Link href="mailto:hypatiacatalog@gmail.com" className={linkStyle}> hypatiacatalog@gmail.com</Link>.
                 </p>
@@ -84,11 +91,7 @@ export default async function Home() {
             </div>
             <div>
                 <div className="relative h-[28rem] w-full">
-                    <Image
-                        src="/static/abundances.png"
-                        fill={true}
-                        alt="Histogram of the element abundances in the Hypatia Catalog and the number of stars for which each element has been measured."
-                    />
+                    <AbundancesHist/>
                 </div>
                 <div className={homeGrid}>
                     <p className="text-hyblue bg-hypurple col-span-14 col-start-2 indent-12 pt-4">

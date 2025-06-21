@@ -28,6 +28,12 @@ module.exports = {
                 destination: '/:launch',
                 permanent: true,
             },
+            {
+                source: '/hypatia',
+                destination: '/',
+                permanent: true,
+            },
         ]
     },
+    output: 'standalone',
 }

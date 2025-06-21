@@ -49,6 +49,18 @@ services:
         networks:
             - hynet
 
+    next-frontend:
+        container_name: next-frontend
+        build:
+            context: ./frontend
+            network: host
+        restart: "${RESTART_POLICY:-no}"
+        read_only: "${READ_ONLY:-false}"
+        networks:
+            - hynet
+        profiles:
+            -   next
+
     django-api:
         container_name: backend
         build: ./backend

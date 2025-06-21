@@ -1,9 +1,9 @@
-import Link from 'next/link';
 import Script from 'next/script'
 import type { Metadata} from "next";
-import React, {ReactElement} from "react";
+import React from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import NavMenu from "@/components/header";
 
 
 
@@ -16,42 +16,6 @@ export const metadata: Metadata = {
     keywords: ["stellar abundance", "exoplanet", "astronomy", "spectroscopy", "elements", "chemistry", "Hypatia", "database", "physics", "stellar composition", "stellar make up", "stellar properties", "planet composition", "planet abundances", "planet make up", "interior structure", "interior mineralogy", "dex notation", "hinkle", "astronomy natalie"]
 
 };
-
-
-const linkTextStyle = "px-4 hover:underline hover:text-hyyellow border-2 md:border-none border-hyyellow hover:bg-hygrey hover:text-hypurple rounded-lg";
-
-
-export function NavMenu(): ReactElement {
-    return (
-        <div className="flex-none w-full items-center bg-hypurple text-white font-mono p-2 text-xl lg:p-4 lg:text-base 2xl:text-xl 2xl:p-6">
-            <div className="md:flex w-full">
-                <div className={linkTextStyle}>
-                    <Link href="/">Home</Link>
-                </div>
-                <div className={linkTextStyle}>
-                    <Link href="/hypatia/default/launch">Elements & Properties</Link>
-                </div>
-                <div className={linkTextStyle}>
-                    <Link href="/hypatia/default/launch?mode=hist"> Stars With/Without Planets </Link>
-                </div>
-                <div className="md:flex md:flex-grow md:justify-end">
-                    <div className={linkTextStyle}>
-                        <Link href="/hypatia/default/help">Help</Link>
-                    </div>
-                    <div className={linkTextStyle}>
-                        <Link href="/hypatia/default/about">About</Link>
-                    </div>
-                    <div className={linkTextStyle}>
-                        <Link href="/hypatia/default/credits">Acknowledgements</Link>
-                    </div>
-                    <div className={linkTextStyle}>
-                        <Link href="/api">API</Link>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
 
 
 export default function RootLayout({

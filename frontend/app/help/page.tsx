@@ -44,7 +44,35 @@ export default function HelpPage() {
                 </p>
                 <p className="c2"><span className="c0"></span></p>
                 <h1 className="c14" id="h.agtiyh92ekx"><span className="c7">ADVANCED CONTROLS</span></h1>
-                <p className="c3 c9"><span className="c0">For those users wishing to change some of the more nuanced aspects of the stellar abundances within the Hypatia Catalog and Database, we provide the ability to make adjustments. In order to ensure that all of the stellar abundances within Hypatia are on the same baseline, all individual catalogs have been renormalized to the same solar normalization. The default is Lodders et al. (2009). As part of the database, the user can change the solar normalization to be with respect to Asplund et al. (2009), Grevesse et al. (2007), Asplund et al. (2005), Grevesse &amp; Sauval (1998), and Anders &amp; Grevesse (1989). If the user would like to view the stellar abundances with respect to the solar normalization employed by each of the catalogs individually, the &ldquo;Original&rdquo; option can be chosen. We note that abundances originally published in absolute A(X) notation cannot be shown when the "Original" normalization is selected, since no solar normalization was specified by the authors at the time of publication. However, when a solar normalization is chosen by the Hypatia Catalog Database user, then all abundances -- [X/H], [X/Fe], or A(X) -- are placed on the same solar scale. The absolute abundances, namely without a solar normalization, can be viewed by choosing &ldquo;Absolute.&rdquo; If an element is selected (with respect to H or Fe) and the plot returns "No data points to display," the original data may be only available as absolute. See <a
+                <p className="c3 c9">
+                    <span className="c0">
+                        For those users wishing to change some of the aspects
+                        of the stellar abundances within the Hypatia Catalog and Database,
+                        we provide the ability to make adjustments.
+                        In order to ensure that all of the stellar abundances
+                        within Hypatia are on the same baseline,
+                        all individual catalogs have been renormalized to the same solar normalization.
+                        The default is Lodders et al. (2009).
+                        As part of the database, the user can change the solar normalization to be with respect to
+                        Asplund et al. (2009),
+                        Grevesse et al. (2007),
+                        Asplund et al. (2005),
+                        Grevesse &amp; Sauval (1998),
+                        and Anders &amp;
+                        Grevesse (1989).
+                        If the user would like to view the stellar abundances with respect to the
+                        solar normalization employed by each of the catalogs individually,
+                        the &ldquo;Original&rdquo; option can be chosen.
+                        We note that abundances originally published in
+                        absolute A(X) notation cannot be shown when the &ldquo;Original&ldquo; normalization is selected,
+                        since no solar normalization was specified by the authors at the time of publication.
+                        However, when a solar normalization is chosen by the Hypatia Catalog Database user,
+                        then all abundances -- [X/H], [X/Fe], or A(X) -- are placed on the same solar scale.
+                        The absolute abundances, namely without a solar normalization,
+                        can be viewed by choosing &ldquo;Absolute.&rdquo;
+                        If an element is selected (with respect to H or Fe)
+                        and the plot returns &ldquo;No data points to display,&ldquo;
+                        the original data may be only available as absolute. See <a
                     className="c6" href="https://ui.adsabs.harvard.edu/abs/2022AJ....164..256H/abstract" target="_blank">Hinkel, Young, & Wheeler (2022)</a> for more details.</span>
                 </p>
                 <p className="c2"><span className="c0"></span></p>
