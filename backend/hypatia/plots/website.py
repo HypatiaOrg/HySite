@@ -22,6 +22,7 @@ def abundance_histogram(verbose: bool = False) -> None:
     star_count_per_element_histogram(element_strings=element_strings,
                                      star_counts=star_counts,
                                      filename=filename,
+                                     web_labels=True,
                                      verbose=verbose)
 
 
