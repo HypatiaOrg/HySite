@@ -1,5 +1,6 @@
 # allow the output directory and subdirectories to be initialized but empty otherwise
 output
+!output/website/*
 !output/catalog_pickles/.gitignore
 !output/database_test/.gitignore
 !output/plots/.gitignore
