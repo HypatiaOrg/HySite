@@ -1,4 +1,6 @@
 import os
+import calendar
+from datetime import date
 
 import requests
 import numpy as np
@@ -6,7 +8,7 @@ import matplotlib.pyplot as plt
 
 from hypatia.elements import element_rank, ElementID
 from hypatia.tools.color_text import file_name_text, colorize_text
-from hypatia.configs.file_paths import histo_dir, histogram_api_url
+from hypatia.configs.file_paths import histo_dir, histogram_api_url, db_summery_url
 
 colors = ['goldenrod', 'dodgerblue', 'darkorange', 'darkorchid', 'darkgreen']
 hypatia_purple = '#4E11B7'
@@ -80,9 +82,21 @@ def get_star_count_per_element_data() -> tuple[list[str], list[int]]:
     element_strings, star_counts = zip(*star_counts_per_element.items())
     return element_strings, star_counts
 
+def get_summary_data() -> dict:
+    """
+    Get the summary data from the Hypatia API.
+    """
+    response = requests.get(url=db_summery_url)
+    if response.status_code != 200:
+        raise ValueError(f'Error fetching summary data: {response.status_code} - {response.text}')
+    return response.json()
+
 def star_count_per_element_histogram(element_strings: list[str], star_counts: list[int], filename: str = None,
-                                     verbose: bool = True, web_labels: bool = False) \
+                                     web_labels: bool = False, literature_sources: int = None,
+                                     verbose: bool = True,) \
         -> tuple[list[str], plt.Figure, plt.Axes]:
+    if literature_sources is None:
+        literature_sources = "+340"
     ordered_list_of_bins = get_hist_bins(available_bins=set(element_strings), is_element_id=True)
     n = len(ordered_list_of_bins)
     hits = [0]
@@ -97,8 +111,11 @@ def star_count_per_element_histogram(element_strings: list[str], star_counts: li
     height = top - bottom
     # I turn the axis frame off. I like my data to look free and run off the page.
     ax = fig.add_axes((left, bottom, width, height), frameon=True)
-    rects1 = plt.bar(ind, hits, width, color='#4E11B7')
-    ax.set_xlabel('Element Abundances in the Hypatia Catalog', fontsize=15)
+    rects1 = plt.bar(ind, hits, width, color=hypatia_purple)
+    today = date.today()
+    month = today.month
+    month_name = calendar.month_name[month]
+    ax.set_xlabel(f'Element Abundances in the Hypatia Catalog ({month_name} {today.year})', fontsize=15)
     ax.set_ylabel('Number of Stars with Measured Element X', fontsize=15)
     y_min = 0.0
     y_max = np.max(hits) + 1000.0
@@ -111,9 +128,9 @@ def star_count_per_element_histogram(element_strings: list[str], star_counts: li
     ax.set_xticklabels(names_up_down)
     ax.tick_params(axis='x', which='minor', length=25)
     ax.tick_params(axis='x', which='both', color='darkgrey')
-    ax.text(60, 12000, 'FGKM-type Stars Within 500pc: '+str(np.max(hits)), fontsize=23,  fontweight='bold', color='#4E11B7')
-    ax.text(60, 10500, 'Literature Sources: +340', fontsize=23,  fontweight='bold', color=hypatia_purple)
-    ax.text(60, 9000, f'Number of Elements/Species: {len(element_strings)}', fontsize=23,  fontweight='bold', color='#4E11B7')
+    ax.text(60, 12000, f'FGKM-type Stars Within 500pc: {np.max(hits)}', fontsize=23,  fontweight='bold', color=hypatia_purple)
+    ax.text(60, 10500, f'Literature Sources: {literature_sources}', fontsize=23,  fontweight='bold', color=hypatia_purple)
+    ax.text(60, 9000, f'Number of Elements/Species: {len(element_strings)}', fontsize=23,  fontweight='bold', color=hypatia_purple)
     if web_labels:
         auto_web_labels(rects1, text_offset=y_range * 0.008, label_inverse_point=y_range * 0.10)
     else:
@@ -133,11 +150,17 @@ def star_count_per_element_histogram(element_strings: list[str], star_counts: li
             text=f' {len(element_strings)} ', style_text='bold', color_text='black', color_background='yellow'))
     return ordered_list_of_bins, fig, ax
 
+
 if __name__ == '__main__':
     from hypatia.configs.file_paths import output_website_dir
     abundance_test = os.path.join(output_website_dir, 'abundances-test.png')
     element_strings, star_counts = get_star_count_per_element_data()
+    summary_data = get_summary_data()
+    catalogs = summary_data['catalogs']
+    unique_sources = set(cat_dict['author'] for cat_dict in catalogs.values())
+
     ordered_list_of_bins_hist, fig_hist, ax_hist = star_count_per_element_histogram(element_strings=element_strings,
                                                                                     star_counts=star_counts,
                                                                                     filename=abundance_test,
+                                                                                    literature_sources=len(unique_sources),
                                                                                     web_labels=True)

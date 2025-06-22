@@ -16,9 +16,9 @@ class HypatiaDataBaseView(View):
     throttle_scope = 'full_db'
 
     def get(self, request):
-        return JsonResponse(hypatia_db.find_all())
+        return JsonResponse(list(hypatia_db.find_all()), safe=False)
 
 
 class SummaryView(View):
     def get(self, request):
-        return JsonResponse(summary_db.find_all())
+        return JsonResponse(summary_db.get_summary())
