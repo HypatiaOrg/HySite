@@ -57,7 +57,7 @@ services:
             args:
                 MONGO_USERNAME: "${MONGO_USERNAME:-admin}"
                 MONGO_PASSWORD: "${MONGO_PASSWORD:-super-not-secure}"
-                MONGO_BUILD_HOST: "${MONGO_BUILD_HOST:-hypatiacatalog.com}"
+                MONGO_HOST: "${MONGO_BUILD_HOST:-hypatiacatalog.com}"
                 MONGO_DATABASE: "${MONGO_DATABASE:-test}"
                 MONGO_STARNAMES_COLLECTION: "${MONGO_STARNAMES_COLLECTION:-stars}"
         restart: "${RESTART_POLICY:-no}"

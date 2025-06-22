@@ -49,7 +49,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 # let this user own the website plots directory
 RUN mkdir -p $WEBSITE_PLOTS_DIR
-RUN chown mz_python:monty_group $WEBSITE_PLOTS_DIR
+RUN chown -R mz_python:monty_group $WEBSITE_PLOTS_DIR
 # switch to the python user
 USER mz_python
 # create the website plots
