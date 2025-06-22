@@ -4,6 +4,7 @@ from standard_lib import standard_output
 from hypatia.collect import BaseCollection
 from hypatia.pipeline.star.db import HypatiaDB
 from hypatia.sources.simbad.db import StarCollection
+from hypatia.plots.website import abundance_histogram
 from hypatia.pipeline.summary import SummaryCollection
 from hypatia.configs.source_settings import norm_keys_default
 from hypatia.configs.env_load import MONGO_DATABASE, MONGO_STARNAMES_COLLECTION
@@ -58,6 +59,10 @@ def publish_stars(target_db_name: str = 'stars', source_db_name: str = MONGO_STA
             )
 
 
+def do_website_plots():
+    abundance_histogram(verbose=True)
+
+
 if __name__ == '__main__':
     import argparse
 
@@ -73,16 +78,23 @@ if __name__ == '__main__':
                         dest='refresh_exo_data')
     parser.add_argument('--publish', action='store_true',
                         help='Publish the Hypatia database to the public database. '
-                             'Any non=publish arguments are ignored.'
+                             'If elected all non-publish arguments are ignored. ' 
                              'Data is transferred from a test database to the public database.',
                         default=False)
     parser.add_argument('--publish-stars', action='store_true',
                         help='Publish the Hypatia metadata.stars from another test database.'
-                             'Any non=publish arguments are ignored. '
+                             'If elected all non-publish arguments are ignored. '
                              'data is transferred from a test database default metadata database.',
                         default=False)
+    parser.add_argument('--make-website-plots', action='store_true',
+                        help='Make the website plots, such as the abundance histogram. '
+                             'If selected, all other arguments are ignored.',
+                        default=False, dest='make_website_plots')
+
     args = parser.parse_args()
-    if args.publish or args.publish_stars:
+    if args.make_website_plots:
+        do_website_plots()
+    elif args.publish or args.publish_stars:
         if args.publish:
             publish_hypatia()
         if args.publish_stars:
