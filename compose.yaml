@@ -53,10 +53,11 @@ services:
         container_name: backend
         build:
             context: ./backend
+            network: host
             args:
                 MONGO_USERNAME: "${MONGO_USERNAME:-admin}"
                 MONGO_PASSWORD: "${MONGO_PASSWORD:-super-not-secure}"
-                MONGO_HOST: "${MONGO_HOST:-hypatiacatalog.com}"
+                MONGO_BUILD_HOST: "${MONGO_BUILD_HOST:-hypatiacatalog.com}"
                 MONGO_DATABASE: "${MONGO_DATABASE:-test}"
                 MONGO_STARNAMES_COLLECTION: "${MONGO_STARNAMES_COLLECTION:-stars}"
         restart: "${RESTART_POLICY:-no}"
