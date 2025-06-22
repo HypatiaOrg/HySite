@@ -55,10 +55,15 @@ def get_hist_bins(available_bins: set[str] | set[ElementID], is_element_id: bool
     return ordered_list_of_bins
 
 
-def star_count_per_element_histogram():
+def get_star_count_per_element_data() -> tuple[list[str], list[int]]:
     star_counts_per_element = requests.get(url=histogram_api_url).json()
     element_strings, star_counts = zip(*star_counts_per_element.items())
-    ordered_list_of_bins = get_hist_bins(available_bins=element_strings, is_element_id=True)
+    return element_strings, star_counts
+
+def star_count_per_element_histogram(element_strings: list[str], star_counts: list[int], filename: str = None,
+                                     verbose: bool = True) \
+        -> tuple[list[str], plt.Figure, plt.Axes]:
+    ordered_list_of_bins = get_hist_bins(available_bins=set(element_strings), is_element_id=True)
     n = len(ordered_list_of_bins)
     hits = [0]
     hits.extend(star_counts)
@@ -83,13 +88,17 @@ def star_count_per_element_histogram():
     autolabel(rects1)
     #ax.show()
     ax.set_aspect('auto')
-    name='bigHist-'+str(np.max(hits))+'.pdf'
-    file_name = os.path.join(histo_dir, name)
-    fig.savefig(file_name)
-    print(f'Saved plot to: {file_name_text(file_name)}')
-    print('Number of elements: ' + colorize_text(
-        text=f' {len(element_strings)} ', style_text='bold', color_text='black', color_background='yellow'))
+    if filename is None:
+        name = f'bigHist-{np.max(hits)}.pdf'
+        filename = os.path.join(histo_dir, name)
+    fig.savefig(filename)
+    if verbose:
+        print(f'Saved plot to: {file_name_text(filename)}')
+        print('Number of elements: ' + colorize_text(
+            text=f' {len(element_strings)} ', style_text='bold', color_text='black', color_background='yellow'))
     return ordered_list_of_bins, fig, ax
 
 if __name__ == '__main__':
-    ordered_list_of_bins_hist, fig_hist, ax_hist = star_count_per_element_histogram()
+    element_strings, star_counts = get_star_count_per_element_data()
+    ordered_list_of_bins_hist, fig_hist, ax_hist = star_count_per_element_histogram(element_strings=element_strings,
+                                                                                    star_counts=star_counts)

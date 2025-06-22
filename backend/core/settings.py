@@ -11,14 +11,38 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 import os
+import shutil
 from pathlib import Path
 from warnings import warn
 
-from hypatia.configs.file_paths import test_database_dir
+from hypatia.configs.file_paths import test_database_dir, output_website_dir
 
 
 def str_is_true(s: str) -> bool:
     return s.lower().strip() in ["true", "yes", "1"]
+
+
+def copy_static_files(source_dir: str = None, target_dir: str = None) -> None:
+    """
+    Copy static files from directory populated at container build time
+    to a directory the has a docker volume mounted to it.
+    """
+    # delete all files in the target directory
+    for item in os.listdir(target_dir):
+        item_path = os.path.join(target_dir, item)
+        if os.path.isfile(item_path):
+            os.remove(item_path)
+        elif os.path.isdir(item_path):
+            shutil.rmtree(item_path)
+    # copy files from source to target directory
+    for item in os.listdir(source_dir):
+        source_item = os.path.join(source_dir, item)
+        target_item = os.path.join(target_dir, item)
+        if os.path.isdir(source_item):
+            shutil.copytree(source_item, target_item, dirs_exist_ok=True)
+        else:
+            shutil.copy2(source_item, target_item)
+    print(f'Copied static files from {source_dir} to {target_dir}')
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -34,6 +58,7 @@ SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY",  'django-insecure-cd&fl(0@&4*%#
 DEBUG = str_is_true(os.environ.get("DEBUG", "true"))
 if DEBUG:
     warn("DEBUG is set to True. Do not run with DEBUG=True in production.")
+
 
 ALLOWED_HOSTS = [
     'hypatiacatalog.com',
@@ -151,6 +176,17 @@ STATICFILES_DIRS = [
 ]
 
 STATIC_ROOT = os.path.join(BASE_DIR, "static_root")
+
+# move static files and plots if the specified target directory is found (like in a docker container)
+app_static_dir = os.path.join('/', 'app', 'static')
+app_plots_dir = os.path.join(app_static_dir, 'plots')
+if os.path.isdir(app_static_dir):
+    copy_static_files(source_dir=STATIC_ROOT, target_dir=app_static_dir)
+    # create the plots directory if it does not exist
+    if not os.path.exists(app_plots_dir):
+        os.makedirs(app_plots_dir)
+    # copy the static files to the plots directory
+    copy_static_files(source_dir=output_website_dir, target_dir=app_plots_dir)
 
 
 # Default primary key field type

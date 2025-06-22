@@ -12,6 +12,7 @@ working_dir = os.path.join(base_dir, 'hypatia')
 configs_dir = os.path.join(working_dir, 'configs')
 
 output_products_dir = os.path.join(base_dir, 'output')
+output_website_dir = os.path.join(output_products_dir, 'website')
 cat_pickles_dir = os.path.join(output_products_dir, 'catalog_pickles')
 
 plot_dir = os.path.join(output_products_dir, 'plots')
