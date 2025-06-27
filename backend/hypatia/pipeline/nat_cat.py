@@ -14,6 +14,7 @@ from hypatia.pipeline.star.output import OutputStarData
 from hypatia.sources.catalogs.solar_norm import SolarNorm
 from hypatia.sources.catalogs.catalogs import get_catalogs
 from hypatia.sources.simbad.batch import get_star_data_batch
+from hypatia.pipeline.star.targets import read_all_targets_files
 from hypatia.sources.simbad.ops import get_main_id, get_star_data
 from hypatia.configs.file_paths import working_dir, ref_dir, abundance_dir, pickle_nat, default_catalog_file
 
@@ -84,6 +85,8 @@ class NatCat:
         self.stats_for_star_data()
         self.stats = self.star_data.stats
         self.star_data.find_available_attributes()
+        self.target_web_data = None
+        self.get_web_targets()
 
     def catalog_data(self):
         if self.verbose:
@@ -259,6 +262,16 @@ class NatCat:
             output_star_data.reduce_elements()
         output_star_data.find_available_attributes()
         return output_star_data
+
+
+    def get_web_targets(self):
+        self.target_web_data = read_all_targets_files()
+        for single_star in self.star_data:
+            main_star_id = single_star.star_reference_name
+            for target_handle, target_data in self.target_web_data.items():
+                if main_star_id in target_data['ids']:
+                    single_star.add_target(target_handle)
+
 
     def pickle_myself(self):
         if self.verbose:

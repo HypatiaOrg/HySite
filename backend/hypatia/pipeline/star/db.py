@@ -140,6 +140,10 @@ class HypatiaDB(BaseStarCollection):
             doc['normalizations'] = normalizations
         if nlte_abundances:
             doc['nlte'] = nlte_abundances
+        target_handles = single_star.target_handles
+        if target_handles is None:
+            target_handles = []
+        doc['target_handles'] = target_handles
         self.add_one(doc=doc)
         print(f'Added {simbad_doc["_id"]} to the database')
 

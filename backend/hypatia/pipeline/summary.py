@@ -5,6 +5,7 @@ from hypatia.object_params import expected_params_dict
 from hypatia.elements import summary_dict, elements_found
 from hypatia.sources.catalogs.ops import export_to_records
 from hypatia.configs.file_paths import default_catalog_file
+from hypatia.pipeline.star.targets import required_fields, not_for_summary_fields
 
 
 
@@ -203,6 +204,41 @@ class SummaryCollection(BaseCollection):
                         'description': 'must be a string for the main identifier of a star that has a NEA name'
                     },
                 },
+                'targets': {
+                    'bsonType': 'object',
+                    'description': 'must be an object with keys that are the target handles and values that are the target data',
+                    'additionalProperties': False,
+                    'patternProperties': {
+                        '.+': {
+                            'bsonType': 'object',
+                            'description': 'must be an object that describes a target',
+                            'required': list(required_fields),
+                            'additionalProperties': True,
+                            'properties': {
+                                'handle': {
+                                    'bsonType': 'string',
+                                    'description': 'must be a string for the handle of the target'
+                                },
+                                'title': {
+                                    'bsonType': 'string',
+                                    'description': 'must be a string for the title of the target'
+                                },
+                                'ref': {
+                                    'bsonType': 'string',
+                                    'description': 'must be a string for the reference of the target'
+                                },
+                                'names': {
+                                    'bsonType': 'array',
+                                    'description': 'must be an array of strings for the names of the target',
+                                    'items': {
+                                        'bsonType': 'string',
+                                        'description': 'must be a string for the name of the target'
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
             },
         },
     }
@@ -217,7 +253,9 @@ def upload_summary(normalizations: dict[str, float| int | str | dict[str, float]
                    plusminus_error: dict[ElementID, float],
                    found_elements: set[ElementID] = None, found_element_nlte: set[ElementID] = None,
                    catalogs_file_name: str = default_catalog_file, found_catalogs: set[str] = None,
-                   ids_with_wds_names: set[str] = None, ids_with_nea_names: set[str] = None):
+                   ids_with_wds_names: set[str] = None, ids_with_nea_names: set[str] = None,
+                   targets: dict[str, dict[str, str | list[str]]] = None,
+                   ):
     if found_elements is None:
         found_elements = set()
     if found_element_nlte is None:
@@ -228,6 +266,8 @@ def upload_summary(normalizations: dict[str, float| int | str | dict[str, float]
         ids_with_wds_names = set()
     if ids_with_nea_names is None:
         ids_with_nea_names = set()
+    if targets is None:
+        targets = {}
     summary_db = SummaryCollection(db_name=MONGO_DATABASE, collection_name='summary')
     summary_db.reset()
 
@@ -248,5 +288,8 @@ def upload_summary(normalizations: dict[str, float| int | str | dict[str, float]
         'representative_error': {str(el_id): error_value for el_id, error_value in plusminus_error.items()},
         'ids_with_wds_names': sorted(ids_with_wds_names),
         'ids_with_nea_names': sorted(ids_with_nea_names),
+        'targets': {target_handle: {key: value for key, value in target_data.items()
+                                    if key not in not_for_summary_fields}
+                    for target_handle, target_data in targets.items()},
     }
     summary_db.add_one(doc)
