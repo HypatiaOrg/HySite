@@ -238,7 +238,6 @@ def create_bokeh_targets(name: list[str],
         score = len(found_target_handles)
         for handle in found_target_handles:
             score += 0.01 * (requested_handles.index(handle))
-            logging.warning(f'handle: {handle} score {score} len {len(found_target_handles)}')
         return score
 
     scores = [sort_key(target_handle) for target_handle in target_handles]
@@ -265,7 +264,7 @@ def create_bokeh_targets(name: list[str],
                     fill_alphas.append(or_matches_plot_options['fill_alpha'])
                     line_alphas.append(or_matches_plot_options['line_alpha'])
                 else:
-                    plot_dict = targets_metadata.get(single_handle, {})
+                    plot_dict = targets_metadata.get(list(requested_handles)[0], {})
                     colors.append(plot_dict.get('color', 'yellow'))
                     fill_alphas.append(plot_dict.get('fill_alpha', 0.5))
                     line_alphas.append(plot_dict.get('line_alpha', 0.8))
@@ -321,7 +320,7 @@ def create_bokeh_targets(name: list[str],
         'yaxis':  y_label if y_label else 'Y Axis',
     }
     tooltips = "<b>@names</b><br/><div style='max-width:300px'>" + ', '.join(
-        [labels[axis] + ' = @' + axis + '{0.00}' for axis in set(labels)]) + '</div>'
+        [labels[axis] + ' = @' + axis[0] + '{0.00}' for axis in set(labels)]) + '</div>'
     hover = HoverTool(tooltips=tooltips)
     # handle tooltips
     source = ColumnDataSource(bokeh_source)
