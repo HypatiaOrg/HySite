@@ -594,6 +594,7 @@ def table_query_from_request(settings: dict[str, any] | None = None) -> dict[str
                 for planet_param in planet_params_returned:
                     hover_data[planet_param].append(data_row.get(f'{planet_param}_ref', ''))
     # return the table data
+    print(table_data[0].keys())
     return dict(
         body={
             column_name: data_list for column_name, data_list in
@@ -605,6 +606,7 @@ def table_query_from_request(settings: dict[str, any] | None = None) -> dict[str
         hover_data=hover_data,
         planet_count=planet_count,
         star_count=star_count,
+        targets=[data_row['target_handles'] for data_row in table_data],
     )
 
 
