@@ -601,7 +601,8 @@ class OutputStarData(AllStarData):
                         target_web_data: dict[str, dict[str, str | list[str]]]  = None):
         hypatia_db = HypatiaDB(db_name=MONGO_DATABASE, collection_name='hypatiaDB')
         hypatia_db.reset()
-        [hypatia_db.add_star(single_star) for single_star in self]
+        # [hypatia_db.add_star(single_star) for single_star in self]
+        hypatia_db.add_all_stars([single_star for single_star in self])
         # add the summary and site-wide information
         found_elements = hypatia_db.added_elements
         found_element_nlte = hypatia_db.added_elements_nlte

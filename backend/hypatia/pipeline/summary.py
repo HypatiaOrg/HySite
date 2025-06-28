@@ -212,7 +212,7 @@ class SummaryCollection(BaseCollection):
                         '.+': {
                             'bsonType': 'object',
                             'description': 'must be an object that describes a target',
-                            'required': list(required_fields),
+                            'required': list(required_fields - not_for_summary_fields),
                             'additionalProperties': True,
                             'properties': {
                                 'handle': {
@@ -226,14 +226,6 @@ class SummaryCollection(BaseCollection):
                                 'ref': {
                                     'bsonType': 'string',
                                     'description': 'must be a string for the reference of the target'
-                                },
-                                'names': {
-                                    'bsonType': 'array',
-                                    'description': 'must be an array of strings for the names of the target',
-                                    'items': {
-                                        'bsonType': 'string',
-                                        'description': 'must be a string for the name of the target'
-                                    },
                                 },
                             },
                         },

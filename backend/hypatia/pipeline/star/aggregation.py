@@ -411,6 +411,7 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
     return_doc = {
         '_id': 0,
         f'{star_name_column}': '$_id',
+        'target_handles': '$target_handles',
     }
 
     if elements_returned:

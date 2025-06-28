@@ -32,7 +32,7 @@ class HypatiaDB(BaseStarCollection):
         # chemical-element names and all nested components
         self.collection_add_index(index_name='normalizations.$**', ascending=True, unique=False)
 
-    def add_star(self, single_star: SingleStar):
+    def doc_format(self, single_star: SingleStar):
         simbad_doc = single_star.simbad_doc
         exo = single_star.exo
         if exo is None:
@@ -143,9 +143,26 @@ class HypatiaDB(BaseStarCollection):
         target_handles = single_star.target_handles
         if target_handles is None:
             target_handles = []
-        doc['target_handles'] = target_handles
+        doc['target_handles'] = sorted(target_handles)
+        return doc
+
+    def add_star(self, single_star: SingleStar):
+        doc = self.doc_format(single_star)
         self.add_one(doc=doc)
-        print(f'Added {simbad_doc["_id"]} to the database')
+        print(f'Added {doc["_id"]} to the database')
+
+    def add_all_stars(self, single_stars: list[SingleStar]) -> int:
+        print('Adding many stars to the database...')
+        print('  Formatting documents...')
+        docs = [self.doc_format(single_star) for single_star in single_stars]
+        if len(docs) > 0:
+            print(f'  Adding {len(docs)} stars to the database...')
+            result = self.add_many(docs=docs)
+            print(f'  ...upload completed, {len(result.inserted_ids)} stars added.')
+            return len(result.inserted_ids)
+        else:
+            print('No stars to add.')
+            return 0
 
     def get_abundance_count(self, norm_key: str = 'absolute', by_element: bool = False, count_stars: bool = False)\
             -> dict[str, int]:

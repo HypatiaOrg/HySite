@@ -11,7 +11,23 @@ hypatia_purple = '#4E11B7'
 axis_lab_font_size = '12pt'
 axis_lab_font_style = 'normal'
 TOOLS = 'crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,'
+all_hypatia_plot_options = {
+    'color': 'grey',
+    'fill_alpha': 0.3,
+    'line_alpha': 0.6,
+}
+or_matches_plot_options = {
+    'color': hypatia_purple,
+    'fill_alpha': 0.5,
+    'line_alpha': 0.8,
+}
+combined_matches_plot_options = {
+    'color': 'orchid',
+    'fill_alpha': 0.5,
+    'line_alpha': 0.8,
+}
 
+plot_layers = ['all_hypatia', 'or_matches', 'combined_matches']
 
 def bokeh_export_html(p):
     script, div = components(p)
@@ -145,13 +161,193 @@ def create_bokeh_scatter(name: list[str],
     callback = CustomJS(args={'allPlotData': source}, code="""
             const inds = cb_obj.indices;
             const d1 = allPlotData.data;
-            const result = inds.map(i => d1['name'][i].replace("HIP ",""));
+            const result = inds.map(i => d1['name'][i]);
             $("#star_list").val(result.join(","));
             $("select[name='star_action']").val("only");
             $("select[name='star_source']").val("hip")
         """)
     source.selected.js_on_change('indices', callback)
 
+    # citation
+    citation = Label(x=10, y=10, x_units='screen', y_units='screen',
+                     text='Hypatia Catalog ' + datetime.now().strftime('%Y-%m-%d'),
+                     text_alpha=0.5)
+    p.add_layout(citation)
+    return bokeh_default_settings(p=p, x_label=labels['xaxis'], y_label=labels['yaxis'], do_gridlines=do_gridlines)
+
+
+def create_bokeh_targets(name: list[str],
+                         xaxis: list[str | float | int], yaxis: list[str | float | int], 
+                         target_handles: list[list[str]],
+                         x_label: str = None, y_label: str = None,
+                         do_xlog: bool = False, do_ylog: bool = False,
+                         xaxisinv: bool = False, yaxisinv: bool = False,
+                         do_gridlines: bool = False,
+                         show_all_hypatia: bool = False, do_or_logic: bool = False,
+                         requested_handles: list[str] = None,
+                         ):
+    requested_handles_set = set(requested_handles)
+    # build the bounds
+    x_min = min(xaxis)
+    x_max = max(xaxis)
+    if x_min == x_max:
+        x_min -= 1
+        x_max += 1
+    y_min = min(yaxis)
+    y_max = max(yaxis)
+    if y_min == y_max:
+        y_min -= 1
+        y_max += 1
+    x_diff = x_max - x_min
+    y_diff = y_max - y_min
+    x_margin = 0.10 * x_diff
+    y_margin = 0.10 * y_diff
+    x_range = [x_min - x_margin, x_max + x_margin]
+    y_range = [y_min - y_margin, y_max + y_margin]
+    # set the axis type: log or linear
+    if do_xlog:
+        x_axis_type = 'log'
+        x_array = np.array(xaxis)
+        x_range[0] = np.min(x_array[x_array > 0])
+    else:
+        x_axis_type = 'linear'
+    if do_ylog:
+        y_axis_type = 'log'
+        y_array = np.array(yaxis)
+        y_range[0] = np.min(y_array[y_array > 0])
+    else:
+        y_axis_type = 'linear'
+    # invert the axis if necessary
+    if xaxisinv:
+        x_range = x_range[::-1]
+    if yaxisinv:
+        y_range = y_range[::-1]
+
+    # if there is no data, then return a message
+    x = []
+    y = []
+    names = []
+    handles = []
+    colors = []
+    fill_alphas = []
+    line_alphas = []
+    number_of_targets = 0
+    def sort_key(target_handle):
+        # sort by x, then y, then target_handle, then star_name
+        found_target_handles = requested_handles_set & set(target_handle)
+        score = len(found_target_handles)
+        for handle in found_target_handles:
+            score += 0.01 * (requested_handles.index(handle))
+            logging.warning(f'handle: {handle} score {score} len {len(found_target_handles)}')
+        return score
+
+    scores = [sort_key(target_handle) for target_handle in target_handles]
+    for _score, x_point, y_point, target_handle, star_name in sorted(zip(scores, xaxis, yaxis, target_handles, name)):
+        target_set = set(target_handle)
+        if do_or_logic:
+            if target_set.isdisjoint(requested_handles):
+                if show_all_hypatia:
+                    x.append(x_point)
+                    y.append(y_point)
+                    handles.append(target_handle)
+                    names.append(star_name)
+                    colors.append(all_hypatia_plot_options['color'])
+                    fill_alphas.append(all_hypatia_plot_options['fill_alpha'])
+                    line_alphas.append(all_hypatia_plot_options['line_alpha'])
+            else:
+                # if we are doing OR logic, then we only add the point to the source if it matches the requested handles
+                x.append(x_point)
+                y.append(y_point)
+                handles.append(target_handle)
+                names.append(star_name)
+                if len(requested_handles) > 1:
+                    colors.append(or_matches_plot_options['color'])
+                    fill_alphas.append(or_matches_plot_options['fill_alpha'])
+                    line_alphas.append(or_matches_plot_options['line_alpha'])
+                else:
+                    plot_dict = targets_metadata.get(single_handle, {})
+                    colors.append(plot_dict.get('color', 'yellow'))
+                    fill_alphas.append(plot_dict.get('fill_alpha', 0.5))
+                    line_alphas.append(plot_dict.get('line_alpha', 0.8))
+                number_of_targets += 1
+        else:
+            handles_found = set()
+            for requested_handle in requested_handles:
+                if requested_handle in target_set:
+                    handles_found.add(requested_handle)
+            if len(handles_found) == 0:
+                if show_all_hypatia:
+                    x.append(x_point)
+                    y.append(y_point)
+                    handles.append(target_handle)
+                    names.append(star_name)
+                    colors.append(all_hypatia_plot_options['color'])
+                    fill_alphas.append(all_hypatia_plot_options['fill_alpha'])
+                    line_alphas.append(all_hypatia_plot_options['line_alpha'])
+            elif len(handles_found) == 1:
+                single_handle = list(handles_found)[0]
+                x.append(x_point)
+                y.append(y_point)
+                handles.append(target_handle)
+                names.append(star_name)
+                plot_dict = targets_metadata.get(single_handle, {})
+                colors.append(plot_dict.get('color', 'yellow'))
+                fill_alphas.append(plot_dict.get('fill_alpha', 0.5))
+                line_alphas.append(plot_dict.get('line_alpha', 0.8))
+                number_of_targets += 1
+            else:
+                x.append(x_point)
+                y.append(y_point)
+                handles.append(target_handle)
+                names.append(star_name)
+                colors.append(combined_matches_plot_options['color'])
+                fill_alphas.append(combined_matches_plot_options['fill_alpha'])
+                line_alphas.append(combined_matches_plot_options['line_alpha'])
+                number_of_targets += 1
+                
+    if len(x) == 0:
+        return '', 'No data points to display'
+    bokeh_source = {
+        'x': np.array(x),
+        'y': np.array(y),
+        'names': names,
+        'handles': handles,
+        'colors': colors,
+        'fill_alphas': fill_alphas,
+        'line_alphas': line_alphas,
+    }
+    labels = {
+        'xaxis':  x_label if x_label else 'X Axis',
+        'yaxis':  y_label if y_label else 'Y Axis',
+    }
+    tooltips = "<b>@names</b><br/><div style='max-width:300px'>" + ', '.join(
+        [labels[axis] + ' = @' + axis + '{0.00}' for axis in set(labels)]) + '</div>'
+    hover = HoverTool(tooltips=tooltips)
+    # handle tooltips
+    source = ColumnDataSource(bokeh_source)
+    # The Target Plot
+    p = figure(tools=[TOOLS, hover], width=750, height=625,
+               x_range=x_range,
+               y_range=y_range,
+               x_axis_type=x_axis_type, y_axis_type=y_axis_type)
+
+
+    p.title.text = f'{number_of_targets} Targets selected'
+    p.title.align = 'center'
+    # build the scatter plot
+    p.scatter(f'x', 'y',
+              fill_color='colors', line_color='colors', fill_alpha='fill_alphas', line_alpha='line_alphas',
+              source=source, size=8)
+    # callback
+    callback = CustomJS(args={'allPlotData': source}, code="""
+            const inds = cb_obj.indices;
+            const d1 = allPlotData.data;
+            const result = inds.map(i => d1['names'][i]);
+            $("#star_list").val(result.join(","));
+            $("select[name='star_action']").val("only");
+            $("select[name='star_source']").val("hip")
+        """)
+    source.selected.js_on_change('indices', callback)
     # citation
     citation = Label(x=10, y=10, x_units='screen', y_units='screen',
                      text='Hypatia Catalog ' + datetime.now().strftime('%Y-%m-%d'),

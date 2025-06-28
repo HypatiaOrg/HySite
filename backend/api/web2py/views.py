@@ -6,7 +6,8 @@ from api.v2.data_process import available_catalogs_v2, representative_error
 from api.web2py.data_process import (home_data, units_and_fields_v2, stellar_param_types_v2,
                                      planet_param_types_v2, ranked_string_params, plot_norms,
                                      graph_settings_from_request, graph_query_pipeline_web2py, histogram_format,
-                                     element_data, table_query_from_request)
+                                     element_data, table_query_from_request, targets_metadata,
+                                     )
 
 
 class Web2pyHome(View):
@@ -25,6 +26,7 @@ class Summary(View):
             solarnorms=plot_norms,
             element_data=element_data,
             representative_error=representative_error,
+            targets=targets_metadata,
         ))
 
 
@@ -50,7 +52,6 @@ class ScatterView(View):
         else:
             star_count = len(graph_data)
             planet_count = None
-        print(output_header)
         return JsonResponse({
             'labels': labels,
             'outputs': {data_key: data_column for data_key, data_column in zip(
@@ -61,6 +62,7 @@ class ScatterView(View):
             'star_count': star_count,
             'planet_count': planet_count,
             'is_loggable': is_loggable,
+            'targets': [data_row['target_handles'] for data_row in graph_data],
         })
 
 

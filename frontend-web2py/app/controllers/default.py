@@ -68,6 +68,11 @@ def hist():
     return dict()
 
 
+def targets():
+    init_session()
+    return dict()
+
+
 def dropdown():
     return dict()
 
@@ -97,7 +102,7 @@ def plot_settings():
     for key in all_request_vars - toggle_graph_vars:
         session[key] = request.vars[key]
     # these values are toggled by the act of being requested (http POST), and the toggle action is controlled here
-    bool_triggers = (all_request_vars & toggle_graph_vars) | session['toggle_vars_to_load']
+    bool_triggers = (all_request_vars & toggle_graph_vars) | session.get('toggle_vars_to_load', set())
     for key in bool_triggers:
         session[key] = True
     # these values are toggled by the act of not being, and the toggle action is control here
@@ -154,6 +159,44 @@ def graph():
                                        zaxisinv=settings['zaxisinv'], has_zaxis=has_zaxis,
                                        do_gridlines=settings['gridlines'])
     # send back to the browser
+    return dict(script=script, div=div)
+
+
+def graph_targets():
+    plot_settings()
+    # set the packaged settings values
+    settings = get_settings()
+    # paras the axis make iterables that are in the form of the final returned data product
+    axes = ['xaxis', 'yaxis']
+    if 'zaxis' in settings.keys() and settings['zaxis'] != 'none':
+        axes.append('zaxis')
+    # set the API request for the data values
+    url_values = urllib.parse.urlencode(settings)
+    full_url = f'{BASE_API_URL}scatter/?{url_values}'
+    graph_data_web = urllib.request.urlopen(full_url)
+    graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
+    # plotting the data based on the settings
+    labels = graph_data['labels']
+    is_loggable = graph_data['is_loggable']
+    do_xlog = settings['xaxislog'] and is_loggable['xaxis']
+    do_ylog = settings['yaxislog'] and is_loggable['yaxis']
+    outputs = graph_data['outputs']
+    requested_handles = []
+    if settings['show_hwo_tier1']:
+        requested_handles.append('hwo_tier1')
+    script, div = create_bokeh_targets(name=outputs.get('name', []),
+                                       xaxis=outputs.get('xaxis', []),
+                                       yaxis=outputs.get('yaxis', []),
+                                       target_handles=graph_data['targets'],
+                                       x_label=labels.get('xaxis', None),
+                                       y_label=labels.get('yaxis', None),
+                                       do_xlog=do_xlog, do_ylog=do_ylog,
+                                       xaxisinv=settings['xaxisinv'], yaxisinv=settings['yaxisinv'],
+                                       do_gridlines=settings['gridlines'],
+                                       show_all_hypatia=settings['show_all'],
+                                       do_or_logic=settings['or_logic'],
+                                       requested_handles=requested_handles,
+                                       )
     return dict(script=script, div=div)
 
 

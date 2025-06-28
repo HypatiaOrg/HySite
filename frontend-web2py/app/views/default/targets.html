@@ -1,0 +1,137 @@
+{{extend 'layout.html'}}
+{{from datetime import datetime}}
+
+{{if auth.user_id == 1:}}
+{{=response.toolbar()}}
+{{pass}}
+<div style="float:left;width:750px;height:625px;display:table;font-size:20px;font-weight:bold;margin-bottom:20px">
+    <div style="display:table-cell;vertical-align:middle;text-align:center;background:#dddddd;height:625px" id="graph_targets">
+    {{=LOAD("default","graph_targets.load",ajax=True,content="Loading...")}}
+    </div>
+</div>
+
+
+<div style="float:left;padding-left:20px">
+    <form method="post">
+        <input class="hidden" name="graph_targets_submit" value="true">
+        <div class="alert alert-info" id="origalert" style="display:none;max-width:400px">Abundances originally published in absolute A(X) notation cannot be shown when the "Original" normalization is selected since no solar normalization was specified.</div>
+        <div class="alert alert-info" id="diskalert" style="display:none;max-width:400px">Values are assigned zero for thin disk and one for thick disk.</div>
+        <div class="alert alert-info" id="specalert" style="display:none;max-width:400px">Spectral type values are assigned a number: F = 10, G = 20, K = 30, M = 40, plus the subclass digit (1-10), plus the roman numeral value * 0.01. Example. F2V = 12.05.</div>
+        <dl>
+            <dt>Filter:</dt>
+            <dd>
+                {{=LOAD("default","dropdown.load",vars=dict(id="filter1_",value1=session.filter1_1,value2=session.filter1_2,value3=session.filter1_3,value4=session.filter1_4,inverse=session.filter1_inv,filter=True,allownone=True))}}
+                {{=LOAD("default","dropdown.load",vars=dict(id="filter2_",value1=session.filter2_1,value2=session.filter2_2,value3=session.filter2_3,value4=session.filter2_4,inverse=session.filter2_inv,filter=True,allownone=True))}}
+                {{=LOAD("default","dropdown.load",vars=dict(id="filter3_",value1=session.filter3_1,value2=session.filter3_2,value3=session.filter3_3,value4=session.filter3_4,inverse=session.filter3_inv,filter=True,allownone=True))}}
+            </dd>
+            <br/>
+            <dt>X-axis:</dt>
+            <dd>
+                {{=LOAD("default","dropdown.load",vars=dict(id="xaxis",value1=session.xaxis1,value2=session.xaxis2,log=True,logstate=session.xaxislog,inverse=session.xaxisinv))}}
+            </dd>
+            <br/>
+            <dt>Y-axis:</dt>
+            <dd>
+                {{=LOAD("default","dropdown.load",vars=dict(id="yaxis",value1=session.yaxis1,value2=session.yaxis2,log=True,logstate=session.yaxislog,inverse=session.yaxisinv))}}
+            </dd>
+            <br/>
+            <dt>Select Target Sets:</dt>
+            <div>
+                <input type="checkbox" {{if session.show_all:}}checked="checked"{{pass}} id="show_all" name="show_all" onchange="refresh()"> All Hypatia Catalog
+            </div>
+            <div>
+                <input type="checkbox" {{if session.or_logic:}}checked="checked"{{pass}} id="or_logic" name="or_logic" onchange="refresh()"> Use "or" Logic for Multiple Target Sets
+            </div>
+            <br/>
+            <div>
+                Available Target Sets:
+                <div title="{{=targets_metadata.get('hwo_tier1').get('ref')}}">
+                    <input type="checkbox" {{if session.show_hwo_tier1:}}checked="checked"{{pass}} id="show_hwo_tier1" name="show_hwo_tier1" title="{{=targets_metadata.get('hwo_tier1').get('description')}}" onchange="refresh()">
+                    {{=targets_metadata.get('hwo_tier1').get('title')}}
+                </div>
+            </div>
+            <br/>
+            <dt>Solar normalization:</dt>
+            <dd>
+            <select class="form-control" name="solarnorm" onchange="refresh()">
+                {{for s in SOLAR_NORMS:}}
+                <option name="solarnorm" value="{{=s.id}}" {{if s.id==session.solarnorm:}}selected="selected"{{pass}}>{{=s.author}} {{if s.year:}}({{=s.year}}){{pass}}</option>
+                {{pass}}
+            </select>
+            </dd>
+            <br/>
+            <dt>If element ratio is in multiple catalogs:</dt>
+            <dd>
+                <select class="form-control" name="statistic" onchange="refresh()">
+                    <option name="statistic" value="median" {{if session.statistic=="median":}}selected="selected"{{pass}}>Use the median</option>
+                    <option name="statistic" value="mean" {{if session.statistic=="mean":}}selected="selected"{{pass}}>Use the mean</option>
+                </select>
+            </dd>
+            <br/>
+            <dt>
+                <select name="cat_action" onchange="refresh()">
+                    <option value="exclude" {{if session.cat_action == "exclude":}}selected="selected"{{pass}}>Exclude</option>
+                    <option value="only" {{if session.cat_action == "only":}}selected="selected"{{pass}}>Allow only</option>
+                </select> catalogs:</dt>
+            <dd>
+                <select id="catalogs" name="catalogs" multiple="multiple" class="form-control">
+                    {{for c in CATALOGS:}}
+                    <option name="catalogs" value="{{=c.id}}" {{if session.catalogs:}}{{if c.id in session.catalogs:}}selected="selected"{{pass}}{{pass}}>{{=c.author}} {{pass}}</option>
+                    {{pass}}
+                </select>
+            </dd>
+
+            <br/>
+            <dt>
+                <select name="star_action" onchange="refresh()">
+                    <option value="exclude" {{if session.star_action == "exclude":}}selected="selected"{{pass}}>Exclude</option>
+                    <option value="only" {{if session.star_action == "only":}}selected="selected"{{pass}}>Allow only</option>
+                </select> stars by <em>any</em> <a href="https://simbad.u-strasbg.fr/simbad/">SIMBAD</a> name.</dt>
+            <dd>
+                <div class="alert alert-info" id="select_alert" style="display:none;height:34px;padding:7px">
+                    Selected
+                    <span id="number_selected">352</span>
+                    stars.
+                    <a href="#">
+                        <b>Clear selection</b>
+                    </a>
+                </div>
+                <input type="text" id="star_list" name="star_list" placeholder="e.g. HD 122196; * 8 Lyn; HIP 114699; 2MASS J00403279-2348172" class="form-control" value="{{=session.star_list or ''}}" onchange="refresh()">
+            </dd>
+            <br/>
+            <dt></dt>
+            <dd>
+                <input type="checkbox" {{if session.gridlines:}}checked="checked"{{pass}} id="gridlines" name="gridlines" onchange="refresh()">
+                <label for="gridlines">
+                    Show gridlines
+                </label>
+            </dd>
+            <br/>
+            <dt></dt>
+            <dd>
+                <input class="btn btn-default" type="submit">
+            </dd>
+        </dl>
+    </form>
+</div>
+</div>
+</div>
+
+{{include 'default/table_options.html'}}
+
+<script>
+    function refresh() {
+        $("#graph_targets> div").css("opacity",0.5);
+        items = []
+        $("form input[name],select[name]").each(function() {
+            items.push(this.name)
+        });
+        if($("select[name='solarnorm'] option[value="+$("select[name='solarnorm']").val()+"]").text().trim() == "Original") {
+            $("#origalert").show();
+        }
+        else {
+            $("#origalert").hide();
+        }
+        ajax('/hypatia/default/graph_targets.load',items,'graph_targets');
+    }
+</script>

@@ -9,5 +9,6 @@ response.logo = A("Hypatia Catalog",
                   _id="hypatia-logo")
 response.menu = [
 (T('Elements & Properties'),request.url=='/hypatia/default/launch','/hypatia/default/launch',[]),
+(T('Target Sets'),request.url=='/hypatia/default/targets','/hypatia/default/targets',[]),
 (T('Stars With/Without Planets'),request.url=='/hypatia/default/hist','/hypatia/default/hist',[]),
 ]

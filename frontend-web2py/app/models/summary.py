@@ -31,6 +31,7 @@ element_data = param_data['element_data']
 h_appended_names = [single_el['element_id'] + 'H' for single_el in element_data]
 h_appended_names_set = set(h_appended_names)
 rank_ordered_elements = {single_el['element_id']: el_index for el_index, single_el in list(enumerate(element_data))}
+targets_metadata = param_data['targets']
 
 
 def element_rank(element_id: str) -> int:
@@ -91,7 +92,9 @@ TABLE_STELLAR = ['raj2000', 'decj2000', 'x_pos', 'y_pos', 'z_pos', 'dist', 'disk
                  'u_vel', 'v_vel', 'w_vel', 'teff', 'logg', 'mass', 'rad']
 TABLE_PLANET = ['planet_letter', 'period', 'eccentricity', 'semi_major_axis', 'pl_mass', 'pl_radius', 'inclination']
 toggle_graph_vars = {'normalize', 'gridlines', 'xaxislog', 'yaxislog', 'zaxislog',
-                     'xaxisinv', 'yaxisinv', 'zaxisinv', 'filter1_inv', 'filter2_inv', 'filter3_inv'}
+                     'xaxisinv', 'yaxisinv', 'zaxisinv', 'filter1_inv', 'filter2_inv', 'filter3_inv',
+                     'show_all', 'or_logic', 'show_hwo_tier1',
+                     }
 default_table_rows_to_show = 1000
 
 session_defaults_launch = {

@@ -40,6 +40,7 @@ loggable_fields_v2 = {filed_name for filed_name, field_data in units_and_fields_
 
 plot_norms = [{k: v for k, v in s_norm.items() if k != 'values'} for s_norm in normalizations_v2]
 chemical_ref = summary_doc['chemical_ref']
+targets_metadata = summary_doc['targets']
 
 
 element_data = []
