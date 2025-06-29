@@ -15,7 +15,7 @@ name_prefixs = {
     'tyc_name': 'TYC ',
 }
 
-required_fields = {'handle', 'title', 'ref', 'names'}
+required_fields = {'handle', 'title', 'ref',}
 not_for_summary_fields = {'names', 'id_to_origin', 'ids'}
 
 
@@ -45,6 +45,7 @@ def read_all_targets_files():
             for field in required_fields:
                 if field not in data:
                     raise ValueError(f'The field "{field}" is required in the TOML file {toml_file}.')
+            data['has_names'] = 'names' in data
             if 'description' not in data:
                 data['description'] = ''
             all_names = data.get('names', [])

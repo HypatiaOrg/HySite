@@ -94,6 +94,7 @@ TABLE_PLANET = ['planet_letter', 'period', 'eccentricity', 'semi_major_axis', 'p
 toggle_graph_vars = {'normalize', 'gridlines', 'xaxislog', 'yaxislog', 'zaxislog',
                      'xaxisinv', 'yaxisinv', 'zaxisinv', 'filter1_inv', 'filter2_inv', 'filter3_inv',
                      'show_all', 'or_logic', 'show_hwo_tier1',
+                     'show_thick_disk', 'show_thin_disk', 'show_has_exo',
                      }
 default_table_rows_to_show = 1000
 

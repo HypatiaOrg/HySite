@@ -43,11 +43,23 @@
                 <input type="checkbox" {{if session.or_logic:}}checked="checked"{{pass}} id="or_logic" name="or_logic" onchange="refresh()"> Use "or" Logic for Multiple Target Sets
             </div>
             <br/>
-            <div>
+            <div >
                 Available Target Sets:
                 <div title="{{=targets_metadata.get('hwo_tier1').get('ref')}}">
                     <input type="checkbox" {{if session.show_hwo_tier1:}}checked="checked"{{pass}} id="show_hwo_tier1" name="show_hwo_tier1" title="{{=targets_metadata.get('hwo_tier1').get('description')}}" onchange="refresh()">
                     {{=targets_metadata.get('hwo_tier1').get('title')}}
+                </div>
+                <div title="{{=targets_metadata.get('thin_disk').get('ref')}}">
+                    <input type="checkbox" {{if session.show_thin_disk:}}checked="checked"{{pass}} id="show_thin_disk" name="show_thin_disk" title="{{=targets_metadata.get('thin_disk').get('description')}}" onchange="refresh()">
+                    {{=targets_metadata.get('thin_disk').get('title')}}
+                </div>
+                <div title="{{=targets_metadata.get('thick_disk').get('ref')}}">
+                    <input type="checkbox" {{if session.show_thick_disk:}}checked="checked"{{pass}} id="show_thick_disk" name="show_thick_disk" title="{{=targets_metadata.get('thick_disk').get('description')}}" onchange="refresh()">
+                    {{=targets_metadata.get('thick_disk').get('title')}}
+                </div>
+                <div title="{{=targets_metadata.get('has_exo').get('ref')}}">
+                    <input type="checkbox" {{if session.show_has_exo:}}checked="checked"{{pass}} id="show_has_exo" name="show_has_exo" title="{{=targets_metadata.get('has_exo').get('description')}}" onchange="refresh()">
+                    {{=targets_metadata.get('has_exo').get('title')}}
                 </div>
             </div>
             <br/>

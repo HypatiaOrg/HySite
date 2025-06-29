@@ -167,6 +167,12 @@ def get_requested_handles(settings: dict) -> list[str]:
     requested_handles = []
     if settings['show_hwo_tier1']:
         requested_handles.append('hwo_tier1')
+    if settings['show_thin_disk']:
+        requested_handles.append('thin_disk')
+    if settings['show_thick_disk']:
+        requested_handles.append('thick_disk')
+    if settings['show_has_exo']:
+        requested_handles.append('has_exo')
     return requested_handles
 
 
@@ -176,8 +182,6 @@ def graph_targets():
     settings = get_settings()
     # paras the axis make iterables that are in the form of the final returned data product
     axes = ['xaxis', 'yaxis']
-    if 'zaxis' in settings.keys() and settings['zaxis'] != 'none':
-        axes.append('zaxis')
     # set the API request for the data values
     url_values = urllib.parse.urlencode(settings)
     full_url = f'{BASE_API_URL}scatter/?{url_values}'

@@ -266,11 +266,29 @@ class NatCat:
 
     def get_web_targets(self):
         self.target_web_data = read_all_targets_files()
-        for single_star in self.star_data:
-            main_star_id = single_star.star_reference_name
-            for target_handle, target_data in self.target_web_data.items():
-                if main_star_id in target_data['ids']:
+        # targets identified by names in the taget TOML files.
+        handles_with_ids = [target_handle for target_handle, target_data in self.target_web_data.items()
+                            if target_data['has_names']]
+        for target_handle in handles_with_ids:
+            target_ids = self.target_web_data[target_handle]['ids']
+            for single_star in self.star_data:
+                main_star_id = single_star.star_reference_name
+                if main_star_id in target_ids:
                     single_star.add_target(target_handle)
+        # Thin and Thick Disks
+        for single_star in self.star_data:
+            disk_value = None
+            params = single_star.params
+            if hasattr(params, 'disk'):
+                disk_value = params.disk.value.lower()
+            if disk_value == 'thin':
+                single_star.add_target('thin_disk')
+            elif disk_value == 'thick':
+                single_star.add_target('thick_disk')
+        # Has Exoplanets
+        for single_star in self.star_data:
+            if single_star.exo is not None:
+                single_star.add_target('has_exo')
 
 
     def pickle_myself(self):
