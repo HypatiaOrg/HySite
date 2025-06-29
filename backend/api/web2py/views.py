@@ -30,40 +30,52 @@ class Summary(View):
         ))
 
 
+def get_graph_data(request, return_targets: bool = False):
+    if DEBUG:
+        print(request.get_full_path())
+    graph_settings = graph_settings_from_request(request.GET, mode='scatter')
+    graph_settings['return_targets'] = return_targets
+    # get more settings about how to process the data
+    graph_data, labels, _to_v2, from_v2, is_loggable, unique_star_names \
+        = graph_query_pipeline_web2py(graph_settings=graph_settings)
+    axis_mapping = graph_settings['axis_mapping']
+    output_header = ['name'] + [f'{x_axis}axis' for x_axis in axis_mapping.keys()]
+    graph_keys = [from_v2[column_name] if column_name in from_v2.keys() else column_name
+                  for column_name in output_header]
+    if any([
+        graph_settings['planet_params_returned'],
+        graph_settings['planet_params_match_filters'],
+        graph_settings['planet_params_value_filters'],
+    ]):
+        star_count = len(unique_star_names)
+        planet_count = len(graph_data)
+    else:
+        star_count = len(graph_data)
+        planet_count = None
+    return_data = {
+        'labels': labels,
+        'outputs': {data_key: data_column for data_key, data_column in zip(
+            output_header,
+            [list(i) for i in zip(*[[data_row[data_key] for data_key in graph_keys]
+                                    for data_row in graph_data])],
+        )},
+        'star_count': star_count,
+        'planet_count': planet_count,
+        'is_loggable': is_loggable,
+    }
+    if return_targets:
+        return_data['targets'] = [data_row['target_handles'] for data_row in graph_data]
+    return return_data
+
+
 class ScatterView(View):
     def get(self, request):
-        if DEBUG:
-            print(request.get_full_path())
-        graph_settings = graph_settings_from_request(request.GET, mode='scatter')
-        # get more settings about how to process the data
-        graph_data, labels, _to_v2, from_v2, is_loggable, unique_star_names \
-            = graph_query_pipeline_web2py(graph_settings=graph_settings)
-        axis_mapping = graph_settings['axis_mapping']
-        output_header = ['name'] + [f'{x_axis}axis' for x_axis in axis_mapping.keys()]
-        graph_keys = [from_v2[column_name] if column_name in from_v2.keys() else column_name
-                      for column_name in output_header]
-        if any([
-            graph_settings['planet_params_returned'],
-            graph_settings['planet_params_match_filters'],
-            graph_settings['planet_params_value_filters'],
-        ]):
-            star_count = len(unique_star_names)
-            planet_count = len(graph_data)
-        else:
-            star_count = len(graph_data)
-            planet_count = None
-        return JsonResponse({
-            'labels': labels,
-            'outputs': {data_key: data_column for data_key, data_column in zip(
-                output_header,
-                [list(i) for i in zip(*[[data_row[data_key] for data_key in graph_keys]
-                                        for data_row in graph_data])],
-            )},
-            'star_count': star_count,
-            'planet_count': planet_count,
-            'is_loggable': is_loggable,
-            'targets': [data_row['target_handles'] for data_row in graph_data],
-        })
+        return JsonResponse(get_graph_data(request))
+
+
+class TargetsView(View):
+    def get(self, request):
+        return JsonResponse(get_graph_data(request, return_targets=True))
 
 
 class HistView(View):

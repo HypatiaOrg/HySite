@@ -217,6 +217,7 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
                       return_error: bool = False,
                       star_name_column: str = 'name',
                       return_hover: bool = False,
+                      return_targets: bool = False,
                       ) -> list[dict]:
     if solarnorm_id == 'absolute':
         norm_path = 'absolute'
@@ -411,9 +412,9 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
     return_doc = {
         '_id': 0,
         f'{star_name_column}': '$_id',
-        'target_handles': '$target_handles',
     }
-
+    if return_targets:
+        return_doc['target_handles'] = '$target_handles'
     if elements_returned:
         for element_name in sorted(elements_returned, key=element_rank):
             element_str = str(element_name)

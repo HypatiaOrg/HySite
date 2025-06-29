@@ -32,6 +32,10 @@ h_appended_names = [single_el['element_id'] + 'H' for single_el in element_data]
 h_appended_names_set = set(h_appended_names)
 rank_ordered_elements = {single_el['element_id']: el_index for el_index, single_el in list(enumerate(element_data))}
 targets_metadata = param_data['targets']
+default_plot_options = targets_metadata['default']
+all_hypatia_plot_options = targets_metadata['all_hypatia']
+or_matches_plot_options = targets_metadata['or_matches']
+combined_matches_plot_options = targets_metadata['combined_matches']
 
 
 def element_rank(element_id: str) -> int:

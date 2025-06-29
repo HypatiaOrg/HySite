@@ -11,21 +11,6 @@ hypatia_purple = '#4E11B7'
 axis_lab_font_size = '12pt'
 axis_lab_font_style = 'normal'
 TOOLS = 'crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,'
-all_hypatia_plot_options = {
-    'color': 'grey',
-    'fill_alpha': 0.3,
-    'line_alpha': 0.6,
-}
-or_matches_plot_options = {
-    'color': hypatia_purple,
-    'fill_alpha': 0.5,
-    'line_alpha': 0.8,
-}
-combined_matches_plot_options = {
-    'color': 'orchid',
-    'fill_alpha': 0.5,
-    'line_alpha': 0.8,
-}
 
 plot_layers = ['all_hypatia', 'or_matches', 'combined_matches']
 

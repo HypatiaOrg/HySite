@@ -256,6 +256,7 @@ class HypatiaDB(BaseStarCollection):
                           return_error: bool = False,
                           star_name_column: str = 'name',
                           return_hover: bool = False,
+                          return_targets: bool = False,
                           **kwargs) -> list:
         json_pipeline = frontend_pipeline(
             db_formatted_names=db_formatted_names,
@@ -281,7 +282,8 @@ class HypatiaDB(BaseStarCollection):
             sort_reverse=sort_reverse,
             return_error=return_error,
             star_name_column=star_name_column,
-            return_hover=return_hover
+            return_hover=return_hover,
+            return_targets=return_targets,
         )
         if DEBUG:
             for stage_index, stage in list(enumerate(json_pipeline)):

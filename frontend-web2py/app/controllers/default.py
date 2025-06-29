@@ -128,10 +128,6 @@ def graph():
     plot_settings()
     # set the packaged settings values
     settings = get_settings()
-    # paras the axis make iterables that are in the form of the final returned data product
-    axes = ['xaxis', 'yaxis']
-    if 'zaxis' in settings.keys() and settings['zaxis'] != 'none':
-        axes.append('zaxis')
     # set the API request for the data values
     url_values = urllib.parse.urlencode(settings)
     full_url = f'{BASE_API_URL}scatter/?{url_values}'
@@ -139,7 +135,6 @@ def graph():
     graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
     # plotting the data based on the settings
     labels = graph_data['labels']
-
     is_loggable = graph_data['is_loggable']
     do_xlog = settings['xaxislog'] and is_loggable['xaxis']
     do_ylog = settings['yaxislog'] and is_loggable['yaxis']
@@ -180,11 +175,9 @@ def graph_targets():
     plot_settings()
     # set the packaged settings values
     settings = get_settings()
-    # paras the axis make iterables that are in the form of the final returned data product
-    axes = ['xaxis', 'yaxis']
     # set the API request for the data values
     url_values = urllib.parse.urlencode(settings)
-    full_url = f'{BASE_API_URL}scatter/?{url_values}'
+    full_url = f'{BASE_API_URL}targets/?{url_values}'
     graph_data_web = urllib.request.urlopen(full_url)
     graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
     # plotting the data based on the settings
@@ -342,6 +335,10 @@ def table():
     # toggle the hover text with this variable
     table_settings['show_hover'] = True  # label this button as 'Hover References'
 
+    # is targets table?
+    is_targets = session.is_targets
+    table_settings['show_targets'] = is_targets
+
     # request the table data from the API
     table_url_values = urllib.parse.urlencode(table_settings)
     table_full_url = f'{BASE_API_URL}table/?{table_url_values}'
@@ -351,9 +348,8 @@ def table():
     star_count = table_data['star_count']
     planet_count = table_data['planet_count']
     hover_data = table_data['hover_data']
-    targets = table_data['targets']
-    is_targets = session.is_targets
     if is_targets:
+        targets = table_data['targets']
         # if this is a target table, then the targets are in the first column
         columns.insert(1, 'targets')
         table_dict['targets'] = targets
@@ -388,7 +384,7 @@ def table():
                     cell_value_str = COL_FORMAT[col_name] % cell_value
                 elif col_name == 'targets':
                     # if this is a target table, then the targets are in the first column
-                    cell_value_str = '\n'.join([targets_metadata[target_handle]['title'] for target_handle in cell_value])
+                    cell_value_str = ', '.join([targets_metadata[target_handle]['title'] for target_handle in cell_value])
                 else:
                     cell_value_str = str(cell_value)
                 if col_name in hover_text_set:
