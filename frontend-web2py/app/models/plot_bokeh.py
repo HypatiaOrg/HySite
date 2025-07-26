@@ -188,7 +188,7 @@ def create_bokeh_targets(name: list[str],
     x_margin = 0.10 * x_diff
     y_margin = 0.10 * y_diff
     x_range = [x_min - x_margin, x_max + x_margin]
-    y_range = [y_min - y_margin, y_max + y_margin]
+    y_range = [y_min - (3.0 * y_margin), y_max + y_margin]
     # set the axis type: log or linear
     if do_xlog:
         x_axis_type = 'log'
@@ -209,13 +209,6 @@ def create_bokeh_targets(name: list[str],
         y_range = y_range[::-1]
 
     # if there is no data, then return a message
-    x = []
-    y = []
-    names = []
-    handles = []
-    colors = []
-    fill_alphas = []
-    line_alphas = []
     number_of_targets = 0
     def sort_key(target_handle):
         # sort by x, then y, then target_handle, then star_name
@@ -226,33 +219,54 @@ def create_bokeh_targets(name: list[str],
         return score
 
     scores = [sort_key(target_handle) for target_handle in target_handles]
+    # group the target types
+    grouped_targets = {}
     for _score, x_point, y_point, target_handle, star_name in sorted(zip(scores, xaxis, yaxis, target_handles, name)):
         target_set = set(target_handle)
         if do_or_logic:
             if target_set.isdisjoint(requested_handles):
                 if show_all_hypatia:
-                    x.append(x_point)
-                    y.append(y_point)
-                    handles.append(target_handle)
-                    names.append(star_name)
-                    colors.append(all_hypatia_plot_options['color'])
-                    fill_alphas.append(all_hypatia_plot_options['fill_alpha'])
-                    line_alphas.append(all_hypatia_plot_options['line_alpha'])
+                    if 'all_hypatia' not in grouped_targets.keys():
+                        grouped_targets['all_hypatia'] = {
+                            'x': [], 'y': [], 'handles': [], 'names': [],
+                            'color': all_hypatia_plot_options['color'],
+                            'fill_alpha': all_hypatia_plot_options['fill_alpha'],
+                            'line_alpha': all_hypatia_plot_options['line_alpha'],
+                            'label': all_hypatia_plot_options['title'],
+                            'marker': all_hypatia_plot_options['marker'],
+                        }
+                    all_hypatia_group = grouped_targets['all_hypatia']
+                    all_hypatia_group['x'].append(x_point)
+                    all_hypatia_group['y'].append(y_point)
+                    all_hypatia_group['handles'].append(target_handle)
+                    all_hypatia_group['names'].append(star_name)
             else:
+                if 'or_matches' not in grouped_targets.keys():
+                    if len(requested_handles) > 1:
+                        grouped_targets['or_matches'] = {
+                            'x': [], 'y': [], 'handles': [], 'names': [],
+                            'color': or_matches_plot_options['color'],
+                            'fill_alpha': or_matches_plot_options['fill_alpha'],
+                            'line_alpha': or_matches_plot_options['line_alpha'],
+                            'label': or_matches_plot_options['title'],
+                            'marker': or_matches_plot_options.get('marker', 'circle'),
+                        }
+                    else:
+                        plot_dict = targets_metadata.get(list(requested_handles)[0], {})
+                        grouped_targets['or_matches'] = {
+                            'x': [], 'y': [], 'handles': [], 'names': [],
+                            'color': plot_dict.get('color', 'yellow'),
+                            'fill_alpha': plot_dict.get('fill_alpha', 0.5),
+                            'line_alpha': plot_dict.get('line_alpha', 0.8),
+                            'label': plot_dict.get(['title'], 'Matches'),
+                            'marker': plot_dict.get('marker', 'circle'),
+                        }
                 # if we are doing OR logic, then we only add the point to the source if it matches the requested handles
-                x.append(x_point)
-                y.append(y_point)
-                handles.append(target_handle)
-                names.append(star_name)
-                if len(requested_handles) > 1:
-                    colors.append(or_matches_plot_options['color'])
-                    fill_alphas.append(or_matches_plot_options['fill_alpha'])
-                    line_alphas.append(or_matches_plot_options['line_alpha'])
-                else:
-                    plot_dict = targets_metadata.get(list(requested_handles)[0], {})
-                    colors.append(plot_dict.get('color', 'yellow'))
-                    fill_alphas.append(plot_dict.get('fill_alpha', 0.5))
-                    line_alphas.append(plot_dict.get('line_alpha', 0.8))
+                or_matches_group = grouped_targets['or_matches']
+                or_matches_group['x'].append(x_point)
+                or_matches_group['y'].append(y_point)
+                or_matches_group['handles'].append(target_handle)
+                or_matches_group['names'].append(star_name)
                 number_of_targets += 1
         else:
             handles_found = set()
@@ -261,45 +275,73 @@ def create_bokeh_targets(name: list[str],
                     handles_found.add(requested_handle)
             if len(handles_found) == 0:
                 if show_all_hypatia:
-                    x.append(x_point)
-                    y.append(y_point)
-                    handles.append(target_handle)
-                    names.append(star_name)
-                    colors.append(all_hypatia_plot_options['color'])
-                    fill_alphas.append(all_hypatia_plot_options['fill_alpha'])
-                    line_alphas.append(all_hypatia_plot_options['line_alpha'])
+                    if 'all_hypatia' not in grouped_targets.keys():
+                        grouped_targets['all_hypatia'] = {
+                            'x': [], 'y': [], 'handles': [], 'names': [],
+                            'color': all_hypatia_plot_options['color'],
+                            'fill_alpha': all_hypatia_plot_options['fill_alpha'],
+                            'line_alpha': all_hypatia_plot_options['line_alpha'],
+                            'label': all_hypatia_plot_options['title'],
+                            'marker': all_hypatia_plot_options.get('marker', 'circle'),
+                        }
+                    all_hypatia_group = grouped_targets['all_hypatia']
+                    all_hypatia_group['x'].append(x_point)
+                    all_hypatia_group['y'].append(y_point)
+                    all_hypatia_group['handles'].append(target_handle)
+                    all_hypatia_group['names'].append(star_name)
             elif len(handles_found) == 1:
                 single_handle = list(handles_found)[0]
-                x.append(x_point)
-                y.append(y_point)
-                handles.append(target_handle)
-                names.append(star_name)
-                plot_dict = targets_metadata.get(single_handle, {})
-                colors.append(plot_dict.get('color', 'yellow'))
-                fill_alphas.append(plot_dict.get('fill_alpha', 0.5))
-                line_alphas.append(plot_dict.get('line_alpha', 0.8))
+                if single_handle not in grouped_targets.keys():
+                    plot_dict = targets_metadata.get(single_handle, {})
+                    grouped_targets[single_handle] = {
+                        'x': [], 'y': [], 'handles': [], 'names': [],
+                        'color': plot_dict.get('color', 'yellow'),
+                        'fill_alpha': plot_dict.get('fill_alpha', 0.5),
+                        'line_alpha': plot_dict.get('line_alpha', 0.8),
+                        'label': plot_dict.get('title', single_handle),
+                        'marker': plot_dict.get('marker', 'circle'),
+                    }
+                handle_group = grouped_targets[single_handle]
+                handle_group['x'].append(x_point)
+                handle_group['y'].append(y_point)
+                handle_group['handles'].append(target_handle)
+                handle_group['names'].append(star_name)
+                number_of_targets += 1
+            if requested_handles_set.issubset(handles_found):
+                if 'combined_matches' not in grouped_targets.keys():
+                    grouped_targets['combined_matches'] = {
+                        'x': [], 'y': [], 'handles': [], 'names': [],
+                        'color': combined_matches_plot_options['color'],
+                        'fill_alpha': combined_matches_plot_options['fill_alpha'],
+                        'line_alpha': combined_matches_plot_options['line_alpha'],
+                        'label': combined_matches_plot_options['title'],
+                        'marker': combined_matches_plot_options.get('marker', 'circle'),
+                    }
+                combined_matches_group = grouped_targets['combined_matches']
+                combined_matches_group['x'].append(x_point)
+                combined_matches_group['y'].append(y_point)
+                combined_matches_group['handles'].append(target_handle)
+                combined_matches_group['names'].append(star_name)
                 number_of_targets += 1
             else:
-                x.append(x_point)
-                y.append(y_point)
-                handles.append(target_handle)
-                names.append(star_name)
-                colors.append(combined_matches_plot_options['color'])
-                fill_alphas.append(combined_matches_plot_options['fill_alpha'])
-                line_alphas.append(combined_matches_plot_options['line_alpha'])
+                if 'combined_matches' not in grouped_targets.keys():
+                    grouped_targets['combined_matches'] = {
+                        'x': [], 'y': [], 'handles': [], 'names': [],
+                        'color': combined_matches_plot_options['color'],
+                        'fill_alpha': combined_matches_plot_options['fill_alpha'],
+                        'line_alpha': combined_matches_plot_options['line_alpha'],
+                        'label': combined_matches_plot_options['title'],
+                        'marker': combined_matches_plot_options.get('marker', 'circle'),
+                    }
+                combined_matches_group = grouped_targets['combined_matches']
+                combined_matches_group['x'].append(x_point)
+                combined_matches_group['y'].append(y_point)
+                combined_matches_group['handles'].append(target_handle)
+                combined_matches_group['names'].append(star_name)
                 number_of_targets += 1
-                
-    if len(x) == 0:
+
+    if len(grouped_targets) == 0:
         return '', 'No data points to display'
-    bokeh_source = {
-        'x': np.array(x),
-        'y': np.array(y),
-        'names': names,
-        'handles': handles,
-        'colors': colors,
-        'fill_alphas': fill_alphas,
-        'line_alphas': line_alphas,
-    }
     labels = {
         'xaxis':  x_label if x_label else 'X Axis',
         'yaxis':  y_label if y_label else 'Y Axis',
@@ -307,36 +349,46 @@ def create_bokeh_targets(name: list[str],
     tooltips = "<b>@names</b><br/><div style='max-width:300px'>" + ', '.join(
         [labels[axis] + ' = @' + axis[0] + '{0.00}' for axis in set(labels)]) + '</div>'
     hover = HoverTool(tooltips=tooltips)
-    # handle tooltips
-    source = ColumnDataSource(bokeh_source)
     # The Target Plot
     p = figure(tools=[TOOLS, hover], width=750, height=625,
                x_range=x_range,
                y_range=y_range,
                x_axis_type=x_axis_type, y_axis_type=y_axis_type)
-
-
     p.title.text = f'{number_of_targets} Targets selected'
     p.title.align = 'center'
-    # build the scatter plot
-    p.scatter(f'x', 'y',
-              fill_color='colors', line_color='colors', fill_alpha='fill_alphas', line_alpha='line_alphas',
-              source=source, size=8)
-    # callback
-    callback = CustomJS(args={'allPlotData': source}, code="""
-            const inds = cb_obj.indices;
-            const d1 = allPlotData.data;
-            const result = inds.map(i => d1['names'][i]);
-            $("#star_list").val(result.join(","));
-            $("select[name='star_action']").val("only");
-            $("select[name='star_source']").val("hip")
-        """)
-    source.selected.js_on_change('indices', callback)
-    # citation
-    citation = Label(x=10, y=10, x_units='screen', y_units='screen',
+    p.add_layout(Label(x=10, y=10, x_units='screen', y_units='screen',
                      text='Hypatia Catalog ' + datetime.now().strftime('%Y-%m-%d'),
-                     text_alpha=0.5)
-    p.add_layout(citation)
+                     text_alpha=0.5))
+    for group_name, plot_data in grouped_targets.items():
+        # handle tooltips
+        source = ColumnDataSource(dict(
+            x=np.array(plot_data['x']),
+            y=np.array(plot_data['y']),
+            names=plot_data['names'],
+            handles=plot_data['handles'],
+        ))
+        # build the scatter plot
+        p.scatter(f'x', 'y',
+                  fill_color=plot_data['color'] , line_color=plot_data['color'] ,
+                  fill_alpha=plot_data['fill_alpha'], line_alpha=plot_data['line_alpha'],
+                  legend_label=plot_data['label'],
+                  marker=plot_data['marker'],
+                  source=source, size=8)
+        # callback
+        callback = CustomJS(args={'allPlotData': source}, code="""
+                const inds = cb_obj.indices;
+                const d1 = allPlotData.data;
+                const result = inds.map(i => d1['names'][i]);
+                $("#star_list").val(result.join(","));
+                $("select[name='star_action']").val("only");
+                $("select[name='star_source']").val("hip")
+            """)
+        source.selected.js_on_change('indices', callback)
+    p.legend.location = 'bottom_right'
+    p.legend.nrows=3
+    p.legend.background_fill_alpha = 0.3
+    leg = p.legend[0]
+    leg.click_policy = 'hide'
     return bokeh_default_settings(p=p, x_label=labels['xaxis'], y_label=labels['yaxis'], do_gridlines=do_gridlines)
 
 
