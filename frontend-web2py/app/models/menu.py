@@ -8,8 +8,8 @@ response.logo = A("Hypatia Catalog",
                   _class="navbar-brand", _href="/hypatia", _style="font-size:30px;",
                   _id="hypatia-logo")
 response.menu = [
-(T('Elements & Properties'),request.url=='/hypatia/default/launch','/hypatia/default/launch',[]),
+(T('Scatter'),request.url=='/hypatia/default/launch','/hypatia/default/launch',[]),
+(T('Target Lists'),request.url=='/hypatia/default/targets','/hypatia/default/targets',[]),
 (T('Density Map'),request.url=='/hypatia/default/density','/hypatia/default/density',[]),
-(T('Stars With/Without Planets'),request.url=='/hypatia/default/hist','/hypatia/default/hist',[]),
-
+(T('Histogram'),request.url=='/hypatia/default/hist','/hypatia/default/hist',[]),
 ]

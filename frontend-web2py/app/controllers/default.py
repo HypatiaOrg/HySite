@@ -45,7 +45,7 @@ def credits():
     return dict()
 
 
-def init_session():
+def init_session(is_targets: bool = False):
     # add default values for missing session variables
     for var_name, default_val in session_defaults_launch.items():
         session_value = session.__getattr__(var_name)
@@ -55,11 +55,17 @@ def init_session():
     # splitting of strings into lists
     if isinstance(session.tablecols, str):
         session.tablecols = session.tablecols.split(',')
-    return
+    # function argumnents
+    session['is_targets'] = is_targets
 
 
 def launch():
     init_session()
+    return dict()
+
+
+def targets():
+    init_session(is_targets=True)
     return dict()
 
 
@@ -102,7 +108,7 @@ def plot_settings():
     for key in all_request_vars - toggle_graph_vars:
         session[key] = request.vars[key]
     # these values are toggled by the act of being requested (http POST), and the toggle action is controlled here
-    bool_triggers = (all_request_vars & toggle_graph_vars) | session['toggle_vars_to_load']
+    bool_triggers = (all_request_vars & toggle_graph_vars) | session.get('toggle_vars_to_load', set())
     for key in bool_triggers:
         session[key] = True
     # these values are toggled by the act of not being, and the toggle action is control here
@@ -122,7 +128,6 @@ def plot_settings():
             session.catalogs = []
     elif session.catalogs is None:
         session.catalogs = []
-
 def scatter_format():
     plot_settings()
     # set the packaged settings values
@@ -146,7 +151,6 @@ def scatter_format():
     has_zaxis = settings['zaxis1'] != 'none'
     outputs = graph_data['outputs']
     return outputs, labels, graph_data, do_xlog, do_ylog, do_zlog, has_zaxis, settings
-
 
 def graph():
     outputs, labels, graph_data, do_xlog, do_ylog, do_zlog, has_zaxis, settings = scatter_format()
@@ -188,6 +192,51 @@ def graph_density():
                                 )
     # send back to the browser
     return dict(div=div)
+
+def get_requested_handles(settings: dict) -> list[str]:
+    requested_handles = []
+    if settings['show_has_exo']:
+        requested_handles.append('has_exo')
+    if settings['show_thin_disk']:
+        requested_handles.append('thin_disk')
+    if settings['show_thick_disk']:
+        requested_handles.append('thick_disk')
+    if settings['show_hwo_tier2']:
+        requested_handles.append('hwo_tier2')
+    if settings['show_hwo_tier1']:
+        requested_handles.append('hwo_tier1')
+    return requested_handles
+
+
+def graph_targets():
+    plot_settings()
+    # set the packaged settings values
+    settings = get_settings()
+    # set the API request for the data values
+    url_values = urllib.parse.urlencode(settings)
+    full_url = f'{BASE_API_URL}targets/?{url_values}'
+    graph_data_web = urllib.request.urlopen(full_url)
+    graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
+    # plotting the data based on the settings
+    labels = graph_data['labels']
+    is_loggable = graph_data['is_loggable']
+    do_xlog = settings['xaxislog'] and is_loggable['xaxis']
+    do_ylog = settings['yaxislog'] and is_loggable['yaxis']
+    outputs = graph_data['outputs']
+    script, div = create_bokeh_targets(name=outputs.get('name', []),
+                                       xaxis=outputs.get('xaxis', []),
+                                       yaxis=outputs.get('yaxis', []),
+                                       target_handles=graph_data['targets'],
+                                       x_label=labels.get('xaxis', None),
+                                       y_label=labels.get('yaxis', None),
+                                       do_xlog=do_xlog, do_ylog=do_ylog,
+                                       xaxisinv=settings['xaxisinv'], yaxisinv=settings['yaxisinv'],
+                                       do_gridlines=settings['gridlines'],
+                                       show_all_hypatia=settings['show_all'],
+                                       do_or_logic=settings['or_logic'],
+                                       requested_handles=get_requested_handles(settings=settings),
+                                       )
+    return dict(script=script, div=div)
 
 
 def graph_hist():
@@ -323,6 +372,10 @@ def table():
     # toggle the hover text with this variable
     table_settings['show_hover'] = True  # label this button as 'Hover References'
 
+    # is targets table?
+    is_targets = session.is_targets
+    table_settings['show_targets'] = is_targets
+
     # request the table data from the API
     table_url_values = urllib.parse.urlencode(table_settings)
     table_full_url = f'{BASE_API_URL}table/?{table_url_values}'
@@ -332,14 +385,28 @@ def table():
     star_count = table_data['star_count']
     planet_count = table_data['planet_count']
     hover_data = table_data['hover_data']
+    if is_targets:
+        targets = table_data['targets']
+        # if this is a target table, then the targets are in the first column
+        columns.insert(1, 'targets')
+        table_dict['targets'] = targets
     if planet_count and 'nea_name' not in columns:
         columns.insert(1, 'nea_name')
+    settings = get_settings()
+    requested_handles = get_requested_handles(settings=settings)
+    requested_handles_set = set(requested_handles)
     # add the JS wrapper to get element details
     requested_elements_set = set(requested_elements)
     hover_text_set = set(requested_elements) | set(requested_stellar_params) | set(requested_planet_params)
     formatted_table = []
     if table_dict:
         for row_index, data_row in list(enumerate(zip(*[table_dict[col_name] for col_name in columns]))):
+            # Determine if targets are selected, and if so, determine is this row is a target
+            if is_targets:
+                target_handles = set(targets[row_index])
+                if target_handles.isdisjoint(requested_handles_set):
+                    continue
+            # format the row data
             formatted_row = []
             for col_name, cell_value in zip(columns, data_row):
                 if cell_value == 0.0:
@@ -352,6 +419,9 @@ def table():
                     cell_value_str = f'{cell_value:1.2f}'
                 elif col_name in COL_FORMAT.keys():
                     cell_value_str = COL_FORMAT[col_name] % cell_value
+                elif col_name == 'targets':
+                    # if this is a target table, then the targets are in the first column
+                    cell_value_str = ', '.join([targets_metadata[target_handle]['title'] for target_handle in cell_value])
                 else:
                     cell_value_str = str(cell_value)
                 if col_name in hover_text_set:
@@ -374,9 +444,9 @@ def table():
             formatted_table.append(formatted_row)
     # Make the status label that is above the Periodic Table that controls the data table
     if planet_count:
-        status = f'{planet_count} planets selected from {star_count} stars'
+        status = f'{len(formatted_table)} planets selected from {star_count} stars'
     else:
-        status = f'{star_count} stars selected'
+        status = f'{len(formatted_table)} stars selected'
     # Only some the default number of rows, and trigger a button that we some all the whole table
     more_rows = False
     if not request.vars.showrows and len(formatted_table) > default_table_rows_to_show:
