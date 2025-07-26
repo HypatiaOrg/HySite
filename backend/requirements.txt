@@ -5,6 +5,7 @@ numpy
 pymongo
 python-dotenv
 roman
+toml
 # Required for the web interface
 django
 djangorestframework

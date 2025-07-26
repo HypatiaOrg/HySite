@@ -42,6 +42,7 @@ else:
             WriteError = True
 
 target_list_dir = os.path.join(hydata_dir, 'target_lists')
+targets_web_dir = os.path.join(hydata_dir, 'targets_web')
 ref_dir = os.path.join(hydata_dir, 'reference_data')
 abundance_dir = os.path.join(hydata_dir, 'abundance_data')
 new_abundances_dir = os.path.join(abundance_dir, 'new_data')

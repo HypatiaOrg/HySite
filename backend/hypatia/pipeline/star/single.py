@@ -35,6 +35,7 @@ class SingleStar:
         self.available_data_types = set()
         self.available_abundance_catalogs = set()
         self.reduced_abundances = {'absolute': ReducedAbundances()}
+        self.target_handles = None
         self.exo = None
 
     def add_abundance_catalog(self, short_catalog_name, catalog_dict):
@@ -142,3 +143,8 @@ class SingleStar:
                     value = self.__getattribute__(catalog_name).__getattribute__(thing)
                     values.append(value)
         return values
+
+    def add_target(self, handle:str):
+        if self.target_handles is None:
+            self.target_handles = set()
+        self.target_handles.add(handle)

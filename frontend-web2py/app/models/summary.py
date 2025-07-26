@@ -31,7 +31,17 @@ element_data = param_data['element_data']
 h_appended_names = [single_el['element_id'] + 'H' for single_el in element_data]
 h_appended_names_set = set(h_appended_names)
 rank_ordered_elements = {single_el['element_id']: el_index for el_index, single_el in list(enumerate(element_data))}
-
+targets_metadata = param_data['targets']
+all_hypatia_plot_options = targets_metadata['all_hypatia']
+or_matches_plot_options = targets_metadata['or_matches']
+combined_matches_plot_options = targets_metadata['combined_matches']
+partial_matches_plot_options = targets_metadata['partial_matches']
+default_plot_options = targets_metadata['default']
+default_color = default_plot_options.get('color', 'black')
+default_fill_alpha = default_plot_options.get('fill_alpha', 0.5)
+default_line_alpha = default_plot_options.get('line_alpha', 0.5)
+default_label = default_plot_options.get('title', 'Hypatia Catalog')
+default_marker = default_plot_options.get('marker', 'circle')
 
 def element_rank(element_id: str) -> int:
     """Returns the rank of the element based on its index in the element_data list."""
@@ -91,7 +101,10 @@ TABLE_STELLAR = ['raj2000', 'decj2000', 'x_pos', 'y_pos', 'z_pos', 'dist', 'disk
                  'u_vel', 'v_vel', 'w_vel', 'teff', 'logg', 'mass', 'rad']
 TABLE_PLANET = ['planet_letter', 'period', 'eccentricity', 'semi_major_axis', 'pl_mass', 'pl_radius', 'inclination']
 toggle_graph_vars = {'normalize', 'gridlines', 'xaxislog', 'yaxislog', 'zaxislog',
-                     'xaxisinv', 'yaxisinv', 'zaxisinv', 'filter1_inv', 'filter2_inv', 'filter3_inv'}
+                     'xaxisinv', 'yaxisinv', 'zaxisinv', 'filter1_inv', 'filter2_inv', 'filter3_inv',
+                     'show_all', 'or_logic', 'show_hwo_tier1', 'show_hwo_tier2',
+                     'show_thick_disk', 'show_thin_disk', 'show_has_exo',
+                     }
 default_table_rows_to_show = 1000
 
 session_defaults_launch = {
@@ -122,6 +135,9 @@ session_defaults_launch = {
     'catalogs': [],
     'star_action': 'exclude',
     'star_list': [],
+    'show_all': True,
+    'show_thin_disk': True,
+    'show_thick_disk': True,
 }
 
 exported_session_vars = sorted(set(session_defaults_launch.keys()) | toggle_graph_vars)

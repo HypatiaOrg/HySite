@@ -213,6 +213,14 @@ validator = {
                     'normalizations': abundance_normalizations,
                 },
             },
+            'target_handles': {
+                'bsonType': 'array',
+                'description': 'The handles of the targets that this star is part of',
+                'items': {
+                    'bsonType': 'string',
+                    'description': 'The handle of a target list that this star is part of',
+                },
+            },
         },
     },
 }

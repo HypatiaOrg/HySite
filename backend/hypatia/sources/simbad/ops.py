@@ -164,7 +164,7 @@ def set_star_doc(simbad_main_id: str, star_names: list[str], star_data: dict[str
     # update the sources with the new data
     try:
         star_collection.add_one(doc=star_record)
-    except OperationFailure:
+    except OperationFailure as e:
         # this is like a permissions issue, a read-only user is trying to add a record
         warn(f"Failed to add the star record for {simbad_main_id} to the sources, progress is not be saved.")
     # update the cache with the new data

@@ -242,7 +242,8 @@ def standard_output(from_scratch=True, refresh_exo_data=False, norm_keys: list[s
         output_star_data.reduce_elements()
         output_star_data.find_available_attributes()
         if mongo_upload:
-            output_star_data.export_to_mongo(catalogs_file_name=nat_cat.catalogs_file_name)
+            output_star_data.export_to_mongo(catalogs_file_name=nat_cat.catalogs_file_name,
+                                             target_web_data=nat_cat.target_web_data)
         output_star_data.pickle_myself()
 
     return nat_cat, output_star_data, target_output

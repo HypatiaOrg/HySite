@@ -597,10 +597,12 @@ class OutputStarData(AllStarData):
         if self.verbose:
             print("  ...Element Ratio and Distance Plots completed \n")
 
-    def export_to_mongo(self, catalogs_file_name: str = default_catalog_file):
+    def export_to_mongo(self, catalogs_file_name: str = default_catalog_file,
+                        target_web_data: dict[str, dict[str, str | list[str]]]  = None):
         hypatia_db = HypatiaDB(db_name=MONGO_DATABASE, collection_name='hypatiaDB')
         hypatia_db.reset()
-        [hypatia_db.add_star(single_star) for single_star in self]
+        # [hypatia_db.add_star(single_star) for single_star in self]
+        hypatia_db.add_all_stars([single_star for single_star in self])
         # add the summary and site-wide information
         found_elements = hypatia_db.added_elements
         found_element_nlte = hypatia_db.added_elements_nlte
@@ -618,4 +620,6 @@ class OutputStarData(AllStarData):
                        plusminus_error=plusminus_error,
                        found_elements=found_elements, found_element_nlte=found_element_nlte,
                        catalogs_file_name=catalogs_file_name, found_catalogs=found_catalogs,
-                       ids_with_wds_names=ids_with_wds_names, ids_with_nea_names=ids_with_nea_names)
+                       ids_with_wds_names=ids_with_wds_names, ids_with_nea_names=ids_with_nea_names,
+                       targets=target_web_data,
+                       )
