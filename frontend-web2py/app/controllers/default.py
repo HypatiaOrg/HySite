@@ -225,6 +225,17 @@ def graph_hist():
     # send back to the browser
     return dict(script=script, div=div)
 
+def hover_text(col_name: str, cell_hover_data: dict, requested_elements_set: set[str]) -> list[str]:
+    if col_name in requested_elements_set:
+        hover_strings = []
+        for key, value in cell_hover_data.items():
+            if value == 0.0:
+                value += 0.0
+            hover_strings.append(f"{'' if value < 0.0 else ' '}{float(value):1.2f}: {CATALOG_AUTHORS[key]}")
+    else:
+        hover_strings = [cell_hover_data]
+    return hover_strings
+
 
 def table():
     # set new session values from the request
@@ -244,6 +255,7 @@ def table():
     else:
         table_columns_set = set(session.tablecols)
     show_error = 'spread' in table_columns_set
+    show_reference = 'ref' in table_columns_set
     for_download = bool(request.vars.download)
 
     # build the columns
@@ -274,12 +286,16 @@ def table():
         fe_elements.add('Fe')
         if show_error:
             columns.append('Fe_err')
+        if show_reference:
+            columns.append('Fe_ref')
         if 'FeII' in table_columns_set:
             columns.append('FeII')
             requested_elements.append('FeII')
             fe_elements.add('FeII')
             if show_error:
                 columns.append('FeII_err')
+            if show_reference:
+                columns.append('FeII_ref')
     other_elements = set()
     for item in table_columns_set:
         if item[0].isupper() and item not in fe_elements:
@@ -289,29 +305,29 @@ def table():
         requested_elements.append(element_name)
         if show_error:
             columns.append(f'{element_name}_err')
+        if show_reference:
+            columns.append(f'{element_name}_ref')
 
     # add planet parameters
     if 'planet' in table_columns_set:
-        if show_error:
-            for planet_param in TABLE_PLANET:
-                if planet_param in {'planet_letter', 'nea_name'}:
-                    columns.append(planet_param)
-                else:
-                    columns.append(planet_param)
+        for planet_param in TABLE_PLANET:
+            columns.append(planet_param)
+            if planet_param not in {'planet_letter', 'nea_name'}:
+                if show_error:
                     columns.append(f'{planet_param}_err')
-        else:
-            columns.extend(TABLE_PLANET)
+                if show_reference:
+                    columns.append(f'{planet_param}_ref')
         requested_planet_params = TABLE_PLANET[:]
 
     # add stellar parameters
     if 'stellar' in table_columns_set:
-        if show_error:
-            for stellar_param in TABLE_STELLAR:
-                columns.append(stellar_param)
-                if stellar_param not in {'disk', 'sptype'}:
+        for stellar_param in TABLE_STELLAR:
+            columns.append(stellar_param)
+            if stellar_param not in {'disk', 'sptype'}:
+                if show_error:
                     columns.append(f'{stellar_param}_err')
-        else:
-            columns.extend(TABLE_STELLAR)
+                if show_reference:
+                    columns.append(f'{stellar_param}_ref')
         requested_stellar_params = TABLE_STELLAR[:]
 
     # package all the query parameters
@@ -363,6 +379,14 @@ def table():
     # add the JS wrapper to get element details
     requested_elements_set = set(requested_elements)
     hover_text_set = set(requested_elements) | set(requested_stellar_params) | set(requested_planet_params)
+    if show_reference:
+        # add the reference columns to the columns list
+        for col_name in columns:
+            if col_name.endswith('_ref'):
+                base_name = col_name.rsplit('_ref', 1)[0]
+                hover_this_column = hover_data[base_name]
+                table_dict[col_name] = ['|'.join(hover_text(base_name, hover_this_column[row_index], requested_elements_set))
+                                        if hover_this_column[row_index] else '' for row_index in range(len(hover_this_column))]
     formatted_table = []
     if table_dict:
         for row_index, data_row in list(enumerate(zip(*[table_dict[col_name] for col_name in columns]))):
@@ -393,17 +417,9 @@ def table():
                     if cell_value_str != '' and col_name in hover_data.keys():
                         cell_hover_data = hover_data[col_name][row_index]
                         if cell_hover_data:
-                            if col_name in requested_elements_set:
-                                hover_strings = []
-                                for key, value in cell_hover_data.items():
-                                    if value == 0.0:
-                                        value += 0.0
-                                    hover_strings.append(f"{'' if value < 0.0 else ' '}{float(value):1.2f}: {CATALOG_AUTHORS[key]}")
-                            else:
-                                hover_strings = [cell_hover_data]
                             cell_value_str = table_cell(
                                 value=cell_value_str,
-                                hover_text='\n'.join(hover_strings),
+                                hover_text='\n'.join(hover_text(col_name, cell_hover_data, requested_elements_set)),
                                 do_wrapper=not for_download)
                 formatted_row.append(cell_value_str)
             formatted_table.append(formatted_row)
