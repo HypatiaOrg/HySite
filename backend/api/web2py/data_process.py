@@ -40,6 +40,7 @@ loggable_fields_v2 = {filed_name for filed_name, field_data in units_and_fields_
 
 plot_norms = [{k: v for k, v in s_norm.items() if k != 'values'} for s_norm in normalizations_v2]
 chemical_ref = summary_doc['chemical_ref']
+targets_metadata = summary_doc['targets']
 
 
 element_data = []
@@ -371,6 +372,7 @@ def table_settings_from_request(settings: dict[str, any] | None) -> dict[str, an
     sort_reverse = is_true_str(settings.get('reverse', 'false'))
     show_error = is_true_str(settings.get('show_error', 'false'))
     show_hover = is_true_str(settings.get('show_hover', 'true'))
+    show_targets = is_true_str(settings.get('show_targets', 'false'))
 
     return dict(
         db_formatted_names=graph_settings['db_formatted_names'],
@@ -394,6 +396,7 @@ def table_settings_from_request(settings: dict[str, any] | None) -> dict[str, an
         sort_reverse=sort_reverse,
         return_error=show_error,
         return_hover=show_hover,
+        return_targets=show_targets,
     )
 
 
@@ -417,6 +420,7 @@ def graph_query_pipeline(graph_settings: dict[str, any]) -> list[dict[str, any]]
         catalogs=graph_settings['catalogs'],
         catalog_exclude=graph_settings['catalog_exclude'],
         return_nea_name=graph_settings['return_nea_name'],
+        return_targets=graph_settings.get('return_targets', False),
     )
 
 
@@ -499,6 +503,7 @@ def table_query_from_request(settings: dict[str, any] | None = None) -> dict[str
     planet_params_value_filters = table_settings['planet_params_value_filters']
     return_nea_name = bool(planet_params_returned)
     return_hover = table_settings['return_hover']
+    return_targets = table_settings['return_targets']
     # get the data from the database
     table_data = hypatia_db.frontend_pipeline(
         db_formatted_names=table_settings['db_formatted_names'],
@@ -523,7 +528,8 @@ def table_query_from_request(settings: dict[str, any] | None = None) -> dict[str
         return_error=return_error,
         star_name_column='star_id',
         return_nea_name=return_nea_name,
-        return_hover=table_settings['return_hover'],
+        return_hover=return_hover,
+        return_targets=return_targets,
     )
     # check the element data error values and replace them with the representative error for zero and null values
     rep_errors = [get_representative_error(el_id) for el_id in elements_returned]
@@ -593,7 +599,7 @@ def table_query_from_request(settings: dict[str, any] | None = None) -> dict[str
                 for planet_param in planet_params_returned:
                     hover_data[planet_param].append(data_row.get(f'{planet_param}_ref', ''))
     # return the table data
-    return dict(
+    return_data = dict(
         body={
             column_name: data_list for column_name, data_list in
             zip(
@@ -605,6 +611,9 @@ def table_query_from_request(settings: dict[str, any] | None = None) -> dict[str
         planet_count=planet_count,
         star_count=star_count,
     )
+    if return_targets:
+        return_data['targets'] = [data_row['target_handles'] for data_row in table_data]
+    return return_data
 
 
 if __name__ == '__main__':
