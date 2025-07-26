@@ -135,6 +135,9 @@ session_defaults_launch = {
     'catalogs': [],
     'star_action': 'exclude',
     'star_list': [],
+    'show_all': True,
+    'show_thin_disk': True,
+    'show_thick_disk': True,
 }
 
 exported_session_vars = sorted(set(session_defaults_launch.keys()) | toggle_graph_vars)
