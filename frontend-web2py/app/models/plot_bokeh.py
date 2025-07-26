@@ -161,6 +161,24 @@ def create_bokeh_scatter(name: list[str],
     return bokeh_default_settings(p=p, x_label=labels['xaxis'], y_label=labels['yaxis'], do_gridlines=do_gridlines)
 
 
+def init_plot_data(**kwargs):
+    return {
+        'x': [], 'y': [], 'handles': [], 'names': [],
+        'color': kwargs.get('color', default_color),
+        'fill_alpha': kwargs.get('fill_alpha', default_fill_alpha),
+        'line_alpha': kwargs.get('line_alpha', default_line_alpha),
+        'label': kwargs.get('title', default_label),
+        'marker': kwargs.get('marker', default_marker),
+    }
+
+def add_plot_data(plot_data, x_point, y_point, target_handle, star_name):
+    plot_data['x'].append(x_point)
+    plot_data['y'].append(y_point)
+    plot_data['handles'].append(target_handle)
+    plot_data['names'].append(star_name)
+    return plot_data
+
+
 def create_bokeh_targets(name: list[str],
                          xaxis: list[str | float | int], yaxis: list[str | float | int], 
                          target_handles: list[list[str]],
@@ -227,46 +245,15 @@ def create_bokeh_targets(name: list[str],
             if target_set.isdisjoint(requested_handles):
                 if show_all_hypatia:
                     if 'all_hypatia' not in grouped_targets.keys():
-                        grouped_targets['all_hypatia'] = {
-                            'x': [], 'y': [], 'handles': [], 'names': [],
-                            'color': all_hypatia_plot_options['color'],
-                            'fill_alpha': all_hypatia_plot_options['fill_alpha'],
-                            'line_alpha': all_hypatia_plot_options['line_alpha'],
-                            'label': all_hypatia_plot_options['title'],
-                            'marker': all_hypatia_plot_options['marker'],
-                        }
-                    all_hypatia_group = grouped_targets['all_hypatia']
-                    all_hypatia_group['x'].append(x_point)
-                    all_hypatia_group['y'].append(y_point)
-                    all_hypatia_group['handles'].append(target_handle)
-                    all_hypatia_group['names'].append(star_name)
+                        grouped_targets['all_hypatia'] = init_plot_data(**all_hypatia_plot_options)
+                    grouped_targets['all_hypatia'] = add_plot_data(grouped_targets['all_hypatia'], x_point, y_point,
+                                                                   target_handle, star_name)
             else:
                 if 'or_matches' not in grouped_targets.keys():
-                    if len(requested_handles) > 1:
-                        grouped_targets['or_matches'] = {
-                            'x': [], 'y': [], 'handles': [], 'names': [],
-                            'color': or_matches_plot_options['color'],
-                            'fill_alpha': or_matches_plot_options['fill_alpha'],
-                            'line_alpha': or_matches_plot_options['line_alpha'],
-                            'label': or_matches_plot_options['title'],
-                            'marker': or_matches_plot_options.get('marker', 'circle'),
-                        }
-                    else:
-                        plot_dict = targets_metadata.get(list(requested_handles)[0], {})
-                        grouped_targets['or_matches'] = {
-                            'x': [], 'y': [], 'handles': [], 'names': [],
-                            'color': plot_dict.get('color', 'yellow'),
-                            'fill_alpha': plot_dict.get('fill_alpha', 0.5),
-                            'line_alpha': plot_dict.get('line_alpha', 0.8),
-                            'label': plot_dict.get(['title'], 'Matches'),
-                            'marker': plot_dict.get('marker', 'circle'),
-                        }
+                    grouped_targets['or_matches'] = init_plot_data(**or_matches_plot_options)
                 # if we are doing OR logic, then we only add the point to the source if it matches the requested handles
-                or_matches_group = grouped_targets['or_matches']
-                or_matches_group['x'].append(x_point)
-                or_matches_group['y'].append(y_point)
-                or_matches_group['handles'].append(target_handle)
-                or_matches_group['names'].append(star_name)
+                grouped_targets['or_matches'] = add_plot_data(grouped_targets['or_matches'], x_point, y_point,
+                                                              target_handle, star_name)
                 number_of_targets += 1
         else:
             handles_found = set()
@@ -276,68 +263,27 @@ def create_bokeh_targets(name: list[str],
             if len(handles_found) == 0:
                 if show_all_hypatia:
                     if 'all_hypatia' not in grouped_targets.keys():
-                        grouped_targets['all_hypatia'] = {
-                            'x': [], 'y': [], 'handles': [], 'names': [],
-                            'color': all_hypatia_plot_options['color'],
-                            'fill_alpha': all_hypatia_plot_options['fill_alpha'],
-                            'line_alpha': all_hypatia_plot_options['line_alpha'],
-                            'label': all_hypatia_plot_options['title'],
-                            'marker': all_hypatia_plot_options.get('marker', 'circle'),
-                        }
-                    all_hypatia_group = grouped_targets['all_hypatia']
-                    all_hypatia_group['x'].append(x_point)
-                    all_hypatia_group['y'].append(y_point)
-                    all_hypatia_group['handles'].append(target_handle)
-                    all_hypatia_group['names'].append(star_name)
+                        grouped_targets['all_hypatia'] = init_plot_data(**all_hypatia_plot_options)
+                    grouped_targets['all_hypatia'] = add_plot_data(grouped_targets['all_hypatia'], x_point, y_point,
+                                                                  target_handle, star_name)
             elif len(handles_found) == 1:
                 single_handle = list(handles_found)[0]
                 if single_handle not in grouped_targets.keys():
-                    plot_dict = targets_metadata.get(single_handle, {})
-                    grouped_targets[single_handle] = {
-                        'x': [], 'y': [], 'handles': [], 'names': [],
-                        'color': plot_dict.get('color', 'yellow'),
-                        'fill_alpha': plot_dict.get('fill_alpha', 0.5),
-                        'line_alpha': plot_dict.get('line_alpha', 0.8),
-                        'label': plot_dict.get('title', single_handle),
-                        'marker': plot_dict.get('marker', 'circle'),
-                    }
-                handle_group = grouped_targets[single_handle]
-                handle_group['x'].append(x_point)
-                handle_group['y'].append(y_point)
-                handle_group['handles'].append(target_handle)
-                handle_group['names'].append(star_name)
+                    grouped_targets[single_handle] = init_plot_data(**targets_metadata.get(single_handle, {}))
+                grouped_targets[single_handle] = add_plot_data(grouped_targets[single_handle], x_point, y_point,
+                                                               target_handle, star_name)
                 number_of_targets += 1
-            if requested_handles_set.issubset(handles_found):
+            elif requested_handles_set.issubset(handles_found):
                 if 'combined_matches' not in grouped_targets.keys():
-                    grouped_targets['combined_matches'] = {
-                        'x': [], 'y': [], 'handles': [], 'names': [],
-                        'color': combined_matches_plot_options['color'],
-                        'fill_alpha': combined_matches_plot_options['fill_alpha'],
-                        'line_alpha': combined_matches_plot_options['line_alpha'],
-                        'label': combined_matches_plot_options['title'],
-                        'marker': combined_matches_plot_options.get('marker', 'circle'),
-                    }
-                combined_matches_group = grouped_targets['combined_matches']
-                combined_matches_group['x'].append(x_point)
-                combined_matches_group['y'].append(y_point)
-                combined_matches_group['handles'].append(target_handle)
-                combined_matches_group['names'].append(star_name)
+                    grouped_targets['combined_matches'] = init_plot_data(**combined_matches_plot_options)
+                grouped_targets['combined_matches'] = add_plot_data(grouped_targets['combined_matches'], x_point,
+                                                                    y_point, target_handle, star_name)
                 number_of_targets += 1
             else:
-                if 'combined_matches' not in grouped_targets.keys():
-                    grouped_targets['combined_matches'] = {
-                        'x': [], 'y': [], 'handles': [], 'names': [],
-                        'color': combined_matches_plot_options['color'],
-                        'fill_alpha': combined_matches_plot_options['fill_alpha'],
-                        'line_alpha': combined_matches_plot_options['line_alpha'],
-                        'label': combined_matches_plot_options['title'],
-                        'marker': combined_matches_plot_options.get('marker', 'circle'),
-                    }
-                combined_matches_group = grouped_targets['combined_matches']
-                combined_matches_group['x'].append(x_point)
-                combined_matches_group['y'].append(y_point)
-                combined_matches_group['handles'].append(target_handle)
-                combined_matches_group['names'].append(star_name)
+                if 'partial_matches' not in grouped_targets.keys():
+                    grouped_targets['partial_matches'] = init_plot_data(**partial_matches_plot_options)
+                grouped_targets['partial_matches'] = add_plot_data(grouped_targets['partial_matches'], x_point,
+                                                                    y_point, target_handle, star_name)
                 number_of_targets += 1
 
     if len(grouped_targets) == 0:

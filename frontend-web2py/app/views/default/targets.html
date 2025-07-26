@@ -40,7 +40,7 @@
                 <input type="checkbox" {{if session.show_all:}}checked="checked"{{pass}} id="show_all" name="show_all" onchange="refresh()"> All Hypatia Catalog
             </div>
             <div>
-                <input type="checkbox" {{if session.or_logic:}}checked="checked"{{pass}} id="or_logic" name="or_logic" onchange="refresh()"> Use "or" Logic for Multiple Target Sets
+                <input type="checkbox" {{if session.or_logic:}}checked="checked"{{pass}} id="or_logic" name="or_logic" onchange="refresh()"> Use "Union" Logic for Multiple Target Sets
             </div>
             <br/>
             <div >
@@ -48,6 +48,10 @@
                 <div title="{{=targets_metadata.get('hwo_tier1').get('ref')}}">
                     <input type="checkbox" {{if session.show_hwo_tier1:}}checked="checked"{{pass}} id="show_hwo_tier1" name="show_hwo_tier1" title="{{=targets_metadata.get('hwo_tier1').get('description')}}" onchange="refresh()">
                     {{=targets_metadata.get('hwo_tier1').get('title')}}
+                </div>
+                <div title="{{=targets_metadata.get('hwo_tier2').get('ref')}}">
+                    <input type="checkbox" {{if session.show_hwo_tier2:}}checked="checked"{{pass}} id="show_hwo_tier2" name="show_hwo_tier2" title="{{=targets_metadata.get('hwo_tier2').get('description')}}" onchange="refresh()">
+                    {{=targets_metadata.get('hwo_tier2').get('title')}}
                 </div>
                 <div title="{{=targets_metadata.get('thin_disk').get('ref')}}">
                     <input type="checkbox" {{if session.show_thin_disk:}}checked="checked"{{pass}} id="show_thin_disk" name="show_thin_disk" title="{{=targets_metadata.get('thin_disk').get('description')}}" onchange="refresh()">

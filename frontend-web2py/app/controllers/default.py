@@ -160,6 +160,8 @@ def graph():
 
 def get_requested_handles(settings: dict) -> list[str]:
     requested_handles = []
+    if settings['show_hwo_tier2']:
+        requested_handles.append('hwo_tier2')
     if settings['show_hwo_tier1']:
         requested_handles.append('hwo_tier1')
     if settings['show_thin_disk']:
