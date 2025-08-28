@@ -113,7 +113,7 @@ hypatia_colormap = LinearSegmentedColormap.from_list("hypatia_colormap", colors)
 
 xaxis1 = 'Fe'
 xaxis2 = 'H'
-yaxis1 = 'N'
+yaxis1 = 'O'
 yaxis2 = 'H'
 plot_data = get_graph_data(xaxis1=xaxis1, xaxis2=xaxis2, yaxis1=yaxis1, yaxis2=yaxis2)
 if plot_data is not None:
@@ -125,15 +125,15 @@ if plot_data is not None:
     if yaxis2 is not None and yaxis2.lower()!= 'h':
         y_handle += f'_{yaxis2}'
     #for both hist and heat
-    hist = True
-    heat = False
+    hist = False
+    heat = True
     both = False
 
 
     full_data = False
-    stand_dev = False
+    stand_dev = True
     sigma = 3
-    per_max = True
+    per_max = False
     percent = 30
     over_ride = False
     maximum = 0.85
@@ -141,8 +141,8 @@ if plot_data is not None:
     data = plot_data[x_handle]
 
     #specifically for heat
-    width_x = 2 * element_err[xaxis1]
-    width_y = 2 * element_err[yaxis1]
+    width_x = 0.08
+    width_y = 0.08
     minimum_y = 0.8
     minimum_x = 0.8
     maximum_y = 0.95

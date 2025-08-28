@@ -101,10 +101,10 @@ element_err = {
 
 hypatia_colormap = colors
 
-xaxis1 = 'Ca'
+xaxis1 = 'Fe'
 xaxis2 = 'H'
-yaxis1 = 'C'
-yaxis2 = 'H'
+yaxis1 = 'Si'
+yaxis2 = 'Fe'
 
 plot_data = get_graph_data(xaxis1=xaxis1, xaxis2=xaxis2, yaxis1=yaxis1, yaxis2=yaxis2)
 
@@ -123,7 +123,7 @@ if plot_data is not None:
 
     full_data = False
     stand_dev = True
-    sigma = 3
+    sigma = 4
     per_max = False
     percent = 30
     over_ride = False
@@ -146,14 +146,14 @@ if plot_data is not None:
                     title=f'[{xaxis1}/{xaxis2}]'
                 )
             ))
-            width = 2 * math.log(10) * math.sqrt((element_err[xaxis1] ** 2) + (element_err[xaxis2] ** 2))
+            width = width_x
         else:
             fig = go.Figure(layout=go.Layout(
                 xaxis=dict(
                     title=f'[{yaxis1}/{yaxis2}]'
                 )
             ))
-            width = 2 * math.log(10) * math.sqrt((element_err[yaxis1] ** 2) + (element_err[yaxis2] ** 2))
+            width = width_y
 
         if full_data is True:
             bins = round((abs(min(data) + abs(max(data))) / width))
