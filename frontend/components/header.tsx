@@ -16,7 +16,7 @@ const linkTextStyle = "px-4 hover:underline hover:text-hyyellow border-2 md:bord
 
 export default function NavMenu(): ReactElement {
     return (
-        <div className="flex-none w-full items-center bg-hypurple text-white font-mono p-2 text-xl lg:p-4 lg:text-base 2xl:text-xl 2xl:p-6">
+        <div className="flex-none w-full items-center bg-hypurple text-white font-sans p-2 text-3xl md:text-base lg:p-4 lg:text-xl 2xl:text-2xl 2xl:p-6">
             <div className="md:flex w-full">
                 <div className={linkTextStyle}>
                     <Link href="/">Home</Link>

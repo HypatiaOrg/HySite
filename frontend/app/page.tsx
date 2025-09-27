@@ -9,7 +9,7 @@ import {scatter_url, help_url, about_url, credits_url, about_api_url} from "@/da
 
 const linkStyle = "text-hyred hover:text-hypurple hover:bg-hyyellow hover:underline"
 const homeGrid = "bg-white grid grid-cols-16";
-const paragraphStyle = "text-hygrey col-span-14 col-start-2 indent-12 pt-4";
+const paragraphStyle = "text-hygrey col-span-14 col-start-2 indent-12 pt-4 text-lg md:text-xl";
 
 export default async function Home() {
     const counts = await getHomeData();
@@ -18,22 +18,22 @@ export default async function Home() {
     }
     return (
         <>
-            <div className="px-8 bg-radial-[at_50%_75%] from-hyyellow via-yellow-500 to-yellow-600 to-90%">
-                <div className="max-w-6xl mx-auto py-4 w-full md:flex flex-row md:items-center md:justify-between">
+            <div className="px-8 bg-radial-[at_50%_75%] from-yellow-400 via-yellow-200 to-hypurple to-90%">
+                <div className="max-w-6xl mx-auto py-4 w-full md:flex flex-row md:items-center gap-20">
                     <div className="flex flex-row justify-center items-center">
                         <Image
                             src={hypatiaLogo}
                             width="350"
                             height="350"
-                            alt="Hyptia Catalog Logo"
+                            alt="Hypatia Catalog Logo"
                         />
                     </div>
                     <div className="flex flex-col items-center text-center md:justify-center md:items-start md:text-left">
-                        <h1 className="text-6xl font-bold text-hypurple">Hypatia Catalog Database</h1>
-                        <h2 className="text-2xl font-semibold text-hyred">
+                        <h1 className="text-6xl font-bold text-hypurple">Hypatia Catalog</h1>
+                        <h2 className="text-xl lg:text-2xl  font-semibold text-hyred">
                             Explore stellar abundance data for
                         </h2>
-                        <ul className="list-inside list-inline ml-4">
+                        <ul className="list-inside list-inline ml-4 text-lg lg:text-2xl">
                             <li><b> {counts['stars'].toLocaleString()} </b> stars,</li>
                             <li><b> {counts['stars_with_planets'].toLocaleString()} </b> of which host planets and </li>
                             <li><b> {counts['stars_multistar'].toLocaleString()} </b> of which are in multistar systems, </li>
@@ -94,7 +94,7 @@ export default async function Home() {
                     <AbundancesHist/>
                 </div>
                 <div className={homeGrid}>
-                    <p className="text-hyblue bg-hypurple col-span-14 col-start-2 indent-12 pt-4">
+                    <p className="text-hyblue bg-hypurple col-span-14 col-start-2 indent-12 pt-2 pl-6 pr-6 pl:4">
                         Number of stars for which each element abundance has been measured as of June 2022.
                         Every star in the Hypatia Catalog has at least [Fe/H] and one other element.
                     </p>
