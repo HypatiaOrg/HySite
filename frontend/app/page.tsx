@@ -30,16 +30,16 @@ export default async function Home() {
                     </div>
                     <div className="flex flex-col items-center text-center md:justify-center md:items-start md:text-left">
                         <h1 className="text-6xl font-bold text-hypurple">Hypatia Catalog</h1>
-                        <h2 className="text-xl lg:text-2xl  font-semibold text-hyred">
-                            Explore stellar abundance data for
+                        <h2 className="text-xl lg:text-3xl  font-semibold text-hyred pt-0 lg:pt-1.5">
+                            Explore stellar abundance data:
                         </h2>
-                        <ul className="list-inside list-inline ml-4 text-lg lg:text-2xl">
+                        <ul className="list-inside list-inline ml-4 text-lg lg:text-2xl pt-0 lg:pt-1.5 lg:space-y-1.5">
                             <li><b> {counts['stars'].toLocaleString()} </b> stars,</li>
-                            <li><b> {counts['stars_with_planets'].toLocaleString()} </b> of which host planets and </li>
-                            <li><b> {counts['stars_multistar'].toLocaleString()} </b> of which are in multistar systems, </li>
+                            <li><b> {counts['stars_with_planets'].toLocaleString()} </b> planet hosts, </li>
+                            <li><b> {counts['stars_multistar'].toLocaleString()} </b> stars in multistellar systems, </li>
                             <li><b> {counts['elements'].toLocaleString()} </b> elements and species, </li>
                             <li><b> {counts['catalogs'].toLocaleString()} </b> catalogs, and </li>
-                            <li><b> {counts['abundances'].toLocaleString()} </b> abundance measurements. </li>
+                            <li><b> {counts['abundances'].toLocaleString()} </b> total abundance measurements. </li>
                         </ul>
                         <div className="text-hyred  border-hyred border-solid border-2 rounded-lg p-4 mt-4 text-2xl hover:bg-hygrey hover:border-hypurple hover:text-hyyellow">
                             <Link href={scatter_url}>Get Started »</Link>
@@ -56,7 +56,7 @@ export default async function Home() {
                     All stellar abundances have been carefully selected
                     from literature sources that measured [Fe/H]
                     and at least one other element.
-                    The Hypatia Catalog Database features an interactive table
+                    The Hypatia Catalog features an interactive table
                     and multiple plotting interfaces that allow easy access
                     and exploration of data within the Hypatia Catalog.
                     In addition, stellar properties and planetary properties,
@@ -68,7 +68,7 @@ export default async function Home() {
                 </div>
                 <p className={paragraphStyle}>
                     Help and documentation about the plots, tables,
-                    and advanced controls within the Hypatia Catalog Database
+                    and advanced controls within the Hypatia Catalog
                     can be found on the
                     <Link href={help_url} className={linkStyle}> Help </Link>
                     page in the top right corner.
@@ -85,7 +85,7 @@ export default async function Home() {
                 <p className={paragraphStyle}>
                     A detailed description of the Hypatia Catalog can be found in
                     <Link href="http://adsabs.harvard.edu/abs/2014AJ....148...54H" className={linkStyle}> Hinkel et al. (2014)</Link>.
-                    The Hypatia Catalog and Hypatia Catalog Database will continue to be routinely updated
+                    The Hypatia Catalog will continue to be routinely updated
                     in order to incorporate the most recent stellar abundance data published within the literature.
                 </p>
             </div>

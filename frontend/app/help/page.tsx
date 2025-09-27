@@ -66,7 +66,7 @@ export default function HelpPage() {
                         We note that abundances originally published in
                         absolute A(X) notation cannot be shown when the &ldquo;Original&ldquo; normalization is selected,
                         since no solar normalization was specified by the authors at the time of publication.
-                        However, when a solar normalization is chosen by the Hypatia Catalog Database user,
+                        However, when a solar normalization is chosen by the Hypatia Catalog user,
                         then all abundances -- [X/H], [X/Fe], or A(X) -- are placed on the same solar scale.
                         The absolute abundances, namely without a solar normalization,
                         can be viewed by choosing &ldquo;Absolute.&rdquo;
