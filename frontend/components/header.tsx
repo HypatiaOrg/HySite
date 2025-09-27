@@ -1,6 +1,14 @@
 import React, {ReactElement} from "react";
 import Link from "next/link";
-import {scatter_url, hist_url, help_url, about_url, credits_url, about_api_url} from "@/data/api_targets";
+import {
+    scatter_url,
+    targets_url,
+    hist_url,
+    help_url,
+    about_url,
+    credits_url,
+    about_api_url,
+} from "@/data/api_targets";
 
 const linkTextStyle = "px-4 hover:underline hover:text-hyyellow border-2 md:border-none border-hyyellow hover:bg-hygrey hover:text-hypurple rounded-lg";
 
@@ -14,10 +22,13 @@ export default function NavMenu(): ReactElement {
                     <Link href="/">Home</Link>
                 </div>
                 <div className={linkTextStyle}>
-                    <Link href={scatter_url}>Elements & Properties</Link>
+                    <Link href={scatter_url}>Scatter</Link>
                 </div>
                 <div className={linkTextStyle}>
-                    <Link href={hist_url}> Stars With/Without Planets </Link>
+                    <Link href={targets_url}>Target Lists</Link>
+                </div>
+                <div className={linkTextStyle}>
+                    <Link href={hist_url}>Histogram</Link>
                 </div>
                 <div className="md:flex md:flex-grow md:justify-end">
                     <div className={linkTextStyle}>

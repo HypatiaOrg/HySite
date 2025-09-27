@@ -34,6 +34,7 @@ export function homeAPI() {
 
 const url_prefix = "/hypatia/default";
 export const scatter_url = url_prefix + "/launch";
+export const targets_url = url_prefix + "/targets";
 export const hist_url = url_prefix + "/hist";
 export const help_url =  url_prefix + "/help";
 export const about_url =  url_prefix + "/about";
