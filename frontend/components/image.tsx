@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import Image, {StaticImageData} from 'next/image';
 import abundanceHistogram from "@/public/abundances.png";
+import backupAbundanceHistogram from "@/public/abundances_default.png";
+
 
 export function AbundancesHist() {
-    const [currentSrc, setCurrentSrc] = useState<string | StaticImageData>("/hypatia/api/plots/abundances_histogram.png");
+    const [currentSrc, setCurrentSrc] = useState<string | StaticImageData>(abundanceHistogram);
 
     const handleError = () => {
-        setCurrentSrc(abundanceHistogram);
+        setCurrentSrc(backupAbundanceHistogram);
     };
 
     return (

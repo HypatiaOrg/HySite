@@ -16,6 +16,8 @@ cp .env.display .env.production || exit
 # update the packages in package-lock.json (this requires node https://nodejs.org/en/download/package-manager)
 npm update || exit
 cd ../ || exit
+# copy image files for optimization in the Next build time
+curl --output-dir ./frontend/public/ -O http://localhost/hypatia/api/static/plots/abundances.png
 # build in the docker container
 echo -r -p "Local Build for frontend completed (needed for fetch-cache), launching the test-website..."
 docker compose build next-frontend || exit
