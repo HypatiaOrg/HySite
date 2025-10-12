@@ -4,12 +4,12 @@ import React from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import NavMenu from "@/components/header";
-import DataProvider from "@/data/UserSettings";
 import {getHomeData} from "@/data/fetch_data";
 
 
 
 const inter = Inter({ subsets: ["latin"] });
+export const revalidate = 300; // 5 minutes
 
 export const metadata: Metadata = {
     title: "Hypatia Catalog",
@@ -20,12 +20,12 @@ export const metadata: Metadata = {
 };
 
 
-export default async function RootLayout({
+export default function RootLayout({
                                        children,
                                    }: Readonly<{
     children: React.ReactNode;
 }>) {
-    const counts = await getHomeData();
+
     return (
         <html lang="en">
             <head>
@@ -42,15 +42,7 @@ export default async function RootLayout({
             <body className={inter.className}>
                 <main className="flex flex-col h-full w-full absolute top-0 left-0 z-10">
                     <NavMenu/>
-                    <DataProvider
-                        total_stars={counts['stars']}
-                        total_planet_hosts={counts['stars_with_planets']}
-                        total_multistar_systems={counts['stars_multistar']}
-                        total_elements={counts['elements']}
-                        total_catalogs={counts['catalogs']}
-                        total_abundances={counts['abundances']}>
-                        {children}
-                    </DataProvider>
+                    {children}
                 </main>
             </body>
         </html>
