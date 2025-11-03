@@ -24,87 +24,130 @@ colors = [
 ]
 
 element_err = {
-    "Ag": 0.2,
-    "Al": 0.06,
-    "Ba_II": 0.19,
-    "Be": 0.12,
-    "C": 0.09,
-    "Ca": 0.06,
-    "Ca_II": 0.03,
-    "Ce": 0.076,
-    "Ce_II": 0.07,
-    "Co": 0.04,
-    "Cr": 0.045,
-    "Cr_II": 0.066,
-    "Cu": 0.08,
-    "Dy": 0.4,
-    "Dy_II": 0.11,
-    "Er_II": 0.16,
-    "Eu": 0.11,
-    "Eu_II": 0.1,
-    "Fe": 0.04,
-    "Gd": 0.6,
-    "Gd_II": 0.13,
-    "Hf": 0.2,
-    "Hf_II": 0.18,
-    "K": 0.04,
-    "La": 0.086,
-    "La_II": 0.22,
-    "Li": 0.1,
-    "Mg": 0.07,
-    "Mn": 0.056,
-    "Mo": 0.12,
-    "N": 0.11,
-    "Na": 0.04,
-    "Nb_II": 0.15,
-    "Nd": 0.07,
-    "Ni": 0.05,
-    "O": 0.09,
-    "P": 0.04,
-    "Pb": 0.22,
-    "Pd": 0.19,
-    "Pr": 0.13,
-    "Pr_II": 0.1,
-    "Ru": 0.12,
-    "S": 0.09,
-    "Sc": 0.05,
-    "Sc_II": 0.09,
-    "Si": 0.05,
-    "Sm": 0.07,
-    "Sm_II": 0.155,
-    "Sr": 0.106,
-    "Sr_II": 0.15,
-    "Tb_II": 0.11,
-    "Th_II": 0.14,
-    "Ti": 0.05,
-    "Ti_II": 0.06,
-    "Tm_II": 0.2,
-    "V": 0.07,
-    "V_II": 0.105,
-    "Y": 0.085,
-    "Y_II": 0.08,
-    "Yb_II": 0.14,
-    "Zn": 0.076,
-    "Zr": 0.1,
-    "Zr_II": 0.08,
-    "F": 0.12,
-    "Si_II": 0.05,
-    "Cl": 0.23,
-    "Mn_II": 0.056,
-    "Rb": 99.99,
-    "Sn": 99.99,
-    "Ba": 0.15,
-    "Ir": 0.28,
-    "Nd_II": 0.07,
-    "H": 0.0
+    "Ag": 0.4,
+    "Al": 0.12,
+    "Al_II": 0.3,
+    "Au": 0.6,
+    "Ba": 0.3,
+    "Ba_II": 0.38,
+    "Be": 0.24,
+    "Be_II": 0.1,
+    "C": 0.18,
+    "Ca": 0.12,
+    "Ca_II": 0.06,
+    "Cd": 0.5,
+    "Ce": 0.152,
+    "Ce_II": 0.14,
+    "Cl": 0.46,
+    "Co": 0.08,
+    "Co_II": 0.1,
+    "Cr": 0.09,
+    "Cr_II": 0.132,
+    "Cu": 0.16,
+    "Cu_II": 0.46,
+    "Dy": 0.8,
+    "Dy_II": 0.22,
+    "Er": 0.4,
+    "Er_II": 0.32,
+    "Eu": 0.22,
+    "Eu_II": 0.2,
+    "F": 0.24,
+    "Fe": 0.08,
+    "Ga": 0.4,
+    "Ga_II": 0.38,
+    "Gd": 1.2,
+    "Gd_II": 0.26,
+    "Hf": 0.4,
+    "Hf_II": 0.36,
+    "Hg_II": 0.36,
+    "Ho_II": 0.42,
+    "In_II": 0.4,
+    "Ir": 0.56,
+    "K": 0.08,
+    "La": 0.172,
+    "La_II": 0.44,
+    "Li": 0.2,
+    "Lu_II": 0.3,
+    "Mg": 0.14,
+    "Mn": 0.112,
+    "Mn_II": 0.112,
+    "Mo": 0.24,
+    "Mo_II": 0.4,
+    "N": 0.22,
+    "Na": 0.08,
+    "Nb": 0.52,
+    "Nb_II": 0.3,
+    "Nd": 0.14,
+    "Nd_II": 0.14,
+    "Ni": 0.1,
+    "Ni_II": 0.16,
+    "O": 0.18,
+    "Os": 0.22,
+    "P": 0.08,
+    "Pb": 0.44,
+    "Pb_II": 0.44,
+    "Pd": 0.38,
+    "Pr": 0.26,
+    "Pr_II": 0.2,
+    "Pt": 0.3,
+    "Rb": 0.24,
+    "Re_II": 0.3,
+    "Rh": 0.44,
+    "Ru": 0.24,
+    "Ru_II": 0.34,
+    "S": 0.18,
+    "Sb": 0.34,
+    "Sc": 0.1,
+    "Sc_II": 0.18,
+    "Se": 0.5,
+    "Si": 0.1,
+    "Si_II": 0.1,
+    "Sm": 0.14,
+    "Sm_II": 0.31,
+    "Sn": 0.44,
+    "Sr": 0.212,
+    "Sr_II": 0.3,
+    "Tb_II": 0.22,
+    "Tc": 0.2,
+    "Te": 0.54,
+    "Th": 0.08,
+    "Th_II": 0.28,
+    "Ti": 0.1,
+    "Ti_II": 0.12,
+    "Tm_II": 0.4,
+    "V": 0.14,
+    "V_II": 0.21,
+    "W": 0.68,
+    "W_II": 0.2,
+    "Y": 0.17,
+    "Y_II": 0.16,
+    "Yb_II": 0.28,
+    "Zn": 0.152,
+    "Zn_II": 0.62,
+    "Zr": 0.2,
+    "Zr_II": 0.16
 }
 
 hypatia_colormap = colors
 
-xaxis1 = 'Fe'
+xaxis1 = 'N'
 xaxis2 = 'H'
-yaxis1 = 'Si'
-yaxis2 = 'Fe'
+yaxis1 = 'Na'
+yaxis2 = 'N'
+
+if xaxis1 == "H":
+    width_x = element_err[xaxis2]
+elif xaxis2 == "H":
+    width_x = element_err[xaxis1]
+else:
+    width_x = math.sqrt((element_err[xaxis1]) ** 2 + (element_err[xaxis2]) ** 2)
+
+if yaxis1 == "H":
+    width_y = element_err[yaxis2]
+elif yaxis2 == "H":
+    width_y = element_err[yaxis1]
+else:
+    width_y = math.sqrt((element_err[yaxis1]) ** 2 + (element_err[yaxis2]) ** 2)
 
 plot_data = get_graph_data(xaxis1=xaxis1, xaxis2=xaxis2, yaxis1=yaxis1, yaxis2=yaxis2)
 
@@ -121,8 +164,8 @@ if plot_data is not None:
     heat = False
     both = True
 
-    full_data = False
-    stand_dev = True
+    full_data = True
+    stand_dev = False
     sigma = 4
     per_max = False
     percent = 30
@@ -132,8 +175,7 @@ if plot_data is not None:
     data = plot_data[x_handle]
 
     # specifically for heat
-    width_x = 0.08
-    width_y = 0.08
+
     minimum_y = 0.8
     minimum_x = 0.8
     maximum_y = 0.95
@@ -141,77 +183,126 @@ if plot_data is not None:
 
     if hist is True:
         if data is plot_data[x_handle]:
-            fig = go.Figure(layout=go.Layout(
-                xaxis=dict(
-                    title=f'[{xaxis1}/{xaxis2}]'
-                )
-            ))
+
             width = width_x
-        else:
-            fig = go.Figure(layout=go.Layout(
-                xaxis=dict(
-                    title=f'[{yaxis1}/{yaxis2}]'
-                )
+
+            if full_data is True:
+                bins = round((abs(min(data) + abs(max(data))) / width))
+                range_min = (min(data))
+                range_max = (max(data))
+
+            elif stand_dev is True:
+                mean = statistics.mean(data)
+                stdev = statistics.stdev(data)
+                threshold = sigma * stdev
+                range_min = mean - threshold
+                range_max = mean + threshold
+                bins = round((abs(range_min) + abs(range_max)) / width)
+            elif per_max is True:
+                bins_init = round((abs(min(data)) / width))
+                hist = np.histogram(data, bins=bins_init)
+                norm_hist = hist[0] / max(hist[0])
+                bin_edges_init = hist[1]
+                threshold = percent * 0.01
+                keep_bin_indices = np.where(norm_hist >= threshold)[0]  # identify the indices to keep
+                bin_edges = bin_edges_init[keep_bin_indices]
+                bin_edges_upper = bin_edges_init[keep_bin_indices + 1]
+                filtered_data = []
+                for lower, upper in zip(bin_edges, bin_edges_upper):
+                    filtered_data.extend([x for x in data if lower <= x < upper])
+                filtered_data = np.array(filtered_data)
+                data = filtered_data
+                range_min = filtered_data.min()
+                range_max = filtered_data.max()
+                bins = round((abs(range_min) + abs(range_max)) / width)
+
+            elif over_ride is True:
+                bins = round((abs(minimum) + abs(maximum)) / width)
+                range_min = minimum
+                range_max = maximum
+
+            # Create histogram using Plotly
+            fig = go.Figure()
+
+            fig.add_trace(go.Histogram(
+                x=data,
+                xbins=dict(start=range_min, end=range_max, size=(range_max - range_min) / width),
+                marker=dict(color='#4e11b7', line=dict(color='black', width=1)),
+                name='data points'
             ))
+
+            # Set layout
+            fig.update_layout(
+                title="Histogram",
+                xaxis=dict(title=f'[{xaxis1}/{xaxis2}]'),
+                yaxis_title='[frequency]',
+                legend=dict(x=1, y=0, xanchor='right', yanchor='bottom'),
+                bargap=0.1
+            )
+
+            # Show the plot
+            fig.show()
+        else:
+
             width = width_y
 
-        if full_data is True:
-            bins = round((abs(min(data) + abs(max(data))) / width))
-            range_min = (min(data))
-            range_max = (max(data))
+            if full_data is True:
+                bins = round((abs(min(data) + abs(max(data))) / width))
+                range_min = (min(data))
+                range_max = (max(data))
 
-        elif stand_dev is True:
-            mean = statistics.mean(data)
-            stdev = statistics.stdev(data)
-            threshold = sigma*stdev
-            range_min = mean-threshold
-            range_max = mean+threshold
-            bins = round((abs(range_min)+abs(range_max))/width)
+            elif stand_dev is True:
+                mean = statistics.mean(data)
+                stdev = statistics.stdev(data)
+                threshold = sigma * stdev
+                range_min = mean - threshold
+                range_max = mean + threshold
+                bins = round((abs(range_min) + abs(range_max)) / width)
+            elif per_max is True:
+                bins_init = round((abs(min(data)) / width))
+                hist = np.histogram(data, bins=bins_init)
+                norm_hist = hist[0] / max(hist[0])
+                bin_edges_init = hist[1]
+                threshold = percent * 0.01
+                keep_bin_indices = np.where(norm_hist >= threshold)[0]  # identify the indices to keep
+                bin_edges = bin_edges_init[keep_bin_indices]
+                bin_edges_upper = bin_edges_init[keep_bin_indices + 1]
+                filtered_data = []
+                for lower, upper in zip(bin_edges, bin_edges_upper):
+                    filtered_data.extend([x for x in data if lower <= x < upper])
+                filtered_data = np.array(filtered_data)
+                data = filtered_data
+                range_min = filtered_data.min()
+                range_max = filtered_data.max()
+                bins = round((abs(range_min) + abs(range_max)) / width)
 
-        elif per_max is True:
-            bins_init = round((abs(min(data))/width))
-            hist = np.histogram(data, bins=bins_init)
-            norm_hist = hist[0]/max(hist[0])
-            bin_edges_init = hist[1]
-            threshold = percent*0.01
-            keep_bin_indices = np.where(norm_hist >= threshold)[0] #identify the indices to keep
-            bin_edges = bin_edges_init[keep_bin_indices]
-            bin_edges_upper = bin_edges_init[keep_bin_indices + 1]
-            filtered_data = []
-            for lower, upper in zip(bin_edges, bin_edges_upper):
-                filtered_data.extend([x for x in data if lower <= x < upper])
-            filtered_data = np.array(filtered_data)
-            data = filtered_data
-            range_min = filtered_data.min()
-            range_max = filtered_data.max()
-            bins = round((abs(range_min)+abs(range_max))/width)
+            elif over_ride is True:
+                bins = round((abs(minimum) + abs(maximum)) / width)
+                range_min = minimum
+                range_max = maximum
 
-        elif over_ride is True:
-            bins = round((abs(minimum)+abs(maximum))/width)
-            range_min = minimum
-            range_max = maximum
+            # Create histogram using Plotly
+            fig = go.Figure()
 
-        # Create histogram using Plotly
-        fig = go.Figure()
+            fig.add_trace(go.Histogram(
+                x=data,
+                xbins=dict(start=range_min, end=range_max, size=(range_max - range_min) / width),
+                marker=dict(color='#4e11b7', line=dict(color='black', width=1)),
+                name='data points'
+            ))
 
-        fig.add_trace(go.Histogram(
-            x=data,
-            xbins=dict(start=range_min, end=range_max, size=(range_max - range_min) / bins),
-            marker=dict(color = '#4e11b7', line=dict(color='black', width=1)),
-            name='data points'
-        ))
+            # Set layout
+            fig.update_layout(
+                title="Histogram",
+                xaxis=dict(title=f"[{yaxis1}/{yaxis2}]"),
+                yaxis_title='[frequency]',
+                legend=dict(x=1, y=0, xanchor='right', yanchor='bottom'),
+                bargap=0.1
+            )
 
-        # Set layout
-        fig.update_layout(
-            title="title",
-            xaxis_title='',
-            yaxis_title='[frequency]',
-            legend=dict(x=1, y=0, xanchor='right', yanchor='bottom'),
-            bargap=0.1
-        )
+            # Show the plot
+            fig.show()
 
-        # Show the plot
-        fig.show()
 
     elif heat is True:
 
@@ -250,8 +341,8 @@ if plot_data is not None:
         fig = go.Figure(data=go.Histogram2d(
             x=x,
             y=y,
-            xbins=dict(start=range_min_x, end=range_max_x, size=(range_max_x - range_min_x) / bin_num_x),
-            ybins=dict(start=range_min_y, end=range_max_y, size=(range_max_y - range_min_y) / bin_num_y),
+            xbins=dict(start=range_min_x, end=range_max_x, size=(range_max_x - range_min_x) / width_x),
+            ybins=dict(start=range_min_y, end=range_max_y, size=(range_max_y - range_min_y) / width_y),
             colorscale=hypatia_colormap,
             colorbar=dict(title='Frequency')
         ))
@@ -319,7 +410,7 @@ if plot_data is not None:
                 xbins=dict(
                     start=range_min_x,
                     end=range_max_x,
-                    size=(range_max_x - range_min_x) / bin_num_x
+                    size=width_x
                 ),
                 marker=dict(color='#4e11b7', line=dict(color='black', width=1)),
                 showlegend=False
@@ -334,7 +425,7 @@ if plot_data is not None:
                 ybins=dict(
                     start=range_min_y,
                     end=range_max_y,
-                    size=(range_max_y - range_min_y) / bin_num_y
+                    size=width_y
                 ),
                 marker=dict(color='#4e11b7', line=dict(color='black', width=1)),
                 showlegend=False
@@ -350,12 +441,12 @@ if plot_data is not None:
                 xbins=dict(
                     start=range_min_x,
                     end=range_max_x,
-                    size=(range_max_x - range_min_x) / bin_num_x
+                    size=width_x
                 ),
                 ybins=dict(
                     start=range_min_y,
                     end=range_max_y,
-                    size=(range_max_y - range_min_y) / bin_num_y
+                    size=width_y
                 ),
                 colorscale=hypatia_colormap,
                 colorbar=dict(title='Frequency'),
@@ -370,7 +461,9 @@ if plot_data is not None:
             xaxis2_title=f"[{xaxis1}/{xaxis2}]",
             yaxis2_title=f"[{yaxis1}/{yaxis2}]",
             bargap=0.05,
-            showlegend=False
+            showlegend=False,
+            width=600,
+            height=600
         )
 
         fig.show()
