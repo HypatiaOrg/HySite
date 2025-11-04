@@ -1,7 +1,7 @@
 export default function Acknowledgements() {
     return (
         <div>
-            Acknowledgements
+            Acknowledgements small change
         </div>
     );
 }
