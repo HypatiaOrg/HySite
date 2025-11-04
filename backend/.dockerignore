@@ -11,3 +11,4 @@ output
 hypatia/HyData/.git
 # ignore the dockerfilesincluding the
 *Dockerfile
+/sandbox.ipynb
