@@ -22,9 +22,7 @@ def simbad_url(simbad_name: str) -> str:
 
 
 def simbad_coord_to_deg(ra: str, dec: str) -> tuple[float, float, str]:
-    *_, hms = str(ra).split('\n')
-    *_, dms = str(dec).split('\n')
-    c = SkyCoord(hms + ' ' + dms, unit=(u.hourangle, u.deg))
+    c = SkyCoord(ra=ra, dec=dec, unit=(u.deg, u.deg))
     return c.ra.deg, c.dec.deg, c.to_string('hmsdms')
 
 
@@ -130,7 +128,7 @@ def parse_star_data(star_data: dict[str, any]) -> dict[str, any]:
         print(f'    No RA Dec results from the SIMBAD record for {main_id}')
     else:
         ra_raw = star_data_lower['ra']
-        dec_raw =star_data_lower['dec']
+        dec_raw = star_data_lower['dec']
         if dec_raw == '-':
             print(f'Vist the SIMBAD pages for {main_id} at:')
             print(f'{simbad_url(main_id)}')
