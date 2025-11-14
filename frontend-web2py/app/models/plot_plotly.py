@@ -1,13 +1,8 @@
-import os
-import sys
-import math
 from warnings import warn
 
 import numpy as np
 
 import plotly.express as px
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
 
 
 default_color_pallet = 'hypatia'
