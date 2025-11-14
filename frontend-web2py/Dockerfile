@@ -1,4 +1,4 @@
-FROM python:alpine
+FROM python:3.13-alpine
 ENV PYTHONNUNBUFFERED 1
 ARG WORKING_DIR=/home/python_kid/web2py_app
 ARG VENV_DIR=$WORKING_DIR/venv
