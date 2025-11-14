@@ -49,7 +49,7 @@
             <dt>Choose a Color Pallet</dt>
             <dd>
                 <select class="form-control" name="color_pallet" onchange="refresh()">
-                    {{for color_pallet in color_pallets:}}
+                    {{for color_pallet in color_pallets.keys():}}
                     <option name="color_pallet" value="{{=color_pallet}}" {{if session.color_pallet==color_pallet:}}selected="selected"{{pass}}>{{=color_pallet}}</option>
 
                     {{pass}}

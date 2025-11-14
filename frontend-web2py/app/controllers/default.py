@@ -175,21 +175,21 @@ def graph():
 
 def graph_density():
     outputs, labels, graph_data, do_xlog, do_ylog, _do_zlog, _has_zaxis, settings = scatter_format()
-    div = create_plotly_scatter(name=outputs.get('name', []),
-                                xaxis=outputs.get('xaxis', []),
-                                yaxis=outputs.get('yaxis', []),
-                                x_label=labels.get('xaxis', None),
-                                y_label=labels.get('yaxis', None),
-                                star_count=graph_data.get('star_count', None),
-                                planet_count=graph_data.get('planet_count', None),
-                                do_xlog=do_xlog, do_ylog=do_ylog,
-                                xaxisinv=settings['xaxisinv'], yaxisinv=settings['yaxisinv'],
-                                do_gridlines=settings['gridlines'],
-                                show_xyhist=settings['show_xyhist'],
-                                xhist_bin_size=settings['xhist_bin_size'],
-                                yhist_bin_size= settings['yhist_bin_size'],
-                                color_pallet=settings['color_pallet'],
-                                )
+    div = create_plotly_hist(name=outputs.get('name', []),
+                             xaxis=outputs.get('xaxis', []),
+                             yaxis=outputs.get('yaxis', []),
+                             x_label=labels.get('xaxis', None),
+                             y_label=labels.get('yaxis', None),
+                             star_count=graph_data.get('star_count', None),
+                             planet_count=graph_data.get('planet_count', None),
+                             do_xlog=do_xlog, do_ylog=do_ylog,
+                             xaxisinv=settings['xaxisinv'], yaxisinv=settings['yaxisinv'],
+                             do_gridlines=settings['gridlines'],
+                             show_xyhist=settings['show_xyhist'],
+                             xhist_bin_size=settings['xhist_bin_size'],
+                             yhist_bin_size= settings['yhist_bin_size'],
+                             color_pallet=settings['color_pallet'],
+                             )
     # send back to the browser
     return dict(div=div)
 
