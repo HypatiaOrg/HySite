@@ -37,7 +37,6 @@ def needs_micro_lense_name_change(nea_name: str) -> None or str:
 
 def upload_to_database(planets_by_host_name: dict[str, dict[str, any]], test_origin: str = 'nea'):
     # make a list of star-names tuples to be used in the main_id search
-    all_ids = []
     search_ids = []
     has_micro_lens_names = []
     for host_name, host_data in planets_by_host_name.items():
@@ -47,7 +46,6 @@ def upload_to_database(planets_by_host_name: dict[str, dict[str, any]], test_ori
             raise ValueError(
                 f'No valid name found for host, this is not supposed to happen, see host_data: {host_data}')
         nea_ids = {host_data[param] for param in hypatia_host_name_rank_order if param in host_data.keys()}
-        all_ids.append(tuple(nea_ids))
         names_to_try = {nea_id for nea_id in nea_ids if nea_id not in nea_names_the_cause_wrong_simbad_references}
         mirco_name_for_simbad = needs_micro_lense_name_change(nea_name)
         has_micro_lens_name = mirco_name_for_simbad is not None
@@ -57,7 +55,7 @@ def upload_to_database(planets_by_host_name: dict[str, dict[str, any]], test_ori
         has_micro_lens_names.append(has_micro_lens_name)
     # update or get all the name data for these stars from SIMBAD
     star_docs = get_star_data_batch(search_ids=search_ids, test_origin=test_origin,
-                                    has_micro_lens_names=has_micro_lens_names, all_ids=all_ids)
+                                    has_micro_lens_names=has_micro_lens_names)
     nea_docs = []
     for (host_name, host_data), star_doc in zip(planets_by_host_name.items(), star_docs):
         mongo_format = {'_id': star_doc['_id'], 'attr_name': star_doc['attr_name'],
