@@ -1,7 +1,7 @@
 services:
     mongo-db:
         container_name: mongoDB
-        image: mongo
+        image: mongo:8.0
         restart: "${RESTART_POLICY:-no}"
         healthcheck:
             test: ["CMD", "echo", "'db.runCommand(\"ping\").ok'", "|", "mongosh", "localhost:27017/test", "--quiet"]
