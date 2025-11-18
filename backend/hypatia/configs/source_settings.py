@@ -33,7 +33,7 @@ simbad_parameters_hack = {'Gaia DR2 4087838959097352064':
 # one line per star name that is causing the conflict
 nea_names_the_cause_wrong_simbad_references = {
     'HD 132563',
-    'Gaia DR2 4794830231453653888',
+    'Gaia DR2 4794830231453653888', 'Gaia DR3 4794830231453653888'
     'TIC 392045047', 'Oph 11',
     'TIC 1129033', # NEA NAME: WASP-77 A
     'HD 358155', 'TIC 442530946', # NEA NAME: WASP-70 A
@@ -65,4 +65,7 @@ nea_names_the_cause_wrong_simbad_references = {
     'TIC 380619414',  # NEA NAME: WASP-85 A
     'Kepler-645', 'TIC 159381747',  # NEA NAME: Gaia DR2 2126865575897687168
     'Kepler-650', 'TIC 158934047',  # NEA NAME: Gaia DR2 2127172919457889792
+    'Kepler-808', 'TIC 26417717', #NEA NAME: Gaia DR3 2129330577887487744
+    'TOI-5319', 'TIC 246965431', #NEA NAME: Gaia DR3 102461087706561024
+    'TIC 164882868', 'Kepler-983', #NEA NAME: Gaia DR3 2106370541711607680
 }

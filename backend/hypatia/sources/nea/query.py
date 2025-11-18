@@ -5,7 +5,8 @@ import numpy as np
 from hypatia.tools.table_read import num_format
 
 nea_host_name_rank_order = [
-    'gaia_id',
+    'gaia_dr3_id',
+    'gaia_dr2_id',
     'tic_id',
     'hip_name',
     'hd_name',
@@ -17,7 +18,8 @@ nea_host_level_params = {
     'hip_name',
     'hostname',
     'tic_id',
-    'gaia_id',
+    'gaia_dr2_id',
+    'gaia_dr3_id',
     'sy_dist',
     'st_mass',
     'st_rad',
@@ -60,7 +62,8 @@ nea_requested_data_types_default = [
     'hd_name',
     'hip_name',
     'tic_id',
-    'gaia_id',
+    'gaia_dr2_id',
+    'gaia_dr3_id',
     'discoverymethod',
 ]
 
@@ -95,7 +98,8 @@ nea_to_hypatia_fields = {
     'hd_name': 'hd',
     'hip_name': 'hip',
     'tic_id': 'tic',
-    'gaia_id': 'gaia dr2',
+    'gaia_dr2_id': 'gaia dr2',
+    'gaia_dr3_id': 'gaia dr3',
     'sy_dist': 'dist',
     'sy_pnum': 'num_planets',
     'st_mass': 'mass',
@@ -117,7 +121,7 @@ nea_to_hypatia_fields = {
 }
 
 non_parameter_fields = {
-    '_id', 'nea_name', 'attr_name', 'hip', 'hd', 'tic', 'gaia dr2',
+    '_id', 'nea_name', 'attr_name', 'hip', 'hd', 'tic', 'gaia dr2', 'gaia dr3',
     'planet_letters', 'planets', 'letter', 'pl_name', 'pl_radelim',
     *calculated_params,
     *bool_params,

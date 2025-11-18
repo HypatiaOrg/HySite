@@ -117,6 +117,10 @@ validator = {
                 'bsonType': 'string',
                 'description': 'must be a string and is not required'
             },
+            'gaia dr3': {
+                'bsonType': 'string',
+                'description': 'must be a string and is not required'
+            },
             'hd': {
                 'bsonType': 'string',
                 'description': 'must be a string and is not required'
