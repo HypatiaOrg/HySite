@@ -31,7 +31,7 @@ simbad_parameters_hack = {'Gaia DR2 4087838959097352064':
 # Example: Gaia DR2 4794830231453653888 is incorrectly associated with HD 41004B in the NEA sources,
 # but this GAIA name is for HD 41004A, which also has an entry in the NEA sources.
 # one line per star name that is causing the conflict
-nea_names_the_cause_wrong_simbad_references = {
+nea_names_that_cause_wrong_simbad_references = {
     'HD 132563',
     'Gaia DR2 4794830231453653888', 'Gaia DR3 4794830231453653888'
     'TIC 392045047', 'Oph 11',

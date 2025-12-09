@@ -1,13 +1,19 @@
-from hypatia.sources.simbad.ops import get_main_id
 from hypatia.sources.nea.db import ExoPlanetStarCollection
 from hypatia.sources.simbad.batch import get_star_data_batch
+from hypatia.sources.simbad.ops import get_main_id, get_match_name
 from hypatia.object_params import SingleParam, expected_params_dict, ObjectParams
 from hypatia.sources.nea.query import query_nea, set_data_by_host, hypatia_host_name_rank_order, non_parameter_fields
-from hypatia.configs.source_settings import (nea_names_the_cause_wrong_simbad_references, nea_ref, known_micro_names,
+from hypatia.configs.source_settings import (nea_names_that_cause_wrong_simbad_references, nea_ref, known_micro_names,
                                              system_designations)
 
 
 nea_collection = ExoPlanetStarCollection(collection_name='nea')
+nea_names_match_names_to_ignore = {get_match_name(nea_name)
+                                   for nea_name in nea_names_that_cause_wrong_simbad_references}
+
+
+def get_nea_ids(nea_ids: set[str]) -> set[str]:
+    return  {nea_id for nea_id in nea_ids if get_match_name(nea_id) not in nea_names_match_names_to_ignore}
 
 
 def get_nea_data(test_name: str) -> dict or None:
@@ -46,7 +52,7 @@ def upload_to_database(planets_by_host_name: dict[str, dict[str, any]], test_ori
             raise ValueError(
                 f'No valid name found for host, this is not supposed to happen, see host_data: {host_data}')
         nea_ids = {host_data[param] for param in hypatia_host_name_rank_order if param in host_data.keys()}
-        names_to_try = {nea_id for nea_id in nea_ids if nea_id not in nea_names_the_cause_wrong_simbad_references}
+        names_to_try = get_nea_ids(nea_ids)
         mirco_name_for_simbad = needs_micro_lense_name_change(nea_name)
         has_micro_lens_name = mirco_name_for_simbad is not None
         if has_micro_lens_name:
