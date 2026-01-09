@@ -3,5 +3,5 @@ net:
   bindIp: 0.0.0.0
   tls:
     mode: requireTLS
-    certificateKeyFile: "/etc/letsencrypt/live/hypatiacatalog.com/mongodb.pem"
-    CAFile: "/etc/letsencrypt/live/hypatiacatalog.com/fullchain.pem"
+    certificateKeyFile: "/etc/letsencrypt/mongo-ssl/mongodb.pem"
+    CAFile: "/etc/letsencrypt/mongo-ssl/fullchain.pem"
