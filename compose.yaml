@@ -18,10 +18,10 @@ services:
               source: ./mongo
               target: /data/db
             - hyroute_ssl_keys:/etc/letsencrypt:ro
+            - ./mongo-config/config.yaml:/etc/mongod.conf:ro
         # open a port on the localhost computer for using the API outside a docker container
         ports: ["27017:27017"]
         profiles: ["db"]
-        command: ["mongod", "--tlsMode", "requireTLS", "--tlsCertificateKeyFile", "/etc/letsencrypt/live/hypatiacatalog.com/mongodb.pem", "--tlsCAFile", "/etc/letsencrypt/live/hypatiacatalog.com/fullchain.pem", "--bind_ip_all"]
         networks:
             - hynet
 
