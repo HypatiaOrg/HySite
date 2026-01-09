@@ -22,6 +22,7 @@ services:
         # open a port on the localhost computer for using the API outside a docker container
         ports: ["27017:27017"]
         profiles: ["db"]
+        command: ["mongod", "--config", "/etc/mongod.conf"]
         networks:
             - hynet
 
