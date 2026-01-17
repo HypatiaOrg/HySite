@@ -134,7 +134,7 @@ volumes:
     web_to_py_gunicorn_tmp:
     web_to_py_session_data:
     hyroute_ssl_keys:
-        external: "${SSL_KEYS_VOLUME_EXTERNAL:-false}"
+        external: "${SSL_KEYS_VOLUME_EXTERNAL:-true}"
 
 networks:
     hynet:
