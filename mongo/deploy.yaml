@@ -2,7 +2,7 @@ net:
   port: 27017
   bindIp: 0.0.0.0
   tls:
-    mode: allowTLS
+    mode: requireTLS
     certificateKeyFile: "/etc/letsencrypt/mongo-ssl/mongodb.pem"
     CAFile: "/etc/letsencrypt/mongo-ssl/fullchain.pem"
     allowConnectionsWithoutCertificates: true
