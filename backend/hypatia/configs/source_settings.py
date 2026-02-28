@@ -68,4 +68,6 @@ nea_names_that_cause_wrong_simbad_references = {
     'Kepler-808', 'TIC 26417717', #NEA NAME: Gaia DR3 2129330577887487744
     'TOI-5319', 'TIC 246965431', #NEA NAME: Gaia DR3 102461087706561024
     'TIC 164882868', 'Kepler-983', #NEA NAME: Gaia DR3 2106370541711607680
+    'SWEEPS-4',
+    'SWEEPS-11',
 }
