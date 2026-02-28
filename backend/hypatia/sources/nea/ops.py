@@ -63,7 +63,13 @@ def upload_to_database(planets_by_host_name: dict[str, dict[str, any]], test_ori
     star_docs = get_star_data_batch(search_ids=search_ids, test_origin=test_origin,
                                     has_micro_lens_names=has_micro_lens_names)
     nea_docs = []
+    unique_names = {}
     for (host_name, host_data), star_doc in zip(planets_by_host_name.items(), star_docs):
+        simbad_id = star_doc['_id']
+        if simbad_id in unique_names:
+            raise ValueError(f'NEA names are not unique: {simbad_id} links to both {host_name} and {unique_names[simbad_id]}.')
+        else:
+            unique_names[simbad_id] = host_name
         mongo_format = {'_id': star_doc['_id'], 'attr_name': star_doc['attr_name'],
                         'planet_letters': list(host_data['planets'].keys()), **host_data}
         # test that the formating will work when this data is returned from the database, but do not use the returned data
