@@ -1,8 +1,9 @@
 # # Custom patterns for the HySite project
 # all environment files
 *.env
-# but not the example.env
+# but not the example.env and local.env
 !example.env
+!local.env
 # ignore the JetBrains IDE files
 .idea/
 # the DS_Store files on macOS

@@ -2,6 +2,7 @@
 Base class for tables data that use star names as their primary key (unique identifier).
 """
 import time
+from warnings import warn
 
 from pymongo import MongoClient
 from pymongo.cursor import Cursor
@@ -9,13 +10,15 @@ from pymongo.results import DeleteResult, InsertOneResult, InsertManyResult, Upd
 from pymongo.errors import ServerSelectionTimeoutError, CollectionInvalid, OperationFailure
 
 
-from hypatia.configs.env_load import connection_string
+from hypatia.configs.env_load import connection_string, CLIENT_TLS
 
 is_read_only_user = False
 
 
 class BaseCollection:
-    client = MongoClient(connection_string)
+    if not CLIENT_TLS:
+        warn(f'CLIENT_TLS is set to {CLIENT_TLS} - Indicates local testing environment.')
+    client = MongoClient(connection_string, tls=CLIENT_TLS)
     validator = {
         '$jsonSchema': {
             'bsonType': 'object',

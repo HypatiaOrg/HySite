@@ -4,7 +4,8 @@ from datetime import datetime
 
 import pymongo
 
-from hypatia.configs.env_load import MONGO_HOST, MONGO_PORT, connection_string, get_connection_string, current_user
+from hypatia.configs.env_load import (MONGO_HOST, MONGO_PORT, connection_string, get_connection_string, current_user,
+                                      CLIENT_TLS)
 
 digits = set(string.digits)
 letters = set(string.ascii_letters)
@@ -13,7 +14,7 @@ alphabet = list(letters | digits | punctuation)
 
 
 def create_user(user_name: str, password: str, roles: list[dict[str, str]]):
-    client = pymongo.MongoClient(connection_string)
+    client = pymongo.MongoClient(connection_string, tls=CLIENT_TLS)
     db = client['admin']
     result = db.command('createUser', user_name, pwd=password, roles=roles)
     if result['ok'] == 0:
@@ -51,7 +52,7 @@ def make_read_only_user(user_name: str, password: str = None):
 
 
 def delete_user(user_name: str):
-    client = pymongo.MongoClient(connection_string)
+    client = pymongo.MongoClient(connection_string, tls=CLIENT_TLS)
     db = client['admin']
     result = db.command('dropUser', user_name)
     if result['ok'] == 0:
