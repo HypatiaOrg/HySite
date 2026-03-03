@@ -10,7 +10,8 @@ from astropy.time import Time
 from astropy import units as u
 from astropy.coordinates import SkyCoord, Distance
 
-from hypatia.sources.gaia.db import astro_query_dr1_params, astro_query_dr2_params, astro_query_dr3_params
+from hypatia.sources.gaia.db import (dr1_params, dr2_source_params, dr2_external_geometric_distance_params,
+                                     dr2_params, dr3_params)
 
 
 deg_per_mas = 1.0 / (1000.0 * 60.0 * 60.0)
@@ -19,9 +20,9 @@ deg_per_mas = 1.0 / (1000.0 * 60.0 * 60.0)
 class GaiaQuery:
     batch_size = 500
     cut_index = len('Gaia DR# ')
-    astro_query_dr1_params = set(astro_query_dr1_params)
-    astro_query_dr2_params = set(astro_query_dr2_params)
-    astro_query_dr3_params = set(astro_query_dr3_params)
+    dr1_params = set(dr1_params)
+    dr2_params = set(dr2_params)
+    dr3_params = set(dr3_params)
     host = "gea.esac.esa.int"
     port = 443
     pathinfo = "/tap-server/tap/async"
@@ -35,16 +36,16 @@ class GaiaQuery:
 
     def get_query_params(self, dr_num: int) -> set[str]:
         if dr_num == 1:
-            requested_params = self.astro_query_dr1_params
+            requested_params = self.dr1_params
         elif dr_num == 2:
-            requested_params = self.astro_query_dr2_params
+            requested_params = self.dr2_params
         elif dr_num == 3:
-            requested_params = self.astro_query_dr3_params
+            requested_params = self.dr3_params
         else:
             raise ValueError(f"The given Gaia Data Release number {str(dr_num)} is not expected.")
         return requested_params
 
-    def wait_for_job(self, jobid):
+    def wait_for_job(self, jobid: str, query_str: str, dr_num: int = 2):
         # Check job status, wait until finished
         while True:
             connection = httplib.HTTPSConnection(self.host, self.port)
@@ -58,11 +59,13 @@ class GaiaQuery:
             phaseValueElement = phaseElement.firstChild
             phase = phaseValueElement.toxml()
             if self.verbose:
-                print("  Gaia Status: " + phase + " Job ID: " + jobid + " Time: " + str(datetime.now()))
+                print(f'  Gaia DR{dr_num} Fetch: {phase} - Job ID: {jobid} Time: {str(datetime.now())}')
 
             # Check finished
             if phase == 'COMPLETED':
                 break
+            elif phase == 'ERROR':
+                raise Exception(f'Gaia Error for Query String: {query_str}')
 
             # wait and repeat
             time.sleep(0.2)
@@ -74,7 +77,7 @@ class GaiaQuery:
         data = response.read().decode('iso-8859-1')
         return json.loads(data)
 
-    def request_job(self, query_text: str):
+    def request_job(self, query_text: str, dr_num: int = 2):
         # Create job
         params = urllib.urlencode({
             "REQUEST": "doQuery",
@@ -97,9 +100,9 @@ class GaiaQuery:
         if self.verbose:
             print("Gaia Batch Query - Job id: " + jobid)
         connection.close()
-        return self.wait_for_job(jobid)
+        return self.wait_for_job(jobid, query_text,  dr_num)
 
-    def process_job(self, raw_results, dr_num=2):
+    def process_job(self, raw_results, dr_num: int = 2):
         metadata = raw_results['metadata']
         data_names = [param_dict['name'] for param_dict in metadata]
         requested_names = {param_name for param_name in data_names if param_name in self.get_query_params(dr_num=dr_num)}
@@ -143,14 +146,17 @@ class GaiaQuery:
         self.star_dict = {}
         for sub_list in list_of_sub_lists:
             if dr_num == 2:
-                query_text = f"""SELECT * 
-                                 FROM gaiadr{dr_num}.gaia_source AS g, external.gaiadr2_geometric_distance AS d 
-                                 WHERE {' OR '.join([f'(source_id={source_id} AND d.source_id = g.source_id)' for source_id in sub_list])};"""
+                column_names = [f'g.{param}' for param in dr2_source_params] + [f'd.{param_e}' for param_e in dr2_external_geometric_distance_params]
+                query_text = f"""SELECT {', '.join(column_names)}
+                                 FROM gaiadr{dr_num}.gaia_source AS g
+                                 INNER JOIN external.gaiadr2_geometric_distance AS d
+                                 ON d.source_id = g.source_id
+                                 WHERE {' OR '.join([f'd.source_id={source_id}' for source_id in sub_list])};"""
             else:
                 query_text = f"""SELECT {', '.join(list(self.get_query_params(dr_num=dr_num)))}
                                  FROM gaiadr{dr_num}.gaia_source 
                                  WHERE {' OR '.join([f'source_id={source_id}' for source_id in sub_list])};"""
-            sources_dict = self.process_job(raw_results=self.request_job(query_text), dr_num=dr_num)
+            sources_dict = self.process_job(raw_results=self.request_job(query_text, dr_num=dr_num), dr_num=dr_num)
             self.star_dict.update({gaia_id_int: sources_dict[gaia_id_int] for gaia_id_int in sources_dict.keys()})
 
 
