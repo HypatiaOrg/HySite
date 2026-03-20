@@ -259,14 +259,14 @@ if __name__ == "__main__":
 
     only_target_list = False
 
-    run_multi_output = True
-    multi_target_list = True
+    run_multi_output = False
+    multi_target_list = False
 
     run_mdwarf_hist = False
 
     all_params = set()
     run_norm_keys = list(norm_keys_default)
-    run_refresh_exo_data = False
+    run_refresh_exo_data = True
     run_from_scratch = True
     run_from_pickled_cat = False
 

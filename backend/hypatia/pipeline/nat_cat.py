@@ -146,7 +146,7 @@ class NatCat:
             print('Acquiring stellar parameter data...')
         gaia_lib = None
         pastel_data = None
-        print_int = round(len(self.star_data) / 20)
+        print_int = max(round(len(self.star_data) / 20), 1)
         for star_index, single_star in list(enumerate(self.star_data)):
             if self.verbose and star_index % print_int == 0:
                 print(f'  {star_index:6} of {len(self.star_data)} stars processed.')

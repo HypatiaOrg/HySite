@@ -3,25 +3,50 @@ import time
 from hypatia.collect import BaseCollection
 
 additional_gaia_params = ['name','dec_epochJ2000','dec_epochJ2000_error','ra_epochJ2000','ra_epochJ2000_error']
-astro_query_dr1_params = ['ra', 'ra_error', 'dec', 'dec_error', 'ref_epoch', 'source_id', 'parallax', 'parallax_error',
-                          'pmra', 'pmra_error', 'pmdec', 'pmdec_error', 'duplicated_source',
-                          'phot_g_mean_flux', 'phot_g_mean_flux_error', 'phot_g_mean_mag']
-astro_query_dr2_params = ['ra', 'ra_error', 'dec', 'dec_error', 'ref_epoch', 'source_id',
-                          'parallax', 'parallax_error',
-                          'pmra', 'pmra_error', 'pmdec', 'pmdec_error', 'duplicated_source',
-                          'phot_g_mean_flux', 'phot_g_mean_flux_error',
-                          'phot_g_mean_mag',
-                          'radial_velocity', 'radial_velocity_error',
-                          'teff_val', 'teff_percentile_lower', 'teff_percentile_upper',
-                          'r_est', 'r_lo', 'r_hi']
-astro_query_dr3_params = ['ra', 'ra_error', 'dec', 'dec_error', 'ref_epoch', 'source_id',
-                          'parallax', 'parallax_error',
-                          'pmra', 'pmra_error', 'pmdec', 'pmdec_error', 'duplicated_source',
-                          'phot_g_mean_flux', 'phot_g_mean_flux_error',
-                          'phot_g_mean_mag',
-                          'radial_velocity', 'radial_velocity_error',
-                          'teff_gspphot', 'teff_gspphot_lower', 'teff_gspphot_upper',
-                          'distance_gspphot', 'distance_gspphot_lower', 'distance_gspphot_upper',]
+dr1_params = [
+    'ra', 'ra_error',
+    'dec', 'dec_error',
+    'ref_epoch',
+    'source_id',
+    'parallax', 'parallax_error',
+    'pmra', 'pmra_error',
+    'pmdec', 'pmdec_error',
+    'duplicated_source',
+    'phot_g_mean_flux', 'phot_g_mean_flux_error',
+    'phot_g_mean_mag',
+]
+dr2_source_params = [
+    'ra', 'ra_error',
+    'dec', 'dec_error',
+    'ref_epoch',
+    'source_id',
+    'parallax', 'parallax_error',
+    'pmra', 'pmra_error',
+    'pmdec', 'pmdec_error',
+    'duplicated_source',
+    'phot_g_mean_flux', 'phot_g_mean_flux_error',
+    'phot_g_mean_mag',
+    'radial_velocity', 'radial_velocity_error',
+    'teff_val', 'teff_percentile_lower', 'teff_percentile_upper',
+]
+dr2_external_geometric_distance_params = ['r_est', 'r_lo', 'r_hi']
+dr2_params = dr2_source_params + dr2_external_geometric_distance_params
+
+dr3_params = [
+    'ra', 'ra_error',
+    'dec', 'dec_error',
+    'ref_epoch',
+    'source_id',
+    'parallax', 'parallax_error',
+    'pmra', 'pmra_error',
+    'pmdec', 'pmdec_error',
+    'duplicated_source',
+    'phot_g_mean_flux', 'phot_g_mean_flux_error',
+    'phot_g_mean_mag',
+    'radial_velocity', 'radial_velocity_error',
+    'teff_gspphot', 'teff_gspphot_lower', 'teff_gspphot_upper',
+    'distance_gspphot', 'distance_gspphot_lower', 'distance_gspphot_upper',
+]
 string_types = {'name'}
 bool_types  = {'duplicated_source'}
 int_types = {'source_id'}
@@ -65,9 +90,9 @@ def data_format(param_name: str, param_value: any) -> float | bool | int | str:
 
 validators = {}
 query_params = {}
-for dr_num, astro_query_params in [(1, astro_query_dr1_params),
-                                   (2, astro_query_dr2_params),
-                                   (3, astro_query_dr3_params)]:
+for dr_num, astro_query_params in [(1, dr1_params),
+                                   (2, dr2_params),
+                                   (3, dr3_params)]:
     validators[dr_num] = {
         '$jsonSchema': {
             'bsonType': 'object',
