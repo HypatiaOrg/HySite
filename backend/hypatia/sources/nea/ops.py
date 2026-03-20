@@ -1,13 +1,19 @@
-from hypatia.sources.simbad.ops import get_main_id
 from hypatia.sources.nea.db import ExoPlanetStarCollection
 from hypatia.sources.simbad.batch import get_star_data_batch
+from hypatia.sources.simbad.ops import get_main_id, get_match_name
 from hypatia.object_params import SingleParam, expected_params_dict, ObjectParams
 from hypatia.sources.nea.query import query_nea, set_data_by_host, hypatia_host_name_rank_order, non_parameter_fields
-from hypatia.configs.source_settings import (nea_names_the_cause_wrong_simbad_references, nea_ref, known_micro_names,
+from hypatia.configs.source_settings import (nea_names_that_cause_wrong_simbad_references, nea_ref, known_micro_names,
                                              system_designations)
 
 
 nea_collection = ExoPlanetStarCollection(collection_name='nea')
+nea_names_match_names_to_ignore = {get_match_name(nea_name)
+                                   for nea_name in nea_names_that_cause_wrong_simbad_references}
+
+
+def get_nea_ids(nea_ids: set[str]) -> set[str]:
+    return  {nea_id for nea_id in nea_ids if get_match_name(nea_id) not in nea_names_match_names_to_ignore}
 
 
 def get_nea_data(test_name: str) -> dict or None:
@@ -37,7 +43,6 @@ def needs_micro_lense_name_change(nea_name: str) -> None or str:
 
 def upload_to_database(planets_by_host_name: dict[str, dict[str, any]], test_origin: str = 'nea'):
     # make a list of star-names tuples to be used in the main_id search
-    all_ids = []
     search_ids = []
     has_micro_lens_names = []
     for host_name, host_data in planets_by_host_name.items():
@@ -47,8 +52,7 @@ def upload_to_database(planets_by_host_name: dict[str, dict[str, any]], test_ori
             raise ValueError(
                 f'No valid name found for host, this is not supposed to happen, see host_data: {host_data}')
         nea_ids = {host_data[param] for param in hypatia_host_name_rank_order if param in host_data.keys()}
-        all_ids.append(tuple(nea_ids))
-        names_to_try = {nea_id for nea_id in nea_ids if nea_id not in nea_names_the_cause_wrong_simbad_references}
+        names_to_try = get_nea_ids(nea_ids)
         mirco_name_for_simbad = needs_micro_lense_name_change(nea_name)
         has_micro_lens_name = mirco_name_for_simbad is not None
         if has_micro_lens_name:
@@ -57,9 +61,15 @@ def upload_to_database(planets_by_host_name: dict[str, dict[str, any]], test_ori
         has_micro_lens_names.append(has_micro_lens_name)
     # update or get all the name data for these stars from SIMBAD
     star_docs = get_star_data_batch(search_ids=search_ids, test_origin=test_origin,
-                                    has_micro_lens_names=has_micro_lens_names, all_ids=all_ids)
+                                    has_micro_lens_names=has_micro_lens_names)
     nea_docs = []
+    unique_names = {}
     for (host_name, host_data), star_doc in zip(planets_by_host_name.items(), star_docs):
+        simbad_id = star_doc['_id']
+        if simbad_id in unique_names:
+            raise ValueError(f'NEA names are not unique: {simbad_id} links to both {host_name} and {unique_names[simbad_id]}.')
+        else:
+            unique_names[simbad_id] = host_name
         mongo_format = {'_id': star_doc['_id'], 'attr_name': star_doc['attr_name'],
                         'planet_letters': list(host_data['planets'].keys()), **host_data}
         # test that the formating will work when this data is returned from the database, but do not use the returned data

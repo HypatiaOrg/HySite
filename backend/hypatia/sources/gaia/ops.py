@@ -171,7 +171,7 @@ class GaiaLib:
     def batch_update(self, dr_number, simbad_formatted_names_list):
         dr_number = int(dr_number)
         gaia_ref = self.__getattribute__(f'gaiadr{dr_number}_ref')
-        self.gaia_query.astroquery_source(simbad_formatted_name_list=simbad_formatted_names_list, dr_num=dr_number)
+        self.gaia_query.query_source(simbad_formatted_name_list=simbad_formatted_names_list, dr_num=dr_number)
         gaia_ref.save_many_records(self.gaia_query.star_dict.values())
 
     def get_gaia_names_dict(self, star_name: str) -> tuple[str, dict[str, str]]:
@@ -187,7 +187,7 @@ class GaiaLib:
         test_output = gaia_ref.find(gaia_star_id=gaia_star_id)
         if test_output is None:
             # is data available on the ESA website?
-            self.gaia_query.astroquery_source([gaia_name], dr_num=dr_number)
+            self.gaia_query.query_source([gaia_name], dr_num=dr_number)
             if gaia_star_id in self.gaia_query.star_dict.keys():
                 # We found the data and can update the reference data so that it is found first next time
                 gaia_params_dict = self.gaia_query.star_dict[gaia_star_id]

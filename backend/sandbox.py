@@ -25,7 +25,7 @@ def mdwarf_histogram(self):
         ordered_list_of_bins.remove('Fe')
     hits = [0]
     hits.extend([self.__getattribute__(bin_name) for bin_name in ordered_list_of_bins[1:]])
-    ordered_list_of_bins.insert(2, '13C')
+    ordered_list_of_bins.insert(28, '13C') #Crossfield19 also Picos25
     hits.insert(2, 2)
     ordered_list_of_bins.insert(5, 'F')
     hits.insert(5, 0)

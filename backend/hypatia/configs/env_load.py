@@ -28,6 +28,7 @@ MONGO_STARNAMES_COLLECTION = os.environ.get('MONGO_STARNAMES_COLLECTION', 'stars
 INTERACTIVE_STARNAMES = os.environ.get('INTERACTIVE_STARNAMES', 'True').lower() in {'true', '1', 't', 'y', 'yes', 'on'}
 CONNECTION_STRING = os.environ.get('CONNECTION_STRING', 'none')
 DEBUG = str_is_true(os.environ.get("DEBUG", "true"))
+CLIENT_TLS = str_is_true(os.environ.get('CLIENT_TLS', 'true'))
 if CONNECTION_STRING.lower() in {None, 'none', 'null', ''}:
     CONNECTION_STRING = None
 
