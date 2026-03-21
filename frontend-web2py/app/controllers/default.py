@@ -385,7 +385,7 @@ def table():
             if col_name.endswith('_ref'):
                 base_name = col_name.rsplit('_ref', 1)[0]
                 hover_this_column = hover_data[base_name]
-                table_dict[col_name] = ['|'.join(hover_text(base_name, hover_this_column[row_index], requested_elements_set))
+                table_dict[col_name] = [hover_text(base_name, hover_this_column[row_index], requested_elements_set)
                                         if hover_this_column[row_index] else '' for row_index in range(len(hover_this_column))]
     formatted_table = []
     if table_dict:
@@ -411,8 +411,12 @@ def table():
                 elif col_name == 'targets':
                     # if this is a target table, then the targets are in the first column
                     cell_value_str = ', '.join([targets_metadata[target_handle]['title'] for target_handle in cell_value])
+                elif col_name.endswith('_ref') or col_name == 'aliases':
+                    cell_value_str = cell_value
                 else:
                     cell_value_str = str(cell_value)
+                if col_name.endswith('_err') and cell_value_str != '':
+                    cell_value_str = f'±{cell_value_str}'
                 if col_name in hover_text_set:
                     if cell_value_str != '' and col_name in hover_data.keys():
                         cell_hover_data = hover_data[col_name][row_index]
