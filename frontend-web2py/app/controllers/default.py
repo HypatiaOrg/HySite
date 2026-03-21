@@ -274,6 +274,9 @@ def table():
     else:
         columns.append('star_id')
         requested_name_types.append('star_id')
+    if 'names_all' in table_columns_set:
+        columns.append('aliases')
+        requested_name_types.append('aliases')
     if is_planet:
         columns.insert(1, 'nea_name')
         requested_planet_params = TABLE_PLANET + ['nea_name']

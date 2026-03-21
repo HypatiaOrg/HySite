@@ -19,7 +19,7 @@
             	    {{for subcell in cell:}}
             	        <span style='display:block'>
                             <nobr>
-                                {{if col_name.endswith("_err") or col_name.endswith("_ref"):}}
+                                {{if col_name.endswith("_err") or col_name.endswith("_ref") or col_name == "aliases":}}
                                     <small>{{=subcell}}</small>
                                 {{else:}}
                                     {{=subcell}}
