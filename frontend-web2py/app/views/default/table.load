@@ -3,68 +3,51 @@
 		<thead>
 			<tr>
 				{{for cell in columns:}}
-				<th style="text-align:center;border-bottom:2px solid #4e11b7">
-					{{if not cell.endswith("_err"):}}
-					{{=A(COL_SHORT_DESC.get(cell) or cell, _title=COL_LONG_DESC.get(cell) or cell,_href=URL('table.load',vars=dict(sort=cell)), cid=request.cid)}}
-					<br/>
-					<small class="text-uppercase" style="color:#555">{{=COL_UNITS.get(cell) or ' '}}</small>
-					{{elif cell.endswith("_min_err"):}}
-					<small style="color:#555">-err</small>
-					{{elif cell.endswith("_max_err"):}}
-					<small style="color:#555">+err</small>
-					{{else:}}
-					<small style="color:#555">err</small>
-					{{pass}}
-				</th>
+					<th style="text-align:center;border-bottom:2px solid #4e11b7">
+						{{if cell.endswith("_err"):}}
+							<small style="color:#555">err</small>
+						{{elif cell.endswith("_ref"):}}
+							<small style="color:#555">reference</small>
+						{{elif cell.endswith("_min_err"):}}
+							<small style="color:#555">-err</small>
+						{{elif cell.endswith("_max_err"):}}
+							<small style="color:#555">+err</small>
+						{{else:}}
+							{{=A(COL_SHORT_DESC.get(cell) or cell, _title=COL_LONG_DESC.get(cell) or cell,_href=URL('table.load',vars=dict(sort=cell)), cid=request.cid)}}
+							<br/>
+							<small class="text-uppercase" style="color:#555">{{=COL_UNITS.get(cell) or ' '}}</small>
+						{{pass}}
+					</th>
 				{{pass}}
 			</tr>
 		</thead>
 		<tbody>
 			{{for row in table:}}
-			<tr>
-				{{for i in range(len(row)):}}
-				<td>
-					{{cell = row[i]}}
-					{{if type(cell) == float and COL_FORMAT.get(columns[i]):}}
-					{{cell = COL_FORMAT[columns[i]] % cell}}
-					{{elif "numpy" in str(type(cell)):}}
-					{{cell = "%.2f" % cell}}
-					{{elif columns[i] == "all_names" and cell:}}
-					{{cell = cell.split(', ')[1:]}}
-					{{pass}} <!-- end if type(cell) == float and COL_FORMAT.get(columns[i]): -->
-					{{if type(cell) != list:}}
-					{{cell = [cell]}}
-					{{pass}} <!-- end if type(cell) != list:-->
-
-					{{for subcell in cell:}}
-					<span style='display:block'>
-						{{if columns[i].endswith("_err") and type(subcell) == float:}}
-						{{subcell = "%.2f" % subcell}}
-						{{pass}} <!-- end if columns[i].endswith("_err") and type(subcell) == float: -->
-						{{if subcell not in {None,"999.0",9999,"","None"}:}}
-						<nobr>
-							{{if columns[i].endswith("_err"):}}
-								<small style='color:#666'>
-									{{if not columns[i].islower():}}
-										±
-									{{pass}} <!-- end if 'min' not in columns[i] and 'max' not in columns[i]: -->
-
-								{{pass}} <!-- end if columns[i].endswith("_err"): -->
-								{{=subcell}}
-								</small>
-								{{if i == 0:}} <!-- generate the link to simbad.fr-->
-								<a href="http://simbad.u-strasbg.fr/simbad/sim-basic?Ident={{=cell[0].replace("+","%2B").replace("2MASS ","2MASS J")}}&submit=SIMBAD+search" target="_blank">
-									<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>
-								</a>
-								{{pass}} <!-- end if i == 0: -->
-								{{pass}} <!-- end if subcell not in [None,"999.0",9999,"","None"]: -->
-
-						</nobr>
-					</span>
-					{{pass}} <!-- end subcell in single cell for-loop -->
-				</td>
-				{{pass}} <!-- end ith column in single for-loop -->
-			</tr>
+				<tr>
+					{{for cell, col_name in zip(row, columns):}}
+						<td>
+							{{if not isinstance(cell, list):}}
+                        		{{cell = [cell]}}
+                    		{{pass}}
+							{{for subcell in cell:}}
+								<span style='display:block'>
+									<nobr>
+										{{if col_name.endswith("_err") or col_name.endswith("_ref") or col_name == "aliases":}}
+											<small style='color:#666'>{{=subcell}}</small>
+										{{else:}}
+											{{=subcell}}
+										{{pass}} <!-- end if columns[i].endswith("_err"): -->
+										{{if col_name == "star_id":}} <!-- generate the link to simbad.fr-->
+											<a href="http://simbad.u-strasbg.fr/simbad/sim-basic?Ident={{=cell[0].replace("+","%2B").replace("2MASS ","2MASS J")}}&submit=SIMBAD+search" target="_blank">
+												<span class="glyphicon glyphicon-new-window" aria-hidden="true"></span>
+											</a>
+										{{pass}}
+									</nobr>
+								</span>
+							{{pass}} <!-- end subcell in single cell for-loop -->
+						</td>
+					{{pass}} <!-- end ith column in single for-loop -->
+				</tr>
 			{{pass}} <!-- end row in table for-loop -->
 		</tbody>
 	</table>

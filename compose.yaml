@@ -36,7 +36,7 @@ services:
         read_only: "${READ_ONLY:-false}"
         volumes:
             # uncomment below to sync all the web2py files for development
-            # - "./Web2Hy/app:/home/python_kid/web2py_app/applications/hypatia:rw"
+            # - "./frontend-web2py/app:/home/python_kid/web2py_app/applications/hypatia:rw"
             # store log and other files in a volume on the host
             - "web_to_py_temp:/home/python_kid/web2py_app/temp_data:rw"
             # gunicorn to store temporary files
