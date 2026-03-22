@@ -14,9 +14,7 @@
 <div style="float:left;padding-left:20px">
     <form method="post">
         <input class="hidden" name="graph_submit" value="true">
-        <div class="alert alert-info" id="origalert" style="display:none;max-width:400px">Abundances originally published in absolute A(X) notation cannot be shown when the "Original" normalization is selected since no solar normalization was specified.</div>
-        <div class="alert alert-info" id="diskalert" style="display:none;max-width:400px">Values are assigned zero for thin disk and one for thick disk.</div>
-        <div class="alert alert-info" id="specalert" style="display:none;max-width:400px">Spectral type values are assigned a number: F = 10, G = 20, K = 30, M = 40, plus the subclass digit (1-10), plus the roman numeral value * 0.01. Example. F2V = 12.05.</div>
+        {{include 'default/notice.html'}}
         <dl>
             <dt>Filter:</dt>
             <dd>
@@ -117,9 +115,13 @@
         });
         if($("select[name='solarnorm'] option[value="+$("select[name='solarnorm']").val()+"]").text().trim() == "Original") {
             $("#origalert").show();
-        }
-        else {
+        } else {
             $("#origalert").hide();
+        }
+        if($("select[name='statistic'] option[value="+$("select[name='statistic']").val()+"]").text().trim() == "Use the mean") {
+            $("#mean-alert").show();
+        } else {
+            $("#mean-alert").hide();
         }
         ajax('/hypatia/default/graph.load',items,'graph');
     }
