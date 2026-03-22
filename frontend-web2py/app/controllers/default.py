@@ -225,10 +225,22 @@ def graph_hist():
     # send back to the browser
     return dict(script=script, div=div)
 
-def hover_text(col_name: str, cell_hover_data: dict, requested_elements_set: set[str]) -> list[str]:
+def hover_text(col_name: str, cell_hover_data: dict, requested_elements_set: set[str], return_median: bool = False) -> list[str]:
     if col_name in requested_elements_set:
         hover_strings = []
-        for key, value in cell_hover_data.items():
+        items_array = [(key, value) for key, value in cell_hover_data.items()]
+        if return_median:
+            # Only the median reference values are required
+            array_length = len(items_array)
+            if array_length % 2 == 0:
+                # Even array return two items
+                median_index = int(array_length / 2)
+                items_array = items_array[median_index - 1:median_index + 1]
+            else:
+                # Odd array return one item
+                median_index = int((array_length - 1) / 2)
+                items_array = items_array[median_index: median_index + 1]
+        for key, value in items_array:
             if value == 0.0:
                 value += 0.0
             hover_strings.append(f"{'' if value < 0.0 else ' '}{float(value):1.2f}: {CATALOG_AUTHORS[key]}")
@@ -383,12 +395,15 @@ def table():
     requested_elements_set = set(requested_elements)
     hover_text_set = set(requested_elements) | set(requested_stellar_params) | set(requested_planet_params)
     if show_reference:
+        # median reference data for elements
+        return_median = table_settings['return_median']
         # add the reference columns to the columns list
         for col_name in columns:
             if col_name.endswith('_ref'):
                 base_name = col_name.rsplit('_ref', 1)[0]
                 hover_this_column = hover_data[base_name]
-                table_dict[col_name] = [hover_text(base_name, hover_this_column[row_index], requested_elements_set)
+                table_dict[col_name] = [hover_text(base_name, hover_this_column[row_index], requested_elements_set,
+                                                   return_median=return_median)
                                         if hover_this_column[row_index] else '' for row_index in range(len(hover_this_column))]
     formatted_table = []
     if table_dict:

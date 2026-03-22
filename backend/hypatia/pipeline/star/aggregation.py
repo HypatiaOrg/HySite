@@ -110,6 +110,15 @@ def catalog_calc_array(element_name: ElementID, norm_path: str, catalogs: list[s
     }
 
 
+def get_values_arrays(element_name: ElementID, array_suffix: str):
+    return {
+        '$map': {
+            'input': f'${element_name}_cat_array{array_suffix}',
+            'in': '$$this.v',
+        },
+    }
+
+
 def star_data_v2(db_formatted_names: list[str]) -> list[dict]:
     return [
         pipeline_add_starname_match(db_formatted_names),
@@ -280,34 +289,55 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
         # stage 3-catalogs: we need to find or exclude values from specific catalogs and calculate the median/mean
         # get the values for in a two-step calculation; the first is to sort the values
         add_fields_first_calc = {}
+        add_fields_middle_calc = {}
         for element_name in all_elements:
             add_fields_first_calc[f'{element_name}_cat_array'] = catalog_calc_array(
                 element_name=element_name, norm_path=norm_path, catalogs=catalogs,
                 catalog_exclude=catalog_exclude,
                 return_linear=False)
-            if not return_median:
+            if return_median:
+                add_fields_middle_calc[f'{element_name}_cat_array_values'] = get_values_arrays(
+                    element_name=element_name, array_suffix='')
+            else:
                 add_fields_first_calc[f'{element_name}_cat_array_linear'] = catalog_calc_array(
                     element_name=element_name, norm_path=norm_path, catalogs=catalogs,
                     catalog_exclude=catalog_exclude,
                     return_linear=True)
-
+                add_fields_middle_calc[f'{element_name}_cat_array_values'] = get_values_arrays(
+                    element_name=element_name, array_suffix='_linear')
+            add_fields_middle_calc[f'{element_name}_cat_array_size'] = {
+                '$cond': {
+                    'if': { '$isArray': add_fields_middle_calc[f'{element_name}_cat_array_values']},
+                    'then': { '$size': add_fields_middle_calc[f'{element_name}_cat_array_values']},
+                    'else': 0,
+                }
+            }
 
         # calculate the median/meaning and error values from the sorted in the first step of the calculation
         add_fields_final_calc = {}
-        array_suffix = '_linear' if not return_median else ''
         for element_name in all_elements:
-            values_array = {
-                '$map': {
-                    'input': f'${element_name}_cat_array{array_suffix}',
-                    'in': '$$this.v',
-                },
-            }
             # calculate the median/mean and error values
+            values_array = f'${element_name}_cat_array_values'
+            array_size = f'${element_name}_cat_array_size'
             if return_median:
                 cat_calc = {
-                    '$median': {
-                        'input': values_array,
-                        'method': 'approximate',
+                    '$cond': {
+                        'if': { '$eq': [{ '$mod': [array_size, 2]}, 0]},
+                        'then': {
+                            '$avg': [
+                                {
+                                    '$arrayElemAt': [values_array, { '$add': [{ '$divide': [array_size, 2]}, -1]}]
+                                },
+                                {
+                                    '$arrayElemAt': [values_array, { '$divide': [array_size, 2]}]
+                                }
+                            ]
+                        },
+                        'else': {
+                            '$arrayElemAt': [
+                                values_array, { '$floor': { '$divide': [array_size, 2]}}
+                            ]
+                        },
                     },
                 }
             else:
@@ -330,6 +360,8 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
         # package the results as two aggregation stages
         if add_fields_first_calc:
             json_pipeline.append({'$addFields': add_fields_first_calc})
+        if add_fields_middle_calc:
+            json_pipeline.append({'$addFields': add_fields_middle_calc})
         if add_fields_final_calc:
             json_pipeline.append({'$addFields': add_fields_final_calc})
     else:
