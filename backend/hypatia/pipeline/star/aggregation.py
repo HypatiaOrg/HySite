@@ -295,16 +295,14 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
                 element_name=element_name, norm_path=norm_path, catalogs=catalogs,
                 catalog_exclude=catalog_exclude,
                 return_linear=False)
-            if return_median:
-                add_fields_middle_calc[f'{element_name}_cat_array_values'] = get_values_arrays(
-                    element_name=element_name, array_suffix='')
-            else:
-                add_fields_first_calc[f'{element_name}_cat_array_linear'] = catalog_calc_array(
-                    element_name=element_name, norm_path=norm_path, catalogs=catalogs,
-                    catalog_exclude=catalog_exclude,
-                    return_linear=True)
-                add_fields_middle_calc[f'{element_name}_cat_array_values'] = get_values_arrays(
-                    element_name=element_name, array_suffix='_linear')
+            add_fields_first_calc[f'{element_name}_cat_array_linear'] = catalog_calc_array(
+                element_name=element_name, norm_path=norm_path, catalogs=catalogs,
+                catalog_exclude=catalog_exclude,
+                return_linear=True)
+            add_fields_middle_calc[f'{element_name}_cat_array_values'] = get_values_arrays(
+                element_name=element_name, array_suffix='')
+            add_fields_middle_calc[f'{element_name}_cat_array_values_linear'] = get_values_arrays(
+                element_name=element_name, array_suffix='_linear')
             add_fields_middle_calc[f'{element_name}_cat_array_size'] = {
                 '$cond': {
                     'if': { '$isArray': add_fields_middle_calc[f'{element_name}_cat_array_values']},
@@ -318,20 +316,23 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
         for element_name in all_elements:
             # calculate the median/mean and error values
             values_array = f'${element_name}_cat_array_values'
+            values_array_linear = f'${element_name}_cat_array_values_linear'
             array_size = f'${element_name}_cat_array_size'
             if return_median:
                 cat_calc = {
                     '$cond': {
                         'if': { '$eq': [{ '$mod': [array_size, 2]}, 0]},
                         'then': {
-                            '$avg': [
-                                {
-                                    '$arrayElemAt': [values_array, { '$add': [{ '$divide': [array_size, 2]}, -1]}]
-                                },
-                                {
-                                    '$arrayElemAt': [values_array, { '$divide': [array_size, 2]}]
-                                }
-                            ]
+                            '$log10': {
+                                 '$avg': [
+                                    {
+                                        '$arrayElemAt': [values_array_linear, { '$add': [{ '$divide': [array_size, 2]}, -1]}]
+                                    },
+                                    {
+                                        '$arrayElemAt': [values_array_linear, { '$divide': [array_size, 2]}]
+                                    }
+                                ]
+                            }
                         },
                         'else': {
                             '$arrayElemAt': [
@@ -341,12 +342,10 @@ def frontend_pipeline(db_formatted_names: list[str] = None,
                     },
                 }
             else:
-                cat_calc = {'$log10': {'$avg': values_array}}
-            add_fields_final_calc[f'{element_name}'] = cat_calc
+                cat_calc = {'$log10': {'$avg': values_array_linear}}
+            add_fields_final_calc[f'{element_name}'] = {'$round': [cat_calc, 2]}
             add_fields_final_calc[f'{element_name}_catalogs'] = {'$arrayToObject': f'${element_name}_cat_array'}
             if return_error:
-                add_fields_final_calc[f'{element_name}'] = {'$round': [cat_calc, 2]}
-
                 # calculate the error values
                 add_fields_final_calc[f'{element_name}_err'] = {
                     '$round': [{
