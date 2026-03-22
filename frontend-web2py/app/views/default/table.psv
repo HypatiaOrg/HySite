@@ -1,2 +1,2 @@
-{{delimiter='\t'}}{{last_index = len(columns) - 1}}{{for cell_index, cell in list(enumerate(columns)):}}{{=cell}}{{if cell_index != last_index:}}{{=delimiter}}{{pass}}{{pass}}{{for row in table:}}
+{{delimiter='|'}}{{last_index = len(columns) - 1}}{{for cell_index, cell in list(enumerate(columns)):}}{{=cell}}{{if cell_index != last_index:}}{{=delimiter}}{{pass}}{{pass}}{{for row in table:}}
 {{for cell_index, (cell, col_name) in list(enumerate(zip(row, columns))):}}{{if type(cell) != list:}}{{cell = [cell]}}{{pass}}{{for subcell in cell:}}{{=subcell}}{{pass}}{{if cell_index != last_index:}}{{=delimiter}}{{pass}}{{pass}}{{pass}}

@@ -100,8 +100,9 @@ periodicTable = [
 ]
 
 
-name_handles_labels = {'star_id': 'Name', 'hd': 'HD', '2mass': '2MASS', 'wds': 'WDS', 'aliases': 'All Names'}
+name_handles_labels = {'star_id': 'Name', 'hd': 'HD', '2mass': '2MASS', 'wds': 'WDS'}
 TABLE_NAMES = [name for name in name_handles_labels.keys()]
+name_handles_labels['aliases'] = 'All Names'
 name_handles_labels['nea_name'] = 'NEA Name'
 name_handles_labels['planet_letter'] = 'Planet Letter'
 TABLE_STELLAR = ['raj2000', 'decj2000', 'x_pos', 'y_pos', 'z_pos', 'dist', 'disk', 'sptype', 'vmag', 'bv',

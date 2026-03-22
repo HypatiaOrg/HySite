@@ -27,10 +27,12 @@
         <br/>
 
         <div>
-            <btn id="pt-names" class="btn btn-pt btn-default" onclick="toggle(this);refresh_table();">Add All Names</btn>
-            <btn id="pt-stellar" class="btn btn-pt btn-default" onclick="toggle(this);refresh_table();">Add Stellar Properties</btn>
-            <btn id="pt-planet" class="btn btn-pt btn-default" onclick="toggle(this);refresh_table();">Add Planet Properties</btn>
-            <btn id="pt-spread" class="btn btn-pt btn-default" onclick="toggle(this);refresh_table();">Add Error</btn>
+            <btn id="pt-stellar" class="btn btn-pt btn-default" onclick="toggle(this);refresh_table();">Stellar Properties</btn>
+            <btn id="pt-planet" class="btn btn-pt btn-default" onclick="toggle(this);refresh_table();">Planet Properties Mode</btn>
+            <btn id="pt-names" class="btn btn-pt btn-default" onclick="toggle(this);refresh_table();">More Names</btn>
+            <btn id="pt-names_all" class="btn btn-pt btn-default" onclick="toggle(this);refresh_table();">All Names</btn>
+            <btn id="pt-spread" class="btn btn-pt btn-default" onclick="toggle(this);refresh_table();">Error</btn>
+            <btn id="pt-ref" class="btn btn-pt btn-default" onclick="toggle(this);refresh_table();">Reference</btn>
             <input id="tablecols" name="tablecols" type="hidden">
             <br/>
             <br/>
@@ -46,6 +48,7 @@
                         <li><a href="/hypatia/default/table.html/hypatia-{{=datetime.strftime(datetime.now(),'%d%m%Y')}}.html?download=true">Save as HTML</a></li>
                         <li><a href="/hypatia/default/table.csv/hypatia-{{=datetime.strftime(datetime.now(),'%d%m%Y')}}.csv?download=true">Save as CSV</a></li>
                         <li><a href="/hypatia/default/table.tsv/hypatia-{{=datetime.strftime(datetime.now(),'%d%m%Y')}}.tsv?download=true">Save as TSV</a></li>
+                        <li><a href="/hypatia/default/table.psv/hypatia-{{=datetime.strftime(datetime.now(),'%d%m%Y')}}.psv?download=true">Save as PSV</a></li>
                     </ul>
                 </div>
             </div>
@@ -58,6 +61,7 @@
     <a class="btn btn-link" href="/hypatia/default/table.html/hypatia-{{=datetime.strftime(datetime.now(),'%d%m%Y')}}.html?download=true">HTML</a>
     <a class="btn btn-link" href="/hypatia/default/table.csv/hypatia-{{=datetime.strftime(datetime.now(),'%d%m%Y')}}.csv?download=true">CSV</a>
     <a class="btn btn-link" href="/hypatia/default/table.tsv/hypatia-{{=datetime.strftime(datetime.now(),'%d%m%Y')}}.tsv?download=true">TSV</a>
+    <a class="btn btn-link" href="/hypatia/default/table.psv/hypatia-{{=datetime.strftime(datetime.now(),'%d%m%Y')}}.psv?download=true">PSV</a>
 </div>
 {{=LOAD("default","table.load",target="stars",ajax=True,timeout=999999)}}
 <div id="stars"></div>
