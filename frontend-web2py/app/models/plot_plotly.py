@@ -126,11 +126,12 @@ def create_plotly_hist(name: list[str],
     )
     # formatting
     fig.update_layout(
-        width=700,
+        width=800,
         height=700,
         coloraxis_colorbar=dict(title='Frequency'),
         plot_bgcolor='white',
         bargap=0.05,
         showlegend=False
     )
+
     return fig.to_html(include_plotlyjs=True)
