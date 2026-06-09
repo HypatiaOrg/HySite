@@ -1,8 +1,7 @@
 from warnings import warn
-
 import numpy as np
-
-import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 
 default_color_pallet = 'hypatia'
@@ -17,6 +16,12 @@ color_pallets = {
         [0.9, '#F7C492'],
         [1.0, '#d63031']
     ],
+    "viridis": "Viridis",
+    "plasma": "Plasma",
+    "cividis": "Cividis",
+    "inferno": "Inferno",
+    "magma": "Magma",
+    "turbo": "Turbo"
 }
 
 
@@ -67,22 +72,48 @@ def get_error(label: str) -> float | None:
     return None
 
 
-def get_bin_number(hist_bin_size, one_axis: np.array, one_range: float, label: str) -> int:
+def get_bin_width(hist_bin_size, one_axis: np.ndarray, one_range: float, label: str) -> float:
+    #returns the actual bin with in data units, so we can directly set xbins.size and ybins.size
     try:
-        hist_bin_size = float(hist_bin_size)
+        bin_width = float(hist_bin_size)
     except (ValueError, TypeError):
-        hist_bin_size = bin_argument(hist_bin_size)
-        if hist_bin_size == 'error':
+        mode = bin_argument(hist_bin_size)
+        if mode == 'error':
             # can be None if no error is defined for the label
-            hist_bin_size = get_error(label)
+            bin_width = get_error(label)
         else:
-            #  hist_bin_size is None or isinstance(hist_bin_size, str):
             # This sets the default bin size to the standard deviation of the data
-            hist_bin_size = np.std(one_axis)
-    hist_bin_size = check_bin_size(hist_bin_size, one_range)
-    n_bins = max(int(np.round(one_range / hist_bin_size)), 1)
-    return n_bins
+            bin_width = np.std(one_axis)
+    return check_bin_size(bin_width, one_range)
 
+def get_axis_range(data: np.ndarray, range_mode:str = "full data",
+                   sigma: float = 4, manual_min: float | None = None,
+                   manual_max: float | None = None) -> tuple[float, float]:
+    #chooses the visible plotting range
+    #Options: full data, std dev (show mean +_ sigma * standard deviation, and manual)
+    #Will need a place to input the sigma value, right now it is set to 4
+    data = np.asarray(data, dtype=float)
+    if range_mode == "manual" and manual_min is not None and manual_max is not None:
+        return float(manual_min), float(manual_max)
+    if range_mode == "std dev" :
+        mean = np.mean(data)
+        stdev = np.std(data)
+        return mean - sigma * stdev, mean + sigma * stdev
+    return float(np.min(data)), float(np.max(data))
+
+def get_hist_color(color_scale):
+    #uses the selected colormap to change the histogram color
+    if isinstance(color_scale, list):
+        return color_scale [0][1]
+    plotly_colors = {
+        "Viridis": "#440154",
+        "Plasma": "#0d0887",
+        "Inferno": "#000004",
+        "Magma": "#000004",
+        "Cividis": "#00224e",
+        "Turbo": "#30123b"
+    }
+    return plotly_colors.get(color_scale, "#4e11b7")
 
 def create_plotly_hist(name: list[str],
                        xaxis: list[str | float | int], yaxis: list[str | float | int],
@@ -93,45 +124,199 @@ def create_plotly_hist(name: list[str],
                        do_gridlines: bool = False,
                        show_xyhist: bool = True,
                        xhist_bin_size: float | str = bin_tags[0], yhist_bin_size: float | str = bin_tags[0],
-                       color_pallet: str = 'hypatia'
+                       color_pallet: str = "hypatia", range_mode: str = "full data", sigma: float = 4,
+                       manual_xmin: float | None = None, manual_xmax: float | None = None,
+                       manual_ymin: float | None = None, manual_ymax: float | None = None,
                        ) -> str:
-    # just trying to get the heatmap to appear. This is a simpler version using px.
-    xaxis = np.array(xaxis)
-    yaxis = np.array(yaxis)
-    xaxis = np.array(xaxis)
-    yaxis = np.array(yaxis)
-    # Create a scatter plot
-    min_x = np.min(xaxis)
-    min_y = np.min(yaxis)
-    max_x = np.max(xaxis)
-    max_y = np.max(yaxis)
-    range_x = max_x - min_x
-    range_y = max_y - min_y
-    nbinsx = get_bin_number(hist_bin_size=xhist_bin_size, one_axis=xaxis, one_range=range_x, label=x_label)
-    nbinsy = get_bin_number(hist_bin_size=yhist_bin_size, one_axis=yaxis, one_range=range_y, label=y_label)
-    test_label = f'Scatter Plot Test Label = Show Hist: {show_xyhist}, X-Bin: {xhist_bin_size}, Y-Bin: {yhist_bin_size}, Pallet: {color_pallet},'
-    color_continuous_scale = color_pallets.get(color_pallet, default_color_pallet)
-    warn(test_label)
+    # Created plotly heatmap with optional marginal histograms
+    xaxis = np.asarray(xaxis, dtype = float)
+    yaxis = np.asarray(yaxis, dtype = float)
 
-    # heatmap with marginal histograms
-    fig = px.density_heatmap(
-        x=xaxis,
-        y=yaxis,
-        nbinsx=nbinsx,
-        nbinsy=nbinsy,
-        marginal_x='histogram',
-        marginal_y='histogram',
-        color_continuous_scale=color_continuous_scale,
-        labels={'x': x_label, 'y': y_label}
+    valid = np.isfinite(xaxis) & np.isfinite(yaxis)
+    xaxis = xaxis[valid]
+    yaxis = yaxis[valid]
+
+    if len(xaxis) == 0 or len(yaxis) == 0:
+        raise ValueError("No valid data available for plotting")
+
+    #Selects data range
+    range_min_x, range_max_x = get_axis_range(
+        xaxis, range_mode = range_mode, sigma = sigma, manual_min = manual_xmin, manual_max = manual_xmax
     )
-    # formatting
+
+    range_min_y, range_max_y = get_axis_range(
+        yaxis, range_mode=range_mode, sigma = sigma, manual_min = manual_ymin, manual_max = manual_ymax
+    )
+
+    range_x = range_max_x - range_min_x
+    range_y = range_max_y - range_min_y
+
+    #Converts input bin choices into actual bin widths
+    width_x = get_bin_width(
+        hist_bin_size = xhist_bin_size, one_axis = xaxis,
+        one_range = range_x, label = x_label
+    )
+
+    width_y = get_bin_width(
+        hist_bin_size = yhist_bin_size, one_axis = yaxis,
+        one_range = range_y, label = y_label
+    )
+
+    color_continuous_scale = color_pallets.get(color_pallet, color_pallets[default_color_pallet])
+    histogram_color = get_hist_color(color_continuous_scale)
+
+    warn(
+        f"Plot: show_xyhist = {show_xyhist},"
+        f"xbin = {xhist_bin_size}, ybin = {yhist_bin_size},"
+        f"width_x = {width_x}, width_y = {width_y},"
+        f"range_mode = {range_mode}, pallet = {color_pallet},"
+    )
+
+    #CASE 1 (heatmap with marginal histograms)
+    if show_xyhist:
+        fig = make_subplots(
+            rows = 2, cols = 2, column_widths = [0.8, 0.2], row_heights = [0.2, 0.8],
+            shared_xaxes = True, shared_yaxes = True, horizontal_spacing = 0.008, vertical_spacing = 0.008,
+            specs = [
+                [{"type": "histogram"}, None],
+                [{"type": "histogram2d"}, {"type": "histogram"}]
+            ]
+        )
+
+        #top histogram
+        fig.add_trace(
+            go.Histogram(
+                x = xaxis, xbins = dict(start = range_min_x, end = range_max_x, size = width_x),
+                marker = dict(color = histogram_color, line = dict(color = "black", width = 1)),
+                showlegend = False,
+            ),
+            row=1, col=1
+        )
+
+        #side histogram
+        fig.add_trace(
+            go.Histogram(
+                y = yaxis, ybins = dict(start = range_min_y, end = range_max_y, size = width_y),
+                marker = dict(color = histogram_color, line = dict(color = "black", width = 1)),
+                showlegend = False,
+            ),
+            row=2, col=2
+        )
+
+        #main heatmap
+        fig.add_trace(
+            go.Histogram2d(
+                x = xaxis, y = yaxis, xbins = dict(start = range_min_x, end = range_max_x, size = width_x),
+                ybins = dict(start = range_min_y, end = range_max_y, size = width_y),
+                colorscale = color_continuous_scale, colorbar = dict(title = 'Frequency'),
+                showscale = True
+            ),
+            row=2, col=1
+        )
+
+        fig.update_xaxes(title_text = x_label, row=2, col=1)
+        fig.update_yaxes(title_text = y_label, row=2, col=1)
+
+    #CASE 2: heatmap only
+    else:
+        fig = go.Figure()
+        fig.add_trace(
+            go.Histogram2d(
+                x = xaxis, y = yaxis, xbins = dict(start = range_min_x, end = range_max_x, size = width_x),
+                ybins = dict(start = range_min_y, end = range_max_y, size = width_y),
+                colorscale = color_continuous_scale, colorbar = dict(title = 'Frequency'),
+                showscale = True
+            )
+        )
+
+        fig.update_xaxes(title_text = x_label)
+        fig.update_yaxes(title_text = y_label)
+
+    #formatting
     fig.update_layout(
-        width=800,
-        height=700,
-        coloraxis_colorbar=dict(title='Frequency'),
-        plot_bgcolor='white',
+        width = 750,
+        height = 650,
+        plot_bgcolor = '#E5ECF6',
+        paper_bgcolor = 'white',
         bargap=0.05,
-        showlegend=False
+        showlegend=False,
+        title = None
     )
+
+
+    #axis toggles and specific formatting
+    if show_xyhist:
+        #side hist
+        fig.update_xaxes(
+            type="log" if do_xlog and np.all(xaxis > 0) else "linear",
+            autorange="reversed" if xaxisinv else True,
+            showgrid=True,
+            gridcolor="white",
+            gridwidth=1,
+
+            showline = True, linewidth=1, linecolor="black",
+            mirror = True, ticks = "outside", ticklen = 6, tickwidth = 1,
+            row=2, col=1
+        )
+
+        fig.update_yaxes(
+            type="log" if do_ylog and np.all(yaxis > 0) else "linear",
+            autorange="reversed" if yaxisinv else True,
+            showgrid=True,
+            gridcolor="white",
+            gridwidth=1,
+
+            showline=True, linewidth=1, linecolor="black",
+            mirror=True, ticks="outside", ticklen=6, tickwidth=1,
+            row=2, col=1
+        )
+        #top hist
+        fig.update_xaxes(
+            type="log" if do_xlog and np.all(xaxis > 0) else "linear",
+            autorange="reversed" if xaxisinv else True,
+            showgrid=True,
+            gridcolor="white",
+            gridwidth=1,
+            row=1, col=1
+        )
+
+        fig.update_yaxes(
+            autorange = True, showgrid = do_gridlines,
+            row=1, col=1
+        )
+
+        fig.update_yaxes(
+            type="log" if do_ylog and np.all(yaxis > 0) else "linear",
+            autorange="reversed" if yaxisinv else True,
+            showgrid=True,
+            gridcolor="white",
+            gridwidth=1,
+            row=2, col=2
+        )
+
+        fig.update_xaxes(
+            autorange = True, showgrid = do_gridlines,
+            row=2, col=2
+        )
+
+    else:
+        fig.update_xaxes(
+            type = "log" if do_xlog else "linear",
+            autorange = "reversed" if xaxisinv else True,
+            showgrid = False,
+            gridwidth = 1,
+            showline=True, linewidth=2, linecolor="black",
+            mirror=True, ticks="outside", ticklen=6, tickwidth=1
+        )
+
+        fig.update_yaxes(
+            type = "log" if do_ylog else "linear",
+            autorange = "reversed" if yaxisinv else True,
+            showgrid = False,
+            gridwidth = 1,
+            showline=True, linewidth=2, linecolor="black",
+            mirror=True, ticks="outside", ticklen=6, tickwidth=1
+        )
+
 
     return fig.to_html(include_plotlyjs=True)
