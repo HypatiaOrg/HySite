@@ -24,6 +24,14 @@ color_pallets = {
     "turbo": "Turbo"
 }
 
+plotly_colors = {
+    "Viridis": "#440154",
+    "Plasma": "#0d0887",
+    "Inferno": "#000004",
+    "Magma": "#000004",
+    "Cividis": "#00224e",
+    "Turbo": "#30123b"
+}
 
 max_bins = 200
 bin_tags = ['std dev', 'error']
@@ -105,14 +113,6 @@ def get_hist_color(color_scale):
     #uses the selected colormap to change the histogram color
     if isinstance(color_scale, list):
         return color_scale [0][1]
-    plotly_colors = {
-        "Viridis": "#440154",
-        "Plasma": "#0d0887",
-        "Inferno": "#000004",
-        "Magma": "#000004",
-        "Cividis": "#00224e",
-        "Turbo": "#30123b"
-    }
     return plotly_colors.get(color_scale, "#4e11b7")
 
 def create_plotly_hist(name: list[str],
