@@ -123,7 +123,7 @@ def create_plotly_hist(name: list[str],
                        do_gridlines: bool = False,
                        show_xyhist: bool = True,
                        xhist_bin_size: float | str = bin_tags[0], yhist_bin_size: float | str = bin_tags[0],
-                       color_pallet: str = "hypatia", range_mode: str = "full data", sigma: float = 4,
+                       color_pallet: str = "Hypatia", range_mode: str = "full data", sigma: float = 4,
                        manual_xmin: float | None = None, manual_xmax: float | None = None,
                        manual_ymin: float | None = None, manual_ymax: float | None = None,
                        ) -> str:
