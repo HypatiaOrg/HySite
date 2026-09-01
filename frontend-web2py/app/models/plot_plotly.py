@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 
-default_color_pallet = 'hypatia'
+default_color_pallet = 'Hypatia'
 
 color_pallets = {
     'Hypatia': [
