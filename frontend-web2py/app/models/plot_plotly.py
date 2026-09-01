@@ -27,7 +27,6 @@ plotly_colors = {
     "Viridis": "#440154",
     "Plasma": "#0d0887",
     "Inferno": "#000004",
-    "Magma": "#000004",
     "Cividis": "#00224e",
     "Turbo": "#30123b"
 }
