@@ -206,7 +206,7 @@ def create_plotly_hist(name: list[str],
             go.Histogram2d(
                 x = xaxis, y = yaxis, xbins = dict(start = range_min_x, end = range_max_x, size = width_x),
                 ybins = dict(start = range_min_y, end = range_max_y, size = width_y),
-                colorscale = color_continuous_scale, colorbar = dict(title = 'Frequency'),
+                colorscale = color_continuous_scale, colorbar = dict(title = 'Num of<br>Stars/Bin'),
                 showscale = True
             ),
             row=2, col=1
@@ -222,7 +222,7 @@ def create_plotly_hist(name: list[str],
             go.Histogram2d(
                 x = xaxis, y = yaxis, xbins = dict(start = range_min_x, end = range_max_x, size = width_x),
                 ybins = dict(start = range_min_y, end = range_max_y, size = width_y),
-                colorscale = color_continuous_scale, colorbar = dict(title = 'Frequency'),
+                colorscale = color_continuous_scale, colorbar = dict(title = 'Num of<br>Stars/Bin'),
                 showscale = True
             )
         )
