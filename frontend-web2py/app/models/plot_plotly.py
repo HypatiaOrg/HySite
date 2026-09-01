@@ -7,7 +7,7 @@ from plotly.subplots import make_subplots
 default_color_pallet = 'hypatia'
 
 color_pallets = {
-    'hypatia': [
+    'Hypatia': [
         [0.0, '#4e11b7'],
         [0.2, '#6c5ce7'],
         [0.4, '#dfe6e9'],
@@ -16,12 +16,11 @@ color_pallets = {
         [0.9, '#F7C492'],
         [1.0, '#d63031']
     ],
-    "viridis": "Viridis",
-    "plasma": "Plasma",
-    "cividis": "Cividis",
-    "inferno": "Inferno",
-    "magma": "Magma",
-    "turbo": "Turbo"
+    "Viridis": "Viridis",
+    "Plasma": "Plasma",
+    "Cividis": "Cividis",
+    "Inferno": "Inferno",
+    "Turbo": "Turbo"
 }
 
 plotly_colors = {
