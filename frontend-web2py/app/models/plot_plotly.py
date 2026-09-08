@@ -89,7 +89,7 @@ def get_bin_width(hist_bin_size, one_axis: np.ndarray, one_range: float, label: 
             bin_width = get_error(label)
         else:
             # This sets the default bin size to the standard deviation of the data
-            bin_width = np.std(one_axis)
+            bin_width = calc_std(list(one_axis))
     return check_bin_size(bin_width, one_range)
 
 def get_axis_range(data: np.ndarray, range_mode:str = "full data",
