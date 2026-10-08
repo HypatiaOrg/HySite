@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python-3.14:alpine
+FROM python:3.14-alpine
 ENV PYTHONUNBUFFERED 1
 ARG WORKING_DIR=/home/mz_python/django_app
 ARG DATA_OUTPUT_DIR=$WORKING_DIR/output
