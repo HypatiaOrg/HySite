@@ -1,4 +1,3 @@
-from warnings import warn
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -162,13 +161,6 @@ def create_plotly_hist(name: list[str],
 
     color_continuous_scale = color_pallets.get(color_pallet, color_pallets[default_color_pallet])
     histogram_color = get_hist_color(color_continuous_scale)
-
-    warn(
-        f"Plot: show_xyhist = {show_xyhist},"
-        f"xbin = {xhist_bin_size}, ybin = {yhist_bin_size},"
-        f"width_x = {width_x}, width_y = {width_y},"
-        f"range_mode = {range_mode}, pallet = {color_pallet},"
-    )
 
     #CASE 1 (heatmap with marginal histograms)
     if show_xyhist:
