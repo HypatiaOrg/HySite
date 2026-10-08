@@ -1,6 +1,6 @@
 """Export a small, consistent sample of the HySite database for testing.
 
-The update workflow runs the whole site against this sample in a local MongoDB container, so it
+The update job (scripts/hysite_update.sh) runs the whole site against this sample in a local MongoDB container, so it
 needs no access to the production database. Rerun this when the database structure changes:
 
     docker compose exec -T django-api python - < scripts/make_test_data.py > mongo/test_data/test_data.json

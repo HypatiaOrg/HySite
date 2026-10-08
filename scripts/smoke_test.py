@@ -17,11 +17,12 @@ import time
 import urllib.error
 import urllib.request
 
-# a star kept in the sample database by scripts/make_test_data.py
-TEST_STAR = "38 Vir"
+# a star kept in the sample database by scripts/make_test_data.py (38 Vir); the API matches
+# catalog names such as HIP or HD numbers, not common names
+TEST_STAR = "HIP 62875"
 
-# (path, what the response must be): "json" parses as non-empty JSON, "png" is an image,
-# any other string must appear in the page
+# (path, what the response must be): "json" parses as non-empty JSON, "found" is JSON for a star
+# the API found, "png" is an image, any other string must appear in the page
 CHECKS = [
     # web2py frontend pages
     ("/", "Hypatia Catalog"),
@@ -42,7 +43,7 @@ CHECKS = [
     ("/hypatia/api/v2/element/", "json"),
     ("/hypatia/api/v2/catalog/", "json"),
     ("/hypatia/api/v2/nea/", "json"),
-    (f"/hypatia/api/v2/star/?name={urllib.request.quote(TEST_STAR)}", "json"),
+    (f"/hypatia/api/v2/star/?name={urllib.request.quote(TEST_STAR)}", "found"),
     ("/hypatia/api/v2/data/?xaxis1=Fe&yaxis1=Si", "json"),
     ("/hypatia/api/stats/histogram/", "json"),
     ("/hypatia/api/planets/", "json"),
@@ -69,13 +70,16 @@ def check(base_url: str, path: str, expect: str) -> str | None:
     status, body = fetch(base_url + path)
     if status != 200:
         return f"HTTP {status}: {body[:200]!r}"
-    if expect == "json":
+    if expect in ("json", "found"):
         try:
             data = json.loads(body)
         except ValueError:
             return f"not JSON: {body[:200]!r}"
         if not data:
             return "empty JSON response"
+        # an unknown star still returns JSON, with "status": "not-found"
+        if expect == "found" and data[0].get("status") != "found":
+            return f"star not found: {body[:200]!r}"
     elif expect == "png":
         if not body.startswith(b"\x89PNG"):
             return "not a PNG image"

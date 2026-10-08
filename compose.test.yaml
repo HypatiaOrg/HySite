@@ -1,5 +1,5 @@
 # Run the whole site against a small sample database, with no access to production.
-# Used by the update workflow (.github/workflows/update-versions.yml) and to test locally:
+# Used by the update job (scripts/hysite_update.sh) and to test by hand:
 #
 #   docker compose -p hysite-test --env-file test.env -f compose.yaml -f compose.test.yaml up --build --detach
 #   python scripts/smoke_test.py http://localhost:8081
