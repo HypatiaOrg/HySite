@@ -36,21 +36,24 @@ class ElementStats:
             self.median_catalogs = [self.catalog_list[0]]
         else:
             value_array = np.array(self.value_list)
-            self.mean = np.around(np.log10(np.mean(np.array(self.value_list_linear))), decimals=2)
-            self.median = np.around(np.median(value_array), decimals=2)
+            value_array_linear = np.array(self.value_list_linear)
+            self.mean = np.around(np.log10(np.mean(value_array_linear)), decimals=2)
             self.max = np.max(value_array)
             self.min = np.min(value_array)
             self.spread = np.around(self.max - self.min, decimals=3)
             self.plusminus = np.around(self.spread / 2.0, decimals=2)
-            value_list_sorted, catalog_list_sorted = zip(*sorted(zip(self.value_list, self.catalog_list)))
+            # Median calculation must take an average in linear space and record the catalogs used to the calculation
+            value_list_sorted, value_list_sorted_linear, catalog_list_sorted = zip(*sorted(zip(self.value_list, self.value_list_linear, self.catalog_list)))
             half_index, remainder = divmod(len(value_list_sorted), 2)
             if remainder == 0:
                 median_slice = slice(half_index - 1, half_index + 1)
+                self.median = np.around(np.log10(np.mean(value_list_sorted_linear[median_slice])), decimals=2)
             else:
                 median_slice = slice(half_index, half_index + 1)
+                self.median = np.around(value_list_sorted[half_index], decimals=2)
             self.median_catalogs = catalog_list_sorted[median_slice]
             if self.len > 2:
-                self.std = params_err_format(np.std(self.value_list), sig_figs=3)
+                self.std = params_err_format(np.log10(np.std(self.value_list_linear)), sig_figs=3)
         if self.plusminus is None or self.plusminus == 0.0:
             self.plusminus = get_representative_error(element_id=self.element_id)
 
