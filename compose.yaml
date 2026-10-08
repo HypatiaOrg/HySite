@@ -33,6 +33,8 @@ services:
         environment:
             COMPOSE_PROFILES: "${COMPOSE_PROFILES:-}"
             BASE_API_URL: "http://django-api:8111"
+            # gunicorn 25.1+ puts its control socket here; $HOME is not writable with READ_ONLY=true
+            XDG_RUNTIME_DIR: /var/tmp
         read_only: "${READ_ONLY:-false}"
         volumes:
             # uncomment below to sync all the web2py files for development
@@ -53,15 +55,9 @@ services:
     django-api:
         container_name: backend
         build:
+            # The build needs no database access. Database work runs when the
+            # container starts, see backend/docker-entrypoint.sh
             context: ./backend
-            network: host
-            args:
-                MONGO_USERNAME: "${MONGO_USERNAME:-admin}"
-                MONGO_PASSWORD: "${MONGO_PASSWORD:-super-not-secure}"
-                MONGO_HOST: "${MONGO_BUILD_HOST:-hypatiacatalog.com}"
-                MONGO_DATABASE: "${MONGO_DATABASE:-test}"
-                MONGO_STARNAMES_COLLECTION: "${MONGO_STARNAMES_COLLECTION:-stars}"
-                CLIENT_TLS: "${CLIENT_TLS:-true}"
         restart: "${RESTART_POLICY:-no}"
         # ports: ["8111:8111"]
         environment:
@@ -75,12 +71,14 @@ services:
             CONNECTION_STRING: ${CONNECTION_STRING:-none}
             INTERACTIVE_STARNAMES: "${INTERACTIVE_STARNAMES:-true}"
             DEBUG: "${DEBUG:-true}"
+            # gunicorn 25.1+ puts its control socket here; $HOME is not writable with READ_ONLY=true
+            XDG_RUNTIME_DIR: /var/tmp
         read_only: "${READ_ONLY:-false}"
         volumes:
             # django_static is written at build time by the SpExWebsite Dockerfile
             - "django_static:/app/static:rw"
-            # matplotlib_cache is recommended for matplotlib to work in a docker container
-            - "matplotlib_cache:/home/python_user/django_backend/.cache/matplotlib:rw"
+            # the homepage plot is made at container start and kept here between restarts
+            - "website_plots:/home/mz_python/django_app/output/website:rw"
             # gunicorn to store temporary files
             - "gunicorn_tmp:/var/tmp:rw"
             # Data output from processing
@@ -128,7 +126,7 @@ services:
 
 volumes:
     django_static:
-    matplotlib_cache:
+    website_plots:
     gunicorn_tmp:
     web_to_py_temp:
     web_to_py_gunicorn_tmp:
