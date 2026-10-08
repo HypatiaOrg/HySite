@@ -1,7 +1,8 @@
 services:
     mongo-db:
         container_name: mongoDB
-        image: mongo:8.2
+        # MONGO_IMAGE is the exact tested image, set by versions.env on the server
+        image: ${MONGO_IMAGE:-mongo:8.2}
         restart: "${RESTART_POLICY:-no}"
         healthcheck:
             test: ["CMD", "echo", "'db.runCommand(\"ping\").ok'", "|", "mongosh", "localhost:27017/test", "--quiet"]
@@ -28,6 +29,11 @@ services:
         container_name: frontend-web2py
         build:
             context: ./frontend-web2py
+            args:
+                # the Python to follow; on the server versions.env sets the exact tested image
+                BASE_IMAGE: ${FRONTEND_BASE_IMAGE:-python:3.13-alpine}
+                # requirements.txt (newest) unless versions.env selects requirements.lock (tested)
+                REQUIREMENTS: ${REQUIREMENTS:-requirements.txt}
         pull_policy: always
         restart: "${RESTART_POLICY:-no}"
         environment:
@@ -58,6 +64,11 @@ services:
             # The build needs no database access. Database work runs when the
             # container starts, see backend/docker-entrypoint.sh
             context: ./backend
+            args:
+                # the Python to follow; on the server versions.env sets the exact tested image
+                BASE_IMAGE: ${BACKEND_BASE_IMAGE:-python:3.14-alpine}
+                # requirements.txt (newest) unless versions.env selects requirements.lock (tested)
+                REQUIREMENTS: ${REQUIREMENTS:-requirements.txt}
         restart: "${RESTART_POLICY:-no}"
         # ports: ["8111:8111"]
         environment:
@@ -114,7 +125,8 @@ services:
 
     nginx-hysite:
         container_name: nginx-hysite
-        image: nginx:latest
+        # NGINX_IMAGE is the exact tested image, set by versions.env on the server
+        image: ${NGINX_IMAGE:-nginx:latest}
         restart: "${RESTART_POLICY:-no}"
         ports:
             - "${LOCAL_PORT:-80}:80"

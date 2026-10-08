@@ -1,4 +1,6 @@
-FROM python:3.13-alpine
+# The Python image is set in compose.yaml (BASE_IMAGE), next to the other image versions
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 ENV PYTHONNUNBUFFERED 1
 ARG WORKING_DIR=/home/python_kid/web2py_app
 ARG VENV_DIR=$WORKING_DIR/venv
@@ -15,9 +17,13 @@ RUN pip install --upgrade pip
 RUN python -m venv $VENV_DIR
 # activate the virtual environment
 RUN source $VENV_DIR/bin/activate
-COPY requirements.txt requirements.txt
+# requirements.txt lists the packages, unpinned. The server's update job builds from
+# requirements.lock, the exact tested versions, with --build-arg REQUIREMENTS=requirements.lock
+ARG REQUIREMENTS=requirements.txt
+# the * also copies requirements.lock when it exists
+COPY requirements.* ./
 # install the python requirments
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r $REQUIREMENTS
 # # create the logs and writable files for the python user
 RUN mkdir -p $TEMP_DIR
 RUN touch $TEMP_DIR/cron.master

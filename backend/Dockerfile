@@ -1,5 +1,7 @@
 # Use an official Python runtime as a parent image
-FROM python:3.14-alpine
+# The Python image is set in compose.yaml (BASE_IMAGE), next to the other image versions
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 ENV PYTHONUNBUFFERED 1
 ARG WORKING_DIR=/home/mz_python/django_app
 ARG DATA_OUTPUT_DIR=$WORKING_DIR/output
@@ -35,8 +37,12 @@ RUN python -m venv $VENV_DIR
 # activate the virtual environment
 RUN source $VENV_DIR/bin/activate
 # install the required packages
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+# requirements.txt lists the packages, unpinned. The server's update job builds from
+# requirements.lock, the exact tested versions, with --build-arg REQUIREMENTS=requirements.lock
+ARG REQUIREMENTS=requirements.txt
+# the * also copies requirements.lock when it exists
+COPY requirements.* ./
+RUN pip install --no-cache-dir -r $REQUIREMENTS
 # Copy the current directory contents into the container
 COPY . .
 # let this user own the website plots directory
