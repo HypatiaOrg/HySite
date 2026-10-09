@@ -13,6 +13,9 @@
 
 <div style="float:left;padding-left:20px">
     <form method="post">
+        <!-- the toggles (checkboxes) this form has; refresh() fills it in, so the server knows which
+             toggles an unchecked box means "off" for, and leaves the other pages' toggles alone (issue #40) -->
+        <input type="hidden" name="toggle_vars" id="toggle_vars" value="">
         <input class="hidden" name="graph_submit" value="true">
         {{include 'default/notice.html'}}
         <dl>
@@ -113,6 +116,7 @@
         $("form input[name],select[name]").each(function() {
             items.push(this.name)
         });
+        $("#toggle_vars").val($("form input[type=checkbox][name]").map(function() { return this.name; }).get().join(","));
         if($("select[name='solarnorm'] option[value="+$("select[name='solarnorm']").val()+"]").text().trim() == "Original") {
             $("#origalert").show();
         } else {

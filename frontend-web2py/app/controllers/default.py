@@ -36,7 +36,6 @@ def init_session(is_targets: bool = False):
         session_value = session.__getattr__(var_name)
         if session_value is None:
             session[var_name] = default_val
-    session['toggle_vars_to_load'] = {key for key in toggle_graph_vars if session[key]}
     # splitting of strings into lists
     if isinstance(session.tablecols, str):
         session.tablecols = session.tablecols.split(',')
@@ -87,15 +86,16 @@ def plot_settings():
     # set new session values (non-toggles controls) from the request; only known settings are kept
     for key in (all_request_vars - toggle_graph_vars) & session_request_vars:
         session[key] = request.vars[key]
-    # these values are toggled by the act of being requested (http POST), and the toggle action is controlled here
-    bool_triggers = (all_request_vars & toggle_graph_vars) | session.get('toggle_vars_to_load', set())
-    for key in bool_triggers:
+    # toggles (checkboxes): a checked box is sent, an unchecked one is not. So a toggle in the request is
+    # on, and a toggle that the sending form has (its "toggle_vars" list) but did not send is off. Toggles
+    # that are not on that form keep their session value: the scatter page's form must not switch off the
+    # targets page's lists or the histogram's normalization (issue #40). A request without "toggle_vars"
+    # (the first load of a page's plot, or an older client) changes no toggle except the ones it sends.
+    form_toggles = set((request.vars.toggle_vars or '').split(',')) & toggle_graph_vars
+    for key in all_request_vars & toggle_graph_vars:
         session[key] = True
-    # these values are toggled by the act of not being, and the toggle action is control here
-    bool_not_triggered = toggle_graph_vars - bool_triggers
-    for key in bool_not_triggered:
+    for key in form_toggles - all_request_vars:
         session[key] = False
-    session['toggle_vars_to_load'] = set()
     # special parsing for lists as strings
     if (request.vars.graph_submit and not request.vars.catalogs):
         session.catalogs = []
