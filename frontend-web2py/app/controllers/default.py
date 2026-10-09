@@ -84,8 +84,8 @@ def get_settings() -> dict[str, any]:
 
 def plot_settings():
     all_request_vars = set(request.vars.keys())
-    # set new session values (non-toggles controls) from the request
-    for key in all_request_vars - toggle_graph_vars:
+    # set new session values (non-toggles controls) from the request; only known settings are kept
+    for key in (all_request_vars - toggle_graph_vars) & session_request_vars:
         session[key] = request.vars[key]
     # these values are toggled by the act of being requested (http POST), and the toggle action is controlled here
     bool_triggers = (all_request_vars & toggle_graph_vars) | session.get('toggle_vars_to_load', set())
@@ -235,9 +235,9 @@ def hover_text(col_name: str, cell_hover_data: dict, requested_elements_set: set
 
 
 def table():
-    # set new session values from the request
+    # set new session values from the request; only known settings are kept
     all_request_vars = set(request.vars.keys())
-    for key in all_request_vars:
+    for key in all_request_vars & session_request_vars:
         session[key] = request.vars[key]
     # special parsing for lists as strings
     if request.vars.graph_submit and isinstance(session.catalogs, str):

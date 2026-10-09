@@ -142,6 +142,8 @@ session_defaults_launch = {
 }
 
 exported_session_vars = sorted(set(session_defaults_launch.keys()) | toggle_graph_vars)
+# the request variables that may be saved in the session; other variables a request sends are ignored
+session_request_vars = set(exported_session_vars) | {'tablecols', 'tableidentifier', 'tablelist', 'tablesource'}
 
 for name_handle, name_label in name_handles_labels.items():
     COL_PREFERRED_NAME[name_handle] = name_label
