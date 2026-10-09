@@ -126,7 +126,7 @@ services:
     nginx-hysite:
         container_name: nginx-hysite
         # NGINX_IMAGE is the exact tested image, set by versions.env on the server
-        image: ${NGINX_IMAGE:-nginx:latest}
+        image: ${NGINX_IMAGE:-nginx:alpine}
         restart: "${RESTART_POLICY:-no}"
         ports:
             - "${LOCAL_PORT:-80}:80"
