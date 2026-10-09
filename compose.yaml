@@ -5,7 +5,13 @@ services:
         image: ${MONGO_IMAGE:-mongo:8.2}
         restart: "${RESTART_POLICY:-no}"
         healthcheck:
-            test: ["CMD", "echo", "'db.runCommand(\"ping\").ok'", "|", "mongosh", "localhost:27017/test", "--quiet"]
+            # ping through mongosh. With TLS required (mongo/deploy.yaml) the check must use TLS too; the
+            # certificate is for the public hostname, so the localhost connection skips certificate checks.
+            test:
+                - CMD-SHELL
+                - >-
+                  mongosh --quiet --eval 'db.adminCommand("ping").ok'
+                  $(grep -q 'mode: requireTLS' /etc/mongod.conf && echo --tls --tlsAllowInvalidCertificates)
             interval: 10s
             timeout: 10s
             retries: 5

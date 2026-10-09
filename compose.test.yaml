@@ -18,7 +18,7 @@ services:
             - ./mongo/test_data/load_test_data.js:/docker-entrypoint-initdb.d/load_test_data.js:ro
         ports: !reset []
         healthcheck:
-            test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+            # the same check as compose.yaml, polled faster
             interval: 5s
             timeout: 5s
             retries: 30
