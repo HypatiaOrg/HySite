@@ -112,6 +112,24 @@ save_run_files() {
         [ -f "$file" ] && install -D --mode 644 "$file" "$RUN_DIR/pinned/$file"
     done
 }
+# the MONGO_VERSION the MongoDB image was built with, e.g. 8.2.12; $1 = image or container
+mongo_version() {
+    docker "$1" inspect "$2" --format '{{range .Config.Env}}{{println .}}{{end}}' 2> /dev/null \
+        | sed -n 's/^MONGO_VERSION=//p'
+}
+# true unless the new MongoDB image is a different release line (major.minor) from the running one
+mongo_line_unchanged() {
+    local running new
+    running=$(mongo_version container mongoDB)
+    [ -n "$running" ] || return 0  # no MongoDB container on this server (database elsewhere)
+    new=$(grep -oE '^MONGO_IMAGE=.*' versions.env | cut -d= -f2-)
+    [ -n "$new" ] || return 0
+    docker pull --quiet "$new" > /dev/null 2>&1
+    new=$(mongo_version image "$new")
+    RUNNING_MONGO_LINE=${running%.*}
+    NEW_MONGO_LINE=${new%.*}
+    [ -z "$new" ] || [ "$RUNNING_MONGO_LINE" = "$NEW_MONGO_LINE" ]
+}
 installed_versions() {  # $1 = image name prefix, e.g. hysite-test
     for service in django-api web-to-py; do
         docker run --rm --entrypoint sh "$1-$service" -c 'python --version; pip freeze' \
@@ -179,6 +197,14 @@ fi
 record tested "All smoke tests passed on the sample database"
 
 # 5. deploy
+# MongoDB's release line (major.minor) is never changed by this job: the data files must be converted one
+# release at a time, by hand, with backups (wiki: "MongoDB Upgrade Plan"). The tests above can't detect
+# the problem, since they start from a fresh sample database. Patch updates within the line are fine.
+if ! mongo_line_unchanged; then
+    restore_pins
+    record mongo_version_blocked "compose.yaml follows MongoDB $NEW_MONGO_LINE but production runs $RUNNING_MONGO_LINE; not deployed. A new MongoDB release line needs the manual upgrade procedure (wiki: MongoDB Upgrade Plan)"
+    finish 1
+fi
 log "Deploying to production"
 for image in "${BUILT_IMAGES[@]}"; do
     docker image inspect "$image:latest" > /dev/null 2>&1 && docker tag "$image:latest" "$image:previous"
