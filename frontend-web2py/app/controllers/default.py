@@ -350,8 +350,9 @@ def table():
     else:
         table_settings['sort'] = None
         table_settings['reverse'] = False
-    # toggle the hover text with this variable
-    table_settings['show_hover'] = True  # label this button as 'Hover References'
+    # hover text (the catalog values behind each cell) is shown on the page; a download has no hover, but
+    # the reference columns are built from the same data
+    table_settings['show_hover'] = (not for_download) or show_reference
 
     # is targets table?
     is_targets = session.is_targets
@@ -391,13 +392,27 @@ def table():
                                                    return_median=return_median)
                                         if hover_this_column[row_index] else '' for row_index in range(len(hover_this_column))]
     formatted_table = []
+    more_rows = False
     if table_dict:
-        for row_index, data_row in list(enumerate(zip(*[table_dict[col_name] for col_name in columns]))):
-            # Determine if targets are selected, and if so, determine is this row is a target
-            if is_targets:
-                target_handles = set(targets[row_index])
-                if target_handles.isdisjoint(requested_handles_set):
-                    continue
+        row_count = len(table_dict[columns[0]])
+        # the rows to show: all of them, or only the targets' rows for a targets table
+        if is_targets:
+            row_indexes = [row_index for row_index in range(row_count)
+                           if not set(targets[row_index]).isdisjoint(requested_handles_set)]
+        else:
+            row_indexes = list(range(row_count))
+        total_rows = len(row_indexes)
+        # a download gets every row. The page shows the first rows, then all of them after "Load All",
+        # but only while the whole table is small enough for a browser (issue #43): above that, the
+        # page points to the downloads instead, whatever the request asks for
+        can_load_all = total_rows * len(columns) <= max_table_cells_to_show
+        show_all_rows = for_download or (bool(request.vars.showrows) and can_load_all)
+        # format only the rows that will be shown (formatting every row for the page was most of the cost)
+        if not show_all_rows and total_rows > default_table_rows_to_show:
+            row_indexes = row_indexes[:default_table_rows_to_show]
+            more_rows = True
+        for row_index in row_indexes:
+            data_row = [table_dict[col_name][row_index] for col_name in columns]
             # format the row data
             formatted_row = []
             for col_name, cell_value in zip(columns, data_row):
@@ -430,14 +445,13 @@ def table():
                                 do_wrapper=not for_download)
                 formatted_row.append(cell_value_str)
             formatted_table.append(formatted_row)
+    else:
+        total_rows = 0
+        can_load_all = True
     # Make the status label that is above the Periodic Table that controls the data table
     if planet_count:
-        status = f'{len(formatted_table)} planets selected from {star_count} stars'
+        status = f'{total_rows} planets selected from {star_count} stars'
     else:
-        status = f'{len(formatted_table)} stars selected'
-    # Only some the default number of rows, and trigger a button that we some all the whole table
-    more_rows = False
-    if not request.vars.showrows and len(formatted_table) > default_table_rows_to_show:
-        formatted_table = formatted_table[:default_table_rows_to_show]
-        more_rows = True
-    return dict(table=formatted_table, status=status, columns=columns, moreRows=more_rows)
+        status = f'{total_rows} stars selected'
+    return dict(table=formatted_table, status=status, columns=columns, moreRows=more_rows,
+                totalRows=total_rows, canLoadAll=can_load_all)

@@ -106,7 +106,11 @@ toggle_graph_vars = {'normalize', 'gridlines', 'xaxislog', 'yaxislog', 'zaxislog
                      'show_all', 'or_logic', 'show_hwo_tier1', 'show_hwo_tier2',
                      'show_thick_disk', 'show_thin_disk', 'show_has_exo',
                      }
+# the on-page table shows this many rows, with a "Load All" link for the rest; downloads always get every row
 default_table_rows_to_show = 1000
+# "Load All" is offered only while the whole table (rows x columns, each cell with its hover text) stays
+# small enough for a browser; above this, the page points to the downloads instead (issue #43)
+max_table_cells_to_show = 250_000
 
 session_defaults_launch = {
     # must be set in the 'launch' function
