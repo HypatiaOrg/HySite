@@ -51,6 +51,10 @@ services:
             BASE_API_URL: "http://django-api:8111"
             # gunicorn 25.1+ puts its control socket here; $HOME is not writable with READ_ONLY=true
             XDG_RUNTIME_DIR: /var/tmp
+            # gunicorn's default is one worker, so one slow request (a big table) made every other
+            # visitor wait and let retries pile up (issue #43). Each worker uses memory: ~200 MB idle,
+            # up to ~1 GB while building the largest table.
+            GUNICORN_CMD_ARGS: "${FRONTEND_GUNICORN_ARGS:---workers 2 --timeout 120}"
         read_only: "${READ_ONLY:-false}"
         volumes:
             # uncomment below to sync all the web2py files for development
@@ -96,6 +100,9 @@ services:
             DEBUG: "${DEBUG:-true}"
             # gunicorn 25.1+ puts its control socket here; $HOME is not writable with READ_ONLY=true
             XDG_RUNTIME_DIR: /var/tmp
+            # as for the frontend: more than one worker, so one big API request does not block the
+            # rest (issue #46). Each worker holds the catalog summary: ~350 MB idle.
+            GUNICORN_CMD_ARGS: "${BACKEND_GUNICORN_ARGS:---workers 2 --timeout 120}"
         read_only: "${READ_ONLY:-false}"
         volumes:
             # django_static is written at build time by the SpExWebsite Dockerfile
