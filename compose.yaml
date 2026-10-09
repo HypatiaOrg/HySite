@@ -94,7 +94,10 @@ services:
             - "gunicorn_tmp:/var/tmp:rw"
             # Data output from processing
             - "./backend/output:${DATA_OUTPUT_DIR:-/home/python_user/django_backend/output}:${VOLUME_SPECIFICATION:-rw}"
-        command: ["gunicorn", "core.wsgi", "--bind", "0.0.0.0:8111"]
+        # The web2py frontend sends its settings to the API in the URL, and a long star list or catalog
+        # selection makes that URL much longer than gunicorn's default 4 KB limit. Requests from outside
+        # still come through nginx, which keeps its own limit on URL length.
+        command: ["gunicorn", "core.wsgi", "--bind", "0.0.0.0:8111", "--limit-request-line", "0"]
         profiles: ["api"]
         networks:
             - hynet

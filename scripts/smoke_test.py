@@ -57,14 +57,39 @@ CHECKS = [
 ]
 
 
+def large_request_checks(base_url: str) -> list[tuple]:
+    """The largest requests the plot and table pages make: every catalog selected, and a long pasted
+    star list. web2py passes these settings to the API in the URL, which once failed above 4 KB."""
+    catalog_ids = [catalog["id"] for catalog in json.loads(fetch(base_url + "/hypatia/api/v2/catalog/")[1])]
+    # the test star (38 Vir) plus 999 more names: about 12 KB, a realistic paste from a target list
+    star_list = "; ".join([TEST_STAR] + [f"HIP {number}" for number in range(1, 1000)])
+    checkboxes = {"show_all": "on", "show_thin_disk": "on", "show_thick_disk": "on"}
+    return [
+        # a new visitor, so settings saved by the checks above don't change these results
+        (NEW_SESSION, None),
+        ("/hypatia/default/launch", "Hypatia Catalog"),
+        ("/hypatia/default/graph.load", "Bokeh", {"catalogs": catalog_ids, "cat_action": "only", **checkboxes}),
+        # the star list is entered with the plot settings, then the table shows those stars
+        ("/hypatia/default/graph.load", '$("#graph")', {"star_list": star_list, "star_action": "only", **checkboxes}),
+        ("/hypatia/default/table.load", "38 Vir"),
+    ]
+
+
 # keeps the web2py session cookie between requests, like a browser
 opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+# in the list of checks: forget the session cookie, like a new visitor
+NEW_SESSION = "new session"
+
+
+def new_session() -> None:
+    global opener
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
 
 
 def fetch(url: str, data: dict | None = None) -> tuple[int, bytes]:
     request = urllib.request.Request(url)
     if data is not None:
-        request = urllib.request.Request(url, data=urllib.parse.urlencode(data).encode(), headers={
+        request = urllib.request.Request(url, data=urllib.parse.urlencode(data, doseq=True).encode(), headers={
             "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
             "X-Requested-With": "XMLHttpRequest"})
     try:
@@ -120,15 +145,20 @@ def main() -> None:
     if not wait_for_site(base_url, args.wait):
         sys.exit(f"The site at {base_url} did not start within {args.wait} seconds")
     failures = 0
-    for path, expect, *data in CHECKS:
+    checks = CHECKS + large_request_checks(base_url)
+    for path, expect, *data in checks:
+        if path == NEW_SESSION:
+            new_session()
+            continue
         start = time.monotonic()
         problem = check(base_url, path, expect, *data)
-        label = f"POST {path} {data[0]}" if data else path
+        label = f"POST {path} {str(data[0])[:60]}" if data else path
         print(f"{'FAIL' if problem else 'ok  '} {time.monotonic() - start:5.1f}s  {label}")
         if problem:
             print(f"       {problem}")
             failures += 1
-    print(f"\n{len(CHECKS) - failures} of {len(CHECKS)} checks passed")
+    total = sum(path != NEW_SESSION for path, *_ in checks)
+    print(f"\n{total - failures} of {total} checks passed")
     sys.exit(1 if failures else 0)
 
 
