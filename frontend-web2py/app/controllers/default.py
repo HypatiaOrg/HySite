@@ -8,21 +8,6 @@ logging.basicConfig(filename='logging.log', level=logging.DEBUG)
 
 
 # -*- coding: utf-8 -*-
-### required - do no delete
-def user():
-    return dict(form=auth())
-
-
-def download():
-    return response.download(request, db)
-
-
-def call():
-    return service()
-
-
-### end requires
-
 # this is the front page
 def index():
     webURL = urllib.request.urlopen(f'{BASE_API_URL}home/')
