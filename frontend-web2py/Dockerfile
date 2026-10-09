@@ -1,9 +1,8 @@
 # The Python image is set in compose.yaml (BASE_IMAGE), next to the other image versions
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
-ENV PYTHONNUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1
 ARG WORKING_DIR=/home/python_kid/web2py_app
-ARG VENV_DIR=$WORKING_DIR/venv
 ARG TEMP_DIR=$WORKING_DIR/temp_data
 ARG SESSION_DIR=$WORKING_DIR/applications/hypatia/sessions
 # set the directroy to install all the files
@@ -13,10 +12,6 @@ RUN addgroup --system --gid 1001 python_kia
 RUN adduser --system --uid 1001 python_kid --ingroup python_kia
 # update pip
 RUN pip install --upgrade pip
-# create a virtual environment
-RUN python -m venv $VENV_DIR
-# activate the virtual environment
-RUN source $VENV_DIR/bin/activate
 # requirements.txt lists the packages, unpinned. The server's update job builds from
 # requirements.lock, the exact tested versions, with --build-arg REQUIREMENTS=requirements.lock
 ARG REQUIREMENTS=requirements.txt
