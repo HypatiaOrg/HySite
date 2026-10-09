@@ -69,7 +69,7 @@ def create_bokeh_scatter(name: list[str],
     # handle tooltips
     source = ColumnDataSource(bokeh_source)
     tooltips = "<b>@name</b><br/><div style='max-width:300px'>" + ', '.join(
-        [labels[axis] + ' = @' + axis + '{0.00}' for axis in set(labels)]) + '</div>'
+        [labels[axis] + ' = @' + axis + '{0.00}' for axis in labels]) + '</div>'
     hover = HoverTool(tooltips=tooltips)
     # build the bounds
     x_min = min(xaxis)
@@ -293,7 +293,7 @@ def create_bokeh_targets(name: list[str],
         'yaxis':  y_label if y_label else 'Y Axis',
     }
     tooltips = "<b>@names</b><br/><div style='max-width:300px'>" + ', '.join(
-        [labels[axis] + ' = @' + axis[0] + '{0.00}' for axis in set(labels)]) + '</div>'
+        [labels[axis] + ' = @' + axis[0] + '{0.00}' for axis in labels]) + '</div>'
     hover = HoverTool(tooltips=tooltips)
     # The Target Plot
     p = figure(tools=[TOOLS, hover], width=750, height=625,
