@@ -177,3 +177,5 @@ cython_debug/
 requirements.lock
 # state for scripts/hysite_update.sh: backups and run records
 .update/
+# database copies made by scripts/backup_mongo.sh
+mongo/backups/
