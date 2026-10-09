@@ -38,7 +38,12 @@ CHECKS = [
     ("/hypatia/default/table.load", "<table"),
     # changing the plot settings (last, since the new settings stay in the session) must change the plot. Posted the way the page's jQuery does it, with
     # "; charset=UTF-8" in the content type, which some web2py versions ignored (HySite issue #32)
-    ("/hypatia/default/graph.load", "[Ca/H]", {"xaxis1": "Ca", "xaxis2": "H", "yaxis1": "Ti", "yaxis2": "H"}),
+    ("/hypatia/default/graph.load", "[Ca/H]", {"xaxis1": "Ca", "xaxis2": "H", "yaxis1": "Ti", "yaxis2": "H",
+                                               "toggle_vars": "gridlines,xaxislog,yaxislog"}),
+    # after a change on the scatter page, the targets page must still show its default lists (issue #40);
+    # with no data the response has no Bokeh plot
+    ("/hypatia/default/targets", "Hypatia Catalog"),
+    ("/hypatia/default/graph_targets.load", "Bokeh"),
     # homepage plot, drawn from the database when the backend starts
     ("/hypatia/api/static/plots/abundances.png", "png"),
     # Django API
