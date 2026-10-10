@@ -12,7 +12,6 @@ axis_lab_font_size = '12pt'
 axis_lab_font_style = 'normal'
 TOOLS = 'crosshair,pan,wheel_zoom,zoom_in,zoom_out,box_zoom,undo,redo,reset,tap,save,box_select,poly_select,lasso_select,'
 
-plot_layers = ['all_hypatia', 'or_matches', 'combined_matches']
 
 def bokeh_export_html(p):
     script, div = components(p)
@@ -69,7 +68,7 @@ def create_bokeh_scatter(name: list[str],
     # handle tooltips
     source = ColumnDataSource(bokeh_source)
     tooltips = "<b>@name</b><br/><div style='max-width:300px'>" + ', '.join(
-        [labels[axis] + ' = @' + axis + '{0.00}' for axis in set(labels)]) + '</div>'
+        [labels[axis] + ' = @' + axis + '{0.00}' for axis in labels]) + '</div>'
     hover = HoverTool(tooltips=tooltips)
     # build the bounds
     x_min = min(xaxis)
@@ -161,35 +160,14 @@ def create_bokeh_scatter(name: list[str],
     return bokeh_default_settings(p=p, x_label=labels['xaxis'], y_label=labels['yaxis'], do_gridlines=do_gridlines)
 
 
-def init_plot_data(**kwargs):
-    return {
-        'x': [], 'y': [], 'handles': [], 'names': [],
-        'color': kwargs.get('color', default_color),
-        'fill_alpha': kwargs.get('fill_alpha', default_fill_alpha),
-        'line_alpha': kwargs.get('line_alpha', default_line_alpha),
-        'label': kwargs.get('title', default_label),
-        'marker': kwargs.get('marker', default_marker),
-    }
-
-def add_plot_data(plot_data, x_point, y_point, target_handle, star_name):
-    plot_data['x'].append(x_point)
-    plot_data['y'].append(y_point)
-    plot_data['handles'].append(target_handle)
-    plot_data['names'].append(star_name)
-    return plot_data
-
-
-def create_bokeh_targets(name: list[str],
-                         xaxis: list[str | float | int], yaxis: list[str | float | int], 
-                         target_handles: list[list[str]],
+def create_bokeh_targets(xaxis: list[str | float | int], yaxis: list[str | float | int],
+                         layers: list[dict], number_of_targets: int,
                          x_label: str = None, y_label: str = None,
                          do_xlog: bool = False, do_ylog: bool = False,
                          xaxisinv: bool = False, yaxisinv: bool = False,
                          do_gridlines: bool = False,
-                         show_all_hypatia: bool = False, do_or_logic: bool = False,
-                         requested_handles: list[str] = None,
                          ):
-    requested_handles_set = set(requested_handles)
+    """The targets plot: one scatter layer per group the API made (api.web2py.plots.group_targets)."""
     # build the bounds
     x_min = min(xaxis)
     x_max = max(xaxis)
@@ -226,74 +204,14 @@ def create_bokeh_targets(name: list[str],
     if yaxisinv:
         y_range = y_range[::-1]
 
-    # if there is no data, then return a message
-    number_of_targets = 0
-    def sort_key(target_handle):
-        # sort by x, then y, then target_handle, then star_name
-        found_target_handles = requested_handles_set & set(target_handle)
-        score = len(found_target_handles)
-        for handle in found_target_handles:
-            score += 0.01 * (requested_handles.index(handle))
-        return score
-
-    scores = [sort_key(target_handle) for target_handle in target_handles]
-    # group the target types
-    grouped_targets = {}
-    for _score, x_point, y_point, target_handle, star_name in sorted(zip(scores, xaxis, yaxis, target_handles, name)):
-        target_set = set(target_handle)
-        if do_or_logic:
-            if target_set.isdisjoint(requested_handles):
-                if show_all_hypatia:
-                    if 'all_hypatia' not in grouped_targets.keys():
-                        grouped_targets['all_hypatia'] = init_plot_data(**all_hypatia_plot_options)
-                    grouped_targets['all_hypatia'] = add_plot_data(grouped_targets['all_hypatia'], x_point, y_point,
-                                                                   target_handle, star_name)
-            else:
-                if 'or_matches' not in grouped_targets.keys():
-                    grouped_targets['or_matches'] = init_plot_data(**or_matches_plot_options)
-                # if we are doing OR logic, then we only add the point to the source if it matches the requested handles
-                grouped_targets['or_matches'] = add_plot_data(grouped_targets['or_matches'], x_point, y_point,
-                                                              target_handle, star_name)
-                number_of_targets += 1
-        else:
-            handles_found = set()
-            for requested_handle in requested_handles:
-                if requested_handle in target_set:
-                    handles_found.add(requested_handle)
-            if len(handles_found) == 0:
-                if show_all_hypatia:
-                    if 'all_hypatia' not in grouped_targets.keys():
-                        grouped_targets['all_hypatia'] = init_plot_data(**all_hypatia_plot_options)
-                    grouped_targets['all_hypatia'] = add_plot_data(grouped_targets['all_hypatia'], x_point, y_point,
-                                                                  target_handle, star_name)
-            elif len(handles_found) == 1:
-                single_handle = list(handles_found)[0]
-                if single_handle not in grouped_targets.keys():
-                    grouped_targets[single_handle] = init_plot_data(**targets_metadata.get(single_handle, {}))
-                grouped_targets[single_handle] = add_plot_data(grouped_targets[single_handle], x_point, y_point,
-                                                               target_handle, star_name)
-                number_of_targets += 1
-            elif requested_handles_set.issubset(handles_found):
-                if 'combined_matches' not in grouped_targets.keys():
-                    grouped_targets['combined_matches'] = init_plot_data(**combined_matches_plot_options)
-                grouped_targets['combined_matches'] = add_plot_data(grouped_targets['combined_matches'], x_point,
-                                                                    y_point, target_handle, star_name)
-                number_of_targets += 1
-            else:
-                if 'partial_matches' not in grouped_targets.keys():
-                    grouped_targets['partial_matches'] = init_plot_data(**partial_matches_plot_options)
-                grouped_targets['partial_matches'] = add_plot_data(grouped_targets['partial_matches'], x_point,
-                                                                    y_point, target_handle, star_name)
-                number_of_targets += 1
-
-    if len(grouped_targets) == 0:
+    if not layers:
         return '', 'No data points to display'
     labels = {
         'xaxis':  x_label if x_label else 'X Axis',
         'yaxis':  y_label if y_label else 'Y Axis',
     }
     tooltips = "<b>@names</b><br/><div style='max-width:300px'>" + ', '.join(
-        [labels[axis] + ' = @' + axis[0] + '{0.00}' for axis in set(labels)]) + '</div>'
+        [labels[axis] + ' = @' + axis[0] + '{0.00}' for axis in labels]) + '</div>'
     hover = HoverTool(tooltips=tooltips)
     # The Target Plot
     p = figure(tools=[TOOLS, hover], width=750, height=625,
@@ -305,7 +223,7 @@ def create_bokeh_targets(name: list[str],
     p.add_layout(Label(x=10, y=10, x_units='screen', y_units='screen',
                      text='Hypatia Catalog ' + datetime.now().strftime('%Y-%m-%d'),
                      text_alpha=0.5))
-    for group_name, plot_data in grouped_targets.items():
+    for plot_data in layers:
         # handle tooltips
         source = ColumnDataSource(dict(
             x=np.array(plot_data['x']),
@@ -338,18 +256,18 @@ def create_bokeh_targets(name: list[str],
     return bokeh_default_settings(p=p, x_label=labels['xaxis'], y_label=labels['yaxis'], do_gridlines=do_gridlines)
 
 
-def create_bokeh_hist(hist_all, hist_planet, edges, x_data: list[str | float | int],
+def create_bokeh_hist(series: list[dict], edges: list[float], x_range: list[float] | None,
                       x_label: str = None,
                       normalize: bool = False, xaxisinv: bool = False, do_gridlines: bool = False,
                       ):
-    # histogram - compare all data to the stars with planets
-    if x_data:
+    """The histogram: one bar series per entry the API made (api.web2py.plots.histogram_series)."""
+    if x_range:
         labels = {'xaxis': x_label if x_label else 'X Axis'}
     else:
         # if there is no data, then return a message
         return '', 'No data points to display'
 
-    max_hist_all = float(max(hist_all))
+    max_hist_all = float(max(series[0]['counts']))
     # normalize if necessary
     if normalize:
         y_label = 'Relative Frequency'
@@ -361,23 +279,18 @@ def create_bokeh_hist(hist_all, hist_planet, edges, x_data: list[str | float | i
         labels['yaxis'] = y_label
         fill_alpha = 1
         line_alpha = 1
-    # set the bounds of the plot
-    x_min = min(x_data)
-    x_max = max(x_data)
-    x_range = [x_min, x_max]
     # invert the plot if necessary
+    x_range = list(x_range)
     if xaxisinv:
         x_range = x_range[::-1]
     # build the plot object
     p = figure(tools=[TOOLS], width=750, height=625,
                x_range=x_range,
                y_range=[0, max_hist_all * 1.20])
-    p.quad(top=hist_all, bottom=0, left=edges[:-1], right=edges[1:],
-           fill_color='maroon', line_color='black', fill_alpha=fill_alpha, line_alpha=line_alpha,
-           legend_label='All Hypatia')
-    p.quad(top=hist_planet, bottom=0, left=edges[:-1], right=edges[1:],
-           fill_color='orange', line_color='black', fill_alpha=fill_alpha, line_alpha=line_alpha,
-           legend_label='Exo-Hosts')
+    for one_series in series:
+        p.quad(top=one_series['counts'], bottom=0, left=edges[:-1], right=edges[1:],
+               fill_color=one_series['color'], line_color='black', fill_alpha=fill_alpha, line_alpha=line_alpha,
+               legend_label=one_series['label'])
     # citation
     citation = Label(x=10, y=10, x_units='screen', y_units='screen',
                      text='Hypatia Catalog ' + datetime.now().strftime('%Y-%m-%d'),
