@@ -30,16 +30,6 @@ element_data = param_data['element_data']
 h_appended_names = [single_el['element_id'] + 'H' for single_el in element_data]
 h_appended_names_set = set(h_appended_names)
 targets_metadata = param_data['targets']
-all_hypatia_plot_options = targets_metadata['all_hypatia']
-or_matches_plot_options = targets_metadata['or_matches']
-combined_matches_plot_options = targets_metadata['combined_matches']
-partial_matches_plot_options = targets_metadata['partial_matches']
-default_plot_options = targets_metadata['default']
-default_color = default_plot_options.get('color', 'black')
-default_fill_alpha = default_plot_options.get('fill_alpha', 0.5)
-default_line_alpha = default_plot_options.get('line_alpha', 0.5)
-default_label = default_plot_options.get('title', 'Hypatia Catalog')
-default_marker = default_plot_options.get('marker', 'circle')
 
 COL_PREFERRED_NAME = {}
 COL_SHORT_DESC = {}
