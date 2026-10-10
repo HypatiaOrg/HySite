@@ -8,7 +8,8 @@ default_controller = 'default'
 default_function = 'index'
 
 routes_in = (
-    ('/api', '/hypatia/api'),
+    # the API explanation page: a function of the default controller, at the short address every page links to
+    ('/api', '/hypatia/default/api'),
     ('/$app/static/$anything', '/$app/static/$anything'),
     ('/$anything', '/$anything'),
 )
