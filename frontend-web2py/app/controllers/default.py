@@ -38,6 +38,12 @@ def credits():
     return dict()
 
 
+def api():
+    """The API explanation page, at /api (routes.py)."""
+    session.forget(response)
+    return dict()
+
+
 def init_session(is_targets: bool = False):
     # add default values for missing session variables
     for var_name, default_val in session_defaults_launch.items():
