@@ -5,8 +5,8 @@
 # scripts/update.sh. Settings come from /etc/hysite/update.env (deploy/systemd/update.env.example).
 #
 #  1. Update the code: fast-forward to origin/$HYSITE_BRANCH.
-#  2. Resolve the newest versions: scripts/refresh_versions.py writes versions.env and the
-#     requirements.lock files (ignored by git).
+#  2. Resolve the newest versions: scripts/refresh_versions.py writes versions.env, the
+#     requirements.lock files and frontend/package-lock.json (all ignored by git).
 #  3. Stop here if neither the code nor any version changed.
 #  4. Test: build and run the whole site against the sample database (compose.test.yaml)
 #     and run the smoke tests. On failure: put the previous versions back, stop.
@@ -35,8 +35,8 @@ SMOKE_WAIT=${HYSITE_SMOKE_WAIT:-300}
 # the backend image has pymongo, so it runs scripts/deployments.py
 OPS_IMAGE=${OPS_IMAGE:-hysite-django-api:latest}
 OPS_NETWORK=${OPS_NETWORK:-hynet}
-BUILT_IMAGES=(hysite-django-api hysite-web-to-py)
-PINNED_FILES=(versions.env backend/requirements.lock frontend-web2py/requirements.lock)
+BUILT_IMAGES=(hysite-django-api hysite-web-to-py hysite-next-frontend)
+PINNED_FILES=(versions.env backend/requirements.lock frontend-web2py/requirements.lock frontend/package-lock.json)
 KEEP_RUNS=20
 
 cd "$REPO" || exit 1
@@ -150,6 +150,9 @@ installed_versions() {  # $1 = image name prefix, e.g. hysite-test
         docker run --rm --entrypoint sh "$1-$service" -c 'python --version; pip freeze' \
             > "$RUN_DIR/installed-$service.txt" 2> /dev/null
     done
+    # the Node packages are in the run folder's copy of package-lock.json (save_run_files)
+    docker run --rm --entrypoint node "$1-next-frontend" --version \
+        > "$RUN_DIR/installed-next-frontend.txt" 2> /dev/null
 }
 
 log "HySite update run $RUN_ID"

@@ -7,6 +7,9 @@ import {AbundancesHist} from "@/components/image";
 import {scatter_url, help_url, about_url, credits_url, about_api_url} from "@/data/api_targets";
 
 
+// rendered when requested, not when the site is built: the counts need a running API
+export const dynamic = 'force-dynamic';
+
 const linkStyle = "text-hyred hover:text-hypurple hover:bg-hyyellow hover:underline"
 const homeGrid = "bg-white grid grid-cols-16";
 const paragraphStyle = "text-hygrey col-span-14 col-start-2 indent-12 pt-4 text-lg md:text-xl";

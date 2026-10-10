@@ -25,8 +25,11 @@ TEST_STAR = "HIP 62875"
 # (path, what the response must be[, form data to POST]): "json" parses as non-empty JSON, "found" is
 # JSON for a star the API found, "png" is an image, any other string must appear in the page
 CHECKS = [
-    # web2py frontend pages
+    # the Next.js frontend: the home page, with the counts from the API (the sample database has planet hosts)
     ("/", "Hypatia Catalog"),
+    ("/", "/_next/static/"),
+    ("/", "planet hosts"),
+    # web2py frontend pages
     # each .load fragment needs the session settings its parent page makes, so the parent comes first
     ("/hypatia/default/launch", "Hypatia Catalog"),
     ("/hypatia/default/graph.load", "plotly-graph-div"),

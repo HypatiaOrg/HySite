@@ -3,19 +3,21 @@
 
 Git holds only what to follow:
   - the image tags in compose.yaml, e.g. ${BACKEND_BASE_IMAGE:-python:3.14-alpine}
-  - the unpinned package lists, backend/requirements.txt and frontend-web2py/requirements.txt
+  - the unpinned package lists, backend/requirements.txt and frontend-web2py/requirements.txt,
+    and the package ranges in frontend/package.json
 
 This script resolves those to exact versions, in files that git ignores:
   - versions.env: each image tag with the @sha256 digest it points to today, and
     REQUIREMENTS=requirements.lock so builds use the lock files
   - backend/requirements.lock, frontend-web2py/requirements.lock: every package at an exact version
+  - frontend/package-lock.json: the same for the Next.js frontend (the Docker build runs npm ci)
 
 The weekly update job on the server (scripts/hysite_update.sh) runs this, tests the result and
 deploys it, and records the versions in the hysite_ops.deployments database collection.
 Compose reads versions.env when it is listed in COMPOSE_ENV_FILES (e.g. COMPOSE_ENV_FILES=.env,versions.env).
 
 Each lock file is compiled inside the service's own pinned base image, so it matches the Python
-version and platform (Alpine, musl) it will be installed on. Needs Docker with buildx.
+or Node version and platform (Alpine, musl) it will be installed on. Needs Docker with buildx.
 
     python3 scripts/refresh_versions.py
 """
@@ -33,6 +35,8 @@ COMPOSE_FILE = REPO / "compose.yaml"
 VERSIONS_FILE = REPO / "versions.env"
 # service directory -> the compose variable holding its Python base image
 LOCKED_SERVICES = {"backend": "BACKEND_BASE_IMAGE", "frontend-web2py": "FRONTEND_BASE_IMAGE"}
+# the Node service -> the compose variable holding its Node base image
+NODE_SERVICES = {"frontend": "NEXT_BASE_IMAGE"}
 
 # image variables with their default tag in compose.yaml, e.g. ${NGINX_IMAGE:-nginx:latest}
 IMAGE_VARIABLE = re.compile(r"\$\{(\w+_IMAGE):-([^}]+)\}")
@@ -74,6 +78,17 @@ def compile_lock(service_dir: Path, image: str) -> None:
          image, "sh", "-c", script])
 
 
+def compile_package_lock(service_dir: Path, image: str) -> None:
+    """Resolve package.json to the newest versions it allows, in package-lock.json, inside the Node image."""
+    print(f"  {service_dir.name}/package-lock.json in {image.split('@')[0]}")
+    run(["docker", "run", "--rm",
+         "--user", f"{os.getuid()}:{os.getgid()}",
+         "--env", "HOME=/tmp", "--env", "npm_config_cache=/tmp/npm-cache",
+         "--volume", f"{service_dir}:/work", "--workdir", "/work",
+         # only the lock file: no node_modules on the host, no install scripts
+         image, "npm", "install", "--package-lock-only", "--ignore-scripts", "--no-audit", "--no-fund"])
+
+
 def main() -> None:
     argparse.ArgumentParser(description=__doc__.split("\n")[0]).parse_args()
 
@@ -86,6 +101,8 @@ def main() -> None:
     print("Compiling lock files")
     for service_dir, variable in LOCKED_SERVICES.items():
         compile_lock(REPO / service_dir, pinned[variable])
+    for service_dir, variable in NODE_SERVICES.items():
+        compile_package_lock(REPO / service_dir, pinned[variable])
 
     lines = [
         "# Exact versions for HySite, made by scripts/refresh_versions.py. Do not edit by hand.",

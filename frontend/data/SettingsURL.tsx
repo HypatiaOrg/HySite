@@ -11,12 +11,12 @@ export function toURL(settings: settingsType = settingsDefault): string {
         plotSettings, targets,
     }: settingsType = settings
     let urlData = {}
-    let urlFilters = []
-    for (const aFilter in filterSettings) {
-        let filterName: string | null;
-        filterName = aFilter.name;
+    const urlFilters: Array<filterType> = []
+    // only the filters that have a name set
+    for (const aFilter of filterSettings) {
+        const filterName = aFilter.name;
         if (filterName !== null && filterName !== undefined && filterName !== '') {
-            urlFilters.push({...aFilter} as filterType)
+            urlFilters.push({...aFilter})
         }
     }
     urlData = {

@@ -84,13 +84,21 @@ services:
         container_name: next-frontend
         build:
             context: ./frontend
-            network: host
+            args:
+                # The Node release line to follow (versions.env on the server pins the exact tested image).
+                # Moving to a new line is a manual decision, as for the Python images.
+                BASE_IMAGE: ${NEXT_BASE_IMAGE:-node:24-alpine}
         restart: "${RESTART_POLICY:-no}"
+        environment:
+            # where the pages fetch their data when rendering on the server
+            API_BASE_SERVER: "http://django-api:8111/"
+            DEBUG: "${DEBUG:-true}"
         read_only: "${READ_ONLY:-false}"
+        volumes:
+            # the fetch and image caches Next.js writes while it runs
+            - "next_cache:/app/.next/cache:rw"
         networks:
             - hynet
-        profiles:
-            -   next
 
     django-api:
         container_name: backend
@@ -180,6 +188,7 @@ services:
 
 volumes:
     django_static:
+    next_cache:
     website_plots:
     gunicorn_tmp:
     web_to_py_temp:
