@@ -210,31 +210,9 @@ def graph_hist():
     # send back to the browser
     return dict(script=script, div=div)
 
-def hover_text(col_name: str, cell_hover_data: dict, requested_elements_set: set[str], return_median: bool = False) -> list[str]:
-    if col_name in requested_elements_set:
-        hover_strings = []
-        items_array = [(key, value) for key, value in cell_hover_data.items()]
-        if return_median:
-            # Only the median reference values are required
-            array_length = len(items_array)
-            if array_length % 2 == 0:
-                # Even array return two items
-                median_index = int(array_length / 2)
-                items_array = items_array[median_index - 1:median_index + 1]
-            else:
-                # Odd array return one item
-                median_index = int((array_length - 1) / 2)
-                items_array = items_array[median_index: median_index + 1]
-        for key, value in items_array:
-            if value == 0.0:
-                value += 0.0
-            hover_strings.append(f"{'' if value < 0.0 else ' '}{float(value):1.2f}: {CATALOG_AUTHORS[key]}")
-    else:
-        hover_strings = [cell_hover_data]
-    return hover_strings
-
-
 def table():
+    """The data table page component and its downloads. The table itself is built by the API
+    (backend/api/web2py/table.py); this function keeps the session and renders what comes back."""
     # set new session values from the request; only known settings are kept
     all_request_vars = set(request.vars.keys())
     for key in all_request_vars & session_request_vars:
@@ -248,210 +226,35 @@ def table():
         except AttributeError:
             session.catalogs = []
     if isinstance(session.tablecols, str):
-        table_columns_set = set(session.tablecols.split(','))
-    else:
-        table_columns_set = set(session.tablecols)
-    show_error = 'spread' in table_columns_set
-    show_reference = 'ref' in table_columns_set
+        session.tablecols = session.tablecols.split(',')
     for_download = bool(request.vars.download)
-
-    # build the columns
-    columns = []
-    requested_name_types = []
-    requested_stellar_params = []
-    requested_planet_params = []
-    requested_elements = []
-
-    is_planet = 'planet' in table_columns_set
-
-    # add star name parameters
-    if 'names' in table_columns_set:
-        columns.extend(TABLE_NAMES)
-        requested_name_types = TABLE_NAMES
-    else:
-        columns.append('star_id')
-        requested_name_types.append('star_id')
-    if 'names_all' in table_columns_set:
-        columns.append('aliases')
-        requested_name_types.append('aliases')
-    if is_planet:
-        columns.insert(1, 'nea_name')
-        requested_planet_params = TABLE_PLANET + ['nea_name']
-
-    # the elements
-    fe_elements = set()
-    if 'Fe' in table_columns_set:
-        columns.append('Fe')
-        requested_elements.append('Fe')
-        fe_elements.add('Fe')
-        if show_error:
-            columns.append('Fe_err')
-        if show_reference:
-            columns.append('Fe_ref')
-        if 'FeII' in table_columns_set:
-            columns.append('FeII')
-            requested_elements.append('FeII')
-            fe_elements.add('FeII')
-            if show_error:
-                columns.append('FeII_err')
-            if show_reference:
-                columns.append('FeII_ref')
-    other_elements = set()
-    for item in table_columns_set:
-        if item[0].isupper() and item not in fe_elements:
-            other_elements.add(item)
-    for element_name in sorted(other_elements, key=element_rank):
-        columns.append(element_name)
-        requested_elements.append(element_name)
-        if show_error:
-            columns.append(f'{element_name}_err')
-        if show_reference:
-            columns.append(f'{element_name}_ref')
-
-    # add planet parameters
-    if 'planet' in table_columns_set:
-        for planet_param in TABLE_PLANET:
-            columns.append(planet_param)
-            if planet_param not in {'planet_letter', 'nea_name'}:
-                if show_error:
-                    columns.append(f'{planet_param}_err')
-                if show_reference:
-                    columns.append(f'{planet_param}_ref')
-        requested_planet_params = TABLE_PLANET[:]
-
-    # add stellar parameters
-    if 'stellar' in table_columns_set:
-        for stellar_param in TABLE_STELLAR:
-            columns.append(stellar_param)
-            if stellar_param not in {'disk', 'sptype'}:
-                if show_error:
-                    columns.append(f'{stellar_param}_err')
-                if show_reference:
-                    columns.append(f'{stellar_param}_ref')
-        requested_stellar_params = TABLE_STELLAR[:]
-
-    # package all the query parameters
-    table_settings = get_settings()
-    table_settings['show_error'] = show_error
-    table_settings['requested_name_types'] = ';'.join(requested_name_types)
-    table_settings['requested_stellar_params'] = ';'.join(requested_stellar_params)
-    table_settings['requested_planet_params'] = ';'.join(requested_planet_params)
-    table_settings['requested_elements'] = ';'.join(requested_elements)
-
-    # table sorting options
+    # table sorting: a second click on the same column reverses the order
     if request.vars.sort:
         if session.orderby == request.vars.sort:
             session.reverse = not session.reverse
         else:
             session.reverse = False
         session.orderby = request.vars.sort
-        table_settings['reverse'] = session.reverse
-        table_settings['sort'] = session.orderby
-    else:
-        table_settings['sort'] = None
-        table_settings['reverse'] = False
-    # hover text (the catalog values behind each cell) is shown on the page; a download has no hover, but
-    # the reference columns are built from the same data
-    table_settings['show_hover'] = (not for_download) or show_reference
-
-    # is targets table?
-    is_targets = session.is_targets
-    table_settings['show_targets'] = is_targets
-
-    # request the table data from the API
-    table_url_values = urllib.parse.urlencode(table_settings)
-    table_full_url = f'{BASE_API_URL}table/?{table_url_values}'
-    table_data_web = urllib.request.urlopen(table_full_url)
+    table_settings = get_settings()
+    table_settings.update(
+        tablecols=','.join(session.tablecols),
+        sort=session.orderby if request.vars.sort else None,
+        reverse=session.reverse if request.vars.sort else False,
+        show_targets=session.is_targets,
+        showrows=bool(request.vars.showrows),
+        download=for_download,
+    )
+    # the table from the API; a POST, since a star list can make the settings longer than a URL
+    table_request = urllib.request.Request(f'{BASE_API_URL}table/',
+                                           data=urllib.parse.urlencode(table_settings).encode(), method='POST')
+    table_data_web = urllib.request.urlopen(table_request)
     table_data = json.loads(table_data_web.read().decode(table_data_web.info().get_content_charset('utf-8')))
-    table_dict = table_data['body']
-    star_count = table_data['star_count']
-    planet_count = table_data['planet_count']
-    hover_data = table_data['hover_data']
-    if is_targets:
-        targets = table_data['targets']
-        # if this is a target table, then the targets are in the first column
-        columns.insert(1, 'targets')
-        table_dict['targets'] = targets
-    if planet_count and 'nea_name' not in columns:
-        columns.insert(1, 'nea_name')
-    settings = get_settings()
-    requested_handles = get_requested_handles(settings=settings)
-    requested_handles_set = set(requested_handles)
-    # add the JS wrapper to get element details
-    requested_elements_set = set(requested_elements)
-    hover_text_set = set(requested_elements) | set(requested_stellar_params) | set(requested_planet_params)
-    if show_reference:
-        # median reference data for elements
-        return_median = table_settings['return_median']
-        # add the reference columns to the columns list
-        for col_name in columns:
-            if col_name.endswith('_ref'):
-                base_name = col_name.rsplit('_ref', 1)[0]
-                hover_this_column = hover_data[base_name]
-                table_dict[col_name] = [hover_text(base_name, hover_this_column[row_index], requested_elements_set,
-                                                   return_median=return_median)
-                                        if hover_this_column[row_index] else '' for row_index in range(len(hover_this_column))]
+    # on the page, a cell with hover text (the catalog values behind it) gets the hover wrapper
     formatted_table = []
-    more_rows = False
-    if table_dict:
-        row_count = len(table_dict[columns[0]])
-        # the rows to show: all of them, or only the targets' rows for a targets table
-        if is_targets:
-            row_indexes = [row_index for row_index in range(row_count)
-                           if not set(targets[row_index]).isdisjoint(requested_handles_set)]
-        else:
-            row_indexes = list(range(row_count))
-        total_rows = len(row_indexes)
-        # a download gets every row. The page shows the first rows, then all of them after "Load All",
-        # but only while the whole table is small enough for a browser (issue #43): above that, the
-        # page points to the downloads instead, whatever the request asks for
-        can_load_all = total_rows * len(columns) <= max_table_cells_to_show
-        show_all_rows = for_download or (bool(request.vars.showrows) and can_load_all)
-        # format only the rows that will be shown (formatting every row for the page was most of the cost)
-        if not show_all_rows and total_rows > default_table_rows_to_show:
-            row_indexes = row_indexes[:default_table_rows_to_show]
-            more_rows = True
-        for row_index in row_indexes:
-            data_row = [table_dict[col_name][row_index] for col_name in columns]
-            # format the row data
-            formatted_row = []
-            for col_name, cell_value in zip(columns, data_row):
-                if cell_value == 0.0:
-                    cell_value += 0.0
-                if isinstance(cell_value, str):
-                    cell_value_str = cell_value
-                elif cell_value is None:
-                    cell_value_str = ''
-                elif col_name in requested_elements_set:
-                    cell_value_str = f'{cell_value:1.2f}'
-                elif col_name in COL_FORMAT.keys():
-                    cell_value_str = COL_FORMAT[col_name] % cell_value
-                elif col_name == 'targets':
-                    # if this is a target table, then the targets are in the first column
-                    cell_value_str = ', '.join([targets_metadata[target_handle]['title'] for target_handle in cell_value])
-                elif col_name.endswith('_ref') or col_name == 'aliases':
-                    cell_value_str = cell_value
-                else:
-                    cell_value_str = str(cell_value)
-                if col_name.endswith('_err') and cell_value_str != '':
-                    cell_value_str = f'±{cell_value_str}'
-                if col_name in hover_text_set:
-                    if cell_value_str != '' and col_name in hover_data.keys():
-                        cell_hover_data = hover_data[col_name][row_index]
-                        if cell_hover_data:
-                            cell_value_str = table_cell(
-                                value=cell_value_str,
-                                hover_text='\n'.join(hover_text(col_name, cell_hover_data, requested_elements_set)),
-                                do_wrapper=not for_download)
-                formatted_row.append(cell_value_str)
-            formatted_table.append(formatted_row)
-    else:
-        total_rows = 0
-        can_load_all = True
-    # Make the status label that is above the Periodic Table that controls the data table
-    if planet_count:
-        status = f'{total_rows} planets selected from {star_count} stars'
-    else:
-        status = f'{total_rows} stars selected'
-    return dict(table=formatted_table, status=status, columns=columns, moreRows=more_rows,
-                totalRows=total_rows, canLoadAll=can_load_all)
+    for row, row_hover in zip(table_data['rows'], table_data['hover']):
+        formatted_table.append([
+            table_cell(value=cell, hover_text=cell_hover, do_wrapper=not for_download) if cell_hover else cell
+            for cell, cell_hover in zip(row, row_hover)])
+    return dict(table=formatted_table, status=table_data['status'], columns=table_data['columns'],
+                moreRows=table_data['moreRows'], totalRows=table_data['totalRows'],
+                canLoadAll=table_data['canLoadAll'])

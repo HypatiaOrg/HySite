@@ -25,12 +25,10 @@ STELLAR_PARAM_TYPES = param_data['stellar_param_types']
 PLANET_PARAM_TYPES = param_data['planet_param_types']
 ranked_string_params = param_data['ranked_string_params']
 CATALOGS = [AttrDict(cat_dict) for cat_dict in param_data['catalogs']]
-CATALOG_AUTHORS = {cat['id']: cat['author'] for cat in CATALOGS}
 SOLAR_NORMS = [AttrDict(norm_dict) for norm_dict in param_data['solarnorms']]
 element_data = param_data['element_data']
 h_appended_names = [single_el['element_id'] + 'H' for single_el in element_data]
 h_appended_names_set = set(h_appended_names)
-rank_ordered_elements = {single_el['element_id']: el_index for el_index, single_el in list(enumerate(element_data))}
 targets_metadata = param_data['targets']
 all_hypatia_plot_options = targets_metadata['all_hypatia']
 or_matches_plot_options = targets_metadata['or_matches']
@@ -43,22 +41,11 @@ default_line_alpha = default_plot_options.get('line_alpha', 0.5)
 default_label = default_plot_options.get('title', 'Hypatia Catalog')
 default_marker = default_plot_options.get('marker', 'circle')
 
-def element_rank(element_id: str) -> int:
-    """Returns the rank of the element based on its index in the element_data list."""
-    return rank_ordered_elements.get(element_id, float('inf'))
-
-
-COL_FORMAT = {}
 COL_PREFERRED_NAME = {}
 COL_SHORT_DESC = {}
 COL_LONG_DESC = {}
 COL_UNITS = {}
 for handle, param_defs in units_and_fields.items():
-    if 'decimals' in param_defs.keys():
-        COL_FORMAT[handle] = f'%.{param_defs["decimals"]}f'
-    # elif 'units' in param_defs.keys() and param_defs['units'] == 'string':
-    else:
-        COL_FORMAT[handle] = '%s'
     COL_PREFERRED_NAME[handle] = param_defs['label']
     COL_SHORT_DESC[handle] = param_defs['label']
     COL_LONG_DESC[handle] = param_defs['hover']
@@ -94,23 +81,14 @@ periodicTable = [
 
 
 name_handles_labels = {'star_id': 'Name', 'hd': 'HD', '2mass': '2MASS', 'wds': 'WDS'}
-TABLE_NAMES = [name for name in name_handles_labels.keys()]
 name_handles_labels['aliases'] = 'All Names'
 name_handles_labels['nea_name'] = 'NEA Name'
 name_handles_labels['planet_letter'] = 'Planet Letter'
-TABLE_STELLAR = ['raj2000', 'decj2000', 'x_pos', 'y_pos', 'z_pos', 'dist', 'disk', 'sptype', 'vmag', 'bv',
-                 'u_vel', 'v_vel', 'w_vel', 'teff', 'logg', 'mass', 'rad']
-TABLE_PLANET = ['planet_letter', 'period', 'eccentricity', 'semi_major_axis', 'pl_mass', 'pl_radius', 'inclination']
 toggle_graph_vars = {'normalize', 'gridlines', 'xaxislog', 'yaxislog', 'zaxislog',
                      'xaxisinv', 'yaxisinv', 'zaxisinv', 'filter1_inv', 'filter2_inv', 'filter3_inv',
                      'show_all', 'or_logic', 'show_hwo_tier1', 'show_hwo_tier2',
                      'show_thick_disk', 'show_thin_disk', 'show_has_exo',
                      }
-# the on-page table shows this many rows, with a "Load All" link for the rest; downloads always get every row
-default_table_rows_to_show = 1000
-# "Load All" is offered only while the whole table (rows x columns, each cell with its hover text) stays
-# small enough for a browser; above this, the page points to the downloads instead (issue #43)
-max_table_cells_to_show = 250_000
 
 session_defaults_launch = {
     # must be set in the 'launch' function
