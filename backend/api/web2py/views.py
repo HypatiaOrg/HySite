@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from core.settings import DEBUG
 from api.v2.data_process import available_catalogs_v2, representative_error
 from api.web2py.table import table_from_request, table_download_lines, DOWNLOAD_FORMATS
+from api.web2py.settings import settings_schema
 from api.web2py.data_process import (home_data, units_and_fields_v2, stellar_param_types_v2,
                                      planet_param_types_v2, ranked_string_params, plot_norms,
                                      graph_settings_from_request, graph_query_pipeline_web2py, histogram_format,
@@ -16,6 +17,12 @@ from api.web2py.data_process import (home_data, units_and_fields_v2, stellar_par
 class Web2pyHome(View):
     def get(self, request):
         return JsonResponse(home_data)
+
+
+class Settings(View):
+    """The frontend's settings model: names, defaults, kinds and choices (api.web2py.settings)."""
+    def get(self, request):
+        return JsonResponse(settings_schema())
 
 
 class Summary(View):

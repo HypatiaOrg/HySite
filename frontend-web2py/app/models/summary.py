@@ -84,48 +84,14 @@ name_handles_labels = {'star_id': 'Name', 'hd': 'HD', '2mass': '2MASS', 'wds': '
 name_handles_labels['aliases'] = 'All Names'
 name_handles_labels['nea_name'] = 'NEA Name'
 name_handles_labels['planet_letter'] = 'Planet Letter'
-toggle_graph_vars = {'normalize', 'gridlines', 'xaxislog', 'yaxislog', 'zaxislog',
-                     'xaxisinv', 'yaxisinv', 'zaxisinv', 'filter1_inv', 'filter2_inv', 'filter3_inv',
-                     'show_all', 'or_logic', 'show_hwo_tier1', 'show_hwo_tier2',
-                     'show_thick_disk', 'show_thin_disk', 'show_has_exo',
-                     }
-
-session_defaults_launch = {
-    # must be set in the 'launch' function
-    'filter1_1': 'none',
-    'filter1_2': 'H',
-    'filter2_1': 'none',
-    'filter2_2': 'H',
-    'filter3_1': 'none',
-    'filter3_2': 'H',
-    'xaxis1': 'Fe',
-    'xaxis2': 'H',
-    'yaxis1': 'Si',
-    'yaxis2': 'H',
-    'zaxis1': 'none',
-    'zaxis2': 'H',
-    'tablecols': 'Fe,C,O,Mg,Si,S,Ca,Ti',
-    # could be set in the 'graph' function, but can also be set in the 'launch' function
-    'filter1_3': '',
-    'filter1_4': '',
-    'filter2_3': '',
-    'filter2_4': '',
-    'filter3_3': '',
-    'filter3_4': '',
-    'cat_action': 'exclude',
-    'statistic': 'median',
-    'solarnorm': 'lodders09',
-    'catalogs': [],
-    'star_action': 'exclude',
-    'star_list': [],
-    'show_all': True,
-    'show_thin_disk': True,
-    'show_thick_disk': True,
-}
-
+# the settings model (names, defaults, which are toggles) comes from the API: one definition for every frontend
+settingsURL = urllib.request.urlopen(f'{BASE_API_URL}settings/')
+settings_data = json.loads(settingsURL.read().decode(settingsURL.info().get_content_charset('utf-8')))
+toggle_graph_vars = set(settings_data['toggles'])
+session_defaults_launch = settings_data['defaults']
 exported_session_vars = sorted(set(session_defaults_launch.keys()) | toggle_graph_vars)
 # the request variables that may be saved in the session; other variables a request sends are ignored
-session_request_vars = set(exported_session_vars) | {'tablecols', 'tableidentifier', 'tablelist', 'tablesource'}
+session_request_vars = set(settings_data['session_keys'])
 
 for name_handle, name_label in name_handles_labels.items():
     COL_PREFERRED_NAME[name_handle] = name_label
