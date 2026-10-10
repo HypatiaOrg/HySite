@@ -20,7 +20,7 @@ from plotly.subplots import make_subplots
 hypatia_purple = '#4E11B7'
 PLOT_WIDTH = 750
 PLOT_HEIGHT = 625
-AXIS_FONT_SIZE = 16  # pixels: the 12pt of the Bokeh plots
+AXIS_FONT_SIZE = 2  # pixels: the 12pt of the Bokeh plots
 MARGIN = 0.10  # of the data range, on each side
 # the Bokeh marker names of the catalog summary's target metadata, as Plotly symbols
 MARKERS = {'circle': 'circle', 'square': 'square', 'diamond': 'diamond', 'triangle': 'triangle-up',
@@ -44,15 +44,15 @@ SELECT_SCRIPT = """
         });
     })();
 </script>"""
-# the hover labels: every star within a few pixels of the cursor, stacked in columns that fill the window's
-# height, as Bokeh's hover tool stacked them (Plotly's own hover shows one point per trace, and searches slowly over an SVG plot,
+# the hover labels: the stars within a few pixels of the cursor, stacked in columns that fill the window's
+# height, as Bokeh's hover tool stacked them; the nearest 25, headed by "Showing 25 of N Stars" when there are more (Plotly's own hover shows one point per trace, and searches slowly over an SVG plot,
 # so the figure has hovermode off and this script does the search over the traces' arrays instead)
 HOVER_SCRIPT = """
 <script>
     (function() {
         var plot = document.getElementById("%(div_id)s");
         if (!plot) { return; }
-        var labels = %(labels)s, RADIUS = 8;  // pixels, about a marker's size
+        var labels = %(labels)s, MAX_LABELS = 25, RADIUS = 4;  // pixels: a marker's radius (size 8)
         var types = {f8: Float64Array, f4: Float32Array, i4: Int32Array, i2: Int16Array, i1: Int8Array,
                      u4: Uint32Array, u2: Uint16Array, u1: Uint8Array};
         function values(column) {  // a plain list, or the base64 typed array Plotly's HTML holds
@@ -95,7 +95,10 @@ HOVER_SCRIPT = """
             if (!found.length) { hide(); return; }
             found.sort(function(a, b) { return a[0] - b[0]; });
             var items = [];
-            for (var k = 0; k < found.length; k++) {
+            if (found.length > MAX_LABELS) {
+                items.push("<div style='padding:2px 0; color:#666'>Showing " + MAX_LABELS + " of " + found.length + " Stars</div>");
+            }
+            for (var k = 0; k < found.length && k < MAX_LABELS; k++) {
                 var data = columns(found[k][1]), i = found[k][2];
                 var text = labels.x + " = " + Number(data.x[i]).toFixed(2) + ", " + labels.y + " = " + Number(data.y[i]).toFixed(2);
                 if (data.z && labels.z) { text += ", " + labels.z + " = " + Number(data.z[i]).toFixed(2); }
@@ -106,7 +109,7 @@ HOVER_SCRIPT = """
             function column(cells) { return "<div style='display:inline-block; vertical-align:top; padding:0 6px'>" + cells.join("") + "</div>"; }
             label.innerHTML = column(items.slice(0, 1));
             label.style.display = "block";
-            var itemHeight = label.firstChild.firstChild.offsetHeight || 34;
+            var itemHeight = label.firstChild.firstChild.offsetHeight || 34;  // measured on the first item
             var perColumn = Math.max(1, Math.floor((window.innerHeight - 24) / itemHeight));
             var blocks = [];
             for (var start = 0; start < items.length; start += perColumn) { blocks.push(column(items.slice(start, start + perColumn))); }
