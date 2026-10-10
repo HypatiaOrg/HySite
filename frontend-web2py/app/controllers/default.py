@@ -76,10 +76,6 @@ def dropdown():
     return dict()
 
 
-def error():
-    return dict()
-
-
 def get_settings() -> dict[str, any]:
     # make changes to the graph settings based on the session values
     all_settings = {}
