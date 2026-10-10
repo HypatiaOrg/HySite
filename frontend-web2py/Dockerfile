@@ -19,20 +19,22 @@ ARG REQUIREMENTS=requirements.txt
 COPY requirements.* ./
 # install the python requirments
 RUN pip install --no-cache-dir -r $REQUIREMENTS
-# # create the logs and writable files for the python user
+# web2py's soft cron (on by default in anyserver.py) keeps its lock in cron.master, which must be
+# writable: it lives in the temp_data volume, linked from where web2py looks for it
 RUN mkdir -p $TEMP_DIR
 RUN touch $TEMP_DIR/cron.master
 RUN chown python_kid:python_kia $TEMP_DIR/cron.master
 RUN ln -s $TEMP_DIR/cron.master $WORKING_DIR/cron.master
-RUN touch $TEMP_DIR/web2py.log
-RUN chown python_kid:python_kia $TEMP_DIR/web2py.log
-RUN ln -s $TEMP_DIR/web2py.log $WORKING_DIR/web2py.log
-# create the session directory
+# the folders web2py expects and would otherwise try to create on every request (gluon/fileutils.py:
+# create_missing_folders and missing_app_folders), which a read-only container cannot do
+RUN mkdir -p $WORKING_DIR/deposit $WORKING_DIR/site-packages $WORKING_DIR/logs
 RUN mkdir -p $SESSION_DIR
 RUN chown python_kid:python_kia $SESSION_DIR
 # the rest of the files
 COPY ./web2py .
 COPY ./app ./applications/hypatia
+RUN mkdir -p applications/hypatia/databases applications/hypatia/private applications/hypatia/uploads \
+    applications/hypatia/cron applications/hypatia/errors
 COPY ./configs ./.
 COPY docker-entrypoint.sh ./
 # switch to the python user
