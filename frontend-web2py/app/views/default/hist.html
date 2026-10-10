@@ -1,9 +1,10 @@
 {{extend 'layout.html'}}
 {{from datetime import datetime}}
+{{block head}}
+<!-- Plotly, copied from the python package when the image is built (Dockerfile); the plot component embeds only the figure -->
+<script src="{{=URL('static','js/plotly.min.js')}}"></script>
+{{end}}
 
-{{if auth.user_id == 1:}}
-{{=response.toolbar()}}
-{{pass}}
 <div style="float:left;width:750px;height:625px;display:table;font-size:20px;font-weight:bold;margin-bottom:20px">
     <div style="display:table-cell;vertical-align:middle;text-align:center;background:#dddddd;height:625px" id="hist">
     {{=LOAD("default","graph_hist.load",ajax=True,content="Loading...")}}
@@ -13,6 +14,9 @@
 
 <div style="float:left;padding-left:20px">
     <form method="post">
+        <!-- the toggles (checkboxes) this form has; refresh() fills it in, so the server knows which
+             toggles an unchecked box means "off" for, and leaves the other pages' toggles alone (issue #40) -->
+        <input type="hidden" name="toggle_vars" id="toggle_vars" value="">
         <input class="hidden" name="hist_submit" value="true">
         {{include 'default/notice.html'}}
         <dl>
@@ -110,6 +114,7 @@
         $("form input[name],select[name]").each(function() {
             items.push(this.name)
         });
+        $("#toggle_vars").val($("form input[type=checkbox][name]").map(function() { return this.name; }).get().join(","));
         if($("select[name='solarnorm'] option[value="+$("select[name='solarnorm']").val()+"]").text().trim() == "Original") {
             $("#origalert").show();
         } else {

@@ -102,7 +102,7 @@ class GaiaQuery:
         connection.close()
         return self.wait_for_job(jobid, query_text,  dr_num)
 
-    def process_job(self, raw_results, dr_num: int = 2):
+    def process_job(self, raw_results, queried_ids: list[int], dr_num: int = 2):
         metadata = raw_results['metadata']
         data_names = [param_dict['name'] for param_dict in metadata]
         requested_names = {param_name for param_name in data_names if param_name in self.get_query_params(dr_num=dr_num)}
@@ -130,6 +130,10 @@ class GaiaQuery:
                 params_dict['raj2000_error'] = params_dict['ra_error'] * deg_per_mas
                 params_dict['decj2000_error'] = params_dict['dec_error'] * deg_per_mas
             sources_dict[params_dict['source_id']] = params_dict
+        # handle the null results when the query data ia not returned
+        for query_id in queried_ids:
+            if query_id not in sources_dict.keys():
+                sources_dict[query_id] = {'source_id': query_id}
         return sources_dict
 
     def query_source(self, simbad_formatted_name_list, dr_num=2):
@@ -156,7 +160,9 @@ class GaiaQuery:
                 query_text = f"""SELECT {', '.join(list(self.get_query_params(dr_num=dr_num)))}
                                  FROM gaiadr{dr_num}.gaia_source 
                                  WHERE {' OR '.join([f'source_id={source_id}' for source_id in sub_list])};"""
-            sources_dict = self.process_job(raw_results=self.request_job(query_text, dr_num=dr_num), dr_num=dr_num)
+            raw_results = self.request_job(query_text, dr_num=dr_num)
+            queried_ids = [int(source_id) for source_id in sub_list]
+            sources_dict = self.process_job(raw_results=raw_results, queried_ids=queried_ids, dr_num=dr_num)
             self.star_dict.update({gaia_id_int: sources_dict[gaia_id_int] for gaia_id_int in sources_dict.keys()})
 
 

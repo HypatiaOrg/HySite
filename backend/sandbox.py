@@ -25,8 +25,8 @@ def mdwarf_histogram(self):
         ordered_list_of_bins.remove('Fe')
     hits = [0]
     hits.extend([self.__getattribute__(bin_name) for bin_name in ordered_list_of_bins[1:]])
-    ordered_list_of_bins.insert(28, '13C') #Crossfield19 also Picos25
-    hits.insert(2, 2)
+    ordered_list_of_bins.insert(2, '13C') #Crossfield19 also Picos25
+    hits.insert(2, 28)
     ordered_list_of_bins.insert(5, 'F')
     hits.insert(5, 0)
     ordered_list_of_bins.remove('NLTE_Sr_II')
@@ -42,8 +42,8 @@ def mdwarf_histogram(self):
     fig = plt.figure(figsize=(10, 5))
     ax = fig.add_subplot(111)
     total_num = self.__getattribute__('Fe')
-    rects_base = plt.bar(ind, base_plus_hits, width, color='firebrick', label="SAKHMET Expected Mission")
-    rects_thresh = plt.bar(ind, thresh_plus_hits, width, color='salmon', label="Required Mission")
+    rects_base = plt.bar(ind, base_plus_hits, width, color='firebrick', label="SAKHMET Expected")
+    rects_thresh = plt.bar(ind, thresh_plus_hits, width, color='salmon', label="SAKHMET Required")
     rects_data = plt.bar(ind, hits, width, color="grey", label="Current M-dwarf Data")
     ax.set_xlabel('Spectroscopic Abundances for M-Dwarfs (excluding Fe)', fontsize=15)
     ax.set_ylabel('Number of Stars with Measured Element X', fontsize=14)
@@ -61,7 +61,7 @@ def mdwarf_histogram(self):
     # plt.title(self.description)
     # ax.show()
     ax.set_aspect('auto')
-    name = "mdwarf24-bigHist-" + str(total_num) + ".pdf"
+    name = "mdwarf26-bigHist-" + str(total_num) + ".pdf"
     file_name = os.path.join(histo_dir, name)
     fig.savefig(file_name)
     print("Number of elements", len(ordered_list_of_bins))

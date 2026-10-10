@@ -1,15 +1,12 @@
 #!/bin/bash
-clear
-cd /home/ubuntu/HySite || return
-echo "Updating HySite repos, a pipeline, database, and website for HypatiaCatalog.com"
-git pull origin main || exit
-git submodule update --recursive || exit
-echo "Updating the docker containers"
-docker compose pull || exit
-docker compose up --detach mongo-db
-docker compose build || exit
-docker compose down || exit
-docker compose up --detach || exit
-read -r -p "Check the website then Press enter to continue deleting the docker cache"
-docker system prune --all --force || exit
-echo "Updates completed"
+# Run the HySite update job now (normally weekly, by hysite-update.timer) and follow its log.
+# The job tests the newest versions and deploys them only if the tests pass; see scripts/hysite_update.sh.
+sudo systemctl start --no-block hysite-update.service || exit
+journalctl --unit hysite-update.service --follow --since now --output cat &
+journal=$!
+while systemctl is-active --quiet hysite-update.service \
+        || [ "$(systemctl show --property ActiveState --value hysite-update.service)" = activating ]; do
+    sleep 5
+done
+kill "$journal"
+systemctl status hysite-update.service --no-pager --lines 0

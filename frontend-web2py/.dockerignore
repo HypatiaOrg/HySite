@@ -11,3 +11,4 @@ web2py/examples
 web2py/applications/welcome
 web2py/applications/examples
 app/sessions
+web2py/applications/admin

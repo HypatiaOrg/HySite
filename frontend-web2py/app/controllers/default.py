@@ -1,47 +1,46 @@
 import json
-import logging
 import urllib.request
 
 
-logging.basicConfig(filename='logging.log', level=logging.DEBUG)
-# logging.warning('Test')
+def api_json(path: str, settings: dict | None = None, post: bool = False) -> dict:
+    """A JSON response from the API's frontend endpoints, with the settings as the query or the form body."""
+    url = f'{BASE_API_URL}{path}'
+    data = urllib.parse.urlencode(settings).encode() if settings else None
+    if data and not post:
+        url, data = f'{url}?{data.decode()}', None
+    with urllib.request.urlopen(urllib.request.Request(url, data=data, method='POST' if post else 'GET')) as response:
+        return json.loads(response.read().decode(response.info().get_content_charset('utf-8')))
 
 
-# -*- coding: utf-8 -*-
-### required - do no delete
-def user():
-    return dict(form=auth())
-
-
-def download():
-    return response.download(request, db)
-
-
-def call():
-    return service()
-
-
-### end requires
-
-# this is the front page
+# the text pages keep no session state, so they set no session cookie and write no session file
 def index():
-    webURL = urllib.request.urlopen(f'{BASE_API_URL}home/')
-    return dict(counts=json.loads(webURL.read().decode(webURL.info().get_content_charset('utf-8'))))
+    session.forget(response)
+    return dict(counts=api_json('home/'))
 
 
 def help():
+    session.forget(response)
     return dict()
 
 
 def about():
+    session.forget(response)
     return dict()
 
 
 def nea():
+    session.forget(response)
     return dict()
 
 
 def credits():
+    session.forget(response)
+    return dict()
+
+
+def api():
+    """The API explanation page, at /api (routes.py)."""
+    session.forget(response)
     return dict()
 
 
@@ -51,7 +50,6 @@ def init_session(is_targets: bool = False):
         session_value = session.__getattr__(var_name)
         if session_value is None:
             session[var_name] = default_val
-    session['toggle_vars_to_load'] = {key for key in toggle_graph_vars if session[key]}
     # splitting of strings into lists
     if isinstance(session.tablecols, str):
         session.tablecols = session.tablecols.split(',')
@@ -74,16 +72,13 @@ def hist():
     return dict()
 
 
+def density():
+    init_session()
+    return dict()
+
+
 def dropdown():
     return dict()
-
-
-def error():
-    return dict()
-
-
-def set_request_values():
-    return
 
 
 def get_settings() -> dict[str, any]:
@@ -99,18 +94,19 @@ def get_settings() -> dict[str, any]:
 
 def plot_settings():
     all_request_vars = set(request.vars.keys())
-    # set new session values (non-toggles controls) from the request
-    for key in all_request_vars - toggle_graph_vars:
+    # set new session values (non-toggles controls) from the request; only known settings are kept
+    for key in (all_request_vars - toggle_graph_vars) & session_request_vars:
         session[key] = request.vars[key]
-    # these values are toggled by the act of being requested (http POST), and the toggle action is controlled here
-    bool_triggers = (all_request_vars & toggle_graph_vars) | session.get('toggle_vars_to_load', set())
-    for key in bool_triggers:
+    # toggles (checkboxes): a checked box is sent, an unchecked one is not. So a toggle in the request is
+    # on, and a toggle that the sending form has (its "toggle_vars" list) but did not send is off. Toggles
+    # that are not on that form keep their session value: the scatter page's form must not switch off the
+    # targets page's lists or the histogram's normalization (issue #40). A request without "toggle_vars"
+    # (the first load of a page's plot, or an older client) changes no toggle except the ones it sends.
+    form_toggles = set((request.vars.toggle_vars or '').split(',')) & toggle_graph_vars
+    for key in all_request_vars & toggle_graph_vars:
         session[key] = True
-    # these values are toggled by the act of not being, and the toggle action is control here
-    bool_not_triggered = toggle_graph_vars - bool_triggers
-    for key in bool_not_triggered:
+    for key in form_toggles - all_request_vars:
         session[key] = False
-    session['toggle_vars_to_load'] = set()
     # special parsing for lists as strings
     if (request.vars.graph_submit and not request.vars.catalogs):
         session.catalogs = []
@@ -126,133 +122,94 @@ def plot_settings():
 
 def graph():
     plot_settings()
-    # set the packaged settings values
     settings = get_settings()
-    # set the API request for the data values
-    url_values = urllib.parse.urlencode(settings)
-    full_url = f'{BASE_API_URL}scatter/?{url_values}'
-    graph_data_web = urllib.request.urlopen(full_url)
-    graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
-    # plotting the data based on the settings
-    labels = graph_data['labels']
-    is_loggable = graph_data['is_loggable']
-    do_xlog = settings['xaxislog'] and is_loggable['xaxis']
-    do_ylog = settings['yaxislog'] and is_loggable['yaxis']
-    do_zlog = settings['zaxislog'] and is_loggable['zaxis']
-    has_zaxis = settings['zaxis1'] != 'none'
+    graph_data = api_json('scatter/', settings)
+    # the plot: the API decided the labels and the log/inverted axes (api.web2py.plots); Plotly draws (models/plot_plotly.py)
+    axes = graph_data['axes']
+    zaxis = axes.get('zaxis', {})
     outputs = graph_data['outputs']
-    script, div = create_bokeh_scatter(name=outputs.get('name', []),
+    div = create_plotly_scatter(name=outputs.get('name', []),
                                        xaxis=outputs.get('xaxis', []),
                                        yaxis=outputs.get('yaxis', []),
                                        zaxis=outputs.get('zaxis', []),
-                                       x_label=labels.get('xaxis', None),
-                                       y_label=labels.get('yaxis', None),
-                                       z_label=labels.get('zaxis', None),
+                                       x_label=axes['xaxis']['label'],
+                                       y_label=axes['yaxis']['label'],
+                                       z_label=zaxis.get('label', None),
                                        star_count=graph_data.get('star_count', None),
                                        planet_count=graph_data.get('planet_count', None),
-                                       do_xlog=do_xlog, do_ylog=do_ylog, do_zlog=do_zlog,
-                                       xaxisinv=settings['xaxisinv'], yaxisinv=settings['yaxisinv'],
-                                       zaxisinv=settings['zaxisinv'], has_zaxis=has_zaxis,
+                                       do_xlog=axes['xaxis']['log'], do_ylog=axes['yaxis']['log'],
+                                       do_zlog=zaxis.get('log', False),
+                                       xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
+                                       zaxisinv=zaxis.get('inverse', False), has_zaxis='zaxis' in axes,
                                        do_gridlines=settings['gridlines'])
     # send back to the browser
-    return dict(script=script, div=div)
-
-
-def get_requested_handles(settings: dict) -> list[str]:
-    requested_handles = []
-    if settings['show_has_exo']:
-        requested_handles.append('has_exo')
-    if settings['show_thin_disk']:
-        requested_handles.append('thin_disk')
-    if settings['show_thick_disk']:
-        requested_handles.append('thick_disk')
-    if settings['show_hwo_tier2']:
-        requested_handles.append('hwo_tier2')
-    if settings['show_hwo_tier1']:
-        requested_handles.append('hwo_tier1')
-    return requested_handles
+    return dict(div=div)
 
 
 def graph_targets():
     plot_settings()
-    # set the packaged settings values
     settings = get_settings()
-    # set the API request for the data values
-    url_values = urllib.parse.urlencode(settings)
-    full_url = f'{BASE_API_URL}targets/?{url_values}'
-    graph_data_web = urllib.request.urlopen(full_url)
-    graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
-    # plotting the data based on the settings
-    labels = graph_data['labels']
-    is_loggable = graph_data['is_loggable']
-    do_xlog = settings['xaxislog'] and is_loggable['xaxis']
-    do_ylog = settings['yaxislog'] and is_loggable['yaxis']
+    graph_data = api_json('targets/', settings)
+    # the plot: the API grouped the stars into layers and decided the axes (api.web2py.plots)
+    axes = graph_data['axes']
     outputs = graph_data['outputs']
-    script, div = create_bokeh_targets(name=outputs.get('name', []),
-                                       xaxis=outputs.get('xaxis', []),
+    div = create_plotly_targets(xaxis=outputs.get('xaxis', []),
                                        yaxis=outputs.get('yaxis', []),
-                                       target_handles=graph_data['targets'],
-                                       x_label=labels.get('xaxis', None),
-                                       y_label=labels.get('yaxis', None),
-                                       do_xlog=do_xlog, do_ylog=do_ylog,
-                                       xaxisinv=settings['xaxisinv'], yaxisinv=settings['yaxisinv'],
-                                       do_gridlines=settings['gridlines'],
-                                       show_all_hypatia=settings['show_all'],
-                                       do_or_logic=settings['or_logic'],
-                                       requested_handles=get_requested_handles(settings=settings),
-                                       )
-    return dict(script=script, div=div)
+                                       layers=graph_data['layers'],
+                                       number_of_targets=graph_data['number_of_targets'],
+                                       x_label=axes['xaxis']['label'],
+                                       y_label=axes['yaxis']['label'],
+                                       do_xlog=axes['xaxis']['log'], do_ylog=axes['yaxis']['log'],
+                                       xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
+                                       do_gridlines=settings['gridlines'])
+    return dict(div=div)
 
 
 def graph_hist():
     plot_settings()
-    # set the packaged settings values
     settings = get_settings()
-    # set the API request for the data values
-    url_values = urllib.parse.urlencode(settings)
-    full_url = f'{BASE_API_URL}hist/?{url_values}'
-    graph_data_web = urllib.request.urlopen(full_url)
-    graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
-    # plotting the data based on the settings
+    graph_data = api_json('hist/', settings)
+    # the plot: the API made the series over shared bins (api.web2py.plots)
     labels = graph_data['labels']
-    script, div = create_bokeh_hist(hist_all=graph_data['hist_all'], hist_planet = graph_data['hist_planet'],
-                                    edges=graph_data['edges'],
+    div = create_plotly_hist(series=graph_data['series'], edges=graph_data['edges'],
+                                    x_range=graph_data['x_range'],
                                     x_label=labels.get('x_label', None),
-                                    x_data = graph_data['x_data'],
                                     normalize=settings['normalize'], xaxisinv=settings['xaxisinv'],
                                     do_gridlines=settings['gridlines'],
                                     )
     # send back to the browser
-    return dict(script=script, div=div)
+    return dict(div=div)
 
-def hover_text(col_name: str, cell_hover_data: dict, requested_elements_set: set[str], return_median: bool = False) -> list[str]:
-    if col_name in requested_elements_set:
-        hover_strings = []
-        items_array = [(key, value) for key, value in cell_hover_data.items()]
-        if return_median:
-            # Only the median reference values are required
-            array_length = len(items_array)
-            if array_length % 2 == 0:
-                # Even array return two items
-                median_index = int(array_length / 2)
-                items_array = items_array[median_index - 1:median_index + 1]
-            else:
-                # Odd array return one item
-                median_index = int((array_length - 1) / 2)
-                items_array = items_array[median_index: median_index + 1]
-        for key, value in items_array:
-            if value == 0.0:
-                value += 0.0
-            hover_strings.append(f"{'' if value < 0.0 else ' '}{float(value):1.2f}: {CATALOG_AUTHORS[key]}")
-    else:
-        hover_strings = [cell_hover_data]
-    return hover_strings
+def graph_density():
+    plot_settings()
+    settings = get_settings()
+    graph_data = api_json('density/', settings)
+    # the plot: the API chose the points, the bins, the colours and the axes (api.web2py.density)
+    axes = graph_data['axes']
+    outputs = graph_data['outputs']
+    bins = graph_data['bins'] or {}
+    div = create_plotly_density(xaxis=outputs.get('xaxis', []),
+                                yaxis=outputs.get('yaxis', []),
+                                x_bins=bins.get('xaxis', None), y_bins=bins.get('yaxis', None),
+                                color_scale=graph_data['color_scale'],
+                                histogram_color=graph_data['histogram_color'],
+                                x_label=axes['xaxis']['label'],
+                                y_label=axes['yaxis']['label'],
+                                do_xlog=axes['xaxis']['log'], do_ylog=axes['yaxis']['log'],
+                                xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
+                                do_gridlines=settings['gridlines'],
+                                show_xyhist=graph_data['show_xyhist'],
+                                )
+    # send back to the browser
+    return dict(div=div)
 
 
 def table():
-    # set new session values from the request
+    """The data table page component and its downloads. The table itself is built by the API
+    (backend/api/web2py/table.py); this function keeps the session and renders what comes back."""
+    # set new session values from the request; only known settings are kept
     all_request_vars = set(request.vars.keys())
-    for key in all_request_vars:
+    for key in all_request_vars & session_request_vars:
         session[key] = request.vars[key]
     # special parsing for lists as strings
     if request.vars.graph_submit and isinstance(session.catalogs, str):
@@ -263,196 +220,32 @@ def table():
         except AttributeError:
             session.catalogs = []
     if isinstance(session.tablecols, str):
-        table_columns_set = set(session.tablecols.split(','))
-    else:
-        table_columns_set = set(session.tablecols)
-    show_error = 'spread' in table_columns_set
-    show_reference = 'ref' in table_columns_set
+        session.tablecols = session.tablecols.split(',')
     for_download = bool(request.vars.download)
-
-    # build the columns
-    columns = []
-    requested_name_types = []
-    requested_stellar_params = []
-    requested_planet_params = []
-    requested_elements = []
-
-    is_planet = 'planet' in table_columns_set
-
-    # add star name parameters
-    if 'names' in table_columns_set:
-        columns.extend(TABLE_NAMES)
-        requested_name_types = TABLE_NAMES
-    else:
-        columns.append('star_id')
-        requested_name_types.append('star_id')
-    if 'names_all' in table_columns_set:
-        columns.append('aliases')
-        requested_name_types.append('aliases')
-    if is_planet:
-        columns.insert(1, 'nea_name')
-        requested_planet_params = TABLE_PLANET + ['nea_name']
-
-    # the elements
-    fe_elements = set()
-    if 'Fe' in table_columns_set:
-        columns.append('Fe')
-        requested_elements.append('Fe')
-        fe_elements.add('Fe')
-        if show_error:
-            columns.append('Fe_err')
-        if show_reference:
-            columns.append('Fe_ref')
-        if 'FeII' in table_columns_set:
-            columns.append('FeII')
-            requested_elements.append('FeII')
-            fe_elements.add('FeII')
-            if show_error:
-                columns.append('FeII_err')
-            if show_reference:
-                columns.append('FeII_ref')
-    other_elements = set()
-    for item in table_columns_set:
-        if item[0].isupper() and item not in fe_elements:
-            other_elements.add(item)
-    for element_name in sorted(other_elements, key=element_rank):
-        columns.append(element_name)
-        requested_elements.append(element_name)
-        if show_error:
-            columns.append(f'{element_name}_err')
-        if show_reference:
-            columns.append(f'{element_name}_ref')
-
-    # add planet parameters
-    if 'planet' in table_columns_set:
-        for planet_param in TABLE_PLANET:
-            columns.append(planet_param)
-            if planet_param not in {'planet_letter', 'nea_name'}:
-                if show_error:
-                    columns.append(f'{planet_param}_err')
-                if show_reference:
-                    columns.append(f'{planet_param}_ref')
-        requested_planet_params = TABLE_PLANET[:]
-
-    # add stellar parameters
-    if 'stellar' in table_columns_set:
-        for stellar_param in TABLE_STELLAR:
-            columns.append(stellar_param)
-            if stellar_param not in {'disk', 'sptype'}:
-                if show_error:
-                    columns.append(f'{stellar_param}_err')
-                if show_reference:
-                    columns.append(f'{stellar_param}_ref')
-        requested_stellar_params = TABLE_STELLAR[:]
-
-    # package all the query parameters
-    table_settings = get_settings()
-    table_settings['show_error'] = show_error
-    table_settings['requested_name_types'] = ';'.join(requested_name_types)
-    table_settings['requested_stellar_params'] = ';'.join(requested_stellar_params)
-    table_settings['requested_planet_params'] = ';'.join(requested_planet_params)
-    table_settings['requested_elements'] = ';'.join(requested_elements)
-
-    # table sorting options
+    # table sorting: a second click on the same column reverses the order
     if request.vars.sort:
         if session.orderby == request.vars.sort:
             session.reverse = not session.reverse
         else:
             session.reverse = False
         session.orderby = request.vars.sort
-        table_settings['reverse'] = session.reverse
-        table_settings['sort'] = session.orderby
-    else:
-        table_settings['sort'] = None
-        table_settings['reverse'] = False
-    # toggle the hover text with this variable
-    table_settings['show_hover'] = True  # label this button as 'Hover References'
-
-    # is targets table?
-    is_targets = session.is_targets
-    table_settings['show_targets'] = is_targets
-
-    # request the table data from the API
-    table_url_values = urllib.parse.urlencode(table_settings)
-    table_full_url = f'{BASE_API_URL}table/?{table_url_values}'
-    table_data_web = urllib.request.urlopen(table_full_url)
-    table_data = json.loads(table_data_web.read().decode(table_data_web.info().get_content_charset('utf-8')))
-    table_dict = table_data['body']
-    star_count = table_data['star_count']
-    planet_count = table_data['planet_count']
-    hover_data = table_data['hover_data']
-    if is_targets:
-        targets = table_data['targets']
-        # if this is a target table, then the targets are in the first column
-        columns.insert(1, 'targets')
-        table_dict['targets'] = targets
-    if planet_count and 'nea_name' not in columns:
-        columns.insert(1, 'nea_name')
-    settings = get_settings()
-    requested_handles = get_requested_handles(settings=settings)
-    requested_handles_set = set(requested_handles)
-    # add the JS wrapper to get element details
-    requested_elements_set = set(requested_elements)
-    hover_text_set = set(requested_elements) | set(requested_stellar_params) | set(requested_planet_params)
-    if show_reference:
-        # median reference data for elements
-        return_median = table_settings['return_median']
-        # add the reference columns to the columns list
-        for col_name in columns:
-            if col_name.endswith('_ref'):
-                base_name = col_name.rsplit('_ref', 1)[0]
-                hover_this_column = hover_data[base_name]
-                table_dict[col_name] = [hover_text(base_name, hover_this_column[row_index], requested_elements_set,
-                                                   return_median=return_median)
-                                        if hover_this_column[row_index] else '' for row_index in range(len(hover_this_column))]
+    table_settings = get_settings()
+    table_settings.update(
+        tablecols=','.join(session.tablecols),
+        sort=session.orderby if request.vars.sort else None,
+        reverse=session.reverse if request.vars.sort else False,
+        show_targets=session.is_targets,
+        showrows=bool(request.vars.showrows),
+        download=for_download,
+    )
+    # the table from the API; a POST, since a star list can make the settings longer than a URL
+    table_data = api_json('table/', table_settings, post=True)
+    # on the page, a cell with hover text (the catalog values behind it) gets the hover wrapper
     formatted_table = []
-    if table_dict:
-        for row_index, data_row in list(enumerate(zip(*[table_dict[col_name] for col_name in columns]))):
-            # Determine if targets are selected, and if so, determine is this row is a target
-            if is_targets:
-                target_handles = set(targets[row_index])
-                if target_handles.isdisjoint(requested_handles_set):
-                    continue
-            # format the row data
-            formatted_row = []
-            for col_name, cell_value in zip(columns, data_row):
-                if cell_value == 0.0:
-                    cell_value += 0.0
-                if isinstance(cell_value, str):
-                    cell_value_str = cell_value
-                elif cell_value is None:
-                    cell_value_str = ''
-                elif col_name in requested_elements_set:
-                    cell_value_str = f'{cell_value:1.2f}'
-                elif col_name in COL_FORMAT.keys():
-                    cell_value_str = COL_FORMAT[col_name] % cell_value
-                elif col_name == 'targets':
-                    # if this is a target table, then the targets are in the first column
-                    cell_value_str = ', '.join([targets_metadata[target_handle]['title'] for target_handle in cell_value])
-                elif col_name.endswith('_ref') or col_name == 'aliases':
-                    cell_value_str = cell_value
-                else:
-                    cell_value_str = str(cell_value)
-                if col_name.endswith('_err') and cell_value_str != '':
-                    cell_value_str = f'±{cell_value_str}'
-                if col_name in hover_text_set:
-                    if cell_value_str != '' and col_name in hover_data.keys():
-                        cell_hover_data = hover_data[col_name][row_index]
-                        if cell_hover_data:
-                            cell_value_str = table_cell(
-                                value=cell_value_str,
-                                hover_text='\n'.join(hover_text(col_name, cell_hover_data, requested_elements_set)),
-                                do_wrapper=not for_download)
-                formatted_row.append(cell_value_str)
-            formatted_table.append(formatted_row)
-    # Make the status label that is above the Periodic Table that controls the data table
-    if planet_count:
-        status = f'{len(formatted_table)} planets selected from {star_count} stars'
-    else:
-        status = f'{len(formatted_table)} stars selected'
-    # Only some the default number of rows, and trigger a button that we some all the whole table
-    more_rows = False
-    if not request.vars.showrows and len(formatted_table) > default_table_rows_to_show:
-        formatted_table = formatted_table[:default_table_rows_to_show]
-        more_rows = True
-    return dict(table=formatted_table, status=status, columns=columns, moreRows=more_rows)
+    for row, row_hover in zip(table_data['rows'], table_data['hover']):
+        formatted_table.append([
+            table_cell(value=cell, hover_text=cell_hover, do_wrapper=not for_download) if cell_hover else cell
+            for cell, cell_hover in zip(row, row_hover)])
+    return dict(table=formatted_table, status=table_data['status'], columns=table_data['columns'],
+                moreRows=table_data['moreRows'], totalRows=table_data['totalRows'],
+                canLoadAll=table_data['canLoadAll'])

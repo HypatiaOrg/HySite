@@ -1,0 +1,12 @@
+# Weekly HySite update. Check with: systemctl list-timers hysite-update.timer
+[Unit]
+Description=Weekly HySite update
+
+[Timer]
+OnCalendar=Mon *-*-* 06:17:00 UTC
+# run at the next boot if the server was off at the scheduled time
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target
