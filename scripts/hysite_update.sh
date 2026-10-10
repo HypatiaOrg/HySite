@@ -188,6 +188,9 @@ save_run_files
 # 3. anything new?
 if [ "$COMMIT" = "$DEPLOYED_COMMIT" ] && pins_unchanged; then
     restore_pins  # same versions; keep the old files so their timestamps stay meaningful
+    # the frontend cleans old session files when it starts; on a week without a deploy, do it here
+    prod_compose exec -T web-to-py python web2py.py -S hypatia -R scripts/sessions2trash.py -A -o -x 604800 \
+        > /dev/null 2>&1 || log "WARNING: old session files were not cleaned up"
     record unchanged "No new code or versions since the last deploy"
     finish 0
 fi
