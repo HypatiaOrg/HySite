@@ -1,8 +1,11 @@
 from django.views import View
-from django.http import JsonResponse
+from django.http import JsonResponse, StreamingHttpResponse
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 from core.settings import DEBUG
 from api.v2.data_process import available_catalogs_v2, representative_error
+from api.web2py.table import table_from_request, table_download_lines, DOWNLOAD_FORMATS
 from api.web2py.data_process import (home_data, units_and_fields_v2, stellar_param_types_v2,
                                      planet_param_types_v2, ranked_string_params, plot_norms,
                                      graph_settings_from_request, graph_query_pipeline_web2py, histogram_format,
@@ -98,8 +101,32 @@ class HistView(View):
         })
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class TableView(View):
+    """
+    The table data. With 'tablecols' in the request: the frontend's table, built here (api.web2py.table),
+    as JSON or as a csv/tsv/psv download ('format'). Without it: the older column-wise data, kept for
+    existing clients. POST takes the same settings as a form body, for long star lists.
+    """
     def get(self, request):
         if DEBUG:
             print(request.get_full_path())
-        return JsonResponse(table_query_from_request(settings=request.GET))
+        return self.table(request.GET)
+
+    def post(self, request):
+        return self.table(request.POST)
+
+    @staticmethod
+    def table(settings):
+        if 'tablecols' not in settings:
+            return JsonResponse(table_query_from_request(settings=settings))
+        file_format = str(settings.get('format', 'json')).lower()
+        if file_format in DOWNLOAD_FORMATS:
+            settings = settings.copy()
+            settings['download'] = 'true'
+            table = table_from_request(settings)
+            response = StreamingHttpResponse(table_download_lines(table, file_format),
+                                             content_type=f'text/{file_format}; charset=utf-8')
+            response['Content-Disposition'] = f'attachment; filename="hypatia.{file_format}"'
+            return response
+        return JsonResponse(table_from_request(settings))
