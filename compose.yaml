@@ -4,7 +4,7 @@ services:
         # The MongoDB release line to follow. MONGO_IMAGE (versions.env on the server) pins the exact
         # tested image within this line. Changing the line is the manual procedure in the wiki page
         # "MongoDB Upgrade Plan": the update job refuses to deploy a different line (scripts/hysite_update.sh).
-        image: ${MONGO_IMAGE:-mongo:8.2}
+        image: ${MONGO_IMAGE:-mongo:8.3}
         restart: "${RESTART_POLICY:-no}"
         healthcheck:
             # ping through mongosh. With TLS required (mongo/deploy.yaml) the check must use TLS too; the
