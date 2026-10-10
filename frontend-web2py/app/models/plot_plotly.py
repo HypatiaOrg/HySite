@@ -6,10 +6,11 @@ static/js/plotly.min.js once (the copy bundled with the installed plotly package
 
 Until October 2026 the scatter, targets and histogram plots were Bokeh figures (models/plot_bokeh.py).
 Plotly draws them now, so the Next.js frontend (issue #19) can draw the same figures from the same data.
-What the Bokeh plots did is kept: the hover text, the z axis as a colour scale, the selected stars going
-to the star list, one legend entry per target layer (click to hide), the normalized histogram, the
-"Hypatia Catalog" citation with the date, the figure size.
+What the Bokeh plots did is kept: the hover text as a stacked column of every star under the cursor, the
+z axis as a colour scale, the selected stars going to the star list, one legend entry per target layer
+(click to hide), the normalized histogram, the "Hypatia Catalog" citation with the date, the figure size.
 """
+import json
 from datetime import datetime
 
 import numpy as np
@@ -34,11 +35,88 @@ SELECT_SCRIPT = """
         if (!plot || !plot.on) { return; }
         plot.on("plotly_selected", function(event) {
             if (!event) { return; }
-            var names = event.points.map(function(point) { return point.text; });
+            var names = event.points.map(function(point) {
+                return (plot.data[point.curveNumber].text || [])[point.pointNumber];
+            });
             $("#star_list").val(names.join(","));
             $("select[name='star_action']").val("only");
             $("select[name='star_source']").val("hip");
         });
+    })();
+</script>"""
+# the hover labels: every star within a few pixels of the cursor, stacked in a column, as Bokeh's hover
+# tool showed them (Plotly's own hover shows one point per trace, and searches slowly over an SVG plot,
+# so the figure has hovermode off and this script does the search over the traces' arrays instead)
+HOVER_SCRIPT = """
+<script>
+    (function() {
+        var plot = document.getElementById("%(div_id)s");
+        if (!plot) { return; }
+        var labels = %(labels)s, MAX_LABELS = 25, RADIUS = 8;  // pixels, about a marker's size
+        var types = {f8: Float64Array, f4: Float32Array, i4: Int32Array, i2: Int16Array, i1: Int8Array,
+                     u4: Uint32Array, u2: Uint16Array, u1: Uint8Array};
+        function values(column) {  // a plain list, or the base64 typed array Plotly's HTML holds
+            if (Array.isArray(column)) { return column; }
+            if (!column || !column.bdata) { return []; }
+            var bytes = atob(column.bdata), buffer = new Uint8Array(bytes.length);
+            for (var i = 0; i < bytes.length; i++) { buffer[i] = bytes.charCodeAt(i); }
+            return new (types[column.dtype] || Float64Array)(buffer.buffer);
+        }
+        var cache = [];
+        function columns(c) {  // the decoded arrays of a trace, decoded once
+            var trace = plot.data[c];
+            if (!cache[c] || cache[c].source !== trace.x) {
+                cache[c] = {source: trace.x, x: values(trace.x), y: values(trace.y),
+                            z: trace.customdata ? values(trace.customdata) : null, names: trace.text || []};
+            }
+            return cache[c];
+        }
+        var label = document.createElement("div");
+        label.style.cssText = "position:absolute; display:none; pointer-events:none; z-index:1000;" +
+            "background:rgba(255,255,255,0.95); border:1px solid #888; border-radius:3px; padding:2px 6px;" +
+            "font-size:12px; font-weight:normal; text-align:left; white-space:nowrap; line-height:1.3; color:#222";
+        document.body.appendChild(label);
+        function hide() { label.style.display = "none"; }
+        function show(event) {
+            var layout = plot._fullLayout;
+            if (!layout || !layout.xaxis || !layout.xaxis.d2p) { hide(); return; }
+            var box = plot.getBoundingClientRect();
+            var px = event.clientX - box.left - layout._size.l, py = event.clientY - box.top - layout._size.t;
+            if (px < 0 || py < 0 || px > layout._size.w || py > layout._size.h) { hide(); return; }
+            var xa = layout.xaxis, ya = layout.yaxis, found = [];
+            for (var c = 0; c < plot.data.length; c++) {
+                if (plot._fullData[c] && plot._fullData[c].visible !== true) { continue; }  // hidden from the legend
+                var data = columns(c);
+                for (var i = 0; i < data.x.length; i++) {
+                    var dx = xa.d2p(data.x[i]) - px, dy = ya.d2p(data.y[i]) - py, d = dx * dx + dy * dy;
+                    if (d <= RADIUS * RADIUS) { found.push([d, c, i]); }
+                }
+            }
+            if (!found.length) { hide(); return; }
+            found.sort(function(a, b) { return a[0] - b[0]; });
+            var lines = [];
+            for (var k = 0; k < found.length && k < MAX_LABELS; k++) {
+                var data = columns(found[k][1]), i = found[k][2];
+                var text = labels.x + " = " + Number(data.x[i]).toFixed(2) + ", " + labels.y + " = " + Number(data.y[i]).toFixed(2);
+                if (data.z && labels.z) { text += ", " + labels.z + " = " + Number(data.z[i]).toFixed(2); }
+                lines.push("<div style='padding:2px 0; border-top:" + (k ? "1px solid #ddd" : "0") + "'><b>" +
+                           $("<span>").text(data.names[i] || "").html() + "</b><br/>" + $("<span>").text(text).html() + "</div>");
+            }
+            if (found.length > MAX_LABELS) { lines.push("<div style='padding:2px 0; color:#666'>and " + (found.length - MAX_LABELS) + " more</div>"); }
+            label.innerHTML = lines.join("");
+            label.style.display = "block";
+            var top = event.pageY + 12, left = event.pageX + 12;
+            if (event.clientY + 12 + label.offsetHeight > window.innerHeight) { top = Math.max(window.scrollY, event.pageY - 12 - label.offsetHeight); }
+            if (event.clientX + 12 + label.offsetWidth > window.innerWidth) { left = Math.max(0, event.pageX - 12 - label.offsetWidth); }
+            label.style.top = top + "px";
+            label.style.left = left + "px";
+        }
+        var pending = null;
+        plot.addEventListener("mousemove", function(event) {  // once per frame, not once per mouse event
+            pending = event;
+            window.requestAnimationFrame(function() { if (pending) { show(pending); pending = null; } });
+        });
+        plot.addEventListener("mouseleave", hide);
     })();
 </script>"""
 
@@ -75,22 +153,19 @@ def citation() -> dict:
                 x=0, y=0, xanchor='left', yanchor='bottom', xshift=10, yshift=10, showarrow=False, opacity=0.5)
 
 
-def figure_html(fig: go.Figure, div_id: str, select: bool = True) -> str:
-    """The figure as an HTML fragment (the page has plotly.min.js), with the selection script if wanted."""
+def figure_html(fig: go.Figure, div_id: str, hover_labels: dict[str, str] | None = None) -> str:
+    """The figure as an HTML fragment (the page has plotly.min.js). With hover_labels (the axis labels for
+    the hover text), the points plot gets the stacked hover labels and the selection into the star list."""
     fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, paper_bgcolor='white', plot_bgcolor='white',
                       margin=dict(l=70, r=30, t=50, b=60))
+    if hover_labels:
+        fig.update_layout(hovermode=False)
     html = fig.to_html(include_plotlyjs=False, full_html=False, div_id=div_id)
-    if select:
+    if hover_labels:
+        labels = {axis[0]: label.replace('_', ' ') for axis, label in hover_labels.items()}
         html += SELECT_SCRIPT % dict(div_id=div_id)
+        html += HOVER_SCRIPT % dict(div_id=div_id, labels=json.dumps(labels))
     return html
-
-
-def hover_template(labels: dict[str, str], with_z: bool = False) -> str:
-    """The hover text of a star: its name, then "label = value" per axis, two decimals, as the Bokeh plots had."""
-    parts = [f"{labels['xaxis']} = %{{x:.2f}}", f"{labels['yaxis']} = %{{y:.2f}}"]
-    if with_z:
-        parts.append(f"{labels['zaxis']} = %{{customdata:.2f}}")
-    return "<b>%{text}</b><br>" + ', '.join(parts) + "<extra></extra>"
 
 
 def create_plotly_scatter(name: list[str],
@@ -125,10 +200,10 @@ def create_plotly_scatter(name: list[str],
         else:
             color = zaxis
         marker.update(color=color, colorscale='Viridis', reversescale=zaxisinv, showscale=True, colorbar=colorbar,
-                      line=dict(color=color, colorscale='Viridis', reversescale=zaxisinv, width=1))
-    fig = go.Figure(go.Scatter(x=xaxis, y=yaxis, mode='markers', marker=marker, text=list(name),
-                               customdata=customdata, hovertemplate=hover_template(labels, with_z=has_zaxis),
-                               showlegend=False))
+                      line=dict(width=0))
+    # WebGL points: an SVG plot of ten thousand markers is slow to draw and to hover over
+    fig = go.Figure(go.Scattergl(x=xaxis, y=yaxis, mode='markers', marker=marker, text=list(name),
+                                 customdata=customdata, hoverinfo='skip', showlegend=False))
     x_range, x_type = axis_range(xaxis, do_log=do_xlog, inverse=xaxisinv)
     y_range, y_type = axis_range(yaxis, do_log=do_ylog, inverse=yaxisinv)
     fig.update_xaxes(range=x_range, type=x_type, **axis_style(labels['xaxis'], do_gridlines))
@@ -138,7 +213,7 @@ def create_plotly_scatter(name: list[str],
     else:
         title = f'{star_count} stars selected'
     fig.update_layout(title=dict(text=title, x=0.5, xanchor='center'), annotations=[citation()])
-    return figure_html(fig, div_id='scatter-plot')
+    return figure_html(fig, div_id='scatter-plot', hover_labels=labels)
 
 
 def create_plotly_targets(xaxis: list[float], yaxis: list[float],
@@ -157,9 +232,9 @@ def create_plotly_targets(xaxis: list[float], yaxis: list[float],
     labels = {'xaxis': x_label if x_label else 'X Axis', 'yaxis': y_label if y_label else 'Y Axis'}
     fig = go.Figure()
     for layer in layers:
-        fig.add_trace(go.Scatter(
+        fig.add_trace(go.Scattergl(
             x=np.asarray(layer['x'], dtype=float), y=np.asarray(layer['y'], dtype=float), mode='markers',
-            name=layer['label'], text=list(layer['names']), hovertemplate=hover_template(labels),
+            name=layer['label'], text=list(layer['names']), hoverinfo='skip',
             marker=dict(symbol=MARKERS.get(layer['marker'], 'circle'), size=8, color=layer['color'],
                         opacity=layer['fill_alpha'], line=dict(color=layer['color'], width=1)),
         ))
@@ -174,7 +249,7 @@ def create_plotly_targets(xaxis: list[float], yaxis: list[float],
                     itemclick='toggle', itemdoubleclick='toggleothers'),
         annotations=[citation()],
     )
-    return figure_html(fig, div_id='targets-plot')
+    return figure_html(fig, div_id='targets-plot', hover_labels=labels)
 
 
 def create_plotly_hist(series: list[dict], edges: list[float], x_range: list[float] | None,
@@ -213,7 +288,7 @@ def create_plotly_hist(series: list[dict], edges: list[float], x_range: list[flo
     fig.update_xaxes(range=x_range, **axis_style(labels['xaxis'], do_gridlines))
     fig.update_yaxes(range=[0, max_hist_all * 1.20], **axis_style(labels['yaxis'], do_gridlines))
     fig.update_layout(barmode='overlay', bargap=0, annotations=[citation()])
-    return figure_html(fig, div_id='hist-plot', select=False)
+    return figure_html(fig, div_id='hist-plot')
 
 
 def create_plotly_density(xaxis: list[float], yaxis: list[float],
