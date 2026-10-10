@@ -38,12 +38,28 @@ for arg in "$@"; do
 done
 name=${name:-$(date -u +%Y-%m-%dT%H-%M-%SZ)}
 
+# Read a Docker Compose .env file the way compose does (KEY=value lines, optional matching quotes,
+# comments), without running it as shell: a password with ( or $ in it must not break or run anything.
+load_env_file() {
+    local line key value
+    while IFS= read -r line || [ -n "$line" ]; do
+        line=${line%$'\r'}
+        case $line in ''|'#'*) continue ;; esac
+        [[ $line == *=* ]] || continue
+        key=${line%%=*}
+        key=${key#export }
+        key=${key//[[:space:]]/}
+        [[ $key =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+        value=${line#*=}
+        if [[ $value == \"*\" || $value == \'*\' ]] && [ ${#value} -ge 2 ]; then
+            value=${value:1:${#value}-2}
+        fi
+        export "$key=$value"
+    done < "$1"
+}
 # the website's database settings
 [ -f .env ] || { echo ".env not found in $REPO"; exit 1; }
-set -a
-# shellcheck disable=SC1091
-. ./.env
-set +a
+load_env_file .env
 # the image line compose.yaml follows, e.g. mongo:8.2 (MONGO_IMAGE from versions.env takes priority)
 IMAGE=${MONGO_IMAGE:-$(sed -n 's/.*\${MONGO_IMAGE:-\([^}]*\)}.*/\1/p' compose.yaml)}
 IMAGE=${BACKUP_IMAGE:-$IMAGE}
