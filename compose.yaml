@@ -25,7 +25,8 @@ services:
         volumes:
             - ./mongo/data:/data/db:rw
             - "./mongo/${DATABASE_TYPE:-deploy}.yaml:/etc/mongod.conf:ro"
-            - hyroute_ssl_keys:/etc/letsencrypt:ro
+            # the certificate file built by HyRoute (bash/restart.sh) in a volume that holds nothing else
+            - hyroute_mongo_ssl:/etc/letsencrypt/mongo-ssl:ro
         # open a port on the localhost computer for using the API outside a docker container
         ports: ["27017:27017"]
         profiles: ["db"]
@@ -165,7 +166,7 @@ volumes:
     web_to_py_temp:
     web_to_py_gunicorn_tmp:
     web_to_py_session_data:
-    hyroute_ssl_keys:
+    hyroute_mongo_ssl:
         external: "${SSL_KEYS_VOLUME_EXTERNAL:-true}"
 
 networks:
