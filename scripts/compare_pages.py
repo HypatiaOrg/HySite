@@ -59,6 +59,15 @@ REQUESTS = [
     ("/hypatia/default/graph.load", {"cat_action": "only", **CHECKBOXES, "catalogs": None}),
     ("/hypatia/default/graph.load", {"star_list": STAR_LIST, "star_action": "only", **CHECKBOXES}),
     "/hypatia/default/table.load",
+    # the table built by the API (api.web2py.table): every column kind, a targets table, a sort, a download
+    "/hypatia/api/web2py/table/?tablecols=names,names_all,planet,stellar,spread,ref,Fe,Fe_II,C,Li"
+    "&show_targets=true&show_hwo_tier1=true&sort=Fe&reverse=true&statistic=median&solarnorm=lodders09",
+    "/hypatia/api/web2py/table/?tablecols=Fe,C,O,Mg,Si,S,Ca,Ti&format=csv",
+    # the settings model (api.web2py.settings), under the frontend API's name and its old one
+    "/hypatia/api/web2py/settings/",
+    "/hypatia/api/frontend/settings/",
+    # the API explanation page (web2py's api controller; routes.py maps /api to it)
+    "/api",
 ]
 DROPPED_HEADERS = {"date", "set-cookie", "content-length", "expires", "last-modified", "etag", "server",
                    "connection", "keep-alive", "transfer-encoding"}
