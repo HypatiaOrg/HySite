@@ -1,32 +1,40 @@
 import json
-import logging
 import urllib.request
 
 
-logging.basicConfig(filename='logging.log', level=logging.DEBUG)
-# logging.warning('Test')
+def api_json(path: str, settings: dict | None = None, post: bool = False) -> dict:
+    """A JSON response from the API's frontend endpoints, with the settings as the query or the form body."""
+    url = f'{BASE_API_URL}{path}'
+    data = urllib.parse.urlencode(settings).encode() if settings else None
+    if data and not post:
+        url, data = f'{url}?{data.decode()}', None
+    with urllib.request.urlopen(urllib.request.Request(url, data=data, method='POST' if post else 'GET')) as response:
+        return json.loads(response.read().decode(response.info().get_content_charset('utf-8')))
 
 
-# -*- coding: utf-8 -*-
-# this is the front page
+# the text pages keep no session state, so they set no session cookie and write no session file
 def index():
-    webURL = urllib.request.urlopen(f'{BASE_API_URL}home/')
-    return dict(counts=json.loads(webURL.read().decode(webURL.info().get_content_charset('utf-8'))))
+    session.forget(response)
+    return dict(counts=api_json('home/'))
 
 
 def help():
+    session.forget(response)
     return dict()
 
 
 def about():
+    session.forget(response)
     return dict()
 
 
 def nea():
+    session.forget(response)
     return dict()
 
 
 def credits():
+    session.forget(response)
     return dict()
 
 
@@ -64,10 +72,6 @@ def dropdown():
 
 def error():
     return dict()
-
-
-def set_request_values():
-    return
 
 
 def get_settings() -> dict[str, any]:
@@ -111,13 +115,8 @@ def plot_settings():
 
 def graph():
     plot_settings()
-    # set the packaged settings values
     settings = get_settings()
-    # set the API request for the data values
-    url_values = urllib.parse.urlencode(settings)
-    full_url = f'{BASE_API_URL}scatter/?{url_values}'
-    graph_data_web = urllib.request.urlopen(full_url)
-    graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
+    graph_data = api_json('scatter/', settings)
     # the plot: the API decided the labels and the log/inverted axes (api.web2py.plots)
     axes = graph_data['axes']
     zaxis = axes.get('zaxis', {})
@@ -142,13 +141,8 @@ def graph():
 
 def graph_targets():
     plot_settings()
-    # set the packaged settings values
     settings = get_settings()
-    # set the API request for the data values
-    url_values = urllib.parse.urlencode(settings)
-    full_url = f'{BASE_API_URL}targets/?{url_values}'
-    graph_data_web = urllib.request.urlopen(full_url)
-    graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
+    graph_data = api_json('targets/', settings)
     # the plot: the API grouped the stars into layers and decided the axes (api.web2py.plots)
     axes = graph_data['axes']
     outputs = graph_data['outputs']
@@ -166,13 +160,8 @@ def graph_targets():
 
 def graph_hist():
     plot_settings()
-    # set the packaged settings values
     settings = get_settings()
-    # set the API request for the data values
-    url_values = urllib.parse.urlencode(settings)
-    full_url = f'{BASE_API_URL}hist/?{url_values}'
-    graph_data_web = urllib.request.urlopen(full_url)
-    graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
+    graph_data = api_json('hist/', settings)
     # the plot: the API made the series over shared bins (api.web2py.plots)
     labels = graph_data['labels']
     script, div = create_bokeh_hist(series=graph_data['series'], edges=graph_data['edges'],
@@ -219,10 +208,7 @@ def table():
         download=for_download,
     )
     # the table from the API; a POST, since a star list can make the settings longer than a URL
-    table_request = urllib.request.Request(f'{BASE_API_URL}table/',
-                                           data=urllib.parse.urlencode(table_settings).encode(), method='POST')
-    table_data_web = urllib.request.urlopen(table_request)
-    table_data = json.loads(table_data_web.read().decode(table_data_web.info().get_content_charset('utf-8')))
+    table_data = api_json('table/', table_settings, post=True)
     # on the page, a cell with hover text (the catalog values behind it) gets the hover wrapper
     formatted_table = []
     for row, row_hover in zip(table_data['rows'], table_data['hover']):

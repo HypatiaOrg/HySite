@@ -34,5 +34,8 @@ RUN chown python_kid:python_kia $SESSION_DIR
 COPY ./web2py .
 COPY ./app ./applications/hypatia
 COPY ./configs ./.
+COPY docker-entrypoint.sh ./
 # switch to the python user
 USER python_kid
+# housekeeping at start (old session files), then the server command from compose.yaml
+ENTRYPOINT ["/bin/sh", "docker-entrypoint.sh"]
