@@ -332,10 +332,14 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
             ]
         )
         # top histogram
-        fig.add_trace(go.Histogram(x=xaxis, xbins=xbins, marker=histogram_marker, showlegend=False, name='X-Histogram'),
+        # (named after the axis, the hover text being the bin's count alone; the count is on y for the top
+        # histogram and on x for the side one)
+        fig.add_trace(go.Histogram(x=xaxis, xbins=xbins, marker=histogram_marker, showlegend=False,
+                                   name=x_label or 'X', hovertemplate='%{y}'),
                       row=1, col=1)
         # side histogram
-        fig.add_trace(go.Histogram(y=yaxis, ybins=ybins, marker=histogram_marker, showlegend=False, name='Y-Histogram'),
+        fig.add_trace(go.Histogram(y=yaxis, ybins=ybins, marker=histogram_marker, showlegend=False,
+                                   name=y_label or 'Y', hovertemplate='%{x}'),
                       row=2, col=2)
         # main heatmap
         fig.add_trace(
