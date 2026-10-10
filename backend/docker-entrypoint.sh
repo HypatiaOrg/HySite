@@ -11,6 +11,9 @@ if [ "$1" = "gunicorn" ]; then
     # website_plots volume.
     timeout 120 python update.py --make-website-plots \
         || echo "WARNING: website plots were not refreshed" >&2
+    # Put the static files and the plots in the volume nginx serves. Once, here,
+    # rather than in every gunicorn worker (see copy_static.py).
+    python copy_static.py
 fi
 
 exec "$@"
