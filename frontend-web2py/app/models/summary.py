@@ -15,7 +15,8 @@ if 'api' in COMPOSE_PROFILES:
     BASE_URL = os.environ.get('BASE_API_URL', BASE_URL_DEFAULT)
 else:
     BASE_URL = 'https://hypatiacatalog.com'
-BASE_API_URL = f'{BASE_URL}/hypatia/api/web2py/'
+# the API's frontend endpoints (backend/api/web2py/, served as /hypatia/api/frontend/)
+BASE_API_URL = f'{BASE_URL}/hypatia/api/frontend/'
 
 webURL = urllib.request.urlopen(f'{BASE_API_URL}summary/')
 param_data = json.loads(webURL.read().decode(webURL.info().get_content_charset('utf-8')))

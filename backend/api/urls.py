@@ -18,6 +18,16 @@ urlpatterns = [
     path('v2/solarnorm/', SolarNorm.as_view(), name='solar-norm'),
     path('v2/element/', AvailableElements.as_view(), name='element'),
     path('v2/catalog/', AvailableCatalogs.as_view(), name='catalog'),
+    # the frontend API: what the website's pages are built from (settings, summary, plots, table).
+    # "frontend/" is the name to use; "web2py/" is the same thing under its old name, kept for
+    # existing clients
+    path('frontend/home/', Web2pyHome.as_view(), name='frontend-home'),
+    path('frontend/summary/', Summary.as_view(), name='frontend-summary'),
+    path('frontend/settings/', Settings.as_view(), name='frontend-settings'),
+    path('frontend/scatter/', ScatterView.as_view(), name='frontend-scatter'),
+    path('frontend/targets/', TargetsView.as_view(), name='frontend-targets'),
+    path('frontend/hist/', HistView.as_view(), name='frontend-hist'),
+    path('frontend/table/', TableView.as_view(), name='frontend-table'),
     path('web2py/home/', Web2pyHome.as_view(), name='web2py-home'),
     path('web2py/summary/', Summary.as_view(), name='web2py-summary'),
     path('web2py/settings/', Settings.as_view(), name='web2py-settings'),
