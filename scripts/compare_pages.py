@@ -63,6 +63,8 @@ REQUESTS = [
     "/hypatia/api/web2py/table/?tablecols=names,names_all,planet,stellar,spread,ref,Fe,Fe_II,C,Li"
     "&show_targets=true&show_hwo_tier1=true&sort=Fe&reverse=true&statistic=median&solarnorm=lodders09",
     "/hypatia/api/web2py/table/?tablecols=Fe,C,O,Mg,Si,S,Ca,Ti&format=csv",
+    # the settings model (api.web2py.settings)
+    "/hypatia/api/web2py/settings/",
 ]
 DROPPED_HEADERS = {"date", "set-cookie", "content-length", "expires", "last-modified", "etag", "server",
                    "connection", "keep-alive", "transfer-encoding"}
