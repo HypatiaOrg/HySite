@@ -87,7 +87,7 @@ DROPPED_HEADERS = {"date", "set-cookie", "content-length", "expires", "last-modi
 
 def normalise(text: str) -> str:
     text = re.sub(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "<uuid>", text)
-    text = re.sub(r'"p\d+"', '"<id>"', text)                            # Bokeh model ids
+    text = re.sub(r'"p\d+"', '"<id>"', text)                            # Bokeh model ids (captures before 2026-10-11)
     text = re.sub(r'(_formkey|session_id_\w+)[^"&\s]*', r"\1<x>", text)  # web2py form and session keys
     text = re.sub(r'id="c\d{10,}"', 'id="c<id>"', text)                 # web2py component ids
     text = re.sub(r"\?_=\d+|\b1[6-9]\d{8}\b", "<time>", text)           # cache busters, unix times

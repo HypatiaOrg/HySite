@@ -29,9 +29,9 @@ CHECKS = [
     ("/", "Hypatia Catalog"),
     # each .load fragment needs the session settings its parent page makes, so the parent comes first
     ("/hypatia/default/launch", "Hypatia Catalog"),
-    ("/hypatia/default/graph.load", "Bokeh"),
+    ("/hypatia/default/graph.load", "plotly-graph-div"),
     ("/hypatia/default/hist", "Hypatia Catalog"),
-    ("/hypatia/default/graph_hist.load", "Bokeh"),
+    ("/hypatia/default/graph_hist.load", "plotly-graph-div"),
     # the density page (the plotly branch): the plot is a Plotly figure; then its own settings changed
     # (bin sizes by keyword and by number, another colour scale, the marginal histograms off)
     ("/hypatia/default/density", "Hypatia Catalog"),
@@ -39,17 +39,18 @@ CHECKS = [
     ("/hypatia/default/graph_density.load", "plotly-graph-div",
      {"xhist_bin_size": "error", "yhist_bin_size": "0.05", "color_pallet": "Viridis", "toggle_vars": "show_xyhist"}),
     ("/hypatia/default/targets", "Hypatia Catalog"),
-    ("/hypatia/default/graph_targets.load", "Bokeh"),
+    ("/hypatia/default/graph_targets.load", "plotly-graph-div"),
     ("/hypatia/default/table", "<table"),
     ("/hypatia/default/table.load", "<table"),
     # changing the plot settings (last, since the new settings stay in the session) must change the plot. Posted the way the page's jQuery does it, with
     # "; charset=UTF-8" in the content type, which some web2py versions ignored (HySite issue #32)
-    ("/hypatia/default/graph.load", "[Ca/H]", {"xaxis1": "Ca", "xaxis2": "H", "yaxis1": "Ti", "yaxis2": "H",
-                                               "toggle_vars": "gridlines,xaxislog,yaxislog"}),
+    # (the axis label "[Ca/H]" as Plotly's HTML writes it, with the slash escaped)
+    ("/hypatia/default/graph.load", "[Ca\\u002fH]", {"xaxis1": "Ca", "xaxis2": "H", "yaxis1": "Ti", "yaxis2": "H",
+                                                      "toggle_vars": "gridlines,xaxislog,yaxislog"}),
     # after a change on the scatter page, the targets page must still show its default lists (issue #40);
-    # with no data the response has no Bokeh plot
+    # with no data the response has no plot
     ("/hypatia/default/targets", "Hypatia Catalog"),
-    ("/hypatia/default/graph_targets.load", "Bokeh"),
+    ("/hypatia/default/graph_targets.load", "plotly-graph-div"),
     # homepage plot, drawn from the database when the backend starts
     ("/hypatia/api/static/plots/abundances.png", "png"),
     # Django API
@@ -81,7 +82,7 @@ def large_request_checks(base_url: str) -> list[tuple]:
         # a new visitor, so settings saved by the checks above don't change these results
         (NEW_SESSION, None),
         ("/hypatia/default/launch", "Hypatia Catalog"),
-        ("/hypatia/default/graph.load", "Bokeh", {"catalogs": catalog_ids, "cat_action": "only", **checkboxes}),
+        ("/hypatia/default/graph.load", "plotly-graph-div", {"catalogs": catalog_ids, "cat_action": "only", **checkboxes}),
         # the star list is entered with the plot settings, then the table shows those stars
         ("/hypatia/default/graph.load", '$("#graph")', {"star_list": star_list, "star_action": "only", **checkboxes}),
         ("/hypatia/default/table.load", "38 Vir"),
