@@ -22,6 +22,13 @@ services:
             # These *INITDB* variables only used when the database is first initialized
             MONGO_INITDB_ROOT_USERNAME: "${MONGO_USERNAME:-admin}"
             MONGO_INITDB_ROOT_PASSWORD: "${MONGO_PASSWORD:-super-not-secure}"
+            # MongoDB 8.0.30+, 8.3 and 9.0 refuse to start on Linux kernels 6.19 to 7.0.13 (SERVER-121912):
+            # their memory allocator's per-CPU caches use the kernel's rseq interface, which changed in 6.19.
+            # The image's default (rseq=0) hands rseq to the allocator. rseq=1 keeps it in glibc, so the
+            # allocator runs without per-CPU caches (a little slower) and the incompatible code is never
+            # used. Set MONGO_GLIBC_TUNABLES=glibc.pthread.rseq=1 in .env on such a kernel (`uname -r`);
+            # see the wiki page "MongoDB Upgrade Plan", section "Kernel check".
+            GLIBC_TUNABLES: "${MONGO_GLIBC_TUNABLES:-glibc.pthread.rseq=0}"
         volumes:
             - ./mongo/data:/data/db:rw
             - "./mongo/${DATABASE_TYPE:-deploy}.yaml:/etc/mongod.conf:ro"
