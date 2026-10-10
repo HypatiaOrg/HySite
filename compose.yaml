@@ -49,7 +49,7 @@ services:
                 # The Python minor version to follow (patch releases arrive through the weekly update job;
                 # versions.env on the server pins the exact tested image). Moving to a new minor version
                 # is a manual, once-a-year decision: see the wiki page "Keeping HySite Up to Date".
-                BASE_IMAGE: ${FRONTEND_BASE_IMAGE:-python:3.13-alpine}
+                BASE_IMAGE: ${FRONTEND_BASE_IMAGE:-python:3.14-alpine}
                 # requirements.txt (newest) unless versions.env selects requirements.lock (tested)
                 REQUIREMENTS: ${REQUIREMENTS:-requirements.txt}
         pull_policy: always
