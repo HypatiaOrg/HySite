@@ -332,13 +332,15 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
             ]
         )
         # top histogram
-        fig.add_trace(go.Histogram(x=xaxis, xbins=xbins, marker=histogram_marker, showlegend=False), row=1, col=1)
+        fig.add_trace(go.Histogram(x=xaxis, xbins=xbins, marker=histogram_marker, showlegend=False, name='X-Histogram'),
+                      row=1, col=1)
         # side histogram
-        fig.add_trace(go.Histogram(y=yaxis, ybins=ybins, marker=histogram_marker, showlegend=False), row=2, col=2)
+        fig.add_trace(go.Histogram(y=yaxis, ybins=ybins, marker=histogram_marker, showlegend=False, name='Y-Histogram'),
+                      row=2, col=2)
         # main heatmap
         fig.add_trace(
             go.Histogram2d(
-                x=xaxis, y=yaxis, xbins=xbins, ybins=ybins,
+                x=xaxis, y=yaxis, xbins=xbins, ybins=ybins, name='Density',
                 colorscale=color_scale, colorbar=dict(title='Num of<br>Stars/Bin'), showscale=True
             ),
             row=2, col=1
@@ -351,7 +353,7 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
         fig = go.Figure()
         fig.add_trace(
             go.Histogram2d(
-                x=xaxis, y=yaxis, xbins=xbins, ybins=ybins,
+                x=xaxis, y=yaxis, xbins=xbins, ybins=ybins, name='Density',
                 colorscale=color_scale, colorbar=dict(title='Num of<br>Stars/Bin'), showscale=True
             )
         )
