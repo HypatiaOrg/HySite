@@ -20,7 +20,7 @@ from plotly.subplots import make_subplots
 hypatia_purple = '#4E11B7'
 PLOT_WIDTH = 750
 PLOT_HEIGHT = 625
-AXIS_FONT_SIZE = 2  # pixels: the 12pt of the Bokeh plots
+AXIS_FONT_SIZE = 16  # pixels: the 12pt of the Bokeh plots
 MARGIN = 0.10  # of the data range, on each side
 # the Bokeh marker names of the catalog summary's target metadata, as Plotly symbols
 MARKERS = {'circle': 'circle', 'square': 'square', 'diamond': 'diamond', 'triangle': 'triangle-up',
