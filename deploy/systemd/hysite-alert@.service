@@ -1,0 +1,12 @@
+# Emails the log of a failed unit (%i). Started by OnFailure= in hysite-update.service.
+[Unit]
+Description=Email an alert that %i failed
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+# to read the failed unit's log
+SupplementaryGroups=systemd-journal
+EnvironmentFile=/etc/hysite/update.env
+ExecStart=/home/ubuntu/HySite/scripts/send_alert.sh %i

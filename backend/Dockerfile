@@ -1,26 +1,17 @@
 # Use an official Python runtime as a parent image
-FROM python:alpine
-ENV PYTHONUNBUFFERED 1
+# The Python image is set in compose.yaml (BASE_IMAGE), next to the other image versions
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+ENV PYTHONUNBUFFERED=1
 ARG WORKING_DIR=/home/mz_python/django_app
 ARG DATA_OUTPUT_DIR=$WORKING_DIR/output
 ARG WEBSITE_PLOTS_DIR=$DATA_OUTPUT_DIR/website
 ARG STATIC_FILES_DIR=/app/static
 ARG STATIC_ROOT_DIR=$WORKING_DIR/static_root
-ARG VENV_DIR=$WORKING_DIR/venv
-ARG MPLCONFIGDIR=$WORKING_DIR/.config/matplotlib
-# MongoDB configurations
-ARG MONGO_USERNAME
-ARG MONGO_PASSWORD
-ARG MONGO_HOST
-ARG MONGO_DATABASE
-ARG MONGO_STARNAMES_COLLECTION
-ARG CLIENT_TLS
-ENV MONGO_USERNAME=$MONGO_USERNAME
-ENV MONGO_PASSWORD=$MONGO_PASSWORD
-ENV MONGO_HOST=$MONGO_HOST
-ENV MONGO_DATABASE=$MONGO_DATABASE
-ENV MONGO_STARNAMES_COLLECTION=$MONGO_STARNAMES_COLLECTION
-ENV CLIENT_TLS=$CLIENT_TLS
+# /var/tmp is a writable volume in compose.yaml, which matters when READ_ONLY=true
+ARG MPLCONFIGDIR=/var/tmp/matplotlib
+ENV MPLCONFIGDIR=$MPLCONFIGDIR
+# MongoDB settings are provided at runtime by compose.yaml, never at build time
 # Set the working directory
 WORKDIR $WORKING_DIR
 ENV PYTHONPATH "${PYTHONPATH}:${WORKING_DIR}"
@@ -40,13 +31,13 @@ RUN chown mz_python:monty_group $MPLCONFIGDIR
 RUN apk update && apk add --no-cache build-base
 # update pip
 RUN pip install --upgrade pip
-# create a virtual environment
-RUN python -m venv $VENV_DIR
-# activate the virtual environment
-RUN source $VENV_DIR/bin/activate
 # install the required packages
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+# requirements.txt lists the packages, unpinned. The server's update job builds from
+# requirements.lock, the exact tested versions, with --build-arg REQUIREMENTS=requirements.lock
+ARG REQUIREMENTS=requirements.txt
+# the * also copies requirements.lock when it exists
+COPY requirements.* ./
+RUN pip install --no-cache-dir -r $REQUIREMENTS
 # Copy the current directory contents into the container
 COPY . .
 # let this user own the website plots directory
@@ -54,7 +45,7 @@ RUN mkdir -p $WEBSITE_PLOTS_DIR
 RUN chown -R mz_python:monty_group $WEBSITE_PLOTS_DIR
 # switch to the python user
 USER mz_python
-# create the website plots
-RUN python update.py --make-website-plots
-# collect the static files
+# collect the static files (no database needed)
 RUN python manage.py collectstatic --clear --noinput
+# database work, like making the homepage plot, runs when the container starts
+ENTRYPOINT ["/bin/sh", "docker-entrypoint.sh"]

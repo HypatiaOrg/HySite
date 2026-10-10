@@ -54,7 +54,14 @@
 </div>
 
 {{if moreRows:}}
-Showing the first {{=len(table)}} rows. {{=A("Load All", _href=URL('table.load',vars=dict(showrows=True)), cid=request.cid)}}
+Showing the first {{=len(table)}} of {{=totalRows}} rows.
+{{if canLoadAll:}}
+{{=A("Load All", _href=URL('table.load',vars=dict(showrows=True)), cid=request.cid)}}
+{{else:}}
+This table is too large to show on the page; use "Download this table" above or
+{{=A('download it as CSV', _href='/hypatia/default/table.csv/hypatia-%s.csv?download=true' % datetime.strftime(datetime.now(), '%d%m%Y'))}}
+to get all {{=totalRows}} rows.
+{{pass}}
 {{pass}}
 
 <script>

@@ -1,0 +1,22 @@
+# Runs the HySite update job: newest versions, tested, then deployed. See scripts/hysite_update.sh.
+# Started weekly by hysite-update.timer, or by hand with scripts/update.sh.
+[Unit]
+Description=HySite update: newest versions, tested, then deployed
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+# email when it fails
+OnFailure=hysite-alert@%n.service
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+SupplementaryGroups=docker
+EnvironmentFile=/etc/hysite/update.env
+WorkingDirectory=/home/ubuntu/HySite
+ExecStart=/home/ubuntu/HySite/scripts/hysite_update.sh
+TimeoutStartSec=2h
+# give the website priority over the build
+Nice=10
+IOSchedulingClass=idle

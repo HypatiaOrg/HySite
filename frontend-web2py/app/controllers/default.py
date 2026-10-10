@@ -8,21 +8,6 @@ logging.basicConfig(filename='logging.log', level=logging.DEBUG)
 
 
 # -*- coding: utf-8 -*-
-### required - do no delete
-def user():
-    return dict(form=auth())
-
-
-def download():
-    return response.download(request, db)
-
-
-def call():
-    return service()
-
-
-### end requires
-
 # this is the front page
 def index():
     webURL = urllib.request.urlopen(f'{BASE_API_URL}home/')
@@ -51,7 +36,6 @@ def init_session(is_targets: bool = False):
         session_value = session.__getattr__(var_name)
         if session_value is None:
             session[var_name] = default_val
-    session['toggle_vars_to_load'] = {key for key in toggle_graph_vars if session[key]}
     # splitting of strings into lists
     if isinstance(session.tablecols, str):
         session.tablecols = session.tablecols.split(',')
@@ -99,18 +83,19 @@ def get_settings() -> dict[str, any]:
 
 def plot_settings():
     all_request_vars = set(request.vars.keys())
-    # set new session values (non-toggles controls) from the request
-    for key in all_request_vars - toggle_graph_vars:
+    # set new session values (non-toggles controls) from the request; only known settings are kept
+    for key in (all_request_vars - toggle_graph_vars) & session_request_vars:
         session[key] = request.vars[key]
-    # these values are toggled by the act of being requested (http POST), and the toggle action is controlled here
-    bool_triggers = (all_request_vars & toggle_graph_vars) | session.get('toggle_vars_to_load', set())
-    for key in bool_triggers:
+    # toggles (checkboxes): a checked box is sent, an unchecked one is not. So a toggle in the request is
+    # on, and a toggle that the sending form has (its "toggle_vars" list) but did not send is off. Toggles
+    # that are not on that form keep their session value: the scatter page's form must not switch off the
+    # targets page's lists or the histogram's normalization (issue #40). A request without "toggle_vars"
+    # (the first load of a page's plot, or an older client) changes no toggle except the ones it sends.
+    form_toggles = set((request.vars.toggle_vars or '').split(',')) & toggle_graph_vars
+    for key in all_request_vars & toggle_graph_vars:
         session[key] = True
-    # these values are toggled by the act of not being, and the toggle action is control here
-    bool_not_triggered = toggle_graph_vars - bool_triggers
-    for key in bool_not_triggered:
+    for key in form_toggles - all_request_vars:
         session[key] = False
-    session['toggle_vars_to_load'] = set()
     # special parsing for lists as strings
     if (request.vars.graph_submit and not request.vars.catalogs):
         session.catalogs = []
@@ -250,9 +235,9 @@ def hover_text(col_name: str, cell_hover_data: dict, requested_elements_set: set
 
 
 def table():
-    # set new session values from the request
+    # set new session values from the request; only known settings are kept
     all_request_vars = set(request.vars.keys())
-    for key in all_request_vars:
+    for key in all_request_vars & session_request_vars:
         session[key] = request.vars[key]
     # special parsing for lists as strings
     if request.vars.graph_submit and isinstance(session.catalogs, str):
@@ -365,8 +350,9 @@ def table():
     else:
         table_settings['sort'] = None
         table_settings['reverse'] = False
-    # toggle the hover text with this variable
-    table_settings['show_hover'] = True  # label this button as 'Hover References'
+    # hover text (the catalog values behind each cell) is shown on the page; a download has no hover, but
+    # the reference columns are built from the same data
+    table_settings['show_hover'] = (not for_download) or show_reference
 
     # is targets table?
     is_targets = session.is_targets
@@ -406,13 +392,27 @@ def table():
                                                    return_median=return_median)
                                         if hover_this_column[row_index] else '' for row_index in range(len(hover_this_column))]
     formatted_table = []
+    more_rows = False
     if table_dict:
-        for row_index, data_row in list(enumerate(zip(*[table_dict[col_name] for col_name in columns]))):
-            # Determine if targets are selected, and if so, determine is this row is a target
-            if is_targets:
-                target_handles = set(targets[row_index])
-                if target_handles.isdisjoint(requested_handles_set):
-                    continue
+        row_count = len(table_dict[columns[0]])
+        # the rows to show: all of them, or only the targets' rows for a targets table
+        if is_targets:
+            row_indexes = [row_index for row_index in range(row_count)
+                           if not set(targets[row_index]).isdisjoint(requested_handles_set)]
+        else:
+            row_indexes = list(range(row_count))
+        total_rows = len(row_indexes)
+        # a download gets every row. The page shows the first rows, then all of them after "Load All",
+        # but only while the whole table is small enough for a browser (issue #43): above that, the
+        # page points to the downloads instead, whatever the request asks for
+        can_load_all = total_rows * len(columns) <= max_table_cells_to_show
+        show_all_rows = for_download or (bool(request.vars.showrows) and can_load_all)
+        # format only the rows that will be shown (formatting every row for the page was most of the cost)
+        if not show_all_rows and total_rows > default_table_rows_to_show:
+            row_indexes = row_indexes[:default_table_rows_to_show]
+            more_rows = True
+        for row_index in row_indexes:
+            data_row = [table_dict[col_name][row_index] for col_name in columns]
             # format the row data
             formatted_row = []
             for col_name, cell_value in zip(columns, data_row):
@@ -445,14 +445,13 @@ def table():
                                 do_wrapper=not for_download)
                 formatted_row.append(cell_value_str)
             formatted_table.append(formatted_row)
+    else:
+        total_rows = 0
+        can_load_all = True
     # Make the status label that is above the Periodic Table that controls the data table
     if planet_count:
-        status = f'{len(formatted_table)} planets selected from {star_count} stars'
+        status = f'{total_rows} planets selected from {star_count} stars'
     else:
-        status = f'{len(formatted_table)} stars selected'
-    # Only some the default number of rows, and trigger a button that we some all the whole table
-    more_rows = False
-    if not request.vars.showrows and len(formatted_table) > default_table_rows_to_show:
-        formatted_table = formatted_table[:default_table_rows_to_show]
-        more_rows = True
-    return dict(table=formatted_table, status=status, columns=columns, moreRows=more_rows)
+        status = f'{total_rows} stars selected'
+    return dict(table=formatted_table, status=status, columns=columns, moreRows=more_rows,
+                totalRows=total_rows, canLoadAll=can_load_all)

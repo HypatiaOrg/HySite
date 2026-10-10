@@ -1,10 +1,19 @@
 services:
     mongo-db:
         container_name: mongoDB
-        image: mongo:8.2
+        # The MongoDB release line to follow. MONGO_IMAGE (versions.env on the server) pins the exact
+        # tested image within this line. Changing the line is the manual procedure in the wiki page
+        # "MongoDB Upgrade Plan": the update job refuses to deploy a different line (scripts/hysite_update.sh).
+        image: ${MONGO_IMAGE:-mongo:8.2}
         restart: "${RESTART_POLICY:-no}"
         healthcheck:
-            test: ["CMD", "echo", "'db.runCommand(\"ping\").ok'", "|", "mongosh", "localhost:27017/test", "--quiet"]
+            # ping through mongosh. With TLS required (mongo/deploy.yaml) the check must use TLS too; the
+            # certificate is for the public hostname, so the localhost connection skips certificate checks.
+            test:
+                - CMD-SHELL
+                - >-
+                  mongosh --quiet --eval 'db.adminCommand("ping").ok'
+                  $(grep -q 'mode: requireTLS' /etc/mongod.conf && echo --tls --tlsAllowInvalidCertificates)
             interval: 10s
             timeout: 10s
             retries: 5
@@ -16,7 +25,8 @@ services:
         volumes:
             - ./mongo/data:/data/db:rw
             - "./mongo/${DATABASE_TYPE:-deploy}.yaml:/etc/mongod.conf:ro"
-            - hyroute_ssl_keys:/etc/letsencrypt:ro
+            # the certificate file built by HyRoute (bash/restart.sh) in a volume that holds nothing else
+            - hyroute_mongo_ssl:/etc/letsencrypt/mongo-ssl:ro
         # open a port on the localhost computer for using the API outside a docker container
         ports: ["27017:27017"]
         profiles: ["db"]
@@ -28,11 +38,24 @@ services:
         container_name: frontend-web2py
         build:
             context: ./frontend-web2py
+            args:
+                # The Python minor version to follow (patch releases arrive through the weekly update job;
+                # versions.env on the server pins the exact tested image). Moving to a new minor version
+                # is a manual, once-a-year decision: see the wiki page "Keeping HySite Up to Date".
+                BASE_IMAGE: ${FRONTEND_BASE_IMAGE:-python:3.13-alpine}
+                # requirements.txt (newest) unless versions.env selects requirements.lock (tested)
+                REQUIREMENTS: ${REQUIREMENTS:-requirements.txt}
         pull_policy: always
         restart: "${RESTART_POLICY:-no}"
         environment:
             COMPOSE_PROFILES: "${COMPOSE_PROFILES:-}"
             BASE_API_URL: "http://django-api:8111"
+            # gunicorn 25.1+ puts its control socket here; $HOME is not writable with READ_ONLY=true
+            XDG_RUNTIME_DIR: /var/tmp
+            # gunicorn's default is one worker, so one slow request (a big table) made every other
+            # visitor wait and let retries pile up (issue #43). Each worker uses memory: ~200 MB idle,
+            # up to ~1 GB while building the largest table.
+            GUNICORN_CMD_ARGS: "${FRONTEND_GUNICORN_ARGS:---workers 2 --timeout 120}"
         read_only: "${READ_ONLY:-false}"
         volumes:
             # uncomment below to sync all the web2py files for development
@@ -53,15 +76,16 @@ services:
     django-api:
         container_name: backend
         build:
+            # The build needs no database access. Database work runs when the
+            # container starts, see backend/docker-entrypoint.sh
             context: ./backend
-            network: host
             args:
-                MONGO_USERNAME: "${MONGO_USERNAME:-admin}"
-                MONGO_PASSWORD: "${MONGO_PASSWORD:-super-not-secure}"
-                MONGO_HOST: "${MONGO_BUILD_HOST:-hypatiacatalog.com}"
-                MONGO_DATABASE: "${MONGO_DATABASE:-test}"
-                MONGO_STARNAMES_COLLECTION: "${MONGO_STARNAMES_COLLECTION:-stars}"
-                CLIENT_TLS: "${CLIENT_TLS:-true}"
+                # The Python minor version to follow (patch releases arrive through the weekly update job;
+                # versions.env on the server pins the exact tested image). Moving to a new minor version
+                # is a manual, once-a-year decision: see the wiki page "Keeping HySite Up to Date".
+                BASE_IMAGE: ${BACKEND_BASE_IMAGE:-python:3.14-alpine}
+                # requirements.txt (newest) unless versions.env selects requirements.lock (tested)
+                REQUIREMENTS: ${REQUIREMENTS:-requirements.txt}
         restart: "${RESTART_POLICY:-no}"
         # ports: ["8111:8111"]
         environment:
@@ -75,17 +99,25 @@ services:
             CONNECTION_STRING: ${CONNECTION_STRING:-none}
             INTERACTIVE_STARNAMES: "${INTERACTIVE_STARNAMES:-true}"
             DEBUG: "${DEBUG:-true}"
+            # gunicorn 25.1+ puts its control socket here; $HOME is not writable with READ_ONLY=true
+            XDG_RUNTIME_DIR: /var/tmp
+            # as for the frontend: more than one worker, so one big API request does not block the
+            # rest (issue #46). Each worker holds the catalog summary: ~350 MB idle.
+            GUNICORN_CMD_ARGS: "${BACKEND_GUNICORN_ARGS:---workers 2 --timeout 120}"
         read_only: "${READ_ONLY:-false}"
         volumes:
             # django_static is written at build time by the SpExWebsite Dockerfile
             - "django_static:/app/static:rw"
-            # matplotlib_cache is recommended for matplotlib to work in a docker container
-            - "matplotlib_cache:/home/python_user/django_backend/.cache/matplotlib:rw"
+            # the homepage plot is made at container start and kept here between restarts
+            - "website_plots:/home/mz_python/django_app/output/website:rw"
             # gunicorn to store temporary files
             - "gunicorn_tmp:/var/tmp:rw"
             # Data output from processing
             - "./backend/output:${DATA_OUTPUT_DIR:-/home/python_user/django_backend/output}:${VOLUME_SPECIFICATION:-rw}"
-        command: ["gunicorn", "core.wsgi", "--bind", "0.0.0.0:8111"]
+        # The web2py frontend sends its settings to the API in the URL, and a long star list or catalog
+        # selection makes that URL much longer than gunicorn's default 4 KB limit. Requests from outside
+        # still come through nginx, which keeps its own limit on URL length.
+        command: ["gunicorn", "core.wsgi", "--bind", "0.0.0.0:8111", "--limit-request-line", "0"]
         profiles: ["api"]
         networks:
             - hynet
@@ -116,7 +148,8 @@ services:
 
     nginx-hysite:
         container_name: nginx-hysite
-        image: nginx:latest
+        # NGINX_IMAGE is the exact tested image, set by versions.env on the server
+        image: ${NGINX_IMAGE:-nginx:alpine}
         restart: "${RESTART_POLICY:-no}"
         ports:
             - "${LOCAL_PORT:-80}:80"
@@ -128,12 +161,12 @@ services:
 
 volumes:
     django_static:
-    matplotlib_cache:
+    website_plots:
     gunicorn_tmp:
     web_to_py_temp:
     web_to_py_gunicorn_tmp:
     web_to_py_session_data:
-    hyroute_ssl_keys:
+    hyroute_mongo_ssl:
         external: "${SSL_KEYS_VOLUME_EXTERNAL:-true}"
 
 networks:

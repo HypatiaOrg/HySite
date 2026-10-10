@@ -1,0 +1,50 @@
+# Run the whole site against a small sample database, with no access to production.
+# Used by the update job (scripts/hysite_update.sh) and to test by hand:
+#
+#   docker compose -p hysite-test --env-file test.env -f compose.yaml -f compose.test.yaml up --build --detach
+#   python scripts/smoke_test.py http://localhost:8081
+#   docker compose -p hysite-test --env-file test.env -f compose.yaml -f compose.test.yaml down --volumes
+#
+# The separate project name (-p), container names, network and port let this run next to a
+# development stack on the same machine.
+services:
+    mongo-db:
+        container_name: !reset null
+        volumes: !override
+            # a named volume (removed by "down --volumes"), so every run starts from the sample data
+            - mongo_test_data:/data/db:rw
+            - ./mongo/local.yaml:/etc/mongod.conf:ro
+            - ./mongo/test_data:/test_data:ro
+            - ./mongo/test_data/load_test_data.js:/docker-entrypoint-initdb.d/load_test_data.js:ro
+        ports: !reset []
+        healthcheck:
+            # the same check as compose.yaml, polled faster
+            interval: 5s
+            timeout: 5s
+            retries: 30
+            start_period: 60s
+        # the backend's hostname for the database
+        networks:
+            hynet:
+                aliases: [mongoDB]
+
+    web-to-py:
+        container_name: !reset null
+
+    django-api:
+        container_name: !reset null
+        depends_on:
+            mongo-db:
+                condition: service_healthy
+
+    nginx-hysite:
+        container_name: !reset null
+        # the frontend and backend hostnames nginx proxies to
+        depends_on: [web-to-py, django-api]
+
+volumes:
+    mongo_test_data:
+
+networks:
+    hynet:
+        name: hysite-test-net
