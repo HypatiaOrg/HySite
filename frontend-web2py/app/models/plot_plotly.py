@@ -44,15 +44,15 @@ SELECT_SCRIPT = """
         });
     })();
 </script>"""
-# the hover labels: every star within a few pixels of the cursor, stacked in a column, as Bokeh's hover
-# tool showed them (Plotly's own hover shows one point per trace, and searches slowly over an SVG plot,
+# the hover labels: every star within a few pixels of the cursor, stacked in columns that fill the window's
+# height, as Bokeh's hover tool stacked them (Plotly's own hover shows one point per trace, and searches slowly over an SVG plot,
 # so the figure has hovermode off and this script does the search over the traces' arrays instead)
 HOVER_SCRIPT = """
 <script>
     (function() {
         var plot = document.getElementById("%(div_id)s");
         if (!plot) { return; }
-        var labels = %(labels)s, MAX_LABELS = 25, RADIUS = 8;  // pixels, about a marker's size
+        var labels = %(labels)s, RADIUS = 8;  // pixels, about a marker's size
         var types = {f8: Float64Array, f4: Float32Array, i4: Int32Array, i2: Int16Array, i1: Int8Array,
                      u4: Uint32Array, u2: Uint16Array, u1: Uint8Array};
         function values(column) {  // a plain list, or the base64 typed array Plotly's HTML holds
@@ -94,21 +94,28 @@ HOVER_SCRIPT = """
             }
             if (!found.length) { hide(); return; }
             found.sort(function(a, b) { return a[0] - b[0]; });
-            var lines = [];
-            for (var k = 0; k < found.length && k < MAX_LABELS; k++) {
+            var items = [];
+            for (var k = 0; k < found.length; k++) {
                 var data = columns(found[k][1]), i = found[k][2];
                 var text = labels.x + " = " + Number(data.x[i]).toFixed(2) + ", " + labels.y + " = " + Number(data.y[i]).toFixed(2);
                 if (data.z && labels.z) { text += ", " + labels.z + " = " + Number(data.z[i]).toFixed(2); }
-                lines.push("<div style='padding:2px 0; border-top:" + (k ? "1px solid #ddd" : "0") + "'><b>" +
+                items.push("<div style='padding:2px 0; border-top:1px solid #ddd'><b>" +
                            $("<span>").text(data.names[i] || "").html() + "</b><br/>" + $("<span>").text(text).html() + "</div>");
             }
-            if (found.length > MAX_LABELS) { lines.push("<div style='padding:2px 0; color:#666'>and " + (found.length - MAX_LABELS) + " more</div>"); }
-            label.innerHTML = lines.join("");
+            // the labels in columns: one column fills the height of the window, the next starts beside it
+            function column(cells) { return "<div style='display:inline-block; vertical-align:top; padding:0 6px'>" + cells.join("") + "</div>"; }
+            label.innerHTML = column(items.slice(0, 1));
             label.style.display = "block";
-            var top = event.pageY + 12, left = event.pageX + 12;
-            if (event.clientY + 12 + label.offsetHeight > window.innerHeight) { top = Math.max(window.scrollY, event.pageY - 12 - label.offsetHeight); }
-            if (event.clientX + 12 + label.offsetWidth > window.innerWidth) { left = Math.max(0, event.pageX - 12 - label.offsetWidth); }
-            label.style.top = top + "px";
+            var itemHeight = label.firstChild.firstChild.offsetHeight || 34;
+            var perColumn = Math.max(1, Math.floor((window.innerHeight - 24) / itemHeight));
+            var blocks = [];
+            for (var start = 0; start < items.length; start += perColumn) { blocks.push(column(items.slice(start, start + perColumn))); }
+            label.innerHTML = blocks.join("");
+            // next to the cursor, kept inside the window
+            var top = Math.min(event.pageY + 12, window.scrollY + window.innerHeight - label.offsetHeight - 4);
+            var left = event.pageX + 12;
+            if (event.clientX + 12 + label.offsetWidth > window.innerWidth) { left = Math.max(window.scrollX + 4, event.pageX - 12 - label.offsetWidth); }
+            label.style.top = Math.max(window.scrollY + 4, top) + "px";
             label.style.left = left + "px";
         }
         var pending = null;
