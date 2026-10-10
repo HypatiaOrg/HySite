@@ -124,11 +124,11 @@ def graph():
     plot_settings()
     settings = get_settings()
     graph_data = api_json('scatter/', settings)
-    # the plot: the API decided the labels and the log/inverted axes (api.web2py.plots)
+    # the plot: the API decided the labels and the log/inverted axes (api.web2py.plots); Plotly draws (models/plot_plotly.py)
     axes = graph_data['axes']
     zaxis = axes.get('zaxis', {})
     outputs = graph_data['outputs']
-    script, div = create_bokeh_scatter(name=outputs.get('name', []),
+    div = create_plotly_scatter(name=outputs.get('name', []),
                                        xaxis=outputs.get('xaxis', []),
                                        yaxis=outputs.get('yaxis', []),
                                        zaxis=outputs.get('zaxis', []),
@@ -143,7 +143,7 @@ def graph():
                                        zaxisinv=zaxis.get('inverse', False), has_zaxis='zaxis' in axes,
                                        do_gridlines=settings['gridlines'])
     # send back to the browser
-    return dict(script=script, div=div)
+    return dict(div=div)
 
 
 def graph_targets():
@@ -153,7 +153,7 @@ def graph_targets():
     # the plot: the API grouped the stars into layers and decided the axes (api.web2py.plots)
     axes = graph_data['axes']
     outputs = graph_data['outputs']
-    script, div = create_bokeh_targets(xaxis=outputs.get('xaxis', []),
+    div = create_plotly_targets(xaxis=outputs.get('xaxis', []),
                                        yaxis=outputs.get('yaxis', []),
                                        layers=graph_data['layers'],
                                        number_of_targets=graph_data['number_of_targets'],
@@ -162,7 +162,7 @@ def graph_targets():
                                        do_xlog=axes['xaxis']['log'], do_ylog=axes['yaxis']['log'],
                                        xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
                                        do_gridlines=settings['gridlines'])
-    return dict(script=script, div=div)
+    return dict(div=div)
 
 
 def graph_hist():
@@ -171,14 +171,14 @@ def graph_hist():
     graph_data = api_json('hist/', settings)
     # the plot: the API made the series over shared bins (api.web2py.plots)
     labels = graph_data['labels']
-    script, div = create_bokeh_hist(series=graph_data['series'], edges=graph_data['edges'],
+    div = create_plotly_hist(series=graph_data['series'], edges=graph_data['edges'],
                                     x_range=graph_data['x_range'],
                                     x_label=labels.get('x_label', None),
                                     normalize=settings['normalize'], xaxisinv=settings['xaxisinv'],
                                     do_gridlines=settings['gridlines'],
                                     )
     # send back to the browser
-    return dict(script=script, div=div)
+    return dict(div=div)
 
 def graph_density():
     plot_settings()
