@@ -1,10 +1,13 @@
 #!/bin/bash
 # Copy the HySite database into a local MongoDB container: a backup, and a place to rehearse upgrades.
 #
-#   scripts/backup_mongo.sh [name] [--dump-only]
+#   scripts/backup_mongo.sh [name] [--dump-only] [--users]
 #
 #  1. mongodump the public and metadata databases from the database in .env (production, read-only
 #     user, TLS) into mongo/backups/<name>/, where <name> defaults to the current UTC date and time.
+#     --users also dumps the admin database (every user with its roles, password hashes and IP
+#     restrictions), which needs root or userAdminAnyDatabase on the source; the dump is then enough
+#     to build a complete new database with scripts/restore_mongo.sh.
 #  2. Restore that dump into a local MongoDB container named hysite-backup, with its own Docker
 #     volume (hysite-backup-data) and the MongoDB image from compose.yaml, so the data files are the
 #     same version as production's. It listens on 127.0.0.1:${BACKUP_PORT:-27018} without TLS, as
@@ -12,8 +15,9 @@
 #     A later run restores over the container's data (collections in the dump are dropped first).
 #
 # Reads only from the source database. Needs Docker and the settings in .env (MONGO_HOST,
-# MONGO_USERNAME, MONGO_PASSWORD, CLIENT_TLS, or CONNECTION_STRING). The dump folder stays on disk:
-# keep it, or delete it once the container holds the copy. Dumps are ignored by git.
+# MONGO_USERNAME, MONGO_PASSWORD, CLIENT_TLS, or CONNECTION_STRING; another file with
+# BACKUP_ENV_FILE=...). The dump folder stays on disk: keep it, or delete it once the container
+# holds the copy. Dumps are ignored by git.
 #
 # To rehearse a MongoDB upgrade on the copy, see the wiki page "MongoDB Upgrade Plan".
 set -euo pipefail
@@ -31,6 +35,7 @@ dump_only=false
 for arg in "$@"; do
     case "$arg" in
         --dump-only) dump_only=true ;;
+        --users) DATABASES+=(admin) ;;
         -h | --help) sed -n '2,18p' "$0" | cut -c3-; exit 0 ;;
         -*) echo "unknown option: $arg"; exit 1 ;;
         *) name=$arg ;;
@@ -58,8 +63,9 @@ load_env_file() {
     done < "$1"
 }
 # the website's database settings
-[ -f .env ] || { echo ".env not found in $REPO"; exit 1; }
-load_env_file .env
+ENV_FILE=${BACKUP_ENV_FILE:-.env}
+[ -f "$ENV_FILE" ] || { echo "$ENV_FILE not found in $REPO"; exit 1; }
+load_env_file "$ENV_FILE"
 # the image line compose.yaml follows, e.g. mongo:8.2 (MONGO_IMAGE from versions.env takes priority)
 IMAGE=${MONGO_IMAGE:-$(sed -n 's/.*\${MONGO_IMAGE:-\([^}]*\)}.*/\1/p' compose.yaml)}
 IMAGE=${BACKUP_IMAGE:-$IMAGE}
@@ -117,6 +123,7 @@ if ! docker container inspect "$CONTAINER" > /dev/null 2>&1; then
     docker run --detach --name "$CONTAINER" --restart unless-stopped \
         --publish "127.0.0.1:$BACKUP_PORT:27017" --volume "$VOLUME:/data/db" \
         --env MONGO_INITDB_ROOT_USERNAME=admin --env MONGO_INITDB_ROOT_PASSWORD="$BACKUP_PASSWORD" \
+        --env "GLIBC_TUNABLES=${MONGO_GLIBC_TUNABLES:-glibc.pthread.rseq=0}" \
         "$IMAGE" > /dev/null
 else
     docker start "$CONTAINER" > /dev/null
@@ -135,6 +142,9 @@ echo
 umask 077
 echo "password: \"$BACKUP_PASSWORD\"" > "$config"
 umask 022
+if [ -d "$dump_dir/admin" ]; then
+    echo "The dump has the admin database: the copy's users will be the source's (BACKUP_PASSWORD no longer applies)"
+fi
 echo "Restoring into $CONTAINER"
 tool mongorestore --network "container:$CONTAINER" --volume "$REPO/$dump_dir:/dump:ro" -- \
     --config /dump/.source.yaml --host localhost --username admin --authenticationDatabase admin \
@@ -144,7 +154,7 @@ rm -f "$config"
 echo "The copy now holds:"
 docker exec "$CONTAINER" mongosh --quiet --username admin --password "$BACKUP_PASSWORD" --eval '
     print("  MongoDB " + db.version() + ", feature compatibility version " + db.adminCommand({getParameter: 1, featureCompatibilityVersion: 1}).featureCompatibilityVersion.version);
-    for (const name of ["'"${DATABASES[0]}"'", "'"${DATABASES[1]}"'"]) {
+    for (const name of ["public", "metadata"]) {
         const database = db.getSiblingDB(name);
         for (const collection of database.getCollectionNames().sort())
             print("  " + name + "." + collection + ": " + database.getCollection(collection).countDocuments() + " documents");
