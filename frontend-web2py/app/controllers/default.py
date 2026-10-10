@@ -118,44 +118,26 @@ def graph():
     full_url = f'{BASE_API_URL}scatter/?{url_values}'
     graph_data_web = urllib.request.urlopen(full_url)
     graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
-    # plotting the data based on the settings
-    labels = graph_data['labels']
-    is_loggable = graph_data['is_loggable']
-    do_xlog = settings['xaxislog'] and is_loggable['xaxis']
-    do_ylog = settings['yaxislog'] and is_loggable['yaxis']
-    do_zlog = settings['zaxislog'] and is_loggable['zaxis']
-    has_zaxis = settings['zaxis1'] != 'none'
+    # the plot: the API decided the labels and the log/inverted axes (api.web2py.plots)
+    axes = graph_data['axes']
+    zaxis = axes.get('zaxis', {})
     outputs = graph_data['outputs']
     script, div = create_bokeh_scatter(name=outputs.get('name', []),
                                        xaxis=outputs.get('xaxis', []),
                                        yaxis=outputs.get('yaxis', []),
                                        zaxis=outputs.get('zaxis', []),
-                                       x_label=labels.get('xaxis', None),
-                                       y_label=labels.get('yaxis', None),
-                                       z_label=labels.get('zaxis', None),
+                                       x_label=axes['xaxis']['label'],
+                                       y_label=axes['yaxis']['label'],
+                                       z_label=zaxis.get('label', None),
                                        star_count=graph_data.get('star_count', None),
                                        planet_count=graph_data.get('planet_count', None),
-                                       do_xlog=do_xlog, do_ylog=do_ylog, do_zlog=do_zlog,
-                                       xaxisinv=settings['xaxisinv'], yaxisinv=settings['yaxisinv'],
-                                       zaxisinv=settings['zaxisinv'], has_zaxis=has_zaxis,
+                                       do_xlog=axes['xaxis']['log'], do_ylog=axes['yaxis']['log'],
+                                       do_zlog=zaxis.get('log', False),
+                                       xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
+                                       zaxisinv=zaxis.get('inverse', False), has_zaxis='zaxis' in axes,
                                        do_gridlines=settings['gridlines'])
     # send back to the browser
     return dict(script=script, div=div)
-
-
-def get_requested_handles(settings: dict) -> list[str]:
-    requested_handles = []
-    if settings['show_has_exo']:
-        requested_handles.append('has_exo')
-    if settings['show_thin_disk']:
-        requested_handles.append('thin_disk')
-    if settings['show_thick_disk']:
-        requested_handles.append('thick_disk')
-    if settings['show_hwo_tier2']:
-        requested_handles.append('hwo_tier2')
-    if settings['show_hwo_tier1']:
-        requested_handles.append('hwo_tier1')
-    return requested_handles
 
 
 def graph_targets():
@@ -167,25 +149,18 @@ def graph_targets():
     full_url = f'{BASE_API_URL}targets/?{url_values}'
     graph_data_web = urllib.request.urlopen(full_url)
     graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
-    # plotting the data based on the settings
-    labels = graph_data['labels']
-    is_loggable = graph_data['is_loggable']
-    do_xlog = settings['xaxislog'] and is_loggable['xaxis']
-    do_ylog = settings['yaxislog'] and is_loggable['yaxis']
+    # the plot: the API grouped the stars into layers and decided the axes (api.web2py.plots)
+    axes = graph_data['axes']
     outputs = graph_data['outputs']
-    script, div = create_bokeh_targets(name=outputs.get('name', []),
-                                       xaxis=outputs.get('xaxis', []),
+    script, div = create_bokeh_targets(xaxis=outputs.get('xaxis', []),
                                        yaxis=outputs.get('yaxis', []),
-                                       target_handles=graph_data['targets'],
-                                       x_label=labels.get('xaxis', None),
-                                       y_label=labels.get('yaxis', None),
-                                       do_xlog=do_xlog, do_ylog=do_ylog,
-                                       xaxisinv=settings['xaxisinv'], yaxisinv=settings['yaxisinv'],
-                                       do_gridlines=settings['gridlines'],
-                                       show_all_hypatia=settings['show_all'],
-                                       do_or_logic=settings['or_logic'],
-                                       requested_handles=get_requested_handles(settings=settings),
-                                       )
+                                       layers=graph_data['layers'],
+                                       number_of_targets=graph_data['number_of_targets'],
+                                       x_label=axes['xaxis']['label'],
+                                       y_label=axes['yaxis']['label'],
+                                       do_xlog=axes['xaxis']['log'], do_ylog=axes['yaxis']['log'],
+                                       xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
+                                       do_gridlines=settings['gridlines'])
     return dict(script=script, div=div)
 
 
@@ -198,12 +173,11 @@ def graph_hist():
     full_url = f'{BASE_API_URL}hist/?{url_values}'
     graph_data_web = urllib.request.urlopen(full_url)
     graph_data = json.loads(graph_data_web.read().decode(graph_data_web.info().get_content_charset('utf-8')))
-    # plotting the data based on the settings
+    # the plot: the API made the series over shared bins (api.web2py.plots)
     labels = graph_data['labels']
-    script, div = create_bokeh_hist(hist_all=graph_data['hist_all'], hist_planet = graph_data['hist_planet'],
-                                    edges=graph_data['edges'],
+    script, div = create_bokeh_hist(series=graph_data['series'], edges=graph_data['edges'],
+                                    x_range=graph_data['x_range'],
                                     x_label=labels.get('x_label', None),
-                                    x_data = graph_data['x_data'],
                                     normalize=settings['normalize'], xaxisinv=settings['xaxisinv'],
                                     do_gridlines=settings['gridlines'],
                                     )

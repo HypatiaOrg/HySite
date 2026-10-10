@@ -7,7 +7,8 @@ from core.settings import DEBUG
 from api.v2.data_process import available_catalogs_v2, representative_error
 from api.web2py.table import table_from_request, table_download_lines, DOWNLOAD_FORMATS
 from api.web2py.settings import settings_schema
-from api.web2py.data_process import (home_data, units_and_fields_v2, stellar_param_types_v2,
+from api.web2py.plots import axes_from_settings, group_targets, requested_target_handles, histogram_series
+from api.web2py.data_process import (home_data, units_and_fields_v2, stellar_param_types_v2, is_true_str,
                                      planet_param_types_v2, ranked_string_params, plot_norms,
                                      graph_settings_from_request, graph_query_pipeline_web2py, histogram_format,
                                      element_data, table_query_from_request, targets_metadata,
@@ -72,9 +73,19 @@ def get_graph_data(request, return_targets: bool = False):
         'star_count': star_count,
         'planet_count': planet_count,
         'is_loggable': is_loggable,
+        # the axis decisions the settings imply (api.web2py.plots)
+        'axes': axes_from_settings(request.GET, labels, is_loggable),
     }
     if return_targets:
         return_data['targets'] = [data_row['target_handles'] for data_row in graph_data]
+        outputs = return_data['outputs']
+        layers, number_of_targets = group_targets(
+            names=outputs.get('name', []), xaxis=outputs.get('xaxis', []), yaxis=outputs.get('yaxis', []),
+            target_handles=return_data['targets'], requested_handles=requested_target_handles(request.GET),
+            show_all=is_true_str(request.GET.get('show_all', 'false')),
+            or_logic=is_true_str(request.GET.get('or_logic', 'false')))
+        return_data['layers'] = layers
+        return_data['number_of_targets'] = number_of_targets
     return return_data
 
 
@@ -96,16 +107,10 @@ class HistView(View):
         # get more settings about how to process the data
         graph_data, labels, _to_v2, from_v2, _is_loggable, _unique_star_names \
             = graph_query_pipeline_web2py(graph_settings=graph_settings)
-        hist_all, hist_planet, edges, x_data \
-            = histogram_format(graph_data=graph_data, labels=labels, from_v2=from_v2,
-                               normalize_hist=graph_settings['normalize_hist'])
-        return JsonResponse({
-            'labels': labels,
-            'hist_all': hist_all.tolist(),
-            'hist_planet': hist_planet.tolist(),
-            'edges': edges.tolist(),
-            'x_data': x_data,
-        })
+        # the histogram as named series (api.web2py.plots); hist_all/hist_planet/edges/x_data as before
+        histogram = histogram_series(graph_data=graph_data, labels=labels, from_v2=from_v2,
+                                     normalize=graph_settings['normalize_hist'])
+        return JsonResponse({'labels': labels, **histogram})
 
 
 @method_decorator(csrf_exempt, name='dispatch')
