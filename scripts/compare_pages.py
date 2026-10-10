@@ -30,6 +30,10 @@ TEST_STAR = "HIP 62875"
 NEW_SESSION = "new session"
 PLOT_SETTINGS = {"xaxis1": "Ca", "xaxis2": "H", "yaxis1": "Ti", "yaxis2": "H", "zaxis1": "Fe", "zaxis2": "H"}
 CHECKBOXES = {"show_all": "on", "show_thin_disk": "on", "show_thick_disk": "on"}
+# the density page's own settings: a keyword and a number as bin sizes, another colour scale, and the
+# marginal histograms switched off (a toggle listed in toggle_vars but not sent). Nothing the other pages share.
+DENSITY_SETTINGS = {"xhist_bin_size": "error", "yhist_bin_size": "0.05", "color_pallet": "Viridis",
+                    "toggle_vars": "show_xyhist,gridlines"}
 STAR_LIST = "; ".join([TEST_STAR] + [f"HIP {number}" for number in range(1, 1000)])
 
 # a path, or (path, form data to POST); "catalogs": None is replaced by every catalog id
@@ -39,6 +43,9 @@ REQUESTS = [
     "/hypatia/default/launch", "/hypatia/default/graph.load",
     "/hypatia/default/dropdown.load?id=xaxis&value1=Fe&value2=H&log=True",
     "/hypatia/default/hist", "/hypatia/default/graph_hist.load",
+    # the density page (the plotly branch): the default plot, then its own settings changed
+    "/hypatia/default/density", "/hypatia/default/graph_density.load",
+    ("/hypatia/default/graph_density.load", DENSITY_SETTINGS),
     "/hypatia/default/targets", "/hypatia/default/graph_targets.load",
     "/hypatia/default/table", "/hypatia/default/table.load",
     "/hypatia/default/table.csv/hypatia.csv?download=true", "/hypatia/default/table.tsv/hypatia.tsv?download=true",
@@ -63,6 +70,11 @@ REQUESTS = [
     "/hypatia/api/web2py/table/?tablecols=names,names_all,planet,stellar,spread,ref,Fe,Fe_II,C,Li"
     "&show_targets=true&show_hwo_tier1=true&sort=Fe&reverse=true&statistic=median&solarnorm=lodders09",
     "/hypatia/api/web2py/table/?tablecols=Fe,C,O,Mg,Si,S,Ca,Ti&format=csv",
+    # the density data (api.web2py.density): the defaults, then every bin size rule, the heatmap alone,
+    # an element ratio and a stellar parameter as the axes, and a log axis
+    "/hypatia/api/frontend/density/?xaxis1=Fe&yaxis1=Si",
+    "/hypatia/api/frontend/density/?xaxis1=Fe&xaxis2=C&yaxis1=teff&xhist_bin_size=error&yhist_bin_size=0.05"
+    "&color_pallet=Viridis&yaxislog=true",
     # the settings model (api.web2py.settings), under the frontend API's name and its old one
     "/hypatia/api/web2py/settings/",
     "/hypatia/api/frontend/settings/",
@@ -125,9 +137,21 @@ def new_session() -> urllib.request.OpenerDirector:
     return urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
 
 
+def by_request(capture: dict) -> dict:
+    """The capture keyed by request instead of position (a repeated request gets a count), so adding a
+    request to REQUESTS does not make every later response look different."""
+    seen = {}
+    result = {}
+    for key in sorted(capture):
+        request = re.sub(r"^\d+ ", "", key)
+        seen[request] = seen.get(request, 0) + 1
+        result[request if seen[request] == 1 else f"{request} ({seen[request]})"] = capture[key]
+    return result
+
+
 def compare(path_a: str, path_b: str, context_lines: int = 12) -> int:
     with open(path_a) as file_a, open(path_b) as file_b:
-        a, b = json.load(file_a), json.load(file_b)
+        a, b = by_request(json.load(file_a)), by_request(json.load(file_b))
     same = different = 0
     for key in sorted(set(a) | set(b)):
         x, y = a.get(key), b.get(key)

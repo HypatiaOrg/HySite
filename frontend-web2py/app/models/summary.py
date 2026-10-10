@@ -28,7 +28,6 @@ ranked_string_params = param_data['ranked_string_params']
 CATALOGS = [AttrDict(cat_dict) for cat_dict in param_data['catalogs']]
 SOLAR_NORMS = [AttrDict(norm_dict) for norm_dict in param_data['solarnorms']]
 element_data = param_data['element_data']
-representative_error = {element.lower().replace('_', ''): error for element, error in param_data['representative_error'].items()}
 h_appended_names = [single_el['element_id'] + 'H' for single_el in element_data]
 h_appended_names_set = set(h_appended_names)
 targets_metadata = param_data['targets']
@@ -45,14 +44,6 @@ for handle, param_defs in units_and_fields.items():
         COL_UNITS[handle] = param_defs['units']
     else:
         COL_UNITS[handle] = ''
-    if 'decimals' in param_defs.keys():
-        # a representative error for a stellar or planet parameter, from its displayed precision
-        try:
-            exponent = int(f'-{param_defs["decimals"]}')
-        except ValueError:
-            pass
-        else:
-            representative_error[handle] = float(f'1.e{exponent + 2}')
 
 COL_PREFERRED_NAME['none'] = 'None'
 COL_PREFERRED_NAME['H'] = 'H'
@@ -92,6 +83,9 @@ session_defaults_launch = settings_data['defaults']
 exported_session_vars = sorted(set(session_defaults_launch.keys()) | toggle_graph_vars)
 # the request variables that may be saved in the session; other variables a request sends are ignored
 session_request_vars = set(settings_data['session_keys'])
+# the density page's controls: the colour scales and the bin size keywords, as the settings model names them
+DENSITY_COLOR_PALLETS = settings_data['fields']['color_pallet']['choices']
+DENSITY_BIN_TAGS = settings_data['fields']['xhist_bin_size']['keywords']
 
 for name_handle, name_label in name_handles_labels.items():
     COL_PREFERRED_NAME[name_handle] = name_label

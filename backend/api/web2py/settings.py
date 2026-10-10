@@ -7,6 +7,7 @@ Until October 2026 the defaults and the toggle list lived in the web2py models (
 API parsed the same names in graph_settings_from_request(); this module is the single place for both.
 """
 from api.web2py.data_process import stellar_param_types_v2, planet_param_types_v2, plot_norms, available_elements_v2
+from api.web2py.density import COLOR_PALLETS, DEFAULT_COLOR_PALLET, BIN_TAGS
 
 # checkboxes: a page sends a toggle only when it is on, and lists its own toggles in "toggle_vars" so
 # the server knows which missing ones mean "off" (issue #40)
@@ -49,7 +50,7 @@ DEFAULTS = {
     # the density page: the marginal histograms' bin sizes (a number, or a keyword) and the colour palette
     'xhist_bin_size': '',
     'yhist_bin_size': '',
-    'color_pallet': 'Hypatia',
+    'color_pallet': DEFAULT_COLOR_PALLET,
 }
 
 # other form fields a page may send that the frontend keeps in its session (the table options form)
@@ -91,10 +92,11 @@ def settings_schema() -> dict:
         'show_hwo_tier1': {'kind': 'toggle', 'about': 'targets: the HWO tier 1 list'},
         'show_hwo_tier2': {'kind': 'toggle', 'about': 'targets: the HWO tier 2 list'},
         'show_xyhist': {'kind': 'toggle', 'about': 'density: the histograms along the x and y axes'},
-        'xhist_bin_size': {'kind': 'text', 'about': 'density: the x bin size, a number or a keyword (std dev, error)'},
-        'yhist_bin_size': {'kind': 'text', 'about': 'density: the y bin size, a number or a keyword (std dev, error)'},
-        'color_pallet': {'kind': 'choice', 'choices': ['Hypatia', 'Viridis', 'Plasma', 'Cividis', 'Inferno', 'Turbo'],
-                         'about': 'density: the colour scale'},
+        'xhist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS,
+                           'about': 'density: the x bin width in data units, or a keyword: the standard deviation '
+                                    'of the data (the default) or the representative error of the parameter'},
+        'yhist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS, 'about': 'density: the y bin width, as for x'},
+        'color_pallet': {'kind': 'choice', 'choices': list(COLOR_PALLETS), 'about': 'density: the colour scale'},
         'tablecols': {'kind': 'list', 'choices': TABLE_TOKENS + list(available_elements_v2),
                       'about': 'the table columns: option tokens and element symbols'},
     })
