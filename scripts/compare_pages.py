@@ -66,6 +66,8 @@ REQUESTS = [
     # the settings model (api.web2py.settings), under the frontend API's name and its old one
     "/hypatia/api/web2py/settings/",
     "/hypatia/api/frontend/settings/",
+    # the API explanation page (web2py's api controller; routes.py maps /api to it)
+    "/api",
 ]
 DROPPED_HEADERS = {"date", "set-cookie", "content-length", "expires", "last-modified", "etag", "server",
                    "connection", "keep-alive", "transfer-encoding"}
