@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# The Next.js frontend
 
-## Getting Started
+The website's pages, being moved here from `frontend-web2py` one page at a time. nginx
+(`nginx/default.conf`) sends `/` here and the pages still under `/hypatia/default/` to web2py.
+The pages get their data from the API (`backend`) at `/hypatia/api/frontend/`.
 
-First, run the development server:
+## Running it
+
+The whole site, with this frontend built in Docker:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+docker compose --profile api up --build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+For development with live reloading, run only the API and nginx in Docker and this frontend on the
+host (it needs [Node.js](https://nodejs.org/en/download)):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+docker compose --profile api up --detach
+cd frontend
+npm install
+npm run dev        # http://localhost:3000, fetching from the API at http://localhost/
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+`API_BASE_SERVER` is where the server-side fetches go (`http://localhost/` when unset; compose.yaml
+sets the API container's address). The browser fetches from the page's own origin. `DEBUG=true`
+logs the fetches.
 
-## Learn More
+## Versions
 
-To learn more about Next.js, take a look at the following resources:
+`package.json` holds the ranges to follow (`^16` for Next.js: a new major version is a decision,
+like a new Python minor version). `package-lock.json` is not in git: the weekly update job
+(`scripts/refresh_versions.py`) writes it with the newest versions inside the pinned Node image,
+tests the site and deploys it, so it matches `requirements.lock` for the Python services. Without
+a lock file, `npm install` and the Docker build resolve the newest allowed versions.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+```bash
+npm run lint
+npm run typecheck
+```

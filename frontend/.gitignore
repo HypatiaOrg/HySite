@@ -1,6 +1,5 @@
-# this a copy of either the .env.deploy or .env.display file
-.env.production
-public/abundances.png
+# the exact tested package versions, written by scripts/refresh_versions.py (like requirements.lock)
+package-lock.json
 
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 static
@@ -31,7 +30,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
+.env*
 
 # vercel
 .vercel
