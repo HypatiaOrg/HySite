@@ -183,25 +183,23 @@ def graph_hist():
 def graph_density():
     plot_settings()
     settings = get_settings()
-    graph_data = api_json('scatter/', settings)
-    # the plot: the same points as the scatter page, drawn as a density map (models/plot_plotly.py)
+    graph_data = api_json('density/', settings)
+    # the plot: the API chose the points, the bins, the colours and the axes (api.web2py.density)
     axes = graph_data['axes']
     outputs = graph_data['outputs']
-    div = create_plotly_hist(name=outputs.get('name', []),
-                             xaxis=outputs.get('xaxis', []),
-                             yaxis=outputs.get('yaxis', []),
-                             x_label=axes['xaxis']['label'],
-                             y_label=axes['yaxis']['label'],
-                             star_count=graph_data.get('star_count', None),
-                             planet_count=graph_data.get('planet_count', None),
-                             do_xlog=axes['xaxis']['log'], do_ylog=axes['yaxis']['log'],
-                             xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
-                             do_gridlines=settings['gridlines'],
-                             show_xyhist=settings['show_xyhist'],
-                             xhist_bin_size=settings['xhist_bin_size'],
-                             yhist_bin_size=settings['yhist_bin_size'],
-                             color_pallet=settings['color_pallet'],
-                             )
+    bins = graph_data['bins'] or {}
+    div = create_plotly_density(xaxis=outputs.get('xaxis', []),
+                                yaxis=outputs.get('yaxis', []),
+                                x_bins=bins.get('xaxis', None), y_bins=bins.get('yaxis', None),
+                                color_scale=graph_data['color_scale'],
+                                histogram_color=graph_data['histogram_color'],
+                                x_label=axes['xaxis']['label'],
+                                y_label=axes['yaxis']['label'],
+                                do_xlog=axes['xaxis']['log'], do_ylog=axes['yaxis']['log'],
+                                xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
+                                do_gridlines=settings['gridlines'],
+                                show_xyhist=graph_data['show_xyhist'],
+                                )
     # send back to the browser
     return dict(div=div)
 

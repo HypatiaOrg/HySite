@@ -40,14 +40,14 @@
                 </label>
             </dd>
             <dt>X histograms bin size</dt>
-            <input type="text" id="xhist_bin_size" name="xhist_bin_size"  placeholder="{{='Float or keywords: (' + ', '.join(bin_tags) + ')'}}" value="{{=session.xhist_bin_size}}" class="form-control" onchange="refresh()">
+            <input type="text" id="xhist_bin_size" name="xhist_bin_size"  placeholder="{{='Float or keywords: (' + ', '.join(DENSITY_BIN_TAGS) + ')'}}" value="{{=session.xhist_bin_size}}" class="form-control" onchange="refresh()">
             <dt>Y histograms bin size</dt>
-            <input type="text" id="yhist_bin_size" name="yhist_bin_size" placeholder="{{='Float or keywords: (' + ', '.join(bin_tags) + ')'}}" class="form-control" value="{{=session.yhist_bin_size}}" onchange="refresh()">
+            <input type="text" id="yhist_bin_size" name="yhist_bin_size" placeholder="{{='Float or keywords: (' + ', '.join(DENSITY_BIN_TAGS) + ')'}}" class="form-control" value="{{=session.yhist_bin_size}}" onchange="refresh()">
             <br/>
             <dt>Choose a Color Pallet</dt>
             <dd>
                 <select class="form-control" name="color_pallet" onchange="refresh()">
-                    {{for color_pallet in color_pallets.keys():}}
+                    {{for color_pallet in DENSITY_COLOR_PALLETS:}}
                     <option name="color_pallet" value="{{=color_pallet}}" {{if session.color_pallet==color_pallet:}}selected="selected"{{pass}}>{{=color_pallet}}</option>
 
                     {{pass}}

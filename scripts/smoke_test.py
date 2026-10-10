@@ -32,6 +32,12 @@ CHECKS = [
     ("/hypatia/default/graph.load", "Bokeh"),
     ("/hypatia/default/hist", "Hypatia Catalog"),
     ("/hypatia/default/graph_hist.load", "Bokeh"),
+    # the density page (the plotly branch): the plot is a Plotly figure; then its own settings changed
+    # (bin sizes by keyword and by number, another colour scale, the marginal histograms off)
+    ("/hypatia/default/density", "Hypatia Catalog"),
+    ("/hypatia/default/graph_density.load", "plotly-graph-div"),
+    ("/hypatia/default/graph_density.load", "plotly-graph-div",
+     {"xhist_bin_size": "error", "yhist_bin_size": "0.05", "color_pallet": "Viridis", "toggle_vars": "show_xyhist"}),
     ("/hypatia/default/targets", "Hypatia Catalog"),
     ("/hypatia/default/graph_targets.load", "Bokeh"),
     ("/hypatia/default/table", "<table"),
@@ -59,6 +65,8 @@ CHECKS = [
     ("/hypatia/api/metadata/solarnorms/", "json"),
     ("/hypatia/api/db/summary/", "json"),
     ("/hypatia/api/web2py/table/?elements=Fe&elements=C", "json"),
+    # the frontend API's density data (api.web2py.density): the points, the bins of each axis, the colours
+    ("/hypatia/api/frontend/density/?xaxis1=Fe&yaxis1=Si", "json"),
 ]
 
 
