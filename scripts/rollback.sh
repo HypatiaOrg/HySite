@@ -10,7 +10,21 @@ prod_compose() { COMPOSE_ENV_FILES=.env,versions.env docker compose "$@"; }
 ops() {
     sudo cat /etc/hysite/update.env | docker run --rm --interactive --network "${OPS_NETWORK:-hynet}" \
         --user "$(id -u):$(id -g)" --volume "$PWD:/repo" --workdir /repo --entrypoint sh \
-        hysite-django-api:latest -c 'set -a; . /dev/stdin; set +a; python scripts/deployments.py "$@"' sh "$@"
+        --entrypoint python hysite-django-api:latest -c '
+# read update.env from stdin the way compose and systemd do (KEY=value, optional quotes), not as shell
+import os, sys
+for line in sys.stdin:
+    line = line.strip()
+    if not line or line.startswith("#") or "=" not in line:
+        continue
+    key, value = (part.strip() for part in line.split("=", 1))
+    key = key.removeprefix("export").strip()
+    if not key.replace("_", "a").isalnum():
+        continue
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"\x27":
+        value = value[1:-1]
+    os.environ[key] = value
+os.execvp("python", ["python", "scripts/deployments.py", *sys.argv[1:]])' "$@"
 }
 
 case "${1:-}" in
