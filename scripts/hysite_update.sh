@@ -11,7 +11,8 @@
 #  4. Test: build and run the whole site against the sample database (compose.test.yaml)
 #     and run the smoke tests. On failure: put the previous versions back, stop.
 #  5. Deploy: rebuild production from the tested versions and recreate changed containers,
-#     keeping the old images as :previous. Smoke test production. On failure: roll back.
+#     keeping the old images as :previous. The HTTPS edge (HyRoute's nginx, when its compose file
+#     is on this server) gets the same tested NGINX_IMAGE. Smoke test production. On failure: roll back.
 #  6. Every step is recorded in the hysite_ops.deployments collection (scripts/deployments.py).
 #
 # Exits non-zero on any failure, so systemd starts hysite-alert@ to send an email.
@@ -26,6 +27,8 @@ BRANCH=${HYSITE_BRANCH:-main}
 # false skips step 1, for testing changes that are not pushed yet
 GIT_UPDATE=${HYSITE_GIT_UPDATE:-true}
 PROD_URL=${HYSITE_URL:-http://localhost}
+# the HTTPS edge (HyRoute); its nginx runs the NGINX_IMAGE tested here. Skipped if the file is absent
+EDGE_COMPOSE=${HYSITE_EDGE_COMPOSE:-/home/ubuntu/HyRoute/compose.yaml}
 TEST_URL=http://localhost:8081
 # seconds the smoke test waits for a site to start
 SMOKE_WAIT=${HYSITE_SMOKE_WAIT:-300}
@@ -62,6 +65,18 @@ prod_compose() { COMPOSE_ENV_FILES=.env,versions.env docker compose "$@"; }
 test_compose() {
     COMPOSE_PROJECT_NAME=hysite-test COMPOSE_FILE=compose.yaml:compose.test.yaml \
         COMPOSE_ENV_FILES=test.env,versions.env docker compose "$@"
+}
+
+# the HTTPS edge: HyRoute's own .env (if any), then versions.env, which sets NGINX_IMAGE
+edge_compose() {
+    local env_files="$REPO/versions.env"
+    [ -f "$(dirname "$EDGE_COMPOSE")/.env" ] && env_files="$(dirname "$EDGE_COMPOSE")/.env,$env_files"
+    COMPOSE_ENV_FILES=$env_files docker compose --file "$EDGE_COMPOSE" "$@"
+}
+# recreate the edge nginx with the NGINX_IMAGE in versions.env (nothing to do without an edge here)
+edge_up() {
+    [ -f "$EDGE_COMPOSE" ] || return 0
+    edge_compose up --detach --no-build nginx
 }
 
 # scripts/deployments.py inside the backend image, with the hysite_ops credentials
@@ -209,7 +224,7 @@ log "Deploying to production"
 for image in "${BUILT_IMAGES[@]}"; do
     docker image inspect "$image:latest" > /dev/null 2>&1 && docker tag "$image:latest" "$image:previous"
 done
-if prod_compose build --pull && prod_compose up --detach --remove-orphans \
+if prod_compose build --pull && prod_compose up --detach --remove-orphans && edge_up \
         && python3 scripts/smoke_test.py "$PROD_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-production.txt"; then
     git rev-parse HEAD > .update/deployed_commit
     installed_versions hysite
@@ -226,7 +241,7 @@ restore_pins
 for image in "${BUILT_IMAGES[@]}"; do
     docker image inspect "$image:previous" > /dev/null 2>&1 && docker tag "$image:previous" "$image:latest"
 done
-if prod_compose up --detach --no-build --remove-orphans \
+if prod_compose up --detach --no-build --remove-orphans && edge_up \
         && python3 scripts/smoke_test.py "$PROD_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-rollback.txt"; then
     record rolled_back "Production check failed; rolled back to the previous versions, which pass. Logs: $REPO/$RUN_DIR"
 else
