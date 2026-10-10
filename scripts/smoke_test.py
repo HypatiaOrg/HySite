@@ -30,6 +30,8 @@ CHECKS = [
     # each .load fragment needs the session settings its parent page makes, so the parent comes first
     ("/hypatia/default/launch", "Hypatia Catalog"),
     ("/hypatia/default/graph.load", "plotly-graph-div"),
+    # the axis labels are drawn at the size the Bokeh plots used (once shipped at 2 pixels: invisible)
+    ("/hypatia/default/graph.load", '"tickfont":{"size":16}'),
     ("/hypatia/default/hist", "Hypatia Catalog"),
     ("/hypatia/default/graph_hist.load", "plotly-graph-div"),
     # the density page (the plotly branch): the plot is a Plotly figure; then its own settings changed
