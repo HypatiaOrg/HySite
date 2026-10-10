@@ -117,4 +117,5 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
             mirror=True, ticks="outside", ticklen=6, tickwidth=1
         )
 
-    return fig.to_html(include_plotlyjs=True)
+    # the figure only: the page loads static/js/plotly.min.js once (frontend-web2py/Dockerfile)
+    return fig.to_html(include_plotlyjs=False, full_html=False)
