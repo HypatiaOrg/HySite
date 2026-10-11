@@ -17,7 +17,40 @@ export type SettingsSchema = {
     toggles: Array<string>,
     session_keys: Array<string>,
     fields: Record<string, SettingsField>,
+    max_filters?: number,
 };
+
+// the most filters a request may carry (filter1 .. filterN), as the API's model says
+export const maxFilters = (schema: SettingsSchema) => schema.max_filters ?? 3;
+
+// the parts of a filter: the parameter, the denominator, the low and high ends, the inverse toggle
+const FILTER_PARTS = ["1", "2", "3", "4", "inv"];
+export const isFilterSetting = (name: string) => /^filter\d+_(1|2|3|4|inv)$/.test(name);
+
+// the indexes of the filters that name a parameter
+export function activeFilters(settings: Settings, max: number): Array<number> {
+    const indexes: Array<number> = [];
+    for (let index = 1; index <= max; index++) {
+        if (settings[`filter${index}_1`] && settings[`filter${index}_1`] !== "none") indexes.push(index);
+    }
+    return indexes;
+}
+
+// the filters in use renumbered 1, 2, 3 ... with the others at their defaults, so a cleared filter leaves
+// no gap and the page URL stays short
+export function compactFilters(schema: SettingsSchema, settings: Settings): Settings {
+    const defaults = defaultSettings(schema), max = maxFilters(schema);
+    const active = activeFilters(settings, max);
+    const result = {...settings};
+    for (let index = 1; index <= max; index++) {
+        const source = active[index - 1];
+        for (const part of FILTER_PARTS) {
+            const target = `filter${index}_${part}`;
+            result[target] = source ? settings[`filter${source}_${part}`] : defaults[target];
+        }
+    }
+    return result;
+}
 
 export type Settings = Record<string, string>;
 

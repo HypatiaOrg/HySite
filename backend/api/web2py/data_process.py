@@ -247,21 +247,25 @@ class FilterForQuery:
             self.planet_params_value_filters[param_id] = (filter_low, filter_high, exclude)
 
 
+# the filters a request may carry: filter1_1 .. filter10_1 (the parameter), _2 (the denominator), _3 and _4
+# (the range), _inv (keep the values outside the range). Three fixed rows until October 2026.
+MAX_FILTERS = 10
+
+
 def graph_settings_from_request(settings: dict[str, any] | None, mode: str = None) -> dict[str, any]:
     if settings is None:
         settings = {}
-    filter1_1 = is_none_str(settings.get('filter1_1', None), default=None)
-    filter1_2 = is_none_str(settings.get('filter1_2', None), default='H')
-    filter1_3 = is_value_str(settings.get('filter1_3', None))
-    filter1_4 = is_value_str(settings.get('filter1_4', None))
-    filter2_1 = is_none_str(settings.get('filter2_1', None), default=None)
-    filter2_2 = is_none_str(settings.get('filter2_2', None), default='H')
-    filter2_3 = is_value_str(settings.get('filter2_3', None))
-    filter2_4 = is_value_str(settings.get('filter2_4', None))
-    filter3_1 = is_none_str(settings.get('filter3_1', None), default=None)
-    filter3_2 = is_none_str(settings.get('filter3_2', None), default='H')
-    filter3_3 = is_value_str(settings.get('filter3_3', None))
-    filter3_4 = is_value_str(settings.get('filter3_4', None))
+    # the filters: (parameter, denominator, low, high, exclude) for each row that names a parameter
+    filters_list = []
+    for index in range(1, MAX_FILTERS + 1):
+        parameter = is_none_str(settings.get(f'filter{index}_1', None), default=None)
+        if parameter in nones:
+            continue
+        filters_list.append((parameter,
+                             is_none_str(settings.get(f'filter{index}_2', None), default='H'),
+                             is_value_str(settings.get(f'filter{index}_3', None)),
+                             is_value_str(settings.get(f'filter{index}_4', None)),
+                             is_true_str(settings.get(f'filter{index}_inv', 'false'))))
     xaxis1 = is_none_str(settings.get('xaxis1', None), default='Fe')
     xaxis2 = is_none_str(settings.get('xaxis2', None), default='H')
     yaxis1 = is_none_str(settings.get('yaxis1', None), default='Si')
@@ -270,9 +274,6 @@ def graph_settings_from_request(settings: dict[str, any] | None, mode: str = Non
     zaxis2 = is_none_str(settings.get('zaxis2', None), default='H')
     cat_action = is_none_str(settings.get('cat_action', None), default='exclude')
     star_action = is_none_str(settings.get('star_action', None), default='exclude')
-    filter1_inv = is_true_str(settings.get('filter1_inv', 'false'))
-    filter2_inv = is_true_str(settings.get('filter2_inv', 'false'))
-    filter3_inv = is_true_str(settings.get('filter3_inv', 'false'))
     solarnorm_id = get_norm_key(is_none_str(settings.get('solarnorm', None), default='lodders09'))
     statistic = settings.get('statistic', None)
     return_nea_name = is_true_str(settings.get('return_nea_name', 'false'))
@@ -302,11 +303,6 @@ def graph_settings_from_request(settings: dict[str, any] | None, mode: str = Non
     is_histogram = mode == 'hist'
 
     star_list = is_list_str(settings.get('star_list', None))
-    filters_list = [
-        (filter1_1, filter1_2, filter1_3, filter1_4, filter1_inv),
-        (filter2_1, filter2_2, filter2_3, filter2_4, filter2_inv),
-        (filter3_1, filter3_2, filter3_3, filter3_4, filter3_inv),
-    ]
     filter_for_query = FilterForQuery()
     # parse the 'axis' to make iterables that are in the form of the final returned data product
     axis_mapping = {'x': determine_param_type(param_name=xaxis1, denominator_element=xaxis2, is_graphed=True)}

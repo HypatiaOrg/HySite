@@ -6,10 +6,9 @@ import type {Settings} from "@/data/settings";
 import {Notice} from "@/components/settings/controls";
 import {help_url} from "@/data/api_targets";
 
-const PARAMETER_SETTINGS = ["xaxis1", "yaxis1", "zaxis1", "filter1_1", "filter2_1", "filter3_1"];
-
 export default function Notices({settings}: {settings: Settings}) {
-    const inUse = (handle: string) => PARAMETER_SETTINGS.some((name) => settings[name] === handle);
+    // an axis or any filter using the parameter
+    const inUse = (handle: string) => Object.entries(settings).some(([name, value]) => /^([xyz]axis1|filter\d+_1)$/.test(name) && value === handle);
     return (
         <>
             {settings.solarnorm === "original" && (

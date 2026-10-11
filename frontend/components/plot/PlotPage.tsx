@@ -5,7 +5,7 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import type {PlotSelectionEvent, PlotlyHTMLElement} from "plotly.js";
 import type {Summary} from "@/data/summary";
 import type {Settings, SettingsSchema} from "@/data/settings";
-import {isOn, listOf, searchParamsFromSettings} from "@/data/settings";
+import {isOn, listOf, searchParamsFromSettings, compactFilters, isFilterSetting, activeFilters, maxFilters} from "@/data/settings";
 import {fetchData, type ScatterData, type TargetsData, type HistData, type DensityData} from "@/data/plot_types";
 import {scatterFigure, targetsFigure, histFigure, densityFigure, type Figure, PLOT_WIDTH, PLOT_HEIGHT} from "@/components/plot/figures";
 import PlotlyFigure from "@/components/plot/PlotlyFigure";
@@ -13,20 +13,20 @@ import HoverLabels from "@/components/plot/HoverLabels";
 import DataTable from "@/components/table/DataTable";
 import Notices from "@/components/settings/Notices";
 import {Toggle} from "@/components/settings/controls";
-import {FilterRow, AxisRow, SolarNormRow, StatisticRow, CatalogsRow, StarsRow, TargetSetsRow, DensityRows, SubmitRow} from "@/components/settings/rows";
+import {FilterRows, AxisRow, SolarNormRow, StatisticRow, CatalogsRow, StarsRow, TargetSetsRow, DensityRows, SubmitRow} from "@/components/settings/rows";
 import {Label} from "@/components/settings/controls";
 
 export type PlotKind = "scatter" | "targets" | "hist" | "density";
 
 // what the current settings apply beyond the axes, in a line under the plot: a changed catalog or star
 // list often leaves the star count as it was, so this says that the request carried it
-function applied(settings: Settings, summary: Summary): string {
+function applied(settings: Settings, summary: Summary, schema: SettingsSchema): string {
     const parts: Array<string> = [];
     const catalogs = listOf(settings, "catalogs").length;
     if (catalogs) parts.push(`${catalogs} catalog${catalogs > 1 ? "s" : ""} ${settings.cat_action === "only" ? "allowed only" : "excluded"}`);
     const stars = listOf(settings, "star_list").length;
     if (stars) parts.push(`${stars} star${stars > 1 ? "s" : ""} ${settings.star_action === "only" ? "allowed only" : "excluded"}`);
-    const filters = [1, 2, 3].filter((index) => settings[`filter${index}_1`] && settings[`filter${index}_1`] !== "none").length;
+    const filters = activeFilters(settings, maxFilters(schema)).length;
     if (filters) parts.push(`${filters} filter${filters > 1 ? "s" : ""}`);
     const norm = summary.solarnorms.find((item) => item.id === settings.solarnorm);
     parts.push(norm ? `${norm.author}${norm.year ? ` (${norm.year})` : ""} normalization` : `${settings.solarnorm} normalization`);
@@ -46,8 +46,12 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
     const request = useRef(0);
 
     const change = useCallback((changes: Record<string, string>) => {
-        setSettings((current) => ({...current, ...changes}));
-    }, []);
+        setSettings((current) => {
+            const next = {...current, ...changes};
+            // a cleared or added filter: the filters in use are renumbered from 1
+            return Object.keys(changes).some(isFilterSetting) ? compactFilters(schema, next) : next;
+        });
+    }, [schema]);
 
     // the page URL follows the settings, so the plot is a link to share
     useEffect(() => {
@@ -104,18 +108,13 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
                 </div>
                 {/* what the plot was made with, beyond its axes */}
                 <p className={"text-center text-sm text-hygrey mt-2 " + (loading ? "opacity-50" : "")} aria-live="polite">
-                    {loading ? "Updating: " : "Showing: "}{applied(settings, summary)}
+                    {loading ? "Updating: " : "Showing: "}{applied(settings, summary, schema)}
                 </p>
                 </div>
 
                 <form className="w-[28rem] max-w-full" onSubmit={(event) => { event.preventDefault(); forceRefresh(); }}>
                     <Notices settings={settings}/>
-                    <div className="mb-3">
-                        <Label>Filter:</Label>
-                        <FilterRow index={1} summary={summary} settings={settings} onChange={change}/>
-                        <FilterRow index={2} summary={summary} settings={settings} onChange={change}/>
-                        <FilterRow index={3} summary={summary} settings={settings} onChange={change}/>
-                    </div>
+                    <FilterRows schema={schema} summary={summary} settings={settings} onChange={change}/>
                     <AxisRow axis="x" label="X-axis:" summary={summary} settings={settings} onChange={change} allowLog={kind !== "hist"}/>
                     {kind !== "hist" && <AxisRow axis="y" label="Y-axis:" summary={summary} settings={settings} onChange={change}/>}
                     {kind === "scatter" && <AxisRow axis="z" label="Z-axis (color):" summary={summary} settings={settings} onChange={change} allowNone/>}

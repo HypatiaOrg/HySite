@@ -43,6 +43,9 @@ REQUESTS = [
     # the Next.js plot pages (2026-10-11) and the data they fetch through their route handler (a JSON POST)
     "/scatter", "/targets", "/hist", "/launch?mode=hist", "/hypatia/default/launch",
     ("/data/scatter", {}), ("/data/scatter", PLOT_SETTINGS), ("/data/targets", CHECKBOXES), ("/data/hist", {}),
+    # four filters (three fixed rows until October 2026)
+    ("/data/scatter", {"filter1_1": "teff", "filter1_3": "5000", "filter1_4": "6000", "filter2_1": "dist", "filter2_4": "100",
+                       "filter3_1": "Fe", "filter3_3": "-1", "filter4_1": "logg", "filter4_3": "4"}),
     ("/data/table", {"tablecols": "Fe,C,O,Mg,Si,S,Ca,Ti"}), ("/data/table", {"tablecols": "names,Fe", "format": "csv", "download": "true"}),
     # the density page: the default data, then its own settings changed
     "/density", ("/data/density", {"show_xyhist": "true"}), ("/data/density", DENSITY_SETTINGS),
