@@ -31,11 +31,13 @@ export function Entry({id, label, heading = false, children}:
 
 // the inputs or outputs of a query: a narrower label column inside the entry
 export function Fields({title, children}: {title: string, children: React.ReactNode}) {
+    // its own <dl>: a <dt> inside the entry's <dd> without one makes the browser close that <dd>,
+    // and the page no longer matches what React rendered (hydration error #418)
     return (
-        <div className="md:grid md:grid-cols-[6rem_1fr] md:gap-x-4 mb-4">
+        <dl className="md:grid md:grid-cols-[6rem_1fr] md:gap-x-4 mb-4">
             <dt className="font-semibold text-hypurple">{title}</dt>
             <dd className="min-w-0">{children}</dd>
-        </div>
+        </dl>
     );
 }
 
