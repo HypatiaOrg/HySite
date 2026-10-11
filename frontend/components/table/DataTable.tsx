@@ -33,6 +33,29 @@ function simbadLink(name: string) {
     return "http://simbad.u-strasbg.fr/simbad/sim-basic?Ident=" + name.replace(/\+/g, "%2B").replace("2MASS ", "2MASS J") + "&submit=SIMBAD+search";
 }
 
+// a cell whose value came from several catalogs: a tooltip for the mouse, and a button that opens the
+// catalog values for the keyboard and a screen reader
+function CellValues({value, values}: {value: string, values: string}) {
+    const [open, setOpen] = useState(false);
+    const lines = values.split("\n").map((line) => line.trim()).filter(Boolean);
+    return (
+        <span className="relative">
+            <button type="button" title={values} aria-expanded={open} onClick={() => setOpen(!open)}
+                    onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); }}
+                    aria-label={`${value}, from ${lines.length} catalog values`}
+                    className="font-semibold cursor-help hover:underline focus:outline-2 focus:outline-hypurple rounded">
+                {value}
+            </button>
+            {open && (
+                <span role="dialog" aria-label="The catalog values" onBlur={() => setOpen(false)}
+                      className="absolute z-20 left-0 top-full mt-1 bg-white border border-hygrey/50 rounded shadow-lg px-2 py-1 text-xs text-black whitespace-nowrap">
+                    {lines.map((line, i) => <span key={i} className="block">{line}</span>)}
+                </span>
+            )}
+        </span>
+    );
+}
+
 type Props = {summary: Summary, settings: Settings, onChange: (changes: Record<string, string>) => void, showTargets: boolean};
 
 export default function DataTable({summary, settings, onChange, showTargets}: Props) {
@@ -120,10 +143,12 @@ export default function DataTable({summary, settings, onChange, showTargets}: Pr
                                     : column.endsWith("_err") ? "err" : column.endsWith("_ref") ? "reference" : null;
                                 const label = columnLabel(summary, column);
                                 return (
-                                    <th key={column} className="text-center border-b-2 border-hypurple px-2 py-1 align-bottom font-normal">
+                                    <th key={column} scope="col" className="text-center border-b-2 border-hypurple px-2 py-1 align-bottom font-normal"
+                                        aria-sort={sort.column === column ? (sort.reverse ? "descending" : "ascending") : undefined}>
                                         {sub ? <small className="text-hygrey">{sub}</small> : (
                                             <>
                                                 <button type="button" title={label.hover} onClick={() => sortBy(column)}
+                                                        aria-label={`Sort by ${label.text}`}
                                                         className={"font-semibold hover:underline " + (sort.column === column ? "text-hyred" : "text-hypurple")}>
                                                     {label.text}{sort.column === column ? (sort.reverse ? " ▾" : " ▴") : ""}
                                                 </button>
@@ -143,12 +168,13 @@ export default function DataTable({summary, settings, onChange, showTargets}: Pr
                                     const lines = Array.isArray(cell) ? cell : [cell];
                                     const hover = table.hover[r]?.[c] ?? undefined;
                                     return (
-                                        <td key={c} className="px-2 py-0.5 whitespace-nowrap" title={hover}>
+                                        <td key={c} className="px-2 py-0.5 whitespace-nowrap">
                                             {lines.map((line, i) => (
-                                                <span key={i} className={"block " + (SMALL_COLUMNS.test(column) ? "text-xs text-hygrey" : "") + (hover ? " font-semibold cursor-help" : "")}>
-                                                    {line}
+                                                <span key={i} className={"block " + (SMALL_COLUMNS.test(column) ? "text-xs text-hygrey" : "")}>
+                                                    {hover ? <CellValues value={line} values={hover}/> : line}
                                                     {column === "star_id" && i === 0 && line && (
-                                                        <a href={simbadLink(line)} target="_blank" rel="noopener noreferrer" className="text-hyred ml-1" title="SIMBAD">↗</a>
+                                                        <a href={simbadLink(line)} target="_blank" rel="noopener noreferrer" className="text-hyred ml-1"
+                                                           aria-label={`${line} on SIMBAD`} title="SIMBAD">↗</a>
                                                     )}
                                                 </span>
                                             ))}

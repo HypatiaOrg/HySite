@@ -1,13 +1,20 @@
 // Inspect the Next.js pages of a running HySite the way the browser's DevTools would, without a screen:
 // console errors, failed requests, sideways overflow, accessibility basics, text contrast (WCAG AA),
-// and a full-page screenshot of each page at desktop and phone widths.
+// the axe-core accessibility rules (WCAG 2.2 AA) when axe-core is installed, and a full-page screenshot
+// of each page at desktop and phone widths.
 //
-//   cd frontend && npm install --no-save playwright-core && npx playwright-core install --with-deps chromium
+//   cd frontend && npm install --no-save playwright-core axe-core && npx playwright-core install --with-deps chromium
 //   node ../scripts/inspect_pages.mjs http://localhost [screenshot-folder]
 //
 // Requests to other sites (analytics, fonts) are blocked, so the checks are about this site alone.
 // A Next.js prefetch answered with a 307 (a new _rsc key) is normal and not reported.
 import { chromium } from 'playwright-core';
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+// the axe-core accessibility rules (WCAG 2.2 AA), when the package is installed next to playwright-core
+let axeSource = null;
+try { axeSource = readFileSync(createRequire(import.meta.url).resolve('axe-core/axe.min.js'), 'utf8'); }
+catch { console.log('(axe-core is not installed: npm install --no-save axe-core for the accessibility rules)'); }
 const base = process.argv[2] ?? 'http://localhost';
 const shotDir = process.argv[3];
 import { mkdirSync } from 'node:fs';
@@ -66,9 +73,16 @@ for (const path of pages) {
       c.pass = c.ratio >= (c.size === 'large' ? 3 : 4.5);
     }
     const low = report.contrast.filter((c) => !c.pass).map((c) => `${c.color} on ${c.bg} (${c.size}) ${c.ratio}:1 "${c.sample}"`);
+    // the axe rules: each failing rule once, with how many elements
+    const axe = [];
+    if (axeSource) {
+      await page.addScriptTag({ content: axeSource });
+      const results = await page.evaluate(async () => await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] } }));
+      for (const v of results.violations) axe.push(`axe ${v.id} [${v.impact}] ${v.nodes.length} elements: ${v.help}`);
+    }
     console.log(`\n## ${path} @ ${width}  status ${response.status()}`);
-    console.log(`overflow: ${report.overflow}  console: ${console_.length}  failed requests: ${failed.length}  a11y: ${report.a11y.length}  low contrast: ${low.length}`);
-    for (const line of [...console_, ...failed, ...report.a11y, ...low]) console.log('  - ' + line);
+    console.log(`overflow: ${report.overflow}  console: ${console_.length}  failed requests: ${failed.length}  a11y: ${report.a11y.length}  low contrast: ${low.length}  axe rules failing: ${axe.length}`);
+    for (const line of [...console_, ...failed, ...report.a11y, ...low, ...axe]) console.log('  - ' + line);
     if (shotDir) await page.screenshot({ path: `${shotDir}/${path === '/' ? 'home' : path.slice(1)}-${width}.png`, fullPage: true });
     await page.close();
   }

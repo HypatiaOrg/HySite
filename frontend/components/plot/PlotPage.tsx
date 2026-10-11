@@ -104,8 +104,11 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
         ...(scale < 0.8 ? {margin: {l: 55, r: 20, t: 40, b: 50}} : {}),
     }), [figure, plotWidth, plotHeight, scale]);
 
+    const pageTitle = {scatter: "Scatter plot", targets: "Target lists plot", hist: "Histogram", density: "Density map"}[kind];
     return (
         <div className="px-4 pb-8">
+            {/* the page's heading, for the page's outline; the figure carries the visible title */}
+            <h1 className="sr-only">{pageTitle} of the Hypatia Catalog</h1>
             <div className="flex flex-wrap gap-6 justify-center">
                 <div ref={plotBox} style={{width: PLOT_WIDTH, maxWidth: "100%"}}>
                 <div className={"relative flex items-center justify-center bg-hygrey/20 transition-opacity " + (loading ? "opacity-50" : "")}

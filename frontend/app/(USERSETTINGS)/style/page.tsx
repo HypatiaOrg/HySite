@@ -24,7 +24,7 @@ export default function StylePage() {
             <P>The six named colors of the site, from the theme in <code>app/globals.css</code>.</P>
             <Palette/>
 
-            <H1 id="text">Text</H1>
+            <H1 as="h2" id="text">Text</H1>
             <P>
                 A main heading above (purple), a subheading below (red), and this paragraph (grey) are the pieces
                 every text page is built from. A link to <In href="/help">a page of this site</In> and a link to{' '}
@@ -42,28 +42,28 @@ export default function StylePage() {
                 <li>and another, with <In href="/about">a link</In>.</li>
             </Ul>
 
-            <H1 id="buttons">Buttons</H1>
+            <H1 as="h2" id="buttons">Buttons</H1>
             <P>The home page&apos;s call to action, in its resting and hover colors.</P>
             <div className="inline-block text-hyred border-hyred border-solid border-2 rounded-lg p-4 mb-8 text-2xl hover:bg-hygrey hover:border-hypurple hover:text-hyyellow">
                 <Link href="/">Get Started »</Link>
             </div>
 
-            <H1 id="table">Table</H1>
+            <H1 as="h2" id="table">Table</H1>
             <P>The first rows of the About page&apos;s column table. The header stays in view while the rows scroll.</P>
             <DefinitionTable rows={columns.slice(0, 6)} name="Sample rows of the column table"/>
 
-            <H1 id="controls">Plot page controls</H1>
+            <H1 as="h2" id="controls">Plot page controls</H1>
             <P>The pieces of the scatter, target lists, density and histogram pages: the parameter picker (click it), a
                 choice, a text field, a toggle, the buttons in their three states, a notice, and the hover labels.</P>
             <StyleSamples/>
 
-            <H1 id="caption">Caption</H1>
+            <H1 as="h2" id="caption">Caption</H1>
             <P>The caption under the home page&apos;s histogram: light blue on purple.</P>
             <p className="text-hyblue bg-hypurple indent-12 pt-2 pb-2 pl-6 pr-6 mb-8">
                 Number of stars for which each element abundance has been measured.
             </p>
 
-            <H1 id="decisions">Decisions to review</H1>
+            <H1 as="h2" id="decisions">Decisions to review</H1>
             <P>Choices made while porting the pages from web2py (October 2026), for review. Each says where it is changed.</P>
             {/* the file paths may break anywhere, so a long one does not widen a phone screen */}
             <div className="[&_code]:break-all">
