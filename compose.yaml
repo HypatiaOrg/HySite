@@ -41,45 +41,6 @@ services:
         networks:
             - hynet
 
-    web-to-py:
-        container_name: frontend-web2py
-        build:
-            context: ./frontend-web2py
-            args:
-                # The Python minor version to follow (patch releases arrive through the weekly update job;
-                # versions.env on the server pins the exact tested image). Moving to a new minor version
-                # is a manual, once-a-year decision: see the wiki page "Keeping HySite Up to Date".
-                BASE_IMAGE: ${FRONTEND_BASE_IMAGE:-python:3.14-alpine}
-                # requirements.txt (newest) unless versions.env selects requirements.lock (tested)
-                REQUIREMENTS: ${REQUIREMENTS:-requirements.txt}
-        pull_policy: always
-        restart: "${RESTART_POLICY:-no}"
-        environment:
-            COMPOSE_PROFILES: "${COMPOSE_PROFILES:-}"
-            BASE_API_URL: "http://django-api:8111"
-            # gunicorn 25.1+ puts its control socket here; $HOME is not writable with READ_ONLY=true
-            XDG_RUNTIME_DIR: /var/tmp
-            # gunicorn's default is one worker, so one slow request (a big table) made every other
-            # visitor wait and let retries pile up (issue #43). Each worker uses memory: ~200 MB idle,
-            # up to ~1 GB while building the largest table.
-            GUNICORN_CMD_ARGS: "${FRONTEND_GUNICORN_ARGS:---workers 2 --timeout 120}"
-        read_only: "${READ_ONLY:-false}"
-        volumes:
-            # uncomment below to sync all the web2py files for development
-            # - "./frontend-web2py/app:/home/python_kid/web2py_app/applications/hypatia:rw"
-            # store log and other files in a volume on the host
-            - "web_to_py_temp:/home/python_kid/web2py_app/temp_data:rw"
-            # gunicorn to store temporary files
-            - "web_to_py_gunicorn_tmp:/var/tmp:rw"
-            # session data (saved user session states)
-            - "web_to_py_session_data:/home/python_kid/web2py_app/applications/hypatia/sessions:rw"
-
-        # the first command to run when the container starts, start the gunicorn server
-        command: ["python", "anyserver.py", "-s", "gunicorn", "-i", "0.0.0.0", "-p", "8222"]
-        # ports: ["8222:8222"]
-        networks:
-            - hynet
-
     next-frontend:
         container_name: next-frontend
         build:
@@ -141,9 +102,9 @@ services:
             - "gunicorn_tmp:/var/tmp:rw"
             # Data output from processing
             - "./backend/output:${DATA_OUTPUT_DIR:-/home/python_user/django_backend/output}:${VOLUME_SPECIFICATION:-rw}"
-        # The web2py frontend sends its settings to the API in the URL, and a long star list or catalog
-        # selection makes that URL much longer than gunicorn's default 4 KB limit. Requests from outside
-        # still come through nginx, which keeps its own limit on URL length.
+        # The Next.js frontend's route handler sends a page's settings to the API in the URL, and a long
+        # star list or catalog selection makes that URL much longer than gunicorn's default 4 KB limit.
+        # Requests from outside still come through nginx, which keeps its own limit on URL length.
         command: ["gunicorn", "core.wsgi", "--bind", "0.0.0.0:8111", "--limit-request-line", "0"]
         profiles: ["api"]
         networks:
@@ -191,9 +152,6 @@ volumes:
     next_cache:
     website_plots:
     gunicorn_tmp:
-    web_to_py_temp:
-    web_to_py_gunicorn_tmp:
-    web_to_py_session_data:
     hyroute_mongo_ssl:
         external: "${SSL_KEYS_VOLUME_EXTERNAL:-true}"
 

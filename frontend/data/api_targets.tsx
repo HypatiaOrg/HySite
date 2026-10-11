@@ -16,8 +16,7 @@ export function apiBaseURL() {
 // the homepage plot, drawn from the database when the API container starts
 export const abundances_plot_url = "/hypatia/api/static/plots/abundances.png";
 
-// The pages. Every web2py page has been ported; nginx redirects the old /hypatia/default addresses
-// (nginx/default.conf).
+// The pages (nginx redirects their old /hypatia/default addresses, nginx/default.conf)
 export const scatter_url = "/scatter";
 export const targets_url = "/targets";
 export const hist_url = "/hist";

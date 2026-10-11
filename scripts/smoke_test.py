@@ -29,7 +29,7 @@ CHECKS = [
     ("/", "Hypatia Catalog"),
     ("/", "/_next/static/"),
     ("/", "planet hosts"),
-    # the Help page (ported 2026-10-11), and its old web2py address, which nginx redirects to it
+    # the Help page (ported 2026-10-11), and its old address, which nginx redirects to it
     ("/help", "GETTING STARTED"),
     ("/help", "/_next/static/"),
     ("/hypatia/default/help", "/_next/static/"),
@@ -37,7 +37,7 @@ CHECKS = [
     ("/about", "ABOUT DATA AND HYPATIA"),
     ("/about", "Henry-Draper catalog name"),
     ("/hypatia/default/about", "/_next/static/"),
-    # the Acknowledgements and API pages (ported 2026-10-11); /api was web2py's, now it is Next.js's
+    # the Acknowledgements and API pages (ported 2026-10-11)
     ("/acknowledgements", "ACKNOWLEDGMENTS"),
     ("/hypatia/default/credits", "/_next/static/"),
     ("/api", "Hypatia Catalog API"),
@@ -71,9 +71,11 @@ CHECKS = [
     ("/data/density", "json", {"xaxis1": "Fe", "yaxis1": "Si", "show_xyhist": "true"}),
     ("/data/density", '"mode": "error"', {"xaxis1": "Fe", "yaxis1": "Si", "xhist_bin_size": "error", "yhist_bin_size": "0.05",
                                           "color_pallet": "Viridis", "show_xyhist": "false"}),
-    # the NEA page (ported 2026-10-11), the last web2py page
+    # the NEA page (ported 2026-10-11)
     ("/nea", "NASA Exoplanet Archive"),
     ("/hypatia/default/nea", "/_next/static/"),
+    # any other old address (the web2py frontend, retired October 2026) goes to the home page
+    ("/hypatia/default/table", "planet hosts"),
     # homepage plot, drawn from the database when the backend starts
     ("/hypatia/api/static/plots/abundances.png", "png"),
     # Django API
@@ -112,7 +114,7 @@ def large_request_checks(base_url: str) -> list[tuple]:
     ]
 
 
-# keeps the web2py session cookie between requests, like a browser
+# keeps cookies between requests, like a browser
 opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
 # in the list of checks: forget the session cookie, like a new visitor
 NEW_SESSION = "new session"
