@@ -65,6 +65,8 @@ export default function StylePage() {
 
             <H1 id="decisions">Decisions to review</H1>
             <P>Choices made while porting the pages from web2py (October 2026), for review. Each says where it is changed.</P>
+            {/* the file paths may break anywhere, so a long one does not widen a phone screen */}
+            <div className="[&_code]:break-all">
             <Ul>
                 <li><b>Body text grey.</b> The theme&apos;s grey (#8A8A8A) on white measures 3.45:1; WCAG AA asks 4.5:1 for
                     normal text, so every page is below it, more so on the yellow and grey blocks. A darker grey such as
@@ -94,6 +96,7 @@ export default function StylePage() {
                 <li><b>Typeface.</b> Inter, from the Next.js site&apos;s original setup, for everything; the old site used
                     Bootstrap&apos;s Helvetica stack. Changed in <code>app/layout.tsx</code>.</li>
             </Ul>
+            </div>
         </Page>
     );
 }
