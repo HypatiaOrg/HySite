@@ -28,6 +28,9 @@ services:
             hynet:
                 aliases: [mongoDB]
 
+    web-to-py:
+        container_name: !reset null
+
     next-frontend:
         container_name: !reset null
 
@@ -40,7 +43,7 @@ services:
     nginx-hysite:
         container_name: !reset null
         # the frontend and backend hostnames nginx proxies to
-        depends_on: [next-frontend, django-api]
+        depends_on: [web-to-py, next-frontend, django-api]
 
 volumes:
     mongo_test_data:

@@ -1,11 +1,12 @@
 # The Next.js frontend
 
-The website's pages (they were a web2py application until October 2026; nginx redirects the old
-`/hypatia/default/` addresses). The pages get their data from the API (`backend`) at
-`/hypatia/api/frontend/`.
+The website's pages, being moved here from `frontend-web2py` one page at a time. nginx
+(`nginx/default.conf`) sends `/` here and the pages still under `/hypatia/default/` to web2py.
+The pages get their data from the API (`backend`) at `/hypatia/api/frontend/`.
 
-A new page: write it under `app/(USERSETTINGS)/<name>/page.tsx`, link it from `data/api_targets.tsx`
-and the menu (`components/header.tsx`), and add it to `scripts/smoke_test.py` and `scripts/compare_pages.py`.
+Porting a page: write it under `app/(USERSETTINGS)/<name>/page.tsx`, point its link in
+`data/api_targets.tsx` at the new path, redirect the old `/hypatia/default/<name>` address in
+`nginx/default.conf`, and add the page to `scripts/smoke_test.py` and `scripts/compare_pages.py`.
 
 ## The plot pages
 
