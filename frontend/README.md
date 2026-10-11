@@ -59,6 +59,8 @@ tests the site and deploys it, so it matches `requirements.lock` for the Python 
 a lock file, `npm install` and the Docker build resolve the newest allowed versions.
 
 ```bash
-npm run lint
-npm run typecheck
+npm run lint         # ESLint: the Next.js and React rules
+npm run typecheck    # TypeScript
+npm test             # Vitest: the settings model and the figures (also run by the Docker build)
+npm run format       # Prettier (format:check only checks)
 ```

@@ -18,11 +18,13 @@ COPY package.json package-lock.json* ./
 # Without it (a development build) npm resolves the newest versions package.json allows.
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
-# Build the site. The pages fetch nothing at build time, so no API needs to be running.
+# Build the site. The pages fetch nothing at build time, so no API needs to be running. The unit tests
+# run first: a failing test fails the build, and so the update job's test step.
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN npm test
 RUN npm run build
 
 # The server
