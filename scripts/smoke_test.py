@@ -33,6 +33,10 @@ CHECKS = [
     ("/help", "GETTING STARTED"),
     ("/help", "/_next/static/"),
     ("/hypatia/default/help", "/_next/static/"),
+    # the About page (ported 2026-10-11): the column table and the old address
+    ("/about", "ABOUT DATA AND HYPATIA"),
+    ("/about", "Henry-Draper catalog name"),
+    ("/hypatia/default/about", "/_next/static/"),
     # web2py frontend pages
     # each .load fragment needs the session settings its parent page makes, so the parent comes first
     ("/hypatia/default/launch", "Hypatia Catalog"),

@@ -1,5 +1,5 @@
 import type {Metadata} from "next";
-import Link from 'next/link';
+import {Page, H1, H2, P, Ul, Ext, In} from "@/components/text";
 import {about_url, nea_url} from "@/data/api_targets";
 
 export const metadata: Metadata = {
@@ -7,21 +7,11 @@ export const metadata: Metadata = {
     description: "How to use the plots, the table and the advanced controls of the Hypatia Catalog.",
 };
 
-const h1Style = "text-3xl md:text-4xl font-bold text-hypurple mt-12 mb-4";
-const h2Style = "text-2xl md:text-3xl font-semibold text-hyred mt-8 mb-3";
-const pStyle = "text-hygrey text-lg md:text-xl mb-5";
-const linkStyle = "text-hyred hover:text-hypurple hover:bg-hyyellow hover:underline";
-
-// a link to another website, opened in a new tab
-function Ext({href, children}: {href: string, children: React.ReactNode}) {
-    return <a className={linkStyle} href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
-}
-
 export default function HelpPage() {
     return (
-        <div className="max-w-5xl mx-auto px-6 pb-16">
-            <h1 className={h1Style} id="getting-started">GETTING STARTED</h1>
-            <p className={pStyle}>
+        <Page>
+            <H1 id="getting-started">GETTING STARTED</H1>
+            <P>
                 Stellar abundance information provides one of the primary tools for understanding everything from
                 the evolution of the Milky Way galaxy to the structure and mineralogy of exoplanets. The Hypatia
                 Catalog is a composite stellar abundance catalog that is comprised of multiple literature sources of
@@ -33,12 +23,12 @@ export default function HelpPage() {
                 models, and techniques, is given in{' '}
                 <Ext href="https://drive.google.com/file/d/0B6JubEpe8-76YjlBakJydy1OaXM/view?usp=sharing&resourcekey=0-PGfV-0IqRvm6a9Xw5dNCXw">this table,</Ext>{' '}
                 where a description of the columns can be found at the bottom of the{' '}
-                <Link className={linkStyle} href={about_url}>About</Link> page. The NASA Exoplanet Archive data{' '}
-                <Link className={linkStyle} href={nea_url}>data page is here.</Link>
-            </p>
+                <In href={about_url}>About</In> page. The NASA Exoplanet Archive data{' '}
+                <In href={nea_url}>data page is here.</In>
+            </P>
 
-            <h2 className={h2Style} id="filtering">Filtering</h2>
-            <p className={pStyle}>
+            <H2 id="filtering">Filtering</H2>
+            <P>
                 The plot and table can be filtered using the 3 filter boxes on the top right that provide minimum and
                 maximum values (either can be left blank in place of infinity). Changes are enacted by pausing for a
                 few seconds (it is no longer necessary to click the “Submit” button at the bottom of the plot).
@@ -46,7 +36,7 @@ export default function HelpPage() {
                 default. From the dropdown menu, if an element is chosen from the Periodic Table, the filter changes
                 to become an X/Y ratio where both the numerator and denominator can be specified. In addition to the
                 neutral state of the element, if the singly ionized element has been measured, the “II” next to the
-                element can be selected (see the <Link className={linkStyle} href={about_url}>About</Link> page).
+                element can be selected (see the <In href={about_url}>About</In> page).
                 Stellar properties are listed along the bottom of the drop down menu in addition to planetary
                 properties. If any of planetary properties are chosen, then the graph will show only planet hosting
                 stars. To look at those stars that have planets without a filter, simply click on “planet letter” in
@@ -56,28 +46,28 @@ export default function HelpPage() {
                 The table will also update to include NEA names. The X and Y axes can plot any of the element
                 ratios, stellar properties, or planet properties. Additionally, the Z-axis, or color, can be
                 initialized to show another dimension.
-            </p>
-            <p className={pStyle}>
+            </P>
+            <P>
                 To move, adjust, zoom, or generally change the properties of the plot, the tools listed vertically
                 along the right side of the plot can be toggled to make the appropriate adjustments. Additionally,
                 the figure can be saved by clicking the “Save” button near the bottom.
-            </p>
+            </P>
 
-            <h1 className={h1Style} id="plots">PLOTS</h1>
-            <h2 className={h2Style} id="scatter">Scatter</h2>
-            <p className={pStyle}>
+            <H1 id="plots">PLOTS</H1>
+            <H2 id="scatter">Scatter</H2>
+            <P>
                 The Scatter plot is the most basic plot on the Hypatia website, allowing the user to plot nearly any
                 parameter with respect to another. The scatter plot has extremely high functionality and
                 flexibility. The X and Y axes can plot any of the element ratios, stellar properties, or planet
                 properties. Additionally, the Z-axis, or color, can be initialized to show another dimension.
-            </p>
+            </P>
 
-            <h2 className={h2Style} id="target-lists">Target Lists</h2>
-            <p className={pStyle}>
+            <H2 id="target-lists">Target Lists</H2>
+            <P>
                 The Target Lists plot is similar to the Scatter plot in functionality, but it also includes a number
                 of pre-defined lists. The available target sets currently include:
-            </p>
-            <ul className={pStyle + " list-disc pl-8"}>
+            </P>
+            <Ul>
                 <li>
                     the Habitable Worlds Observatory (HWO) Tier 1 and Tier 2 target lists as compiled by the Target
                     Stars and Systems (TSS) working group. The 2025 TSS list includes 164 highest priority Tier 1
@@ -95,15 +85,15 @@ export default function HelpPage() {
                 <li>
                     host exoplanets, or any star that has a confirmed planet per the NASA Exoplanet Archive.
                 </li>
-            </ul>
-            <p className={pStyle}>
+            </Ul>
+            <P>
                 A user may plot multiple target lists at once, either individually or using &quot;union&quot; logic
                 to show which stars are in multiple target lists. The user may also plot the rest of the Hypatia
                 Catalog stars that are not in any of the target lists selected.
-            </p>
+            </P>
 
-            <h2 className={h2Style} id="histogram">Histogram</h2>
-            <p className={pStyle}>
+            <H2 id="histogram">Histogram</H2>
+            <P>
                 While the plot showing “Elements and Properties” enables a user to look at <em>either</em> planet
                 hosting stars or stars that are not currently known to have planets, we wanted to provide the ability
                 to look at the two populations simultaneously. Therefore, we have provided a 1D histogram that shows
@@ -111,10 +101,10 @@ export default function HelpPage() {
                 cuts on those stars analyzed. Additionally, the histogram can be viewed either in terms of total
                 number of stars in a bin or normalized (by checking the “Normalize the histogram” toggle) according
                 to the bin with most number of stars, which has a height of 1 by definition.
-            </p>
+            </P>
 
-            <h1 className={h1Style} id="advanced-controls">ADVANCED CONTROLS &amp; INFO</h1>
-            <p className={pStyle}>
+            <H1 id="advanced-controls">ADVANCED CONTROLS &amp; INFO</H1>
+            <P>
                 For those users wishing to change some of the more nuanced aspects of the stellar abundances within
                 the Hypatia Catalog, we provide the ability to make adjustments. In order to ensure that all of the
                 stellar abundances within Hypatia are on the same baseline, all individual catalogs have been
@@ -132,11 +122,11 @@ export default function HelpPage() {
                 original data may be only available as absolute. See{' '}
                 <Ext href="https://ui.adsabs.harvard.edu/abs/2022AJ....164..256H/abstract">Hinkel, Young, &amp; Wheeler (2022)</Ext>{' '}
                 for more details.
-            </p>
-            <p className={pStyle}>
+            </P>
+            <P>
                 The Hypatia Catalog is a multidimensional database, which utilizes all stellar abundances
                 measurements made for an element within a star by 360+ catalogs (see details on the{' '}
-                <Link className={linkStyle} href="/">Home page</Link>). Therefore, to provide a 2-dimensional table,
+                <In href="/">Home page</In>). Therefore, to provide a 2-dimensional table,
                 those measurements must be collapsed or reduced. The toggle “If an element ratio is in multiple
                 catalogs” changes the reduction method to either take the median (default) or mean of all
                 measurements of an element in a star. We note that the stellar abundance dex notation is inherently
@@ -148,8 +138,8 @@ export default function HelpPage() {
                 references in the table (by selecting the “Reference” button), only those references that went into
                 the final calculation are provided. Namely, all references are shown when taking the mean, while
                 only the middle one or two references are shown when taking the median.
-            </p>
-            <p className={pStyle}>
+            </P>
+            <P>
                 Users may note that some [Fe/H] column values are repeated by the same first author or group across
                 multiple papers, who often draw upon their previous stellar parameters calculations when determining
                 new element abundances for the same set of stars. Any data entered into the Hypatia Catalog is
@@ -158,24 +148,24 @@ export default function HelpPage() {
                 median or mean calculation. Unfortunately, this is not an issue that can be easily corrected within
                 the Hypatia Catalog database, but we hope that the accessibility of all of the references will allow
                 each user to make the best decision for their science.
-            </p>
-            <p className={pStyle}>
+            </P>
+            <P>
                 Finally, while the Hypatia Catalog is unbiased in its inclusion of datasets, we recognize that the
                 user may wish to look exclusively at particular catalogs. We have provided a toggle that allows the
                 user to switch between “Excluding” or “Allowing” individual catalogs as they see fit.
-            </p>
+            </P>
 
-            <h1 className={h1Style} id="table">TABLE</h1>
-            <p className={pStyle}>
+            <H1 id="table">TABLE</H1>
+            <P>
                 The table is filtered using the filter bars at the top. The columns that are shown in the table can
                 be adjusted using the “Add/remove columns” button, which gives the user the ability to include
                 individual elements (shown as [X/H] unless the Absolute solar normalization is chosen). Additionally,
                 all stellar properties (RA, Dec, XYZ position, distance, disk, spectral type, V mag, B-V, UVW
                 galactic velocity, Teff, and logg) and all planetary properties (planet letter, period, planet mass,
                 eccentricity, and semimajor axis, where applicable) can be shown in the table (see the{' '}
-                <Link className={linkStyle} href={about_url}>About</Link> page).
-            </p>
-            <p className={pStyle}>
+                <In href={about_url}>About</In> page).
+            </P>
+            <P>
                 The user can also view the spread (or error) in the stellar abundances. Per the original Hypatia
                 Catalog paper (<Ext href="http://adsabs.harvard.edu/abs/2014AJ....148...54H">Hinkel et al. 2014</Ext>),
                 the spread is defined as the range in the stellar abundance measurements when determined by different
@@ -184,7 +174,7 @@ export default function HelpPage() {
                 which is why we utilize it as the overall abundance precision, see{' '}
                 <Ext href="https://ui.adsabs.harvard.edu/abs/2016ApJS..226....4H">Hinkel et al. (2016)</Ext> for
                 more details.
-            </p>
-        </div>
+            </P>
+        </Page>
     );
 }

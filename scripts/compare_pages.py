@@ -39,7 +39,7 @@ STAR_LIST = "; ".join([TEST_STAR] + [f"HIP {number}" for number in range(1, 1000
 # a path, or (path, form data to POST); "catalogs": None is replaced by every catalog id
 REQUESTS = [
     # frontend pages
-    "/", "/help", "/hypatia/default/about", "/hypatia/default/nea", "/hypatia/default/credits",
+    "/", "/help", "/about", "/hypatia/default/nea", "/hypatia/default/credits",
     "/hypatia/default/launch", "/hypatia/default/graph.load",
     "/hypatia/default/dropdown.load?id=xaxis&value1=Fe&value2=H&log=True",
     "/hypatia/default/hist", "/hypatia/default/graph_hist.load",
