@@ -33,14 +33,17 @@ export default function PeriodicTable({summary, selected, onPick, allowH = false
     const available = new Set(summary.element_data.map((element) => element.element_id));
     if (allowH) available.add("H");
     const names = new Map(summary.element_data.map((element) => [element.element_id, element.element_name]));
-    const cell = (id: string, text: string, title: string) => (
+    // every column the same width: the element button a fixed width, the ionized species' button half of it
+    // beside it, and an element the catalog does not have in a box of the element's width
+    const cell = (id: string, text: string, title: string, species = false) => (
         <button type="button" key={id} data-picks="1" title={title} onClick={() => onPick(id)}
-                className={buttonClass(selected.has(id) ? onColor : "plain", "px-0.5 py-0 text-xs leading-5")}>
+                className={buttonClass(selected.has(id) ? onColor : "plain",
+                    "px-0 h-6 leading-6 text-center " + (species ? "w-[18px] text-[11px]" : "w-9 text-xs"))}>
             {text}
         </button>
     );
     return (
-        <table className="border-separate border-spacing-px">
+        <table className="border-separate border-spacing-x-0.5 border-spacing-y-px table-fixed">
             <tbody>
             {PERIODS.map((period, row) => (
                 <tr key={row}>
@@ -48,9 +51,12 @@ export default function PeriodicTable({summary, selected, onPick, allowH = false
                         if (!element) return <td key={column}/>;
                         const hasI = available.has(element), hasII = available.has(element + "_II");
                         return (
-                            <td key={column} className="whitespace-nowrap text-center text-hygrey text-xs">
-                                {hasI ? cell(element, element, names.get(element) ?? element) : element}
-                                {hasII && cell(element + "_II", "II", (names.get(element) ?? element) + " (II)")}
+                            <td key={column} className="w-14 whitespace-nowrap text-hygrey text-xs align-top">
+                                <span className="inline-flex items-start">
+                                    {hasI ? cell(element, element, names.get(element) ?? element)
+                                          : <span className="inline-block w-9 h-6 leading-6 text-center">{element}</span>}
+                                    {hasII && cell(element + "_II", "II", (names.get(element) ?? element) + " (II)", true)}
+                                </span>
                             </td>
                         );
                     })}

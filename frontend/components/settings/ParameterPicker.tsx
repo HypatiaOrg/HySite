@@ -34,7 +34,7 @@ export default function ParameterPicker({summary, name, value, denominator, onCh
     return (
         <span className="inline-flex items-center gap-1">
             <Popover button={<span>{labelOf(summary, value)}</span>} title={hoverOf(summary, value)}>
-                <div className="w-[58rem]">
+                <div className="w-[64rem]">
                     {allowNone && (
                         <button type="button" data-picks="1" onClick={() => onChange("none")}
                                 className={buttonClass(value === "none" ? "picked" : "plain", "px-1.5 py-0 text-xs leading-5 mb-2")}>none</button>
@@ -49,7 +49,7 @@ export default function ParameterPicker({summary, name, value, denominator, onCh
             </Popover>
             {isElement(value) && (
                 <Popover button={<span>{labelOf(summary, denominator)}</span>} title="the denominator of the ratio">
-                    <div className="w-[58rem]">
+                    <div className="w-[64rem]">
                         <div className="font-semibold text-hypurple">Denominator:</div>
                         <PeriodicTable summary={summary} selected={new Set([denominator])} allowH onPick={(id) => onChange(value, id)}/>
                     </div>
