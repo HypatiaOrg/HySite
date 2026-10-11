@@ -12,7 +12,7 @@ const base = process.argv[2] ?? 'http://localhost';
 const shotDir = process.argv[3];
 import { mkdirSync } from 'node:fs';
 if (shotDir) mkdirSync(shotDir, { recursive: true });
-const pages = ['/', '/help', '/about', '/acknowledgements', '/api', '/style', '/scatter', '/targets', '/hist'];
+const pages = ['/', '/help', '/about', '/acknowledgements', '/api', '/style', '/scatter', '/targets', '/hist', '/density', '/nea'];
 const widths = [1280, 390];
 const browser = await chromium.launch({ args: ['--no-proxy-server'] });
 

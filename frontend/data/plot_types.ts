@@ -25,6 +25,17 @@ export type HistData = {
     x_range: Array<number> | null,
 };
 
+export type DensityBins = {start: number, end: number, size: number, mode: string};
+
+export type DensityData = ScatterData & {
+    bins: {xaxis: DensityBins, yaxis: DensityBins} | null,
+    show_xyhist: boolean,
+    color_pallet: string,
+    color_scale: Array<[number, string]> | string,
+    histogram_color: string,
+    bin_tags: Array<string>,
+};
+
 export type TableData = {
     columns: Array<string>,
     rows: Array<Array<string | Array<string>>>,

@@ -56,12 +56,16 @@ CHECKS = [
     ("/data/targets", "json", {"xaxis1": "Fe", "yaxis1": "Si", "show_all": "true", "show_thin_disk": "true"}),
     ("/data/hist", "json", {"xaxis1": "Fe"}),
     ("/data/table", "star_id", {"tablecols": "names,Fe,C"}),
-    # the density page (still web2py, with its own session): the plot is a Plotly figure; then its own settings changed
-    # (bin sizes by keyword and by number, another colour scale, the marginal histograms off)
-    ("/hypatia/default/density", "Hypatia Catalog"),
-    ("/hypatia/default/graph_density.load", "plotly-graph-div"),
-    ("/hypatia/default/graph_density.load", "plotly-graph-div",
-     {"xhist_bin_size": "error", "yhist_bin_size": "0.05", "color_pallet": "Viridis", "toggle_vars": "show_xyhist"}),
+    # the density page: the default data, then its own settings changed (bin sizes by keyword and by number,
+    # another colour scale, the marginal histograms off)
+    ("/density", "/_next/static/"),
+    ("/hypatia/default/density", "/_next/static/"),
+    ("/data/density", "json", {"xaxis1": "Fe", "yaxis1": "Si", "show_xyhist": "true"}),
+    ("/data/density", '"mode": "error"', {"xaxis1": "Fe", "yaxis1": "Si", "xhist_bin_size": "error", "yhist_bin_size": "0.05",
+                                          "color_pallet": "Viridis", "show_xyhist": "false"}),
+    # the NEA page (ported 2026-10-11), the last web2py page
+    ("/nea", "NASA Exoplanet Archive"),
+    ("/hypatia/default/nea", "/_next/static/"),
     # homepage plot, drawn from the database when the backend starts
     ("/hypatia/api/static/plots/abundances.png", "png"),
     # Django API

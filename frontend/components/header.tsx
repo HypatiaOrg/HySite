@@ -30,7 +30,7 @@ export default function NavMenu(): ReactElement {
                     <Suspense fallback={<Link href={targets_url}>Target Lists</Link>}><PlotLink href={targets_url}>Target Lists</PlotLink></Suspense>
                 </div>
                 <div className={linkTextStyle}>
-                    <Link href={density_url}>Density Map</Link>
+                    <Suspense fallback={<Link href={density_url}>Density Map</Link>}><PlotLink href={density_url}>Density Map</PlotLink></Suspense>
                 </div>
                 <div className={linkTextStyle}>
                     <Suspense fallback={<Link href={hist_url}>Histogram</Link>}><PlotLink href={hist_url}>Histogram</PlotLink></Suspense>

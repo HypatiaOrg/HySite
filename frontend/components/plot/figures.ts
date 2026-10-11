@@ -1,7 +1,7 @@
 // The figures, as Plotly data and layout, from what the API returns. The API decided the data, the
 // target layers, the histogram series and the axes; this only draws, as models/plot_plotly.py did.
 import type {Data, Layout} from "plotly.js";
-import type {ScatterData, TargetsData, HistData} from "@/data/plot_types";
+import type {ScatterData, TargetsData, HistData, DensityData} from "@/data/plot_types";
 
 export const HYPATIA_PURPLE = "#4E11B7";
 export const PLOT_WIDTH = 750;
@@ -150,4 +150,51 @@ export function histFigure(data: HistData, normalize: boolean, inverse: boolean,
         barmode: "overlay", bargap: 0, annotations: [citation()],
     };
     return {data: traces, layout};
+}
+
+// the density map: a heat map of the points, with histograms along the axes when wanted. The API decided
+// the points, the bins (start, end and size of each axis), the colours and the axes (api.web2py.density).
+// With the histograms, the figure is the 2 by 2 grid plotly's make_subplots made: the heat map in the
+// large bottom-left cell, the x histogram above it on the same x axis, the y histogram beside it on the
+// same y axis (column widths 0.8 and 0.2, row heights 0.2 and 0.8, 0.008 between)
+export function densityFigure(data: DensityData, gridlines: boolean): Figure | null {
+    const x = data.outputs.xaxis ?? [], y = data.outputs.yaxis ?? [];
+    if (!x.length || !data.bins) return null;
+    const axes = data.axes;
+    const xbins = {start: data.bins.xaxis.start, end: data.bins.xaxis.end, size: data.bins.xaxis.size};
+    const ybins = {start: data.bins.yaxis.start, end: data.bins.yaxis.end, size: data.bins.yaxis.size};
+    const histogramMarker = {color: data.histogram_color, line: {color: "black", width: 1}};
+    const xType = axes.xaxis.log ? "log" : "linear", yType = axes.yaxis.log ? "log" : "linear";
+    const xAutorange = axes.xaxis.inverse ? "reversed" : true, yAutorange = axes.yaxis.inverse ? "reversed" : true;
+    const heatmap = {
+        type: "histogram2d", x, y, xbins, ybins, name: "Density", colorscale: data.color_scale,
+        colorbar: {title: {text: "Num of<br>Stars/Bin"}}, showscale: true,
+    } as unknown as Data;
+    const layout: Partial<Layout> = {
+        width: PLOT_WIDTH, height: 650, plot_bgcolor: "#E5ECF6", paper_bgcolor: "white", bargap: 0.05, showlegend: false,
+    };
+    if (data.show_xyhist) {
+        const gap = 0.008, large = 0.8 * (1 - gap), small = large + gap;
+        const top = {type: "histogram", x, xbins, marker: histogramMarker, showlegend: false, name: axes.xaxis.label || "X",
+                     hovertemplate: "%{y}", xaxis: "x", yaxis: "y2"} as unknown as Data;
+        const side = {type: "histogram", y, ybins, marker: histogramMarker, showlegend: false, name: axes.yaxis.label || "Y",
+                      hovertemplate: "%{x}", xaxis: "x2", yaxis: "y"} as unknown as Data;
+        Object.assign(heatmap, {xaxis: "x", yaxis: "y"});
+        const edge = {showgrid: true, gridcolor: "white", gridwidth: 1, showline: true, linewidth: 1, linecolor: "black",
+                      mirror: true, ticks: "outside" as const, ticklen: 6, tickwidth: 1};
+        Object.assign(layout, {
+            xaxis: {domain: [0, large], title: {text: axes.xaxis.label}, type: xType, autorange: xAutorange, ...edge},
+            yaxis: {domain: [0, large], title: {text: axes.yaxis.label}, type: yType, autorange: yAutorange, ...edge},
+            yaxis2: {domain: [small, 1], autorange: true, showgrid: gridlines},
+            xaxis2: {domain: [small, 1], autorange: true, showgrid: gridlines},
+        });
+        return {data: [top, side, heatmap], layout};
+    }
+    const edge = {showgrid: false, gridwidth: 1, showline: true, linewidth: 2, linecolor: "black", mirror: true,
+                  ticks: "outside" as const, ticklen: 6, tickwidth: 1};
+    Object.assign(layout, {
+        xaxis: {title: {text: axes.xaxis.label}, type: xType, autorange: xAutorange, ...edge},
+        yaxis: {title: {text: axes.yaxis.label}, type: yType, autorange: yAutorange, ...edge},
+    });
+    return {data: [heatmap], layout};
 }
