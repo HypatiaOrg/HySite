@@ -29,8 +29,9 @@ export default function HelpPage() {
 
             <H2 id="filtering">Filtering</H2>
             <P>
-                The plot and table can be filtered using the 3 filter boxes on the top right that provide minimum and
-                maximum values (either can be left blank in place of infinity). Changes are enacted by pausing for a
+                The plot and table can be filtered using the filter rows on the right, each with a minimum and a
+                maximum value (either can be left blank in place of infinity); up to ten filters can be set, and
+                a new row appears as each one is filled. Changes are enacted by pausing for a
                 few seconds (it is no longer necessary to click the “Submit” button at the bottom of the plot).
                 Options for the filter criteria can be accessed by clicking on the dropdown menu that says “none” as
                 default. From the dropdown menu, if an element is chosen from the Periodic Table, the filter changes
