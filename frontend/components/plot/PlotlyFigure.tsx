@@ -1,4 +1,4 @@
-'use client';
+"use client";
 // A Plotly figure in a div. plotly.js is large, so it is loaded in the browser the first time a figure
 // is drawn, never on the server or on the text pages.
 import {useEffect, useRef, useState} from "react";
@@ -8,19 +8,21 @@ type PlotlyModule = typeof import("plotly.js-dist-min");
 let plotlyPromise: Promise<PlotlyModule> | null = null;
 export function loadPlotly(): Promise<PlotlyModule> {
     if (!plotlyPromise) {
-        plotlyPromise = import("plotly.js-dist-min").then((module) => (module.default ?? module) as unknown as PlotlyModule);
+        plotlyPromise = import("plotly.js-dist-min").then(
+            (module) => (module.default ?? module) as unknown as PlotlyModule,
+        );
     }
     return plotlyPromise;
 }
 
 export type FigureProps = {
-    data: Array<Data>,
-    layout: Partial<Layout>,
-    config?: Partial<Config>,
+    data: Array<Data>;
+    layout: Partial<Layout>;
+    config?: Partial<Config>;
     // a box or lasso selection
-    onSelected?: (event: PlotSelectionEvent | undefined) => void,
+    onSelected?: (event: PlotSelectionEvent | undefined) => void;
     // the drawn plot, for the hover labels
-    onDrawn?: (plot: PlotlyHTMLElement | null) => void,
+    onDrawn?: (plot: PlotlyHTMLElement | null) => void;
 };
 
 export default function PlotlyFigure({data, layout, config, onSelected, onDrawn}: FigureProps) {
@@ -36,8 +38,12 @@ export default function PlotlyFigure({data, layout, config, onSelected, onDrawn}
 
     useEffect(() => {
         let active = true;
-        loadPlotly().then((module) => { if (active) setPlotly(module); });
-        return () => { active = false; };
+        loadPlotly().then((module) => {
+            if (active) setPlotly(module);
+        });
+        return () => {
+            active = false;
+        };
     }, []);
 
     useEffect(() => {
@@ -58,8 +64,10 @@ export default function PlotlyFigure({data, layout, config, onSelected, onDrawn}
 
     useEffect(() => {
         const div = divRef.current;
-        return () => { if (div && plotly) plotly.purge(div); };
+        return () => {
+            if (div && plotly) plotly.purge(div);
+        };
     }, [plotly]);
 
-    return <div ref={divRef} className="mx-auto"/>;
+    return <div ref={divRef} className="mx-auto" />;
 }

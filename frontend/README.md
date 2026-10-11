@@ -7,18 +7,19 @@ before it takes over. For testing, the port picks the frontend: this one on ngin
 (http://localhost/), web2py on 8082 (http://localhost:8082/); on this host every old
 `/hypatia/default/` address redirects to the page here.
 
-A new page: write it under `app/(USERSETTINGS)/<name>/page.tsx`, link it from `data/api_targets.tsx`
-and the menu (`components/header.tsx`), and add it to `scripts/smoke_test.py` and `scripts/compare_pages.py`.
+A new page: write it under `app/<name>/page.tsx`, link it from `lib/urls.ts`
+and the menu (`components/Header.tsx`), and add it to `scripts/smoke_test.py` and `scripts/compare_pages.py`.
 
 ## The plot pages
 
 `/scatter`, `/targets` and `/hist` (`components/plot/PlotPage.tsx`) hold their settings in React state
-and in the page URL, under the API's own names (`data/settings.ts`), so a plot is a link to share and
+and in the page URL, under the API's own names (`lib/settings.ts`), so a plot is a link to share and
 the menu carries the settings from one plot page to the next. The API's `settings/` endpoint is the
 model: defaults, toggles and choices. A change posts the settings as JSON to `/data/<kind>`
 (`app/data/[kind]/route.ts`), which asks the API inside the network, where a long star list fits in
 a URL; the figure (`components/plot/figures.ts`, from `models/plot_plotly.py`) is drawn by plotly.js,
-loaded only on these pages. The form is `components/settings/`, the table `components/table/`.
+loaded only on these pages. The form is `components/settings/`, the table `components/table/`. Non-component code is in `lib/`
+(the settings model, the API types and fetchers, the page paths), page content in `content/`.
 
 ## Running it
 
@@ -46,8 +47,8 @@ logs the fetches.
 
 `/style` (not in the menu) shows every piece of the site on one page: the six named colors with a picker
 to try other values against everything at once, the headings, paragraphs, links, buttons and the table.
-It answers only while `DEBUG` is true. To remove it for good, delete `app/(USERSETTINGS)/style/` and
-`components/palette.tsx`.
+It answers only while `DEBUG` is true. To remove it for good, delete `app/style/` and
+`components/Palette.tsx` and `components/StyleSamples.tsx`.
 
 ## Versions
 
@@ -58,6 +59,8 @@ tests the site and deploys it, so it matches `requirements.lock` for the Python 
 a lock file, `npm install` and the Docker build resolve the newest allowed versions.
 
 ```bash
-npm run lint
-npm run typecheck
+npm run lint         # ESLint: the Next.js and React rules
+npm run typecheck    # TypeScript
+npm test             # Vitest: the settings model and the figures (also run by the Docker build)
+npm run format       # Prettier (format:check only checks)
 ```

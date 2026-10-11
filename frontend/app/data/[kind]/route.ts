@@ -2,7 +2,7 @@
 // the API inside the network (API_BASE_SERVER), where a long query is allowed. The public nginx only lets
 // GET through to the API, and a star list can make the settings longer than a URL, so the browser POSTs.
 import {NextRequest} from "next/server";
-import {apiBaseURL} from "@/data/api_targets";
+import {apiBaseURL} from "@/lib/config";
 
 // the API's frontend endpoints a page may ask for
 const PLOT_KINDS = new Set(["scatter", "targets", "hist", "density"]);

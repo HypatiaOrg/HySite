@@ -1,52 +1,58 @@
-'use client';
+"use client";
 // The hover labels of the points plots: the stars within a few pixels of the cursor, stacked in columns
 // that fill the window's height, as Bokeh's hover tool stacked them; the nearest 25, headed by
 // "Showing 25 of N Stars" when there are more. Plotly's own hover shows one point per trace, so the
 // figure has hovermode off and this searches the traces' arrays instead, once per animation frame.
 import React, {useEffect, useRef, useState} from "react";
 import type {PlotlyHTMLElement} from "plotly.js";
+import {plotArea, traces, traceVisible} from "@/components/plot/plotlyInternals";
 
 const MAX_LABELS = 25;
-const RADIUS = 4;  // pixels: a marker's radius (size 8)
+const RADIUS = 4; // pixels: a marker's radius (size 8)
 
-type Found = {name: string, text: string};
-type Shown = {items: Array<Found>, total: number, x: number, y: number};
+type Found = {name: string; text: string};
+type Shown = {items: Array<Found>; total: number; x: number; y: number};
 
-// Plotly's drawn axes, with their data-to-pixel functions
-type FullLayout = {
-    xaxis?: {d2p: (value: number) => number}, yaxis?: {d2p: (value: number) => number},
-    _size?: {l: number, t: number, w: number, h: number},
-};
-type Trace = {x: ArrayLike<number>, y: ArrayLike<number>, customdata?: ArrayLike<number>, text?: Array<string>};
-
-export default function HoverLabels({plot, labels}: {plot: PlotlyHTMLElement | null, labels: Record<string, string>}) {
+export default function HoverLabels({plot, labels}: {plot: PlotlyHTMLElement | null; labels: Record<string, string>}) {
     const [shown, setShown] = useState<Shown | null>(null);
     const boxRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!plot) return;
-        const element = plot as unknown as HTMLElement & {_fullLayout?: FullLayout, _fullData?: Array<{visible: boolean | string}>, data: Array<Trace>};
+        const element = plot as HTMLElement;
         let pending: MouseEvent | null = null;
         const hide = () => setShown(null);
-        const show = (event: {clientX: number, clientY: number}) => {
-            const layout = element._fullLayout;
-            if (!layout?.xaxis?.d2p || !layout.yaxis?.d2p || !layout._size) { hide(); return; }
-            const box = element.getBoundingClientRect();
-            const px = event.clientX - box.left - layout._size.l, py = event.clientY - box.top - layout._size.t;
-            if (px < 0 || py < 0 || px > layout._size.w || py > layout._size.h) { hide(); return; }
+        const show = (event: {clientX: number; clientY: number}) => {
+            const area = plotArea(plot);
+            if (!area) {
+                hide();
+                return;
+            }
+            const px = event.clientX - area.left,
+                py = event.clientY - area.top;
+            if (px < 0 || py < 0 || px > area.width || py > area.height) {
+                hide();
+                return;
+            }
+            const data = traces(plot);
             const found: Array<[number, number, number]> = [];
-            for (let c = 0; c < element.data.length; c++) {
-                if (element._fullData?.[c] && element._fullData[c].visible !== true) continue;  // hidden from the legend
-                const trace = element.data[c];
+            for (let c = 0; c < data.length; c++) {
+                if (!traceVisible(plot, c)) continue; // hidden from the legend
+                const trace = data[c];
                 for (let i = 0; i < trace.x.length; i++) {
-                    const dx = layout.xaxis.d2p(trace.x[i]) - px, dy = layout.yaxis.d2p(trace.y[i]) - py, d = dx * dx + dy * dy;
+                    const dx = area.xaxis.d2p(trace.x[i]) - px,
+                        dy = area.yaxis.d2p(trace.y[i]) - py,
+                        d = dx * dx + dy * dy;
                     if (d <= RADIUS * RADIUS) found.push([d, c, i]);
                 }
             }
-            if (!found.length) { hide(); return; }
+            if (!found.length) {
+                hide();
+                return;
+            }
             found.sort((a, b) => a[0] - b[0]);
             const items = found.slice(0, MAX_LABELS).map(([, c, i]) => {
-                const trace = element.data[c];
+                const trace = data[c];
                 let text = `${labels.x} = ${Number(trace.x[i]).toFixed(2)}, ${labels.y} = ${Number(trace.y[i]).toFixed(2)}`;
                 if (trace.customdata && labels.z) text += `, ${labels.z} = ${Number(trace.customdata[i]).toFixed(2)}`;
                 return {name: trace.text?.[i] ?? "", text};
@@ -55,7 +61,12 @@ export default function HoverLabels({plot, labels}: {plot: PlotlyHTMLElement | n
         };
         const onMove = (event: MouseEvent) => {
             pending = event;
-            window.requestAnimationFrame(() => { if (pending) { show(pending); pending = null; } });
+            window.requestAnimationFrame(() => {
+                if (pending) {
+                    show(pending);
+                    pending = null;
+                }
+            });
         };
         // a tap on a touch screen shows the labels too, until the next tap (Plotly takes the touch events
         // for its own dragging, so the tap is read as the touch ends, not as a click)
@@ -88,14 +99,26 @@ export default function HoverLabels({plot, labels}: {plot: PlotlyHTMLElement | n
     const itemHeight = 34;
     const perColumn = Math.max(1, Math.floor((window.innerHeight - 24) / itemHeight));
     const columns: Array<Array<Found>> = [];
-    for (let start = 0; start < shown.items.length; start += perColumn) columns.push(shown.items.slice(start, start + perColumn));
+    for (let start = 0; start < shown.items.length; start += perColumn)
+        columns.push(shown.items.slice(start, start + perColumn));
     return (
-        <div ref={boxRef} className="fixed z-50 pointer-events-none bg-white/95 border border-hygrey rounded px-1.5 py-0.5 text-xs text-left whitespace-nowrap leading-tight text-[#222]">
-            {shown.total > MAX_LABELS && <div className="py-0.5 text-hygrey">Showing {MAX_LABELS} of {shown.total} Stars</div>}
+        <div
+            ref={boxRef}
+            className="fixed z-50 pointer-events-none bg-white/95 border border-hygrey rounded px-1.5 py-0.5 text-xs text-left whitespace-nowrap leading-tight text-[#222]"
+        >
+            {shown.total > MAX_LABELS && (
+                <div className="py-0.5 text-hygrey">
+                    Showing {MAX_LABELS} of {shown.total} Stars
+                </div>
+            )}
             {columns.map((column, index) => (
                 <div key={index} className="inline-block align-top px-1.5">
                     {column.map((item, i) => (
-                        <div key={i} className="py-0.5 border-t border-[#ddd]"><b>{item.name}</b><br/>{item.text}</div>
+                        <div key={i} className="py-0.5 border-t border-[#ddd]">
+                            <b>{item.name}</b>
+                            <br />
+                            {item.text}
+                        </div>
                     ))}
                 </div>
             ))}
