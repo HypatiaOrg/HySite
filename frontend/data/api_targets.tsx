@@ -30,11 +30,14 @@ export function homeAPI() {
 // the homepage plot, drawn from the database when the API container starts
 export const abundances_plot_url = "/hypatia/api/static/plots/abundances.png";
 
+// The pages. Those still served by web2py are under /hypatia/default; a page moves to its own
+// path when it is ported here, and nginx redirects the old path (nginx/default.conf).
 const url_prefix = "/hypatia/default";
 export const scatter_url = url_prefix + "/launch";
 export const targets_url = url_prefix + "/targets";
 export const hist_url = url_prefix + "/hist";
-export const help_url =  url_prefix + "/help";
+export const help_url = "/help";
 export const about_url =  url_prefix + "/about";
+export const nea_url =  url_prefix + "/nea";
 export const credits_url =  url_prefix + "/credits";
 export const about_api_url = "/api";

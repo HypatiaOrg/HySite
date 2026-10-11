@@ -4,6 +4,10 @@ The website's pages, being moved here from `frontend-web2py` one page at a time.
 (`nginx/default.conf`) sends `/` here and the pages still under `/hypatia/default/` to web2py.
 The pages get their data from the API (`backend`) at `/hypatia/api/frontend/`.
 
+Porting a page: write it under `app/(USERSETTINGS)/<name>/page.tsx`, point its link in
+`data/api_targets.tsx` at the new path, redirect the old `/hypatia/default/<name>` address in
+`nginx/default.conf`, and add the page to `scripts/smoke_test.py` and `scripts/compare_pages.py`.
+
 ## Running it
 
 The whole site, with this frontend built in Docker:

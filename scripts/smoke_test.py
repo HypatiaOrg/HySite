@@ -29,6 +29,10 @@ CHECKS = [
     ("/", "Hypatia Catalog"),
     ("/", "/_next/static/"),
     ("/", "planet hosts"),
+    # the Help page (ported 2026-10-11), and its old web2py address, which nginx redirects to it
+    ("/help", "GETTING STARTED"),
+    ("/help", "/_next/static/"),
+    ("/hypatia/default/help", "/_next/static/"),
     # web2py frontend pages
     # each .load fragment needs the session settings its parent page makes, so the parent comes first
     ("/hypatia/default/launch", "Hypatia Catalog"),
@@ -120,7 +124,11 @@ def fetch(url: str, data: dict | None = None) -> tuple[int, bytes]:
 
 def check(base_url: str, path: str, expect: str, data: dict | None = None) -> str | None:
     """None if the check passes, otherwise what went wrong."""
-    status, body = fetch(base_url + path, data)
+    try:
+        status, body = fetch(base_url + path, data)
+    except (urllib.error.URLError, ConnectionError, TimeoutError) as error:
+        # e.g. a redirect to an address that is not this site
+        return f"no response: {error}"
     if status != 200:
         return f"HTTP {status}: {body[:200]!r}"
     if expect in ("json", "found"):
