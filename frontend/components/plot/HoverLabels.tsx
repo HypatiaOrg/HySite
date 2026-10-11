@@ -28,7 +28,7 @@ export default function HoverLabels({plot, labels}: {plot: PlotlyHTMLElement | n
         const element = plot as unknown as HTMLElement & {_fullLayout?: FullLayout, _fullData?: Array<{visible: boolean | string}>, data: Array<Trace>};
         let pending: MouseEvent | null = null;
         const hide = () => setShown(null);
-        const show = (event: MouseEvent) => {
+        const show = (event: {clientX: number, clientY: number}) => {
             const layout = element._fullLayout;
             if (!layout?.xaxis?.d2p || !layout.yaxis?.d2p || !layout._size) { hide(); return; }
             const box = element.getBoundingClientRect();
@@ -57,11 +57,19 @@ export default function HoverLabels({plot, labels}: {plot: PlotlyHTMLElement | n
             pending = event;
             window.requestAnimationFrame(() => { if (pending) { show(pending); pending = null; } });
         };
+        // a tap on a touch screen shows the labels too, until the next tap (Plotly takes the touch events
+        // for its own dragging, so the tap is read as the touch ends, not as a click)
+        const onTouch = (event: TouchEvent) => {
+            const touch = event.changedTouches[0];
+            if (touch) show({clientX: touch.clientX, clientY: touch.clientY});
+        };
         element.addEventListener("mousemove", onMove);
         element.addEventListener("mouseleave", hide);
+        element.addEventListener("touchend", onTouch);
         return () => {
             element.removeEventListener("mousemove", onMove);
             element.removeEventListener("mouseleave", hide);
+            element.removeEventListener("touchend", onTouch);
         };
     }, [plot, labels]);
 

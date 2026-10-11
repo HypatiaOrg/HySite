@@ -2,6 +2,7 @@
 // A plot page: the settings form, the figure and the data table. The settings are the page's state and
 // its URL (a shareable link); every change asks the API for the plot and the table again.
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import {useElementWidth} from "@/components/plot/use_element_width";
 import type {PlotSelectionEvent, PlotlyHTMLElement} from "plotly.js";
 import type {Summary} from "@/data/summary";
 import type {Settings, SettingsSchema} from "@/data/settings";
@@ -90,18 +91,32 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
 
     const forceRefresh = () => setSettings((current) => ({...current}));
 
+    // the figure at its 750 by 625 size where the screen allows, scaled down to the screen's width otherwise
+    const [plotBox, plotBoxWidth] = useElementWidth<HTMLDivElement>();
+    const fullHeight = kind === "density" ? 650 : PLOT_HEIGHT;
+    const scale = plotBoxWidth ? Math.min(1, plotBoxWidth / PLOT_WIDTH) : 1;
+    const plotWidth = Math.round(PLOT_WIDTH * scale), plotHeight = Math.round(fullHeight * scale);
+    // no mode bar on a small figure: it would sit on the title, and its tools are for a mouse
+    const plotConfig = useMemo(() => ({displayModeBar: scale < 0.8 ? false : "hover" as const}), [scale]);
+    const sizedLayout = useMemo(() => figure && ({
+        ...figure.layout, width: plotWidth, height: plotHeight,
+        // less room for the axis titles on a small screen
+        ...(scale < 0.8 ? {margin: {l: 55, r: 20, t: 40, b: 50}} : {}),
+    }), [figure, plotWidth, plotHeight, scale]);
+
     return (
         <div className="px-4 pb-8">
             <div className="flex flex-wrap gap-6 justify-center">
-                <div style={{width: PLOT_WIDTH, maxWidth: "100%"}}>
+                <div ref={plotBox} style={{width: PLOT_WIDTH, maxWidth: "100%"}}>
                 <div className={"relative flex items-center justify-center bg-hygrey/20 transition-opacity " + (loading ? "opacity-50" : "")}
-                     style={{height: kind === "density" ? 650 : PLOT_HEIGHT}}>
+                     style={{height: plotHeight}}>
                     {error && <div className="text-hyred text-xl font-semibold p-4">The plot could not be loaded: {error}</div>}
                     {!error && data && !figure && <div className="text-xl font-semibold text-hygrey">No data points to display</div>}
                     {!error && !data && <div className="text-xl font-semibold text-hygrey">Loading...</div>}
-                    {figure && (
+                    {figure && sizedLayout && (
                         <div className="bg-white">
-                            <PlotlyFigure data={figure.data} layout={figure.layout} onSelected={onSelected} onDrawn={setPlot}/>
+                            <PlotlyFigure data={figure.data} layout={sizedLayout} onSelected={onSelected} onDrawn={setPlot}
+                                          config={plotConfig}/>
                             {figure.hoverLabels && <HoverLabels plot={plot} labels={figure.hoverLabels}/>}
                         </div>
                     )}

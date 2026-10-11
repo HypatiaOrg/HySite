@@ -14,19 +14,26 @@ export function FilterRow({index, summary, settings, onChange, onRemove}:
     const prefix = `filter${index}_`;
     // one line per filter: the parameter (its name shortened rather than wrapping), the range, inverse, remove
     return (
-        <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_5.5rem_auto_1rem] gap-2 items-center mb-1">
-            <ParameterPicker summary={summary} name={prefix + "1"} value={settings[prefix + "1"]} denominator={settings[prefix + "2"]} allowNone compact
-                             onChange={(value, denominator) => onChange({[prefix + "1"]: value, ...(denominator ? {[prefix + "2"]: denominator} : {})})}/>
-            <TextField name={prefix + "3"} value={settings[prefix + "3"]} placeholder="minimum" className="w-full"
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_1rem] sm:grid-cols-[minmax(0,1fr)_5.5rem_5.5rem_auto_1rem] gap-2 items-center mb-2 sm:mb-1">
+            {/* on a small screen (two lines): the parameter, inverse and remove, then the range beneath */}
+            <div className="col-span-2 sm:col-span-1 min-w-0 order-1">
+                <ParameterPicker summary={summary} name={prefix + "1"} value={settings[prefix + "1"]} denominator={settings[prefix + "2"]} allowNone compact
+                                 onChange={(value, denominator) => onChange({[prefix + "1"]: value, ...(denominator ? {[prefix + "2"]: denominator} : {})})}/>
+            </div>
+            <TextField name={prefix + "3"} value={settings[prefix + "3"]} placeholder="minimum" className="w-full order-4 sm:order-2"
                        onCommit={(value) => onChange({[prefix + "3"]: value})}/>
-            <TextField name={prefix + "4"} value={settings[prefix + "4"]} placeholder="maximum" className="w-full"
+            <TextField name={prefix + "4"} value={settings[prefix + "4"]} placeholder="maximum" className="w-full order-5 sm:order-3"
                        onCommit={(value) => onChange({[prefix + "4"]: value})}/>
-            <Toggle name={prefix + "inv"} label="inverse" checked={isOn(settings, prefix + "inv")}
-                    onChange={(on) => onChange({[prefix + "inv"]: String(on)})}/>
-            {onRemove ? (
-                <button type="button" onClick={onRemove} title="Remove this filter" aria-label="Remove this filter"
-                        className="text-hygrey hover:text-hyred text-lg leading-none">×</button>
-            ) : <span/>}
+            <div className="order-2 sm:order-4">
+                <Toggle name={prefix + "inv"} label="inverse" checked={isOn(settings, prefix + "inv")}
+                        onChange={(on) => onChange({[prefix + "inv"]: String(on)})}/>
+            </div>
+            <div className="order-3 sm:order-5">
+                {onRemove && (
+                    <button type="button" onClick={onRemove} title="Remove this filter" aria-label="Remove this filter"
+                            className="text-hygrey hover:text-hyred text-lg leading-none">×</button>
+                )}
+            </div>
         </div>
     );
 }
