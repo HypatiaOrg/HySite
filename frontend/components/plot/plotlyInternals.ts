@@ -3,22 +3,30 @@
 import type {PlotlyHTMLElement} from "plotly.js";
 
 type DrawnAxis = {d2p: (value: number) => number};
-type Trace = {x: ArrayLike<number>, y: ArrayLike<number>, customdata?: ArrayLike<number>, text?: Array<string>};
+type Trace = {x: ArrayLike<number>; y: ArrayLike<number>; customdata?: ArrayLike<number>; text?: Array<string>};
 type Drawn = {
-    _fullLayout?: {xaxis?: DrawnAxis, yaxis?: DrawnAxis, _size?: {l: number, t: number, w: number, h: number}},
-    _fullData?: Array<{visible: boolean | string}>,
-    data: Array<Trace>,
+    _fullLayout?: {xaxis?: DrawnAxis; yaxis?: DrawnAxis; _size?: {l: number; t: number; w: number; h: number}};
+    _fullData?: Array<{visible: boolean | string}>;
+    data: Array<Trace>;
 };
 
 const drawn = (plot: PlotlyHTMLElement) => plot as unknown as HTMLElement & Drawn;
 
 // the plot area on the page, with the axes that turn a value into a pixel; null until the figure is drawn
-export function plotArea(plot: PlotlyHTMLElement): {left: number, top: number, width: number, height: number, xaxis: DrawnAxis, yaxis: DrawnAxis} | null {
+export function plotArea(
+    plot: PlotlyHTMLElement,
+): {left: number; top: number; width: number; height: number; xaxis: DrawnAxis; yaxis: DrawnAxis} | null {
     const layout = drawn(plot)._fullLayout;
     if (!layout?.xaxis?.d2p || !layout.yaxis?.d2p || !layout._size) return null;
     const box = plot.getBoundingClientRect();
-    return {left: box.left + layout._size.l, top: box.top + layout._size.t, width: layout._size.w, height: layout._size.h,
-            xaxis: layout.xaxis, yaxis: layout.yaxis};
+    return {
+        left: box.left + layout._size.l,
+        top: box.top + layout._size.t,
+        width: layout._size.w,
+        height: layout._size.h,
+        xaxis: layout.xaxis,
+        yaxis: layout.yaxis,
+    };
 }
 
 // the traces' arrays, as given to Plotly

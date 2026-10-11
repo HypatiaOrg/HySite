@@ -17,5 +17,12 @@ export async function renderPlotPage(kind: PlotKind, searchParams: SearchParams)
     for (const [name, value] of Object.entries(params)) {
         if (typeof value === "string") query.set(name, value);
     }
-    return <PlotPage kind={kind} schema={schema} summary={summary} initialSettings={settingsFromSearchParams(schema, query)}/>;
+    return (
+        <PlotPage
+            kind={kind}
+            schema={schema}
+            summary={summary}
+            initialSettings={settingsFromSearchParams(schema, query)}
+        />
+    );
 }

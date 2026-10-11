@@ -3,15 +3,15 @@
 /* the site's named colors. static: every color is written to the page, used or not, so the style page
    can show them all */
 @theme static {
-    --color-hypurple: #4E11B7;
-    --color-hygreen: #4B7F52;
-    --color-hyred: #C42348;
-    --color-hyblue: #A6E1FA;
-    --color-hyyellow: #FCBA04;
-    --color-hygrey: #8A8A8A;
+  --color-hypurple: #4e11b7;
+  --color-hygreen: #4b7f52;
+  --color-hyred: #c42348;
+  --color-hyblue: #a6e1fa;
+  --color-hyyellow: #fcba04;
+  --color-hygrey: #8a8a8a;
 }
 
 body {
-    background: white;
-    color: #171717;
+  background: white;
+  color: #171717;
 }

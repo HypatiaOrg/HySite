@@ -1,4 +1,4 @@
-'use client';
+"use client";
 // The width of an element, kept up to date as the window changes
 import {useCallback, useEffect, useState} from "react";
 

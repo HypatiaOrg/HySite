@@ -1,4 +1,4 @@
-'use client';
+"use client";
 // The data table under the plots: the API builds it (columns, display strings, hover text); this shows it,
 // sorts by a click on a header, loads every row on request, and downloads it.
 import React, {useMemo, useState} from "react";
@@ -14,15 +14,25 @@ import CellValues from "@/components/table/CellValues";
 const DEFAULT_COLUMNS = "Fe,C,O,Mg,Si,S,Ca,Ti";
 // the column options beyond the elements, as the API's table tokens
 const OPTIONS: Array<[string, string]> = [
-    ["stellar", "Stellar Properties"], ["planet", "Planet Properties Mode"], ["names", "More Names"],
-    ["names_all", "All Names"], ["spread", "Error"], ["ref", "Reference"],
+    ["stellar", "Stellar Properties"],
+    ["planet", "Planet Properties Mode"],
+    ["names", "More Names"],
+    ["names_all", "All Names"],
+    ["spread", "Error"],
+    ["ref", "Reference"],
 ];
 const NAME_LABELS: Record<string, string> = {
-    star_id: "Name", hd: "HD", "2mass": "2MASS", wds: "WDS", aliases: "All Names", nea_name: "NEA Name", planet_letter: "Planet Letter",
+    star_id: "Name",
+    hd: "HD",
+    "2mass": "2MASS",
+    wds: "WDS",
+    aliases: "All Names",
+    nea_name: "NEA Name",
+    planet_letter: "Planet Letter",
 };
 const SMALL_COLUMNS = /(_err|_ref)$|^aliases$/;
 
-function columnLabel(summary: Summary, column: string): {text: string, hover: string, units: string} {
+function columnLabel(summary: Summary, column: string): {text: string; hover: string; units: string} {
     const info = summary.units_and_fields[column];
     if (info) return {text: info.label, hover: info.hover, units: info.units ?? ""};
     if (NAME_LABELS[column]) return {text: NAME_LABELS[column], hover: NAME_LABELS[column], units: ""};
@@ -32,27 +42,42 @@ function columnLabel(summary: Summary, column: string): {text: string, hover: st
 }
 
 function simbadLink(name: string) {
-    return "http://simbad.u-strasbg.fr/simbad/sim-basic?Ident=" + name.replace(/\+/g, "%2B").replace("2MASS ", "2MASS J") + "&submit=SIMBAD+search";
+    return (
+        "http://simbad.u-strasbg.fr/simbad/sim-basic?Ident=" +
+        name.replace(/\+/g, "%2B").replace("2MASS ", "2MASS J") +
+        "&submit=SIMBAD+search"
+    );
 }
 
-type Props = {summary: Summary, settings: Settings, onChange: (changes: Record<string, string>) => void, showTargets: boolean};
+type Props = {
+    summary: Summary;
+    settings: Settings;
+    onChange: (changes: Record<string, string>) => void;
+    showTargets: boolean;
+};
 
 export default function DataTable({summary, settings, onChange, showTargets}: Props) {
-    const [sort, setSort] = useState<{column: string | null, reverse: boolean}>({column: null, reverse: false});
+    const [sort, setSort] = useState<{column: string | null; reverse: boolean}>({column: null, reverse: false});
     const [showRows, setShowRows] = useState(false);
     const columns = useMemo(() => new Set(listOf(settings, "tablecols")), [settings]);
 
     // the settings the API's table endpoint takes: the plot's, plus the table's own
-    const tableSettings = useMemo(() => ({
-        ...settings, show_targets: String(showTargets), showrows: String(showRows),
-        ...(sort.column ? {sort: sort.column, reverse: String(sort.reverse)} : {}),
-    }), [settings, showTargets, showRows, sort]);
+    const tableSettings = useMemo(
+        () => ({
+            ...settings,
+            show_targets: String(showTargets),
+            showrows: String(showRows),
+            ...(sort.column ? {sort: sort.column, reverse: String(sort.reverse)} : {}),
+        }),
+        [settings, showTargets, showRows, sort],
+    );
 
     const {data: table, error, loading} = useFetchedData<TableData>("table", tableSettings);
 
     const toggleColumn = (id: string) => {
         const next = new Set(columns);
-        if (next.has(id)) next.delete(id); else next.add(id);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
         onChange({tablecols: [...next].join(",")});
     };
     const sortBy = (column: string) => {
@@ -61,7 +86,8 @@ export default function DataTable({summary, settings, onChange, showTargets}: Pr
     };
     const download = async (format: "csv" | "tsv" | "psv") => {
         const response = await fetch("/data/table", {
-            method: "POST", headers: {"Content-Type": "application/json"},
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
             body: JSON.stringify({...tableSettings, format, download: "true"}),
         });
         const blob = await response.blob();
@@ -81,18 +107,37 @@ export default function DataTable({summary, settings, onChange, showTargets}: Pr
             </div>
             <div className="bg-hygrey/10 border-b-2 border-hypurple pb-4">
                 <div className="mx-auto w-fit max-w-full overflow-x-auto px-2">
-                    <PeriodicTable summary={summary} selected={columns} onPick={toggleColumn} onColor="on"/>
+                    <PeriodicTable summary={summary} selected={columns} onPick={toggleColumn} onColor="on" />
                     <div className="flex flex-wrap gap-1 mt-2">
                         {OPTIONS.map(([token, label]) => (
-                            <button type="button" key={token} onClick={() => toggleColumn(token)}
-                                    className={buttonClass(columns.has(token) ? "on" : "plain")}>{label}</button>
+                            <button
+                                type="button"
+                                key={token}
+                                onClick={() => toggleColumn(token)}
+                                className={buttonClass(columns.has(token) ? "on" : "plain")}
+                            >
+                                {label}
+                            </button>
                         ))}
                     </div>
                     <div className="flex flex-wrap items-center gap-3 mt-3">
-                        <button type="button" className={buttonStyle} onClick={() => onChange({tablecols: DEFAULT_COLUMNS})}>Reset</button>
+                        <button
+                            type="button"
+                            className={buttonStyle}
+                            onClick={() => onChange({tablecols: DEFAULT_COLUMNS})}
+                        >
+                            Reset
+                        </button>
                         <span className="text-hygrey">Download this table:</span>
                         {(["csv", "tsv", "psv"] as const).map((format) => (
-                            <button type="button" key={format} className="text-hyred hover:text-hypurple hover:underline uppercase" onClick={() => download(format)}>{format}</button>
+                            <button
+                                type="button"
+                                key={format}
+                                className="text-hyred hover:text-hypurple hover:underline uppercase"
+                                onClick={() => download(format)}
+                            >
+                                {format}
+                            </button>
                         ))}
                     </div>
                 </div>
@@ -103,62 +148,120 @@ export default function DataTable({summary, settings, onChange, showTargets}: Pr
                 {table && (
                     <table className="w-full border-collapse bg-white text-sm">
                         <thead className="sticky top-0 bg-white z-10">
-                        <tr>
-                            {table.columns.map((column) => {
-                                const sub = column.endsWith("_min_err") ? "-err" : column.endsWith("_max_err") ? "+err"
-                                    : column.endsWith("_err") ? "err" : column.endsWith("_ref") ? "reference" : null;
-                                const label = columnLabel(summary, column);
-                                return (
-                                    <th key={column} scope="col" className="text-center border-b-2 border-hypurple px-2 py-1 align-bottom font-normal"
-                                        aria-sort={sort.column === column ? (sort.reverse ? "descending" : "ascending") : undefined}>
-                                        {sub ? <small className="text-hygrey">{sub}</small> : (
-                                            <>
-                                                <button type="button" title={label.hover} onClick={() => sortBy(column)}
-                                                        aria-label={`Sort by ${label.text}`}
-                                                        className={"font-semibold hover:underline " + (sort.column === column ? "text-hyred" : "text-hypurple")}>
-                                                    {label.text}{sort.column === column ? (sort.reverse ? " ▾" : " ▴") : ""}
-                                                </button>
-                                                <br/><small className="text-hygrey uppercase">{label.units || " "}</small>
-                                            </>
-                                        )}
-                                    </th>
-                                );
-                            })}
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {table.rows.map((row, r) => (
-                            <tr key={r} className="odd:bg-hyblue/10">
-                                {row.map((cell, c) => {
-                                    const column = table.columns[c];
-                                    const lines = Array.isArray(cell) ? cell : [cell];
-                                    const hover = table.hover[r]?.[c] ?? undefined;
+                            <tr>
+                                {table.columns.map((column) => {
+                                    const sub = column.endsWith("_min_err")
+                                        ? "-err"
+                                        : column.endsWith("_max_err")
+                                          ? "+err"
+                                          : column.endsWith("_err")
+                                            ? "err"
+                                            : column.endsWith("_ref")
+                                              ? "reference"
+                                              : null;
+                                    const label = columnLabel(summary, column);
                                     return (
-                                        <td key={c} className="px-2 py-0.5 whitespace-nowrap">
-                                            {lines.map((line, i) => (
-                                                <span key={i} className={"block " + (SMALL_COLUMNS.test(column) ? "text-xs text-hygrey" : "")}>
-                                                    {hover ? <CellValues value={line} values={hover}/> : line}
-                                                    {column === "star_id" && i === 0 && line && (
-                                                        <a href={simbadLink(line)} target="_blank" rel="noopener noreferrer" className="text-hyred ml-1"
-                                                           aria-label={`${line} on SIMBAD`} title="SIMBAD">↗</a>
-                                                    )}
-                                                </span>
-                                            ))}
-                                        </td>
+                                        <th
+                                            key={column}
+                                            scope="col"
+                                            className="text-center border-b-2 border-hypurple px-2 py-1 align-bottom font-normal"
+                                            aria-sort={
+                                                sort.column === column
+                                                    ? sort.reverse
+                                                        ? "descending"
+                                                        : "ascending"
+                                                    : undefined
+                                            }
+                                        >
+                                            {sub ? (
+                                                <small className="text-hygrey">{sub}</small>
+                                            ) : (
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        title={label.hover}
+                                                        onClick={() => sortBy(column)}
+                                                        aria-label={`Sort by ${label.text}`}
+                                                        className={
+                                                            "font-semibold hover:underline " +
+                                                            (sort.column === column ? "text-hyred" : "text-hypurple")
+                                                        }
+                                                    >
+                                                        {label.text}
+                                                        {sort.column === column ? (sort.reverse ? " ▾" : " ▴") : ""}
+                                                    </button>
+                                                    <br />
+                                                    <small className="text-hygrey uppercase">
+                                                        {label.units || " "}
+                                                    </small>
+                                                </>
+                                            )}
+                                        </th>
                                     );
                                 })}
                             </tr>
-                        ))}
+                        </thead>
+                        <tbody>
+                            {table.rows.map((row, r) => (
+                                <tr key={r} className="odd:bg-hyblue/10">
+                                    {row.map((cell, c) => {
+                                        const column = table.columns[c];
+                                        const lines = Array.isArray(cell) ? cell : [cell];
+                                        const hover = table.hover[r]?.[c] ?? undefined;
+                                        return (
+                                            <td key={c} className="px-2 py-0.5 whitespace-nowrap">
+                                                {lines.map((line, i) => (
+                                                    <span
+                                                        key={i}
+                                                        className={
+                                                            "block " +
+                                                            (SMALL_COLUMNS.test(column) ? "text-xs text-hygrey" : "")
+                                                        }
+                                                    >
+                                                        {hover ? <CellValues value={line} values={hover} /> : line}
+                                                        {column === "star_id" && i === 0 && line && (
+                                                            <a
+                                                                href={simbadLink(line)}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-hyred ml-1"
+                                                                aria-label={`${line} on SIMBAD`}
+                                                                title="SIMBAD"
+                                                            >
+                                                                ↗
+                                                            </a>
+                                                        )}
+                                                    </span>
+                                                ))}
+                                            </td>
+                                        );
+                                    })}
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 )}
             </div>
             {table?.moreRows && (
                 <div className="p-3 text-hygrey">
-                    Showing the first {table.rows.length} of {table.totalRows} rows.{' '}
-                    {table.canLoadAll
-                        ? <button type="button" className="text-hyred hover:underline" onClick={() => setShowRows(true)}>Load All</button>
-                        : <>This table is too large to show on the page; <button type="button" className="text-hyred hover:underline" onClick={() => download("csv")}>download it as CSV</button> to get all {table.totalRows} rows.</>}
+                    Showing the first {table.rows.length} of {table.totalRows} rows.{" "}
+                    {table.canLoadAll ? (
+                        <button type="button" className="text-hyred hover:underline" onClick={() => setShowRows(true)}>
+                            Load All
+                        </button>
+                    ) : (
+                        <>
+                            This table is too large to show on the page;{" "}
+                            <button
+                                type="button"
+                                className="text-hyred hover:underline"
+                                onClick={() => download("csv")}
+                            >
+                                download it as CSV
+                            </button>{" "}
+                            to get all {table.totalRows} rows.
+                        </>
+                    )}
                 </div>
             )}
         </section>

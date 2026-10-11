@@ -5,19 +5,19 @@
 export type FieldKind = "choice" | "number" | "toggle" | "list" | "text";
 
 export type SettingsField = {
-    kind: FieldKind,
-    about: string,
-    choices?: Array<string>,
-    keywords?: Array<string>,
-    default?: string | boolean | Array<string>,
+    kind: FieldKind;
+    about: string;
+    choices?: Array<string>;
+    keywords?: Array<string>;
+    default?: string | boolean | Array<string>;
 };
 
 export type SettingsSchema = {
-    defaults: Record<string, string | boolean | Array<string>>,
-    toggles: Array<string>,
-    session_keys: Array<string>,
-    fields: Record<string, SettingsField>,
-    max_filters?: number,
+    defaults: Record<string, string | boolean | Array<string>>;
+    toggles: Array<string>;
+    session_keys: Array<string>;
+    fields: Record<string, SettingsField>;
+    max_filters?: number;
 };
 
 // the most filters a request may carry (filter1 .. filterN), as the API's model says
@@ -39,7 +39,8 @@ export function activeFilters(settings: Settings, max: number): Array<number> {
 // the filters in use renumbered 1, 2, 3 ... with the others at their defaults, so a cleared filter leaves
 // no gap and the page URL stays short
 export function compactFilters(schema: SettingsSchema, settings: Settings): Settings {
-    const defaults = defaultSettings(schema), max = maxFilters(schema);
+    const defaults = defaultSettings(schema),
+        max = maxFilters(schema);
     const active = activeFilters(settings, max);
     const result = {...settings};
     for (let index = 1; index <= max; index++) {
@@ -74,14 +75,19 @@ export function defaultSettings(schema: SettingsSchema): Settings {
 
 export const isOn = (settings: Settings, name: string) => settings[name] === "true";
 export const listOf = (settings: Settings, name: string) =>
-    (settings[name] ?? "").split(listSeparator(name)).map((item) => item.trim()).filter((item) => item);
+    (settings[name] ?? "")
+        .split(listSeparator(name))
+        .map((item) => item.trim())
+        .filter((item) => item);
 
 // the settings a page URL carries: only what differs from the defaults, under the API's own names
 export function settingsFromSearchParams(schema: SettingsSchema, params: URLSearchParams): Settings {
     const settings = defaultSettings(schema);
     for (const [name, value] of params.entries()) {
         if (!(name in settings)) continue;
-        settings[name] = schema.toggles.includes(name) ? String(["true", "1", "on"].includes(value.toLowerCase())) : value;
+        settings[name] = schema.toggles.includes(name)
+            ? String(["true", "1", "on"].includes(value.toLowerCase()))
+            : value;
     }
     return settings;
 }

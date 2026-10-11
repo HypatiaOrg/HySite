@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "next": "^16",
@@ -23,6 +25,8 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "^16",
+    "eslint-config-prettier": "^10",
+    "prettier": "^3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

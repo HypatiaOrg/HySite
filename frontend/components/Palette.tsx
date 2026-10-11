@@ -1,4 +1,4 @@
-'use client';
+"use client";
 // The site's named colors, read from the CSS theme (app/globals.css) so this always shows the real
 // values. Each swatch has a color picker that changes the variable on this page alone, to try a color
 // against every piece of the site at once; the value to keep goes into globals.css.
@@ -20,7 +20,8 @@ function readTheme(): Record<string, string> {
     if (themeColors === null) {
         const style = getComputedStyle(document.documentElement);
         themeColors = Object.fromEntries(
-            siteColors.map(({name}) => [name, style.getPropertyValue(`--color-${name}`).trim()]));
+            siteColors.map(({name}) => [name, style.getPropertyValue(`--color-${name}`).trim()]),
+        );
     }
     return themeColors;
 }
@@ -49,7 +50,10 @@ export function Palette() {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                 {siteColors.map(({name, role}) => (
                     <label key={name} className="block cursor-pointer">
-                        <div className="h-24 rounded-lg border border-hyblue" style={{background: `var(--color-${name})`}}/>
+                        <div
+                            className="h-24 rounded-lg border border-hyblue"
+                            style={{background: `var(--color-${name})`}}
+                        />
                         <div className="pt-2 font-semibold text-hypurple">{name}</div>
                         <div className="text-hygrey text-sm">{role}</div>
                         <div className="text-hygrey font-mono text-sm pt-1">
@@ -67,10 +71,13 @@ export function Palette() {
                 ))}
             </div>
             <div className="pt-4 text-hygrey">
-                Pick a color to try it on everything on this page. Nothing is saved: a value to keep goes into{' '}
-                <code>frontend/app/globals.css</code>.{' '}
+                Pick a color to try it on everything on this page. Nothing is saved: a value to keep goes into{" "}
+                <code>frontend/app/globals.css</code>.{" "}
                 {changed && (
-                    <button onClick={reset} className="text-hyred hover:text-hypurple hover:bg-hyyellow hover:underline">
+                    <button
+                        onClick={reset}
+                        className="text-hyred hover:text-hypurple hover:bg-hyyellow hover:underline"
+                    >
                         Back to the theme&apos;s colors
                     </button>
                 )}
