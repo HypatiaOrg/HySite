@@ -3,13 +3,14 @@
 import React, {useMemo, useState} from "react";
 import type {Summary} from "@/data/summary";
 import type {Settings, SettingsSchema} from "@/data/settings";
-import {isOn, listOf} from "@/data/settings";
+import {isOn, listOf, activeFilters, maxFilters} from "@/data/settings";
 import ParameterPicker from "@/components/settings/ParameterPicker";
 import {Toggle, Select, TextField, Label, labelStyle, inputStyle, buttonStyle} from "@/components/settings/controls";
 
 export type Change = (changes: Record<string, string>) => void;
 
-export function FilterRow({index, summary, settings, onChange}: {index: 1 | 2 | 3, summary: Summary, settings: Settings, onChange: Change}) {
+export function FilterRow({index, summary, settings, onChange, onRemove}:
+                          {index: number, summary: Summary, settings: Settings, onChange: Change, onRemove?: () => void}) {
     const prefix = `filter${index}_`;
     return (
         <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -21,6 +22,28 @@ export function FilterRow({index, summary, settings, onChange}: {index: 1 | 2 | 
                        onCommit={(value) => onChange({[prefix + "4"]: value})}/>
             <Toggle name={prefix + "inv"} label="inverse" checked={isOn(settings, prefix + "inv")}
                     onChange={(on) => onChange({[prefix + "inv"]: String(on)})}/>
+            {onRemove && (
+                <button type="button" onClick={onRemove} title="Remove this filter" aria-label="Remove this filter"
+                        className="text-hygrey hover:text-hyred text-lg leading-none px-1">×</button>
+            )}
+        </div>
+    );
+}
+
+// the filters: those in use, each with a remove button, then one empty row until the API's limit
+export function FilterRows({schema, summary, settings, onChange}:
+                           {schema: SettingsSchema, summary: Summary, settings: Settings, onChange: Change}) {
+    const max = maxFilters(schema);
+    const active = activeFilters(settings, max);
+    const next = active.length < max ? active.length + 1 : null;
+    return (
+        <div className="mb-3">
+            <Label>{active.length ? `Filters (${active.length} of ${max}):` : "Filter:"}</Label>
+            {active.map((index) => (
+                <FilterRow key={index} index={index} summary={summary} settings={settings} onChange={onChange}
+                           onRemove={() => onChange({[`filter${index}_1`]: "none"})}/>
+            ))}
+            {next && <FilterRow key={`new-${next}`} index={next} summary={summary} settings={settings} onChange={onChange}/>}
         </div>
     );
 }

@@ -53,6 +53,14 @@ CHECKS = [
     ("/data/scatter", "json", {"xaxis1": "Fe", "yaxis1": "Si"}),
     # changed settings change the plot: the axis label the API returns
     ("/data/scatter", "[Ca/H]", {"xaxis1": "Ca", "xaxis2": "H", "yaxis1": "Ti", "yaxis2": "H", "xaxislog": "true"}),
+    # up to ten filters (three fixed rows until October 2026): the settings model lists the tenth, and a request
+    # with four of them is answered
+    ("/hypatia/api/frontend/settings/", "filter10_1"),
+    ("/data/scatter", "json", {"xaxis1": "Fe", "yaxis1": "Si", "filter1_1": "teff", "filter1_3": "5000", "filter1_4": "6000",
+                               "filter2_1": "dist", "filter2_4": "100", "filter3_1": "Fe", "filter3_3": "-1",
+                               "filter4_1": "logg", "filter4_3": "4"}),
+    ("/scatter?filter1_1=teff&filter1_3=5000&filter2_1=dist&filter2_4=100&filter3_1=Fe&filter3_3=-1&filter4_1=logg&filter4_3=4",
+     "/_next/static/"),
     ("/data/targets", "json", {"xaxis1": "Fe", "yaxis1": "Si", "show_all": "true", "show_thin_disk": "true"}),
     ("/data/hist", "json", {"xaxis1": "Fe"}),
     ("/data/table", "star_id", {"tablecols": "names,Fe,C"}),

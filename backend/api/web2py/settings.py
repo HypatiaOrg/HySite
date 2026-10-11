@@ -6,24 +6,22 @@ frontend (web2py today, Next.js next) builds its state from it instead of keepin
 Until October 2026 the defaults and the toggle list lived in the web2py models (summary.py) while the
 API parsed the same names in graph_settings_from_request(); this module is the single place for both.
 """
-from api.web2py.data_process import stellar_param_types_v2, planet_param_types_v2, plot_norms, available_elements_v2
+from api.web2py.data_process import (stellar_param_types_v2, planet_param_types_v2, plot_norms, available_elements_v2,
+                                     MAX_FILTERS)
 from api.web2py.density import COLOR_PALLETS, DEFAULT_COLOR_PALLET, BIN_TAGS
 
 # checkboxes: a page sends a toggle only when it is on, and lists its own toggles in "toggle_vars" so
 # the server knows which missing ones mean "off" (issue #40)
+FILTER_PREFIXES = [f'filter{index}' for index in range(1, MAX_FILTERS + 1)]
 TOGGLES = ['normalize', 'gridlines', 'xaxislog', 'yaxislog', 'zaxislog',
-           'xaxisinv', 'yaxisinv', 'zaxisinv', 'filter1_inv', 'filter2_inv', 'filter3_inv',
+           'xaxisinv', 'yaxisinv', 'zaxisinv', *(f'{prefix}_inv' for prefix in FILTER_PREFIXES),
            'show_all', 'or_logic', 'show_hwo_tier1', 'show_hwo_tier2',
            'show_thick_disk', 'show_thin_disk', 'show_has_exo', 'show_xyhist']
 
 # the state a new session starts with (the keys the pages' forms send, with their first values)
 DEFAULTS = {
-    'filter1_1': 'none',
-    'filter1_2': 'H',
-    'filter2_1': 'none',
-    'filter2_2': 'H',
-    'filter3_1': 'none',
-    'filter3_2': 'H',
+    # the filters: no parameter, H as the denominator, an open range
+    **{f'{prefix}_{part}': value for prefix in FILTER_PREFIXES for part, value in (('1', 'none'), ('2', 'H'), ('3', ''), ('4', ''))},
     'xaxis1': 'Fe',
     'xaxis2': 'H',
     'yaxis1': 'Si',
@@ -31,12 +29,6 @@ DEFAULTS = {
     'zaxis1': 'none',
     'zaxis2': 'H',
     'tablecols': 'Fe,C,O,Mg,Si,S,Ca,Ti',
-    'filter1_3': '',
-    'filter1_4': '',
-    'filter2_3': '',
-    'filter2_4': '',
-    'filter3_3': '',
-    'filter3_4': '',
     'cat_action': 'exclude',
     'statistic': 'median',
     'solarnorm': 'lodders09',
@@ -64,7 +56,7 @@ def settings_schema() -> dict:
     parameters = ['none'] + list(available_elements_v2) + stellar_param_types_v2 + planet_param_types_v2
     denominators = ['H'] + list(available_elements_v2)
     fields = {}
-    for prefix in ('filter1', 'filter2', 'filter3'):
+    for prefix in FILTER_PREFIXES:
         fields[f'{prefix}_1'] = {'kind': 'choice', 'choices': parameters, 'about': 'the parameter to filter on, or none'}
         fields[f'{prefix}_2'] = {'kind': 'choice', 'choices': denominators, 'about': 'the denominator of an element ratio'}
         fields[f'{prefix}_3'] = {'kind': 'number', 'about': 'the filter minimum, or empty'}
@@ -105,6 +97,6 @@ def settings_schema() -> dict:
             field['default'] = DEFAULTS[name]
         elif field['kind'] == 'toggle':
             field['default'] = False
-    return dict(defaults=DEFAULTS, toggles=TOGGLES,
+    return dict(defaults=DEFAULTS, toggles=TOGGLES, max_filters=MAX_FILTERS,
                 session_keys=sorted(set(DEFAULTS) | set(TOGGLES) | set(EXTRA_SESSION_KEYS)),
                 fields=fields)
