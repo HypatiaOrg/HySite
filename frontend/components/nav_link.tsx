@@ -5,7 +5,7 @@ import Link from "next/link";
 import {usePathname, useSearchParams} from "next/navigation";
 import {plot_urls} from "@/data/api_targets";
 
-const style = "block px-3 md:px-4 py-1 md:py-0 hover:underline hover:text-hyyellow hover:bg-hygrey hover:text-hypurple rounded-lg";
+const style = "block px-3 xl:px-4 py-1 md:py-0 hover:underline hover:text-hyyellow hover:bg-hygrey hover:text-hypurple rounded-lg";
 const currentStyle = " bg-white text-hypurple";
 
 export default function NavLink({href, children}: {href: string, children: React.ReactNode}) {
