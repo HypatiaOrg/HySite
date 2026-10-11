@@ -5,6 +5,7 @@ import type {Summary} from "@/lib/summary";
 import type {Settings, SettingsSchema} from "@/lib/settings";
 import {isOn, listOf, activeFilters, maxFilters} from "@/lib/settings";
 import ParameterPicker from "@/components/settings/ParameterPicker";
+import {Ext} from "@/components/Text";
 import {Toggle, Select, TextField, Label, labelStyle, inputStyle, buttonStyle} from "@/components/settings/Controls";
 
 export type Change = (changes: Record<string, string>) => void;
@@ -151,7 +152,7 @@ export function StarsRow({settings, onChange}: {settings: Settings, onChange: Ch
                     <option value="exclude">Exclude</option>
                     <option value="only">Allow only</option>
                 </Select>
-                <span>stars by <em>any</em> <a className="text-hyred underline decoration-hyred/40 hover:text-hypurple" href="https://simbad.u-strasbg.fr/simbad/" target="_blank" rel="noopener noreferrer">SIMBAD</a> name.</span>
+                <span>stars by <em>any</em> <Ext href="https://simbad.u-strasbg.fr/simbad/">SIMBAD</Ext> name.</span>
             </div>
             {count > 1 && (
                 <div className="text-sm text-hygrey mb-1">

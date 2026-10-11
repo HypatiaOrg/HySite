@@ -4,12 +4,9 @@ import React from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
-import {getHomeData} from "@/lib/api.server";
 
-
-
+// the site's typeface, served with the site
 const inter = Inter({ subsets: ["latin"] });
-export const revalidate = 300; // 5 minutes
 
 export const metadata: Metadata = {
     title: "Hypatia Catalog",

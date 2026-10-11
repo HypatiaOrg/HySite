@@ -4,13 +4,13 @@ import {getHomeData} from "@/lib/api.server";
 import {DEBUG} from "@/lib/config";
 import hypatiaLogo from "@/public/hypatialogo2.png";
 import {AbundancesHist} from "@/components/AbundancesHistogram";
+import {linkStyle} from "@/components/Text";
 import {scatterURL, helpURL, aboutURL, creditsURL, apiPageURL} from "@/lib/urls";
 
 
 // rendered when requested, not when the site is built: the counts need a running API
 export const dynamic = 'force-dynamic';
 
-const linkStyle = "text-hyred underline decoration-hyred/40 hover:text-hypurple hover:bg-hyyellow"
 const homeGrid = "bg-white grid grid-cols-16";
 const paragraphStyle = "text-hygrey col-span-14 col-start-2 indent-12 pt-4 text-lg md:text-xl";
 

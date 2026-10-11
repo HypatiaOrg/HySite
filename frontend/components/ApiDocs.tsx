@@ -2,6 +2,7 @@
 // column, content on the right, and callout panels for the notices. On a phone the label sits above
 // its content.
 import React from "react";
+import {linkStyle} from "@/components/Text";
 
 // a panel for a notice: "info" for what to know, "note" for a longer set of remarks
 export function Callout({kind, children}: {kind: "info" | "note", children: React.ReactNode}) {
@@ -61,7 +62,7 @@ export function Request({url}: {url: string}) {
     const full = "https://hypatiacatalog.com" + url;
     return (
         <p className="mb-2">
-            GET <a className="text-hyred underline decoration-hyred/40 hover:text-hypurple break-all" href={url}>{full}</a>
+            GET <a className={linkStyle + " break-all"} href={url}>{full}</a>
         </p>
     );
 }
