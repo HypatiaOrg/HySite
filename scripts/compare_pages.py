@@ -40,18 +40,13 @@ STAR_LIST = "; ".join([TEST_STAR] + [f"HIP {number}" for number in range(1, 1000
 REQUESTS = [
     # frontend pages
     "/", "/help", "/about", "/hypatia/default/nea", "/acknowledgements",
-    "/hypatia/default/launch", "/hypatia/default/graph.load",
-    "/hypatia/default/dropdown.load?id=xaxis&value1=Fe&value2=H&log=True",
-    "/hypatia/default/hist", "/hypatia/default/graph_hist.load",
-    # the density page (the plotly branch): the default plot, then its own settings changed
+    # the Next.js plot pages (2026-10-11) and the data they fetch through their route handler (a JSON POST)
+    "/scatter", "/targets", "/hist", "/launch?mode=hist", "/hypatia/default/launch",
+    ("/data/scatter", {}), ("/data/scatter", PLOT_SETTINGS), ("/data/targets", CHECKBOXES), ("/data/hist", {}),
+    ("/data/table", {"tablecols": "Fe,C,O,Mg,Si,S,Ca,Ti"}), ("/data/table", {"tablecols": "names,Fe", "format": "csv", "download": "true"}),
+    # the density page (still web2py): the default plot, then its own settings changed
     "/hypatia/default/density", "/hypatia/default/graph_density.load",
     ("/hypatia/default/graph_density.load", DENSITY_SETTINGS),
-    "/hypatia/default/targets", "/hypatia/default/graph_targets.load",
-    "/hypatia/default/table", "/hypatia/default/table.load",
-    "/hypatia/default/table.csv/hypatia.csv?download=true", "/hypatia/default/table.tsv/hypatia.tsv?download=true",
-    ("/hypatia/default/graph.load", PLOT_SETTINGS), "/hypatia/default/table.load",
-    # after a scatter change, the targets plot must still have data (issue #40)
-    "/hypatia/default/targets", "/hypatia/default/graph_targets.load",
     "/hypatia/default/not_a_page",
     # API
     "/hypatia/api/", "/hypatia/api/v2/solarnorm/", "/hypatia/api/v2/element/", "/hypatia/api/v2/catalog/",
@@ -62,10 +57,9 @@ REQUESTS = [
     "/hypatia/api/db/summary/", "/hypatia/api/web2py/table/?elements=Fe&elements=C",
     "/hypatia/api/web2py/table/?elements=Fe&elements=C&elements=O&elements=Mg&elements=Si&elements=Ti&elements=Ni",
     # the largest requests the pages make: every catalog, a long star list, then the table of those stars
-    NEW_SESSION, "/hypatia/default/launch",
-    ("/hypatia/default/graph.load", {"cat_action": "only", **CHECKBOXES, "catalogs": None}),
-    ("/hypatia/default/graph.load", {"star_list": STAR_LIST, "star_action": "only", **CHECKBOXES}),
-    "/hypatia/default/table.load",
+    ("/data/scatter", {"cat_action": "only", "catalogs": None}),
+    ("/data/scatter", {"star_list": STAR_LIST, "star_action": "only"}),
+    ("/data/table", {"star_list": STAR_LIST, "star_action": "only", "tablecols": "names,Fe"}),
     # the table built by the API (api.web2py.table): every column kind, a targets table, a sort, a download
     "/hypatia/api/web2py/table/?tablecols=names,names_all,planet,stellar,spread,ref,Fe,Fe_II,C,Li"
     "&show_targets=true&show_hwo_tier1=true&sort=Fe&reverse=true&statistic=median&solarnorm=lodders09",
@@ -111,10 +105,15 @@ def capture(base_url: str, out_path: str) -> None:
             if "catalogs" in form:
                 if catalog_ids is None:
                     catalog_ids = [c["id"] for c in json.loads(opener.open(base_url + "/hypatia/api/v2/catalog/").read())]
-                form["catalogs"] = catalog_ids
-            data = urllib.parse.urlencode(form, doseq=True).encode()
-        headers = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-                   "X-Requested-With": "XMLHttpRequest"} if data else {}
+                form["catalogs"] = ";".join(catalog_ids)
+            if path.startswith("/data/"):
+                # the Next.js pages post their settings as JSON to their route handler
+                data = json.dumps(form).encode()
+            else:
+                data = urllib.parse.urlencode(form, doseq=True).encode()
+        headers = ({"Content-Type": "application/json"} if path.startswith("/data/") else
+                   {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                    "X-Requested-With": "XMLHttpRequest"}) if data else {}
         request = urllib.request.Request(base_url + path, data=data, headers=headers)
         try:
             with opener.open(request, timeout=600) as response:

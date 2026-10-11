@@ -43,4 +43,6 @@ USER nextjs
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+# a plot page's settings are in its URL; allow what nginx allows (large_client_header_buffers)
+ENV NODE_OPTIONS="--max-http-header-size=65536"
 CMD ["node", "server.js"]

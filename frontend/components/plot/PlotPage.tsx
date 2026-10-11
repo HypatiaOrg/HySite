@@ -1,0 +1,115 @@
+'use client';
+// A plot page: the settings form, the figure and the data table. The settings are the page's state and
+// its URL (a shareable link); every change asks the API for the plot and the table again.
+import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import type {PlotSelectionEvent, PlotlyHTMLElement} from "plotly.js";
+import type {Summary} from "@/data/summary";
+import type {Settings, SettingsSchema} from "@/data/settings";
+import {isOn, searchParamsFromSettings} from "@/data/settings";
+import {fetchData, type ScatterData, type TargetsData, type HistData} from "@/data/plot_types";
+import {scatterFigure, targetsFigure, histFigure, type Figure, PLOT_WIDTH, PLOT_HEIGHT} from "@/components/plot/figures";
+import PlotlyFigure from "@/components/plot/PlotlyFigure";
+import HoverLabels from "@/components/plot/HoverLabels";
+import DataTable from "@/components/table/DataTable";
+import Notices from "@/components/settings/Notices";
+import {Toggle} from "@/components/settings/controls";
+import {FilterRow, AxisRow, SolarNormRow, StatisticRow, CatalogsRow, StarsRow, TargetSetsRow, SubmitRow} from "@/components/settings/rows";
+import {Label} from "@/components/settings/controls";
+
+export type PlotKind = "scatter" | "targets" | "hist";
+
+type Props = {kind: PlotKind, schema: SettingsSchema, summary: Summary, initialSettings: Settings};
+
+export default function PlotPage({kind, schema, summary, initialSettings}: Props) {
+    const [settings, setSettings] = useState<Settings>(initialSettings);
+    // what the API answered, and for which settings: the plot is loading while they are not the current ones
+    const [answer, setAnswer] = useState<{settings: Settings, data: ScatterData | TargetsData | HistData | null, error: string | null} | null>(null);
+    const data = answer?.data ?? null, error = answer?.error ?? null;
+    const loading = answer?.settings !== settings;
+    const [plot, setPlot] = useState<PlotlyHTMLElement | null>(null);
+    const request = useRef(0);
+
+    const change = useCallback((changes: Record<string, string>) => {
+        setSettings((current) => ({...current, ...changes}));
+    }, []);
+
+    // the page URL follows the settings, so the plot is a link to share
+    useEffect(() => {
+        const query = searchParamsFromSettings(schema, settings).toString();
+        const url = window.location.pathname + (query ? "?" + query : "");
+        if (url !== window.location.pathname + window.location.search) window.history.replaceState(null, "", url);
+    }, [schema, settings]);
+
+    // the plot's data, asked for a moment after the last change
+    useEffect(() => {
+        const id = ++request.current;
+        const timer = setTimeout(() => {
+            fetchData<ScatterData | TargetsData | HistData>(kind, settings)
+                .then((result) => { if (id === request.current) setAnswer({settings, data: result, error: null}); })
+                .catch((problem: Error) => { if (id === request.current) setAnswer((current) => ({settings, data: current?.data ?? null, error: problem.message})); });
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [kind, settings]);
+
+    const gridlines = isOn(settings, "gridlines");
+    const figure: Figure | null = useMemo(() => {
+        if (!data) return null;
+        if (kind === "scatter") return scatterFigure(data as ScatterData, gridlines);
+        if (kind === "targets") return targetsFigure(data as TargetsData, gridlines);
+        return histFigure(data as HistData, isOn(settings, "normalize"), isOn(settings, "xaxisinv"), gridlines);
+    }, [kind, data, gridlines, settings]);
+
+    // a box or lasso selection puts the selected stars into the star list
+    const onSelected = useCallback((event: PlotSelectionEvent | undefined) => {
+        if (!event || !plot) return;
+        const traces = (plot as unknown as {data: Array<{text?: Array<string>}>}).data;
+        const names = event.points.map((point) => traces[point.curveNumber]?.text?.[point.pointNumber]).filter((name): name is string => Boolean(name));
+        if (names.length) change({star_list: names.join(";"), star_action: "only"});
+    }, [plot, change]);
+
+    const forceRefresh = () => setSettings((current) => ({...current}));
+
+    return (
+        <div className="px-4 pb-8">
+            <div className="flex flex-wrap gap-6 justify-center">
+                <div className={"relative flex items-center justify-center bg-hygrey/20 transition-opacity " + (loading ? "opacity-50" : "")}
+                     style={{width: PLOT_WIDTH, height: PLOT_HEIGHT, maxWidth: "100%"}}>
+                    {error && <div className="text-hyred text-xl font-semibold p-4">The plot could not be loaded: {error}</div>}
+                    {!error && data && !figure && <div className="text-xl font-semibold text-hygrey">No data points to display</div>}
+                    {!error && !data && <div className="text-xl font-semibold text-hygrey">Loading...</div>}
+                    {figure && (
+                        <div className="bg-white">
+                            <PlotlyFigure data={figure.data} layout={figure.layout} onSelected={onSelected} onDrawn={setPlot}/>
+                            {figure.hoverLabels && <HoverLabels plot={plot} labels={figure.hoverLabels}/>}
+                        </div>
+                    )}
+                </div>
+
+                <form className="w-[28rem] max-w-full" onSubmit={(event) => { event.preventDefault(); forceRefresh(); }}>
+                    <Notices settings={settings}/>
+                    <div className="mb-3">
+                        <Label>Filter:</Label>
+                        <FilterRow index={1} summary={summary} settings={settings} onChange={change}/>
+                        <FilterRow index={2} summary={summary} settings={settings} onChange={change}/>
+                        <FilterRow index={3} summary={summary} settings={settings} onChange={change}/>
+                    </div>
+                    <AxisRow axis="x" label="X-axis:" summary={summary} settings={settings} onChange={change} allowLog={kind !== "hist"}/>
+                    {kind !== "hist" && <AxisRow axis="y" label="Y-axis:" summary={summary} settings={settings} onChange={change}/>}
+                    {kind === "scatter" && <AxisRow axis="z" label="Z-axis (color):" summary={summary} settings={settings} onChange={change} allowNone/>}
+                    {kind === "hist" && (
+                        <div className="mb-3"><Toggle name="normalize" label="Normalize the histogram" checked={isOn(settings, "normalize")} onChange={(on) => change({normalize: String(on)})}/></div>
+                    )}
+                    {kind === "targets" && <TargetSetsRow summary={summary} settings={settings} onChange={change}/>}
+                    <SolarNormRow summary={summary} settings={settings} onChange={change}/>
+                    <StatisticRow settings={settings} onChange={change}/>
+                    <CatalogsRow summary={summary} settings={settings} onChange={change}/>
+                    <StarsRow settings={settings} onChange={change}/>
+                    <div className="mb-3"><Toggle name="gridlines" label="Show gridlines" checked={gridlines} onChange={(on) => change({gridlines: String(on)})}/></div>
+                    <SubmitRow onSubmit={forceRefresh}/>
+                </form>
+            </div>
+
+            <DataTable summary={summary} settings={settings} onChange={change} showTargets={kind === "targets"}/>
+        </div>
+    );
+}
