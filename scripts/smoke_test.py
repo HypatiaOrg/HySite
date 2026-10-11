@@ -42,33 +42,26 @@ CHECKS = [
     ("/hypatia/default/credits", "/_next/static/"),
     ("/api", "Hypatia Catalog API"),
     ("/api", "/_next/static/"),
-    # web2py frontend pages
-    # each .load fragment needs the session settings its parent page makes, so the parent comes first
-    ("/hypatia/default/launch", "Hypatia Catalog"),
-    ("/hypatia/default/graph.load", "plotly-graph-div"),
-    # the axis labels are drawn at the size the Bokeh plots used (once shipped at 2 pixels: invisible)
-    ("/hypatia/default/graph.load", '"tickfont":{"size":16}'),
-    ("/hypatia/default/hist", "Hypatia Catalog"),
-    ("/hypatia/default/graph_hist.load", "plotly-graph-div"),
-    # the density page (the plotly branch): the plot is a Plotly figure; then its own settings changed
+    # the plot pages (ported 2026-10-11): the page, its old address, and the data the page fetches through
+    # its route handler (frontend/app/data), posted as JSON the way the page does
+    ("/scatter", "/_next/static/"),
+    ("/targets", "/_next/static/"),
+    ("/hist", "/_next/static/"),
+    ("/hypatia/default/launch", "/_next/static/"),
+    ("/hypatia/default/targets", "/_next/static/"),
+    ("/hypatia/default/hist", "/_next/static/"),
+    ("/data/scatter", "json", {"xaxis1": "Fe", "yaxis1": "Si"}),
+    # changed settings change the plot: the axis label the API returns
+    ("/data/scatter", "[Ca/H]", {"xaxis1": "Ca", "xaxis2": "H", "yaxis1": "Ti", "yaxis2": "H", "xaxislog": "true"}),
+    ("/data/targets", "json", {"xaxis1": "Fe", "yaxis1": "Si", "show_all": "true", "show_thin_disk": "true"}),
+    ("/data/hist", "json", {"xaxis1": "Fe"}),
+    ("/data/table", "star_id", {"tablecols": "names,Fe,C"}),
+    # the density page (still web2py, with its own session): the plot is a Plotly figure; then its own settings changed
     # (bin sizes by keyword and by number, another colour scale, the marginal histograms off)
     ("/hypatia/default/density", "Hypatia Catalog"),
     ("/hypatia/default/graph_density.load", "plotly-graph-div"),
     ("/hypatia/default/graph_density.load", "plotly-graph-div",
      {"xhist_bin_size": "error", "yhist_bin_size": "0.05", "color_pallet": "Viridis", "toggle_vars": "show_xyhist"}),
-    ("/hypatia/default/targets", "Hypatia Catalog"),
-    ("/hypatia/default/graph_targets.load", "plotly-graph-div"),
-    ("/hypatia/default/table", "<table"),
-    ("/hypatia/default/table.load", "<table"),
-    # changing the plot settings (last, since the new settings stay in the session) must change the plot. Posted the way the page's jQuery does it, with
-    # "; charset=UTF-8" in the content type, which some web2py versions ignored (HySite issue #32)
-    # (the axis label "[Ca/H]" as Plotly's HTML writes it, with the slash escaped)
-    ("/hypatia/default/graph.load", "[Ca\\u002fH]", {"xaxis1": "Ca", "xaxis2": "H", "yaxis1": "Ti", "yaxis2": "H",
-                                                      "toggle_vars": "gridlines,xaxislog,yaxislog"}),
-    # after a change on the scatter page, the targets page must still show its default lists (issue #40);
-    # with no data the response has no plot
-    ("/hypatia/default/targets", "Hypatia Catalog"),
-    ("/hypatia/default/graph_targets.load", "plotly-graph-div"),
     # homepage plot, drawn from the database when the backend starts
     ("/hypatia/api/static/plots/abundances.png", "png"),
     # Django API
@@ -91,19 +84,19 @@ CHECKS = [
 
 def large_request_checks(base_url: str) -> list[tuple]:
     """The largest requests the plot and table pages make: every catalog selected, and a long pasted
-    star list. web2py passes these settings to the API in the URL, which once failed above 4 KB."""
+    star list. The page posts these to its route handler, which passes them to the API in a URL inside
+    the network (gunicorn allows any length; nginx once failed above 4 KB). A page URL with the same
+    settings (a shared link) must be answered too: nginx and Node allow 64 KB."""
     catalog_ids = [catalog["id"] for catalog in json.loads(fetch(base_url + "/hypatia/api/v2/catalog/")[1])]
     # the test star (38 Vir) plus 999 more names: about 12 KB, a realistic paste from a target list
     star_list = "; ".join([TEST_STAR] + [f"HIP {number}" for number in range(1, 1000)])
-    checkboxes = {"show_all": "on", "show_thin_disk": "on", "show_thick_disk": "on"}
     return [
-        # a new visitor, so settings saved by the checks above don't change these results
-        (NEW_SESSION, None),
-        ("/hypatia/default/launch", "Hypatia Catalog"),
-        ("/hypatia/default/graph.load", "plotly-graph-div", {"catalogs": catalog_ids, "cat_action": "only", **checkboxes}),
-        # the star list is entered with the plot settings, then the table shows those stars
-        ("/hypatia/default/graph.load", '$("#graph")', {"star_list": star_list, "star_action": "only", **checkboxes}),
-        ("/hypatia/default/table.load", "38 Vir"),
+        ("/data/scatter", "json", {"catalogs": ";".join(catalog_ids), "cat_action": "only"}),
+        ("/data/scatter", "json", {"star_list": star_list, "star_action": "only"}),
+        # the table of those stars
+        ("/data/table", "38 Vir", {"star_list": star_list, "star_action": "only", "tablecols": "names,Fe"}),
+        # the same star list in a page URL
+        ("/scatter?" + urllib.parse.urlencode({"star_list": star_list, "star_action": "only"}), "/_next/static/"),
     ]
 
 
@@ -120,7 +113,10 @@ def new_session() -> None:
 
 def fetch(url: str, data: dict | None = None) -> tuple[int, bytes]:
     request = urllib.request.Request(url)
-    if data is not None:
+    if data is not None and "/data/" in url:
+        # the Next.js pages post their settings as JSON to their route handler
+        request = urllib.request.Request(url, data=json.dumps(data).encode(), headers={"Content-Type": "application/json"})
+    elif data is not None:
         request = urllib.request.Request(url, data=urllib.parse.urlencode(data, doseq=True).encode(), headers={
             "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
             "X-Requested-With": "XMLHttpRequest"})

@@ -1,14 +1,22 @@
-import {DEBUG, revalidate_seconds, homeAPI} from "@/data/api_targets";
+// What the pages fetch from the API on the server, reused for revalidate_seconds
+import {DEBUG, revalidate_seconds, apiBaseURL} from "@/data/api_targets";
+import type {SettingsSchema} from "@/data/settings";
+import type {Summary} from "@/data/summary";
 
-export const getHomeData = async () => {
-    const fetchURL = homeAPI()
+async function getJSON<T>(path: string): Promise<T> {
+    const fetchURL = apiBaseURL() + path;
     if (DEBUG) {
-        console.log("Database Stats Fetch from:", fetchURL)
+        console.log("Fetch from:", fetchURL);
     }
-    const res = await fetch(fetchURL,  { next: { revalidate: revalidate_seconds } })
-    const json = await res.json()
-    if (DEBUG) {
-        console.log("Homepage database counts:", json)
+    const res = await fetch(fetchURL, {next: {revalidate: revalidate_seconds}});
+    if (!res.ok) {
+        throw new Error(`The API answered ${res.status} for ${path}`);
     }
-    return json
+    return res.json();
 }
+
+export const getHomeData = () => getJSON<Record<string, number>>("home/");
+// the settings model: every setting's default, kind and choices (api.web2py.settings)
+export const getSettingsSchema = () => getJSON<SettingsSchema>("settings/");
+// the catalog summary: columns, parameters, catalogs, solar normalizations, elements, target lists
+export const getSummary = () => getJSON<Summary>("summary/");

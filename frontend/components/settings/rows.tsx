@@ -1,0 +1,160 @@
+'use client';
+// The rows of the plot settings form: a filter, an axis, the catalogs, the stars, the target sets
+import React, {useMemo, useState} from "react";
+import type {Summary} from "@/data/summary";
+import type {Settings} from "@/data/settings";
+import {isOn, listOf} from "@/data/settings";
+import ParameterPicker from "@/components/settings/ParameterPicker";
+import {Toggle, Select, TextField, Label, labelStyle, inputStyle, buttonStyle} from "@/components/settings/controls";
+
+export type Change = (changes: Record<string, string>) => void;
+
+export function FilterRow({index, summary, settings, onChange}: {index: 1 | 2 | 3, summary: Summary, settings: Settings, onChange: Change}) {
+    const prefix = `filter${index}_`;
+    return (
+        <div className="flex flex-wrap items-center gap-2 mb-1">
+            <ParameterPicker summary={summary} name={prefix + "1"} value={settings[prefix + "1"]} denominator={settings[prefix + "2"]} allowNone
+                             onChange={(value, denominator) => onChange({[prefix + "1"]: value, ...(denominator ? {[prefix + "2"]: denominator} : {})})}/>
+            <TextField name={prefix + "3"} value={settings[prefix + "3"]} placeholder="minimum" className="w-28"
+                       onCommit={(value) => onChange({[prefix + "3"]: value})}/>
+            <TextField name={prefix + "4"} value={settings[prefix + "4"]} placeholder="maximum" className="w-28"
+                       onCommit={(value) => onChange({[prefix + "4"]: value})}/>
+            <Toggle name={prefix + "inv"} label="inverse" checked={isOn(settings, prefix + "inv")}
+                    onChange={(on) => onChange({[prefix + "inv"]: String(on)})}/>
+        </div>
+    );
+}
+
+export function AxisRow({axis, label, summary, settings, onChange, allowLog = true, allowNone = false}:
+                        {axis: "x" | "y" | "z", label: string, summary: Summary, settings: Settings, onChange: Change, allowLog?: boolean, allowNone?: boolean}) {
+    const name = `${axis}axis`;
+    return (
+        <div className="mb-3">
+            <Label>{label}</Label>
+            <div className="flex flex-wrap items-center gap-3">
+                <ParameterPicker summary={summary} name={name + "1"} value={settings[name + "1"]} denominator={settings[name + "2"]} allowNone={allowNone}
+                                 onChange={(value, denominator) => onChange({[name + "1"]: value, ...(denominator ? {[name + "2"]: denominator} : {})})}/>
+                {allowLog && (
+                    <Toggle name={name + "log"} label="log" checked={isOn(settings, name + "log")} onChange={(on) => onChange({[name + "log"]: String(on)})}/>
+                )}
+                <Toggle name={name + "inv"} label="inverse" checked={isOn(settings, name + "inv")} onChange={(on) => onChange({[name + "inv"]: String(on)})}/>
+            </div>
+        </div>
+    );
+}
+
+export function SolarNormRow({summary, settings, onChange}: {summary: Summary, settings: Settings, onChange: Change}) {
+    return (
+        <div className="mb-3">
+            <Label htmlFor="solarnorm">Solar normalization:</Label>
+            <Select name="solarnorm" value={settings.solarnorm} onChange={(value) => onChange({solarnorm: value})} className="w-full">
+                {summary.solarnorms.map((norm) => (
+                    <option key={norm.id} value={norm.id}>{norm.author}{norm.year ? ` (${norm.year})` : ""}</option>
+                ))}
+            </Select>
+        </div>
+    );
+}
+
+export function StatisticRow({settings, onChange}: {settings: Settings, onChange: Change}) {
+    return (
+        <div className="mb-3">
+            <Label htmlFor="statistic">If element ratio is in multiple catalogs:</Label>
+            <Select name="statistic" value={settings.statistic} onChange={(value) => onChange({statistic: value})} className="w-full">
+                <option value="median">Use the median</option>
+                <option value="mean">Use the mean</option>
+            </Select>
+        </div>
+    );
+}
+
+// the catalogs to exclude or allow: a list with a search box, as the old select2 control
+export function CatalogsRow({summary, settings, onChange}: {summary: Summary, settings: Settings, onChange: Change}) {
+    const [search, setSearch] = useState("");
+    const chosen = useMemo(() => new Set(listOf(settings, "catalogs")), [settings]);
+    const shown = useMemo(() => {
+        const needle = search.trim().toLowerCase();
+        return needle ? summary.catalogs.filter((catalog) => catalog.author.toLowerCase().includes(needle)) : summary.catalogs;
+    }, [summary, search]);
+    const toggle = (id: string) => {
+        const next = new Set(chosen);
+        if (next.has(id)) next.delete(id); else next.add(id);
+        onChange({catalogs: [...next].join(";")});
+    };
+    return (
+        <div className="mb-3">
+            <div className={labelStyle + " mb-1 flex items-center gap-2"}>
+                <Select name="cat_action" value={settings.cat_action} onChange={(value) => onChange({cat_action: value})}>
+                    <option value="exclude">Exclude</option>
+                    <option value="only">Allow only</option>
+                </Select>
+                <span>catalogs:</span>
+                {chosen.size > 0 && (
+                    <span className="font-normal text-hygrey">{chosen.size} chosen,{' '}
+                        <button type="button" className="text-hyred hover:underline" onClick={() => onChange({catalogs: ""})}>clear</button>
+                    </span>
+                )}
+            </div>
+            <input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="search the catalogs"
+                   className={inputStyle + " w-full mb-1"} aria-label="search the catalogs"/>
+            <div className="h-40 overflow-y-auto border border-hygrey/50 rounded bg-white px-2 py-1">
+                {shown.map((catalog) => (
+                    <label key={catalog.id} className="block cursor-pointer text-black whitespace-nowrap">
+                        <input type="checkbox" checked={chosen.has(catalog.id)} onChange={() => toggle(catalog.id)} className="accent-hypurple mr-2"/>
+                        {catalog.author}
+                    </label>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+export function StarsRow({settings, onChange}: {settings: Settings, onChange: Change}) {
+    const count = listOf(settings, "star_list").length;
+    return (
+        <div className="mb-3">
+            <div className={labelStyle + " mb-1 flex items-center gap-2"}>
+                <Select name="star_action" value={settings.star_action} onChange={(value) => onChange({star_action: value})}>
+                    <option value="exclude">Exclude</option>
+                    <option value="only">Allow only</option>
+                </Select>
+                <span>stars by <em>any</em> <a className="text-hyred hover:underline" href="https://simbad.u-strasbg.fr/simbad/" target="_blank" rel="noopener noreferrer">SIMBAD</a> name.</span>
+            </div>
+            {count > 1 && (
+                <div className="text-sm text-hygrey mb-1">
+                    {count} stars listed.{' '}
+                    <button type="button" className="text-hyred hover:underline" onClick={() => onChange({star_list: ""})}>Clear the list</button>
+                </div>
+            )}
+            <TextField name="star_list" value={settings.star_list} className="w-full"
+                       placeholder="e.g. HD 122196; * 8 Lyn; HIP 114699; 2MASS J00403279-2348172"
+                       onCommit={(value) => onChange({star_list: value})}/>
+        </div>
+    );
+}
+
+const TARGET_ORDER = ["hwo_tier1", "hwo_tier2", "thin_disk", "thick_disk", "has_exo"];
+
+export function TargetSetsRow({summary, settings, onChange}: {summary: Summary, settings: Settings, onChange: Change}) {
+    return (
+        <div className="mb-3">
+            <Label>Select Target Sets:</Label>
+            <div><Toggle name="show_all" label="All Hypatia Catalog" checked={isOn(settings, "show_all")} onChange={(on) => onChange({show_all: String(on)})}/></div>
+            <div><Toggle name="or_logic" label='Use "Union" Logic for Multiple Target Sets' checked={isOn(settings, "or_logic")} onChange={(on) => onChange({or_logic: String(on)})}/></div>
+            <div className="mt-2 text-black">Available Target Sets:</div>
+            {TARGET_ORDER.filter((handle) => summary.targets[handle]).map((handle) => {
+                const target = summary.targets[handle];
+                return (
+                    <div key={handle} title={target.ref}>
+                        <Toggle name={"show_" + handle} label={target.title} title={target.description}
+                                checked={isOn(settings, "show_" + handle)} onChange={(on) => onChange({["show_" + handle]: String(on)})}/>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
+export function SubmitRow({onSubmit}: {onSubmit: () => void}) {
+    return <button type="button" onClick={onSubmit} className={buttonStyle + " px-4"}>Submit</button>;
+}

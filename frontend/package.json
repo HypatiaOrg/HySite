@@ -11,12 +11,14 @@
   },
   "dependencies": {
     "next": "^16",
+    "plotly.js-dist-min": "^3",
     "react": "^19",
     "react-dom": "^19"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^24",
+    "@types/plotly.js": "^3",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

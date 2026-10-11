@@ -81,12 +81,16 @@ def compile_lock(service_dir: Path, image: str) -> None:
 def compile_package_lock(service_dir: Path, image: str) -> None:
     """Resolve package.json to the newest versions it allows, in package-lock.json, inside the Node image."""
     print(f"  {service_dir.name}/package-lock.json in {image.split('@')[0]}")
+    # resolved in an empty directory: next to a node_modules a developer installed on the host, npm leaves
+    # the other platforms' optional packages out of the lock, and the Docker build's npm ci then refuses it
+    script = ("mkdir -p /tmp/lock && cp /work/package.json /tmp/lock/ && cd /tmp/lock"
+              " && npm install --package-lock-only --ignore-scripts --no-audit --no-fund"
+              " && cp package-lock.json /work/package-lock.json")
     run(["docker", "run", "--rm",
          "--user", f"{os.getuid()}:{os.getgid()}",
          "--env", "HOME=/tmp", "--env", "npm_config_cache=/tmp/npm-cache",
-         "--volume", f"{service_dir}:/work", "--workdir", "/work",
-         # only the lock file: no node_modules on the host, no install scripts
-         image, "npm", "install", "--package-lock-only", "--ignore-scripts", "--no-audit", "--no-fund"])
+         "--volume", f"{service_dir}:/work",
+         image, "sh", "-c", script])
 
 
 def main() -> None:

@@ -8,6 +8,16 @@ Porting a page: write it under `app/(USERSETTINGS)/<name>/page.tsx`, point its l
 `data/api_targets.tsx` at the new path, redirect the old `/hypatia/default/<name>` address in
 `nginx/default.conf`, and add the page to `scripts/smoke_test.py` and `scripts/compare_pages.py`.
 
+## The plot pages
+
+`/scatter`, `/targets` and `/hist` (`components/plot/PlotPage.tsx`) hold their settings in React state
+and in the page URL, under the API's own names (`data/settings.ts`), so a plot is a link to share and
+the menu carries the settings from one plot page to the next. The API's `settings/` endpoint is the
+model: defaults, toggles and choices. A change posts the settings as JSON to `/data/<kind>`
+(`app/data/[kind]/route.ts`), which asks the API inside the network, where a long star list fits in
+a URL; the figure (`components/plot/figures.ts`, from `models/plot_plotly.py`) is drawn by plotly.js,
+loaded only on these pages. The form is `components/settings/`, the table `components/table/`.
+
 ## Running it
 
 The whole site, with this frontend built in Docker:
