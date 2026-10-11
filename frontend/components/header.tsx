@@ -1,6 +1,6 @@
 import React, {ReactElement, Suspense} from "react";
-import PlotLink from "@/components/plot_link";
 import Link from "next/link";
+import NavLink from "@/components/nav_link";
 import {
     scatter_url,
     targets_url,
@@ -12,44 +12,32 @@ import {
     about_api_url,
 } from "@/data/api_targets";
 
-const linkTextStyle = "px-4 hover:underline hover:text-hyyellow border-2 md:border-none border-hyyellow hover:bg-hygrey hover:text-hypurple rounded-lg";
-
-
+// the menu: each link marks the current page and, between plot pages, carries the plot settings along
+// (components/nav_link.tsx, which reads the URL in the browser; the plain link is what the server sends first)
+function MenuLink({href, children}: {href: string, children: React.ReactNode}) {
+    return (
+        <Suspense fallback={<Link href={href} className="block px-4">{children}</Link>}>
+            <NavLink href={href}>{children}</NavLink>
+        </Suspense>
+    );
+}
 
 export default function NavMenu(): ReactElement {
     return (
-        <div className="flex-none w-full items-center bg-hypurple text-white font-sans p-2 text-3xl md:text-base lg:p-4 lg:text-xl 2xl:text-2xl 2xl:p-6">
+        <nav className="flex-none w-full items-center bg-hypurple text-white font-sans p-2 text-3xl md:text-base lg:p-4 lg:text-xl 2xl:text-2xl 2xl:p-6">
             <div className="md:flex w-full">
-                <div className={linkTextStyle}>
-                    <Link href="/">Home</Link>
-                </div>
-                <div className={linkTextStyle}>
-                    <Suspense fallback={<Link href={scatter_url}>Scatter</Link>}><PlotLink href={scatter_url}>Scatter</PlotLink></Suspense>
-                </div>
-                <div className={linkTextStyle}>
-                    <Suspense fallback={<Link href={targets_url}>Target Lists</Link>}><PlotLink href={targets_url}>Target Lists</PlotLink></Suspense>
-                </div>
-                <div className={linkTextStyle}>
-                    <Suspense fallback={<Link href={density_url}>Density Map</Link>}><PlotLink href={density_url}>Density Map</PlotLink></Suspense>
-                </div>
-                <div className={linkTextStyle}>
-                    <Suspense fallback={<Link href={hist_url}>Histogram</Link>}><PlotLink href={hist_url}>Histogram</PlotLink></Suspense>
-                </div>
+                <MenuLink href="/">Home</MenuLink>
+                <MenuLink href={scatter_url}>Scatter</MenuLink>
+                <MenuLink href={targets_url}>Target Lists</MenuLink>
+                <MenuLink href={density_url}>Density Map</MenuLink>
+                <MenuLink href={hist_url}>Histogram</MenuLink>
                 <div className="md:flex md:flex-grow md:justify-end">
-                    <div className={linkTextStyle}>
-                        <Link href={help_url}>Help</Link>
-                    </div>
-                    <div className={linkTextStyle}>
-                        <Link href={about_url}>About</Link>
-                    </div>
-                    <div className={linkTextStyle}>
-                        <Link href={credits_url}>Acknowledgements</Link>
-                    </div>
-                    <div className={linkTextStyle}>
-                        <Link href={about_api_url}>API</Link>
-                    </div>
+                    <MenuLink href={help_url}>Help</MenuLink>
+                    <MenuLink href={about_url}>About</MenuLink>
+                    <MenuLink href={credits_url}>Acknowledgements</MenuLink>
+                    <MenuLink href={about_api_url}>API</MenuLink>
                 </div>
             </div>
-        </div>
+        </nav>
     );
 }

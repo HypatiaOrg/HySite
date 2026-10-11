@@ -7,7 +7,7 @@ import type {Settings} from "@/data/settings";
 import {listOf} from "@/data/settings";
 import {fetchData, type TableData} from "@/data/plot_types";
 import PeriodicTable from "@/components/settings/PeriodicTable";
-import {buttonStyle, onStyle} from "@/components/settings/controls";
+import {buttonStyle, buttonClass} from "@/components/settings/controls";
 
 const DEFAULT_COLUMNS = "Fe,C,O,Mg,Si,S,Ca,Ti";
 // the column options beyond the elements, as the API's table tokens
@@ -96,7 +96,7 @@ export default function DataTable({summary, settings, onChange, showTargets}: Pr
                     <div className="flex flex-wrap gap-1 mt-2">
                         {OPTIONS.map(([token, label]) => (
                             <button type="button" key={token} onClick={() => toggleColumn(token)}
-                                    className={buttonStyle + " " + (columns.has(token) ? onStyle : "")}>{label}</button>
+                                    className={buttonClass(columns.has(token) ? "on" : "plain")}>{label}</button>
                         ))}
                     </div>
                     <div className="flex flex-wrap items-center gap-3 mt-3">
