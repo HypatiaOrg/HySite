@@ -9,7 +9,7 @@
 Evidence that a change (an upgrade, a refactor, a deploy) changed nothing it should not have: every
 frontend page, every API endpoint, the table and its CSV export, the largest requests the pages make
 (every catalog selected, a 1000-star list), all in one browser-like session. The parts that differ on
-every request anyway (session keys, form keys, web2py component ids, dates, the host name) are
+every request anyway (ids, dates, the host name) are
 normalised before saving, so two captures of the same site are identical. Standard library only.
 
 A capture is about 45 requests, including heavy ones; it takes a minute or two and the file is large
@@ -74,7 +74,7 @@ REQUESTS = [
     # the settings model (api.web2py.settings), under the frontend API's name and its old one
     "/hypatia/api/web2py/settings/",
     "/hypatia/api/frontend/settings/",
-    # the API explanation page (web2py's api controller; routes.py maps /api to it)
+    # the API explanation page
     "/api",
 ]
 DROPPED_HEADERS = {"date", "set-cookie", "content-length", "expires", "last-modified", "etag", "server",
@@ -84,8 +84,6 @@ DROPPED_HEADERS = {"date", "set-cookie", "content-length", "expires", "last-modi
 def normalise(text: str) -> str:
     text = re.sub(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "<uuid>", text)
     text = re.sub(r'"p\d+"', '"<id>"', text)                            # Bokeh model ids (captures before 2026-10-11)
-    text = re.sub(r'(_formkey|session_id_\w+)[^"&\s]*', r"\1<x>", text)  # web2py form and session keys
-    text = re.sub(r'id="c\d{10,}"', 'id="c<id>"', text)                 # web2py component ids
     text = re.sub(r"\?_=\d+|\b1[6-9]\d{8}\b", "<time>", text)           # cache busters, unix times
     text = re.sub(r"\b20\d\d-\d\d-\d\d\b|\b\d\d/\d\d/20\d\d\b", "<date>", text)
     text = re.sub(r"https?://[^/\s\"']+/", "http://<host>/", text)

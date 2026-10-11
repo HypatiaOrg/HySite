@@ -3,13 +3,12 @@
 
 Git holds only what to follow:
   - the image tags in compose.yaml, e.g. ${BACKEND_BASE_IMAGE:-python:3.14-alpine}
-  - the unpinned package lists, backend/requirements.txt and frontend-web2py/requirements.txt,
-    and the package ranges in frontend/package.json
+  - the unpinned package list backend/requirements.txt, and the package ranges in frontend/package.json
 
 This script resolves those to exact versions, in files that git ignores:
   - versions.env: each image tag with the @sha256 digest it points to today, and
     REQUIREMENTS=requirements.lock so builds use the lock files
-  - backend/requirements.lock, frontend-web2py/requirements.lock: every package at an exact version
+  - backend/requirements.lock: every package at an exact version
   - frontend/package-lock.json: the same for the Next.js frontend (the Docker build runs npm ci)
 
 The weekly update job on the server (scripts/hysite_update.sh) runs this, tests the result and
@@ -34,7 +33,7 @@ REPO = Path(__file__).resolve().parent.parent
 COMPOSE_FILE = REPO / "compose.yaml"
 VERSIONS_FILE = REPO / "versions.env"
 # service directory -> the compose variable holding its Python base image
-LOCKED_SERVICES = {"backend": "BACKEND_BASE_IMAGE", "frontend-web2py": "FRONTEND_BASE_IMAGE"}
+LOCKED_SERVICES = {"backend": "BACKEND_BASE_IMAGE"}
 # the Node service -> the compose variable holding its Node base image
 NODE_SERVICES = {"frontend": "NEXT_BASE_IMAGE"}
 

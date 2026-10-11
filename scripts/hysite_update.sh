@@ -6,7 +6,7 @@
 #
 #  1. Update the code: fast-forward to origin/$HYSITE_BRANCH.
 #  2. Resolve the newest versions: scripts/refresh_versions.py writes versions.env, the
-#     requirements.lock files and frontend/package-lock.json (all ignored by git).
+#     requirements.lock file and frontend/package-lock.json (all ignored by git).
 #  3. Stop here if neither the code nor any version changed.
 #  4. Test: build and run the whole site against the sample database (compose.test.yaml)
 #     and run the smoke tests. On failure: put the previous versions back, stop.
@@ -35,8 +35,8 @@ SMOKE_WAIT=${HYSITE_SMOKE_WAIT:-300}
 # the backend image has pymongo, so it runs scripts/deployments.py
 OPS_IMAGE=${OPS_IMAGE:-hysite-django-api:latest}
 OPS_NETWORK=${OPS_NETWORK:-hynet}
-BUILT_IMAGES=(hysite-django-api hysite-web-to-py hysite-next-frontend)
-PINNED_FILES=(versions.env backend/requirements.lock frontend-web2py/requirements.lock frontend/package-lock.json)
+BUILT_IMAGES=(hysite-django-api hysite-next-frontend)
+PINNED_FILES=(versions.env backend/requirements.lock frontend/package-lock.json)
 KEEP_RUNS=20
 
 cd "$REPO" || exit 1
@@ -146,10 +146,8 @@ mongo_line_unchanged() {
     [ -z "$new" ] || [ "$RUNNING_MONGO_LINE" = "$NEW_MONGO_LINE" ]
 }
 installed_versions() {  # $1 = image name prefix, e.g. hysite-test
-    for service in django-api web-to-py; do
-        docker run --rm --entrypoint sh "$1-$service" -c 'python --version; pip freeze' \
-            > "$RUN_DIR/installed-$service.txt" 2> /dev/null
-    done
+    docker run --rm --entrypoint sh "$1-django-api" -c 'python --version; pip freeze' \
+        > "$RUN_DIR/installed-django-api.txt" 2> /dev/null
     # the Node packages are in the run folder's copy of package-lock.json (save_run_files)
     docker run --rm --entrypoint node "$1-next-frontend" --version \
         > "$RUN_DIR/installed-next-frontend.txt" 2> /dev/null
@@ -191,9 +189,6 @@ save_run_files
 # 3. anything new?
 if [ "$COMMIT" = "$DEPLOYED_COMMIT" ] && pins_unchanged; then
     restore_pins  # same versions; keep the old files so their timestamps stay meaningful
-    # the frontend cleans old session files when it starts; on a week without a deploy, do it here
-    prod_compose exec -T web-to-py python web2py.py -S hypatia -R scripts/sessions2trash.py -A -o -x 604800 \
-        > /dev/null 2>&1 || log "WARNING: old session files were not cleaned up"
     record unchanged "No new code or versions since the last deploy"
     finish 0
 fi

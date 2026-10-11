@@ -31,10 +31,10 @@ case "${1:-}" in
     --list)
         ops list --limit 20 ;;
     "")
-        for file in versions.env backend/requirements.lock frontend-web2py/requirements.lock; do
+        for file in versions.env backend/requirements.lock frontend/package-lock.json; do
             if [ -f ".update/backup/$file" ]; then cp ".update/backup/$file" "$file"; else rm -f "$file"; fi
         done
-        for image in hysite-django-api hysite-web-to-py; do
+        for image in hysite-django-api hysite-next-frontend; do
             docker image inspect "$image:previous" > /dev/null 2>&1 \
                 || { echo "No $image:previous image to roll back to; try: scripts/rollback.sh --list"; exit 1; }
             docker tag "$image:previous" "$image:latest"
