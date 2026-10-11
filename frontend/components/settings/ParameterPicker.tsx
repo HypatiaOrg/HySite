@@ -17,6 +17,8 @@ type Props = {
     allowNone?: boolean,
     // in a filter row: the name shortened to fit rather than wrapping the row
     compact?: boolean,
+    // what the picker is for, for a screen reader: "X-axis parameter", "filter 2 parameter"
+    label: string,
 };
 
 function PropertyButtons({summary, handles, value, onPick}: {summary: Summary, handles: Array<string>, value: string, onPick: (id: string) => void}) {
@@ -32,11 +34,12 @@ function PropertyButtons({summary, handles, value, onPick}: {summary: Summary, h
     );
 }
 
-export default function ParameterPicker({summary, name, value, denominator, onChange, allowNone = false, compact = false}: Props) {
+export default function ParameterPicker({summary, name, value, denominator, onChange, allowNone = false, compact = false, label}: Props) {
     return (
         <span className={"inline-flex items-center gap-1" + (compact ? " min-w-0" : "")}>
-            <Popover button={<span>{labelOf(summary, value)}</span>} title={hoverOf(summary, value)} compact={compact}>
-                <div className="w-[64rem]">
+            <Popover button={<span>{labelOf(summary, value)}</span>} title={hoverOf(summary, value)} compact={compact}
+                     ariaLabel={`${label}: ${labelOf(summary, value)}`}>
+                <div className="w-[68rem]">
                     {allowNone && (
                         <button type="button" data-picks="1" onClick={() => onChange("none")}
                                 className={buttonClass(value === "none" ? "picked" : "plain", "px-1.5 py-0 text-xs leading-5 mb-2")}>none</button>
@@ -50,8 +53,9 @@ export default function ParameterPicker({summary, name, value, denominator, onCh
                 </div>
             </Popover>
             {isElement(value) && (
-                <Popover button={<span>{labelOf(summary, denominator)}</span>} title="the denominator of the ratio">
-                    <div className="w-[64rem]">
+                <Popover button={<span>{labelOf(summary, denominator)}</span>} title="the denominator of the ratio"
+                         ariaLabel={`${label}, denominator of the ratio: ${labelOf(summary, denominator)}`}>
+                    <div className="w-[68rem]">
                         <div className="font-semibold text-hypurple">Denominator:</div>
                         <PeriodicTable summary={summary} selected={new Set([denominator])} allowH onPick={(id) => onChange(value, id)}/>
                     </div>

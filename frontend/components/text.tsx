@@ -2,18 +2,19 @@
 import React from "react";
 import Link from "next/link";
 
-export const linkStyle = "text-hyred hover:text-hypurple hover:bg-hyyellow hover:underline [overflow-wrap:anywhere]";
+export const linkStyle = "text-hyred underline decoration-hyred/40 hover:text-hypurple hover:bg-hyyellow hover:decoration-hypurple [overflow-wrap:anywhere]";
 
 export function Page({children}: {children: React.ReactNode}) {
     return <div className="w-full max-w-5xl mx-auto px-6 pb-16">{children}</div>;
 }
 
-export function H1({id, children}: {id?: string, children: React.ReactNode}) {
-    return <h1 id={id} className="text-3xl md:text-4xl font-bold text-hypurple mt-12 mb-4">{children}</h1>;
+// a page has one h1; a later section with the h1's look is an h2 (as="h2"), its subsections h3
+export function H1({id, children, as: Tag = "h1"}: {id?: string, children: React.ReactNode, as?: "h1" | "h2"}) {
+    return <Tag id={id} className="text-3xl md:text-4xl font-bold text-hypurple mt-12 mb-4">{children}</Tag>;
 }
 
-export function H2({id, children}: {id?: string, children: React.ReactNode}) {
-    return <h2 id={id} className="text-2xl md:text-3xl font-semibold text-hyred mt-8 mb-3">{children}</h2>;
+export function H2({id, children, as: Tag = "h2"}: {id?: string, children: React.ReactNode, as?: "h2" | "h3"}) {
+    return <Tag id={id} className="text-2xl md:text-3xl font-semibold text-hyred mt-8 mb-3">{children}</Tag>;
 }
 
 export function P({children}: {children: React.ReactNode}) {

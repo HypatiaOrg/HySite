@@ -40,10 +40,16 @@ export default function RootLayout({
                 </Script>
             </head>
             <body className={inter.className}>
-                <main className="flex flex-col h-full w-full absolute top-0 left-0 z-10">
-                    <NavMenu/>
-                    {children}
-                </main>
+                <div className="flex flex-col h-full w-full absolute top-0 left-0 z-10">
+                    {/* for keyboard users: past the menu (and a plot's tool bar) to the page */}
+                    <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:bg-hyyellow focus:text-hypurple focus:px-3 focus:py-2 focus:rounded-lg">
+                        Skip to content
+                    </a>
+                    <header><NavMenu/></header>
+                    <main id="main" tabIndex={-1} className="outline-none">
+                        {children}
+                    </main>
+                </div>
             </body>
         </html>
 );

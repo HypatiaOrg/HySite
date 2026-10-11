@@ -10,7 +10,7 @@ import {scatter_url, help_url, about_url, credits_url, about_api_url} from "@/da
 // rendered when requested, not when the site is built: the counts need a running API
 export const dynamic = 'force-dynamic';
 
-const linkStyle = "text-hyred hover:text-hypurple hover:bg-hyyellow hover:underline"
+const linkStyle = "text-hyred underline decoration-hyred/40 hover:text-hypurple hover:bg-hyyellow"
 const homeGrid = "bg-white grid grid-cols-16";
 const paragraphStyle = "text-hygrey col-span-14 col-start-2 indent-12 pt-4 text-lg md:text-xl";
 
@@ -66,7 +66,7 @@ export default async function Home() {
                     where applicable, have been made available.
                     Data can be downloaded either through the website
                     or through the terminal via
-                    <Link href={about_api_url}>our API</Link>
+                    <Link href={about_api_url} className={linkStyle}>our API</Link>
                     for use in external plotting routines and data analysis.
                 </div>
                 <p className={paragraphStyle}>

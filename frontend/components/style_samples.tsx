@@ -21,7 +21,7 @@ export default function StyleSamples() {
             <div className="flex flex-wrap items-end gap-6 mb-4">
                 <div>
                     <Label>X-axis:</Label>
-                    <ParameterPicker summary={sampleSummary} name="sample" value={axis.value} denominator={axis.denominator}
+                    <ParameterPicker summary={sampleSummary} name="sample" value={axis.value} denominator={axis.denominator} label="X-axis parameter"
                                      onChange={(value, denominator) => setAxis({value, denominator: denominator ?? axis.denominator})}/>
                 </div>
                 <div>

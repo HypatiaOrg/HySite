@@ -54,8 +54,8 @@ export default function HelpPage() {
                 the figure can be saved by clicking the “Save” button near the bottom.
             </P>
 
-            <H1 id="plots">PLOTS</H1>
-            <H2 id="scatter">Scatter</H2>
+            <H1 as="h2" id="plots">PLOTS</H1>
+            <H2 as="h3" id="scatter">Scatter</H2>
             <P>
                 The Scatter plot is the most basic plot on the Hypatia website, allowing the user to plot nearly any
                 parameter with respect to another. The scatter plot has extremely high functionality and
@@ -63,7 +63,7 @@ export default function HelpPage() {
                 properties. Additionally, the Z-axis, or color, can be initialized to show another dimension.
             </P>
 
-            <H2 id="target-lists">Target Lists</H2>
+            <H2 as="h3" id="target-lists">Target Lists</H2>
             <P>
                 The Target Lists plot is similar to the Scatter plot in functionality, but it also includes a number
                 of pre-defined lists. The available target sets currently include:
@@ -93,7 +93,7 @@ export default function HelpPage() {
                 Catalog stars that are not in any of the target lists selected.
             </P>
 
-            <H2 id="histogram">Histogram</H2>
+            <H2 as="h3" id="histogram">Histogram</H2>
             <P>
                 While the plot showing “Elements and Properties” enables a user to look at <em>either</em> planet
                 hosting stars or stars that are not currently known to have planets, we wanted to provide the ability
@@ -104,7 +104,7 @@ export default function HelpPage() {
                 to the bin with most number of stars, which has a height of 1 by definition.
             </P>
 
-            <H1 id="advanced-controls">ADVANCED CONTROLS &amp; INFO</H1>
+            <H1 as="h2" id="advanced-controls">ADVANCED CONTROLS &amp; INFO</H1>
             <P>
                 For those users wishing to change some of the more nuanced aspects of the stellar abundances within
                 the Hypatia Catalog, we provide the ability to make adjustments. In order to ensure that all of the
@@ -156,7 +156,7 @@ export default function HelpPage() {
                 user to switch between “Excluding” or “Allowing” individual catalogs as they see fit.
             </P>
 
-            <H1 id="table">TABLE</H1>
+            <H1 as="h2" id="table">TABLE</H1>
             <P>
                 The table is filtered using the filter bars at the top. The columns that are shown in the table can
                 be adjusted using the “Add/remove columns” button, which gives the user the ability to include

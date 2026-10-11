@@ -61,7 +61,7 @@ export function Request({url}: {url: string}) {
     const full = "https://hypatiacatalog.com" + url;
     return (
         <p className="mb-2">
-            GET <a className="text-hyred hover:text-hypurple hover:underline break-all" href={url}>{full}</a>
+            GET <a className="text-hyred underline decoration-hyred/40 hover:text-hypurple break-all" href={url}>{full}</a>
         </p>
     );
 }
@@ -71,7 +71,7 @@ export function Python({children}: {children: string}) {
     return (
         <>
             <p className="mb-1">Python code:</p>
-            <pre className={preStyle + " bg-hyyellow/30 border border-hyyellow text-black"}><code>{children.trim()}</code></pre>
+            <pre tabIndex={0} aria-label="Python code" className={preStyle + " bg-hyyellow/30 border border-hyyellow text-black focus:outline-2 focus:outline-hypurple"}><code>{children.trim()}</code></pre>
         </>
     );
 }
@@ -81,11 +81,11 @@ export function Result({children}: {children: string}) {
     return (
         <>
             <p className="mb-1">Result:</p>
-            <pre className={preStyle + " bg-hygrey/10"}><code>{children.trim()}</code></pre>
+            <pre tabIndex={0} aria-label="Result" className={preStyle + " bg-hygrey/10 focus:outline-2 focus:outline-hypurple"}><code>{children.trim()}</code></pre>
         </>
     );
 }
 
 export function Pre({children}: {children: string}) {
-    return <pre className={preStyle + " bg-hygrey/10"}><code>{children.trim()}</code></pre>;
+    return <pre tabIndex={0} className={preStyle + " bg-hygrey/10 focus:outline-2 focus:outline-hypurple"}><code>{children.trim()}</code></pre>;
 }

@@ -18,19 +18,20 @@ export function FilterRow({index, summary, settings, onChange, onRemove}:
             {/* on a small screen (two lines): the parameter, inverse and remove, then the range beneath */}
             <div className="col-span-2 sm:col-span-1 min-w-0 order-1">
                 <ParameterPicker summary={summary} name={prefix + "1"} value={settings[prefix + "1"]} denominator={settings[prefix + "2"]} allowNone compact
+                                 label={`Filter ${index} parameter`}
                                  onChange={(value, denominator) => onChange({[prefix + "1"]: value, ...(denominator ? {[prefix + "2"]: denominator} : {})})}/>
             </div>
             <TextField name={prefix + "3"} value={settings[prefix + "3"]} placeholder="minimum" className="w-full order-4 sm:order-2"
-                       onCommit={(value) => onChange({[prefix + "3"]: value})}/>
+                       ariaLabel={`Filter ${index} minimum`} onCommit={(value) => onChange({[prefix + "3"]: value})}/>
             <TextField name={prefix + "4"} value={settings[prefix + "4"]} placeholder="maximum" className="w-full order-5 sm:order-3"
-                       onCommit={(value) => onChange({[prefix + "4"]: value})}/>
+                       ariaLabel={`Filter ${index} maximum`} onCommit={(value) => onChange({[prefix + "4"]: value})}/>
             <div className="order-2 sm:order-4">
                 <Toggle name={prefix + "inv"} label="inverse" checked={isOn(settings, prefix + "inv")}
                         onChange={(on) => onChange({[prefix + "inv"]: String(on)})}/>
             </div>
             <div className="order-3 sm:order-5">
                 {onRemove && (
-                    <button type="button" onClick={onRemove} title="Remove this filter" aria-label="Remove this filter"
+                    <button type="button" onClick={onRemove} title="Remove this filter" aria-label={`Remove filter ${index}`}
                             className="text-hygrey hover:text-hyred text-lg leading-none">×</button>
                 )}
             </div>
@@ -64,6 +65,7 @@ export function AxisRow({axis, label, summary, settings, onChange, allowLog = tr
             <Label>{label}</Label>
             <div className="flex flex-wrap items-center gap-3">
                 <ParameterPicker summary={summary} name={name + "1"} value={settings[name + "1"]} denominator={settings[name + "2"]} allowNone={allowNone}
+                                 label={`${label.replace(/:$/, "")} parameter`}
                                  onChange={(value, denominator) => onChange({[name + "1"]: value, ...(denominator ? {[name + "2"]: denominator} : {})})}/>
                 {allowLog && (
                     <Toggle name={name + "log"} label="log" checked={isOn(settings, name + "log")} onChange={(on) => onChange({[name + "log"]: String(on)})}/>
@@ -115,7 +117,7 @@ export function CatalogsRow({summary, settings, onChange}: {summary: Summary, se
     return (
         <div className="mb-3">
             <div className={labelStyle + " mb-1 flex items-center gap-2"}>
-                <Select name="cat_action" value={settings.cat_action} onChange={(value) => onChange({cat_action: value})}>
+                <Select name="cat_action" value={settings.cat_action} onChange={(value) => onChange({cat_action: value})} ariaLabel="What the catalog list does">
                     <option value="exclude">Exclude</option>
                     <option value="only">Allow only</option>
                 </Select>
@@ -145,11 +147,11 @@ export function StarsRow({settings, onChange}: {settings: Settings, onChange: Ch
     return (
         <div className="mb-3">
             <div className={labelStyle + " mb-1 flex items-center gap-2"}>
-                <Select name="star_action" value={settings.star_action} onChange={(value) => onChange({star_action: value})}>
+                <Select name="star_action" value={settings.star_action} onChange={(value) => onChange({star_action: value})} ariaLabel="What the star list does">
                     <option value="exclude">Exclude</option>
                     <option value="only">Allow only</option>
                 </Select>
-                <span>stars by <em>any</em> <a className="text-hyred hover:underline" href="https://simbad.u-strasbg.fr/simbad/" target="_blank" rel="noopener noreferrer">SIMBAD</a> name.</span>
+                <span>stars by <em>any</em> <a className="text-hyred underline decoration-hyred/40 hover:text-hypurple" href="https://simbad.u-strasbg.fr/simbad/" target="_blank" rel="noopener noreferrer">SIMBAD</a> name.</span>
             </div>
             {count > 1 && (
                 <div className="text-sm text-hygrey mb-1">
@@ -157,7 +159,7 @@ export function StarsRow({settings, onChange}: {settings: Settings, onChange: Ch
                     <button type="button" className="text-hyred hover:underline" onClick={() => onChange({star_list: ""})}>Clear the list</button>
                 </div>
             )}
-            <TextField name="star_list" value={settings.star_list} className="w-full"
+            <TextField name="star_list" value={settings.star_list} className="w-full" ariaLabel="Star list, names separated by semicolons"
                        placeholder="e.g. HD 122196; * 8 Lyn; HIP 114699; 2MASS J00403279-2348172"
                        onCommit={(value) => onChange({star_list: value})}/>
         </div>

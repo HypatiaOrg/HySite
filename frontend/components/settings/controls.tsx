@@ -30,10 +30,11 @@ export function Toggle({name, label, checked, onChange, title}:
     );
 }
 
-export function Select({name, value, onChange, children, className = ""}:
-                       {name: string, value: string, onChange: (value: string) => void, children: React.ReactNode, className?: string}) {
+export function Select({name, value, onChange, children, className = "", ariaLabel}:
+                       {name: string, value: string, onChange: (value: string) => void, children: React.ReactNode, className?: string, ariaLabel?: string}) {
     return (
-        <select name={name} value={value} onChange={(event) => onChange(event.target.value)} className={inputStyle + " " + className}>
+        <select id={name} name={name} value={value} onChange={(event) => onChange(event.target.value)} className={inputStyle + " " + className}
+                aria-label={ariaLabel}>
             {children}
         </select>
     );
@@ -41,8 +42,8 @@ export function Select({name, value, onChange, children, className = ""}:
 
 // a text field that reports its value when the user leaves it or presses Enter (as the old forms did), not
 // on every keystroke
-export function TextField({name, value, onCommit, placeholder, className = ""}:
-                          {name: string, value: string, onCommit: (value: string) => void, placeholder?: string, className?: string}) {
+export function TextField({name, value, onCommit, placeholder, className = "", ariaLabel}:
+                          {name: string, value: string, onCommit: (value: string) => void, placeholder?: string, className?: string, ariaLabel?: string}) {
     const [text, setText] = useState(value);
     // a new value from outside (a selection on the plot, a cleared list) replaces what is typed
     const [seen, setSeen] = useState(value);
@@ -52,18 +53,21 @@ export function TextField({name, value, onCommit, placeholder, className = ""}:
     }
     const commit = () => { if (text !== value) onCommit(text); };
     return (
-        <input type="text" name={name} value={text} placeholder={placeholder} className={inputStyle + " " + className}
-               onChange={(event) => setText(event.target.value)} onBlur={commit}
+        <input type="text" id={name} name={name} value={text} placeholder={placeholder} className={inputStyle + " " + className}
+               aria-label={ariaLabel} onChange={(event) => setText(event.target.value)} onBlur={commit}
                onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); commit(); } }}/>
     );
 }
 
 // a button that opens a panel beneath it; the panel closes on a click elsewhere or Escape
-export function Popover({button, children, title, compact = false}:
-                        {button: React.ReactNode, children: React.ReactNode, title?: string, compact?: boolean}) {
+export function Popover({button, children, title, compact = false, ariaLabel}:
+                        {button: React.ReactNode, children: React.ReactNode, title?: string, compact?: boolean, ariaLabel?: string}) {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    // closing by a choice or Escape puts the keyboard focus back on the button
+    const close = () => { setOpen(false); buttonRef.current?.focus(); };
     // the panel under its button, shifted to stay inside the window (leftwards over the plot from the
     // form's buttons, as the old dropdown opened)
     useLayoutEffect(() => {
@@ -78,20 +82,21 @@ export function Popover({button, children, title, compact = false}:
     useEffect(() => {
         if (!open) return;
         const onClick = (event: MouseEvent) => { if (!ref.current?.contains(event.target as Node)) setOpen(false); };
-        const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+        const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") close(); };
         document.addEventListener("mousedown", onClick);
         document.addEventListener("keydown", onKey);
         return () => { document.removeEventListener("mousedown", onClick); document.removeEventListener("keydown", onKey); };
     }, [open]);
     return (
         <div ref={ref} className={"relative inline-block" + (compact ? " min-w-0 max-w-full" : "")}>
-            <button type="button" title={title} onClick={() => setOpen(!open)} aria-expanded={open}
-                    className={buttonStyle + " whitespace-nowrap" + (compact ? " max-w-full truncate" : "")}>
+            <button type="button" ref={buttonRef} title={title} onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="dialog"
+                    aria-label={ariaLabel} className={buttonStyle + " whitespace-nowrap" + (compact ? " max-w-full truncate" : "")}>
                 {button} <span className="text-hygrey">▾</span>
             </button>
             {open && (
                 <div ref={panelRef} className="absolute z-30 mt-1 left-0 w-max max-w-[calc(100vw-16px)] bg-white border border-hygrey/50 rounded-lg shadow-lg p-3 max-h-[80vh] overflow-auto"
-                     onClick={(event) => { if ((event.target as HTMLElement).closest("[data-picks]")) setOpen(false); }}>
+                     role="dialog" aria-label={ariaLabel ?? title}
+                     onClick={(event) => { if ((event.target as HTMLElement).closest("[data-picks]")) close(); }}>
                     {children}
                 </div>
             )}
