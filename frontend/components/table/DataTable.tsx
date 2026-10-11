@@ -2,12 +2,14 @@
 // The data table under the plots: the API builds it (columns, display strings, hover text); this shows it,
 // sorts by a click on a header, loads every row on request, and downloads it.
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import type {Summary} from "@/data/summary";
-import type {Settings} from "@/data/settings";
-import {listOf} from "@/data/settings";
-import {fetchData, type TableData} from "@/data/plot_types";
+import type {Summary} from "@/lib/summary";
+import type {Settings} from "@/lib/settings";
+import {listOf} from "@/lib/settings";
+import {fetchData} from "@/lib/api";
+import {type TableData} from "@/lib/plotTypes";
 import PeriodicTable from "@/components/settings/PeriodicTable";
-import {buttonStyle, buttonClass} from "@/components/settings/controls";
+import {buttonStyle, buttonClass} from "@/components/settings/Controls";
+import CellValues from "@/components/table/CellValues";
 
 const DEFAULT_COLUMNS = "Fe,C,O,Mg,Si,S,Ca,Ti";
 // the column options beyond the elements, as the API's table tokens
@@ -31,29 +33,6 @@ function columnLabel(summary: Summary, column: string): {text: string, hover: st
 
 function simbadLink(name: string) {
     return "http://simbad.u-strasbg.fr/simbad/sim-basic?Ident=" + name.replace(/\+/g, "%2B").replace("2MASS ", "2MASS J") + "&submit=SIMBAD+search";
-}
-
-// a cell whose value came from several catalogs: a tooltip for the mouse, and a button that opens the
-// catalog values for the keyboard and a screen reader
-function CellValues({value, values}: {value: string, values: string}) {
-    const [open, setOpen] = useState(false);
-    const lines = values.split("\n").map((line) => line.trim()).filter(Boolean);
-    return (
-        <span className="relative">
-            <button type="button" title={values} aria-expanded={open} onClick={() => setOpen(!open)}
-                    onKeyDown={(event) => { if (event.key === "Escape") setOpen(false); }}
-                    aria-label={`${value}, from ${lines.length} catalog values`}
-                    className="font-semibold cursor-help hover:underline focus:outline-2 focus:outline-hypurple rounded">
-                {value}
-            </button>
-            {open && (
-                <span role="dialog" aria-label="The catalog values" onBlur={() => setOpen(false)}
-                      className="absolute z-20 left-0 top-full mt-1 bg-white border border-hygrey/50 rounded shadow-lg px-2 py-1 text-xs text-black whitespace-nowrap">
-                    {lines.map((line, i) => <span key={i} className="block">{line}</span>)}
-                </span>
-            )}
-        </span>
-    );
 }
 
 type Props = {summary: Summary, settings: Settings, onChange: (changes: Record<string, string>) => void, showTargets: boolean};

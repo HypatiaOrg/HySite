@@ -2,20 +2,21 @@
 // A plot page: the settings form, the figure and the data table. The settings are the page's state and
 // its URL (a shareable link); every change asks the API for the plot and the table again.
 import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
-import {useElementWidth} from "@/components/plot/use_element_width";
+import {useElementWidth} from "@/components/plot/useElementWidth";
 import type {PlotSelectionEvent, PlotlyHTMLElement} from "plotly.js";
-import type {Summary} from "@/data/summary";
-import type {Settings, SettingsSchema} from "@/data/settings";
-import {isOn, listOf, searchParamsFromSettings, compactFilters, isFilterSetting, activeFilters, maxFilters} from "@/data/settings";
-import {fetchData, type ScatterData, type TargetsData, type HistData, type DensityData} from "@/data/plot_types";
+import type {Summary} from "@/lib/summary";
+import type {Settings, SettingsSchema} from "@/lib/settings";
+import {isOn, listOf, searchParamsFromSettings, compactFilters, isFilterSetting, activeFilters, maxFilters} from "@/lib/settings";
+import {fetchData} from "@/lib/api";
+import {type ScatterData, type TargetsData, type HistData, type DensityData} from "@/lib/plotTypes";
 import {scatterFigure, targetsFigure, histFigure, densityFigure, type Figure, PLOT_WIDTH, PLOT_HEIGHT} from "@/components/plot/figures";
 import PlotlyFigure from "@/components/plot/PlotlyFigure";
 import HoverLabels from "@/components/plot/HoverLabels";
 import DataTable from "@/components/table/DataTable";
 import Notices from "@/components/settings/Notices";
-import {Toggle} from "@/components/settings/controls";
-import {FilterRows, AxisRow, SolarNormRow, StatisticRow, CatalogsRow, StarsRow, TargetSetsRow, DensityRows, SubmitRow} from "@/components/settings/rows";
-import {Label} from "@/components/settings/controls";
+import {Toggle} from "@/components/settings/Controls";
+import {FilterRows, AxisRow, SolarNormRow, StatisticRow, CatalogsRow, StarsRow, TargetSetsRow, DensityRows, SubmitRow} from "@/components/settings/Rows";
+import {Label} from "@/components/settings/Controls";
 
 export type PlotKind = "scatter" | "targets" | "hist" | "density";
 

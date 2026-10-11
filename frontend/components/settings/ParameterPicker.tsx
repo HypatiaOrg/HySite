@@ -2,11 +2,11 @@
 // An axis or filter parameter: an element ratio (with its denominator), a stellar property or a planet
 // property, picked from a panel like the old dropdown
 import React from "react";
-import type {Summary} from "@/data/summary";
-import {labelOf, hoverOf} from "@/data/summary";
-import {isElement} from "@/data/settings";
+import type {Summary} from "@/lib/summary";
+import {labelOf, hoverOf} from "@/lib/summary";
+import {isElement} from "@/lib/settings";
 import PeriodicTable from "@/components/settings/PeriodicTable";
-import {Popover, buttonClass} from "@/components/settings/controls";
+import {Popover, buttonClass} from "@/components/settings/Controls";
 
 type Props = {
     summary: Summary,

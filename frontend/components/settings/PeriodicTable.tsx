@@ -3,8 +3,8 @@
 // the singly ionized species where it is measured. Picks one element (an axis or filter) or toggles
 // several (the table's columns).
 import React from "react";
-import type {Summary} from "@/data/summary";
-import {buttonClass} from "@/components/settings/controls";
+import type {Summary} from "@/lib/summary";
+import {buttonClass} from "@/components/settings/Controls";
 
 const PERIODS: Array<Array<string | null>> = [
     ['H', null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 'He'],

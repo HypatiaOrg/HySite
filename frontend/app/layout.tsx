@@ -3,8 +3,8 @@ import type { Metadata} from "next";
 import React from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import NavMenu from "@/components/header";
-import {getHomeData} from "@/data/fetch_data";
+import Header from "@/components/Header";
+import {getHomeData} from "@/lib/api.server";
 
 
 
@@ -45,7 +45,7 @@ export default function RootLayout({
                     <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:bg-hyyellow focus:text-hypurple focus:px-3 focus:py-2 focus:rounded-lg">
                         Skip to content
                     </a>
-                    <header><NavMenu/></header>
+                    <header><Header/></header>
                     <main id="main" tabIndex={-1} className="outline-none">
                         {children}
                     </main>

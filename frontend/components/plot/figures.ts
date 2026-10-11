@@ -1,7 +1,7 @@
 // The figures, as Plotly data and layout, from what the API returns. The API decided the data, the
 // target layers, the histogram series and the axes; this only draws, as models/plot_plotly.py did.
 import type {Data, Layout} from "plotly.js";
-import type {ScatterData, TargetsData, HistData, DensityData} from "@/data/plot_types";
+import type {ScatterData, TargetsData, HistData, DensityData} from "@/lib/plotTypes";
 
 export const HYPATIA_PURPLE = "#4E11B7";
 export const PLOT_WIDTH = 750;
