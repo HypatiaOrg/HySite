@@ -33,3 +33,30 @@ export function Ext({href, children}: {href: string, children: React.ReactNode})
 export function In({href, children}: {href: string, children: React.ReactNode}) {
     return <Link className={linkStyle} href={href}>{children}</Link>;
 }
+
+// A table of definitions, such as the About page's columns: label and unit side by side on a phone with
+// the description beneath; three columns with a header that stays in view on a wider screen
+export type definitionType = {label: string, unit: string | null, description: React.ReactNode};
+const rowStyle = "grid grid-cols-[auto_1fr] md:grid-cols-[10rem_7rem_1fr] gap-x-6 gap-y-1 py-3 border-b border-hyblue";
+const labelStyle = "font-semibold text-hypurple";
+const unitStyle = "text-hygrey text-sm md:text-base md:pt-0.5";
+const descriptionStyle = "col-span-2 md:col-span-1 text-hygrey";
+
+export function DefinitionTable({rows, name}: {rows: Array<definitionType>, name: string}) {
+    return (
+        <div className="text-lg md:text-xl mb-8" role="table" aria-label={name}>
+            <div className={rowStyle + " sticky top-0 bg-white border-b-2 border-hypurple"} role="row">
+                <div className={labelStyle} role="columnheader">Label</div>
+                <div className={unitStyle + " font-semibold"} role="columnheader">Unit</div>
+                <div className={descriptionStyle + " font-semibold hidden md:block"} role="columnheader">Description</div>
+            </div>
+            {rows.map((row, index) => (
+                <div className={rowStyle} role="row" key={index}>
+                    <div className={labelStyle} role="cell">{row.label}</div>
+                    <div className={unitStyle} role="cell">{row.unit ?? "—"}</div>
+                    <div className={descriptionStyle} role="cell">{row.description}</div>
+                </div>
+            ))}
+        </div>
+    );
+}
