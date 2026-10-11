@@ -38,7 +38,7 @@ export default function PeriodicTable({summary, selected, onPick, allowH = false
     const cell = (id: string, text: string, title: string, species = false) => (
         <button type="button" key={id} data-picks="1" title={title} onClick={() => onPick(id)}
                 className={buttonClass(selected.has(id) ? onColor : "plain",
-                    "px-0 h-6 leading-6 text-center " + (species ? "w-[18px] text-[11px]" : "w-9 text-xs"))}>
+                    "px-0 h-6 inline-flex items-center justify-center leading-none " + (species ? "w-[18px] text-xs" : "w-9 text-sm"))}>
             {text}
         </button>
     );
@@ -52,9 +52,9 @@ export default function PeriodicTable({summary, selected, onPick, allowH = false
                         const hasI = available.has(element), hasII = available.has(element + "_II");
                         return (
                             <td key={column} className="w-14 whitespace-nowrap text-hygrey text-xs align-top">
-                                <span className="inline-flex items-start">
+                                <span className="inline-flex items-center">
                                     {hasI ? cell(element, element, names.get(element) ?? element)
-                                          : <span className="inline-block w-9 h-6 leading-6 text-center">{element}</span>}
+                                          : <span className="inline-flex w-9 h-6 items-center justify-center text-sm">{element}</span>}
                                     {hasII && cell(element + "_II", "II", (names.get(element) ?? element) + " (II)", true)}
                                 </span>
                             </td>
