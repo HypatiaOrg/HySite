@@ -37,6 +37,11 @@ CHECKS = [
     ("/about", "ABOUT DATA AND HYPATIA"),
     ("/about", "Henry-Draper catalog name"),
     ("/hypatia/default/about", "/_next/static/"),
+    # the Acknowledgements and API pages (ported 2026-10-11); /api was web2py's, now it is Next.js's
+    ("/acknowledgements", "ACKNOWLEDGMENTS"),
+    ("/hypatia/default/credits", "/_next/static/"),
+    ("/api", "Hypatia Catalog API"),
+    ("/api", "/_next/static/"),
     # web2py frontend pages
     # each .load fragment needs the session settings its parent page makes, so the parent comes first
     ("/hypatia/default/launch", "Hypatia Catalog"),

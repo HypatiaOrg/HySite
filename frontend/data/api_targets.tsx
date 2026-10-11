@@ -39,5 +39,5 @@ export const hist_url = url_prefix + "/hist";
 export const help_url = "/help";
 export const about_url = "/about";
 export const nea_url =  url_prefix + "/nea";
-export const credits_url =  url_prefix + "/credits";
+export const credits_url = "/acknowledgements";
 export const about_api_url = "/api";
