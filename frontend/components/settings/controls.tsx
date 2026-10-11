@@ -59,7 +59,8 @@ export function TextField({name, value, onCommit, placeholder, className = ""}:
 }
 
 // a button that opens a panel beneath it; the panel closes on a click elsewhere or Escape
-export function Popover({button, children, title}: {button: React.ReactNode, children: React.ReactNode, title?: string}) {
+export function Popover({button, children, title, compact = false}:
+                        {button: React.ReactNode, children: React.ReactNode, title?: string, compact?: boolean}) {
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
@@ -83,9 +84,9 @@ export function Popover({button, children, title}: {button: React.ReactNode, chi
         return () => { document.removeEventListener("mousedown", onClick); document.removeEventListener("keydown", onKey); };
     }, [open]);
     return (
-        <div ref={ref} className="relative inline-block">
+        <div ref={ref} className={"relative inline-block" + (compact ? " min-w-0 max-w-full" : "")}>
             <button type="button" title={title} onClick={() => setOpen(!open)} aria-expanded={open}
-                    className={buttonStyle + " whitespace-nowrap"}>
+                    className={buttonStyle + " whitespace-nowrap" + (compact ? " max-w-full truncate" : "")}>
                 {button} <span className="text-hygrey">▾</span>
             </button>
             {open && (

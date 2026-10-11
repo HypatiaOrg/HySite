@@ -15,6 +15,8 @@ type Props = {
     denominator: string,   // the ratio's denominator (xaxis2 ...), shown only for an element
     onChange: (value: string, denominator?: string) => void,
     allowNone?: boolean,
+    // in a filter row: the name shortened to fit rather than wrapping the row
+    compact?: boolean,
 };
 
 function PropertyButtons({summary, handles, value, onPick}: {summary: Summary, handles: Array<string>, value: string, onPick: (id: string) => void}) {
@@ -30,10 +32,10 @@ function PropertyButtons({summary, handles, value, onPick}: {summary: Summary, h
     );
 }
 
-export default function ParameterPicker({summary, name, value, denominator, onChange, allowNone = false}: Props) {
+export default function ParameterPicker({summary, name, value, denominator, onChange, allowNone = false, compact = false}: Props) {
     return (
-        <span className="inline-flex items-center gap-1">
-            <Popover button={<span>{labelOf(summary, value)}</span>} title={hoverOf(summary, value)}>
+        <span className={"inline-flex items-center gap-1" + (compact ? " min-w-0" : "")}>
+            <Popover button={<span>{labelOf(summary, value)}</span>} title={hoverOf(summary, value)} compact={compact}>
                 <div className="w-[64rem]">
                     {allowNone && (
                         <button type="button" data-picks="1" onClick={() => onChange("none")}

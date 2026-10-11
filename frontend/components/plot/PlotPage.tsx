@@ -112,7 +112,7 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
                 </p>
                 </div>
 
-                <form className="w-[28rem] max-w-full" onSubmit={(event) => { event.preventDefault(); forceRefresh(); }}>
+                <form className="w-[29rem] max-w-full" onSubmit={(event) => { event.preventDefault(); forceRefresh(); }}>
                     <Notices settings={settings}/>
                     <FilterRows schema={schema} summary={summary} settings={settings} onChange={change}/>
                     <AxisRow axis="x" label="X-axis:" summary={summary} settings={settings} onChange={change} allowLog={kind !== "hist"}/>
