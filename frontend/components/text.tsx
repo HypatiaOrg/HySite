@@ -5,7 +5,7 @@ import Link from "next/link";
 export const linkStyle = "text-hyred hover:text-hypurple hover:bg-hyyellow hover:underline";
 
 export function Page({children}: {children: React.ReactNode}) {
-    return <div className="max-w-5xl mx-auto px-6 pb-16">{children}</div>;
+    return <div className="w-full max-w-5xl mx-auto px-6 pb-16">{children}</div>;
 }
 
 export function H1({id, children}: {id?: string, children: React.ReactNode}) {

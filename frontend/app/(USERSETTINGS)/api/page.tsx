@@ -1,6 +1,6 @@
 import type {Metadata} from "next";
-import {Page, H1, H2, P, Ul, Ext, In} from "@/components/text";
-import {Endpoint, Question, Fields, Field, Note, Request, Python, Result, Pre} from "@/components/api_docs";
+import {Page, H1, Ext, In} from "@/components/text";
+import {Callout, Definitions, Entry, Fields, Field, Note, Request, Python, Result, Pre} from "@/components/api_docs";
 import {scatter_url, hist_url} from "@/data/api_targets";
 
 export const metadata: Metadata = {
@@ -24,43 +24,46 @@ export default function ApiPage() {
     return (
         <Page>
             <H1 id="api">Hypatia Catalog API v2.2.0</H1>
-            <P><b>Data access no longer requires an API Key.</b></P>
-            <P>
-                <b>Version 2.2 of the API uses a <Ext href="https://www.djangoproject.com/">Django</Ext>-Python
-                framework with data access and query powered by a <Ext href="https://www.mongodb.com/">MongoDB</Ext> database.</b>
-            </P>
-            <Ul>
-                <li>If this update broke your existing pipeline, please reach out.</li>
-                <li>
-                    We intend to freeze the current version/views of this API; the purpose of this API is to support
-                    existing pipelines since our current framework allows us to include new additional views as
-                    necessary. For future APIs, we are considering simplified interfaces, thoughtful defaults, and
-                    more output formats to enable first-time partners. At the same time, we want to build towards
-                    on-demand support for other databases as well as data-science and machine learning operations.
-                    Please reach out for any features that would support your science.
-                </li>
-                <li>
-                    Unused fields that were associated with abundance catalogs and solar normalization data objects
-                    (returned in <b>solarnorm, catalog, composition</b> queries) were removed.
-                </li>
-                <li>
-                    Hypatia Catalog now supports more star names and has a powerful matching tools, as a basis we
-                    include every name available from {simbad} for all Hypatia stars. This means that you can use any
-                    SIMBAD name to check availability in the Hypatia Catalog.
-                </li>
-                <li>
-                    This update included significant performance enhancements. We, at the Hypatia Catalog, are proud
-                    to invest in our infrastructure to better enable the next generation of partners (like you!) and
-                    scientists around the world.
-                </li>
-            </Ul>
+            <Callout kind="info"><b>Data access no longer requires an API Key.</b></Callout>
+            <Callout kind="note">
+                <p className="mb-3">
+                    <b>Version 2.2 of the API uses a <Ext href="https://www.djangoproject.com/">Django</Ext>-Python
+                    framework with data access and query powered by a <Ext href="https://www.mongodb.com/">MongoDB</Ext> database.</b>
+                </p>
+                <ul className="list-disc pl-8 space-y-2">
+                    <li>If this update broke your existing pipeline, please reach out.</li>
+                    <li>
+                        We intend to freeze the current version/views of this API; the purpose of this API is to support
+                        existing pipelines since our current framework allows us to include new additional views as
+                        necessary. For future APIs, we are considering simplified interfaces, thoughtful defaults, and
+                        more output formats to enable first-time partners. At the same time, we want to build towards
+                        on-demand support for other databases as well as data-science and machine learning operations.
+                        Please reach out for any features that would support your science.
+                    </li>
+                    <li>
+                        Unused fields that were associated with abundance catalogs and solar normalization data objects
+                        (returned in <b>solarnorm, catalog, composition</b> queries) were removed.
+                    </li>
+                    <li>
+                        Hypatia Catalog now supports more star names and has a powerful matching tools, as a basis we
+                        include every name available from {simbad} for all Hypatia stars. This means that you can use any
+                        SIMBAD name to check availability in the Hypatia Catalog.
+                    </li>
+                    <li>
+                        This update included significant performance enhancements. We, at the Hypatia Catalog, are proud
+                        to invest in our infrastructure to better enable the next generation of partners (like you!) and
+                        scientists around the world.
+                    </li>
+                </ul>
+            </Callout>
 
-            <Question id="what-is-an-api" q="What is an API?">
+            <Definitions>
+            <Entry id="what-is-an-api" label="What is an API?">
                 An application programming interface (API) allows you to write code that interacts with websites.
                 Most major websites provide an API as a courtesy to developers everywhere. For instance,{' '}
                 <Ext href="https://developer.spotify.com/documentation/web-api/">here is what the API for Spotify looks like.</Ext>
-            </Question>
-            <Question id="what-is-this" q="What is this?">
+            </Entry>
+            <Entry id="what-is-this" label="What is this?">
                 The Hypatia Catalog API allows you to write programs that access the Hypatia Catalog outside a web
                 browser. Suppose that you&apos;ve written a program in Python to do computational work for your next
                 abundance-related discovery, and it takes data from the Hypatia Catalog as input. You could manually
@@ -68,45 +71,52 @@ export default function ApiPage() {
                 program to parse the data -- but that can become tedious over many iterations. Instead, with a few
                 simple commands, you can use the API to request the data within your program and it will come to you
                 in an easy-to-use, machine-readable format.
-            </Question>
-            <Question id="should-i-use-this" q="Should I use this?">
+            </Entry>
+            <Entry id="should-i-use-this" label="Should I use this?">
                 Many researchers (and the Hypatia Catalog!) depend on APIs like this one for their work because it
                 allows their code to access or update online data automatically, without going by hand to the web
                 interface. The Hypatia Catalog API will allow you to access properties of the star, element
                 abundances, catalog data, and scatter/histogram plots from the command line (outlined below). If
                 you&apos;re not planning on writing code, or if you only need a few stellar abundances for a
                 particular star, you may wish to use the <In href={scatter_url}>interactive plotting tool</In> instead.
-            </Question>
-            <Question id="how-do-i-try-it-out" q="How do I try it out?">
-                Many programming languages have libraries that can access web-based APIs. We will focus on the{' '}
-                <Ext href="http://www.python.org/">Python programming language</Ext> and the{' '}
-                <Ext href="https://pypi.org/project/requests/">Requests library</Ext> for interfacing with APIs.
-                When you have Python and the Python-package requests installed, you can put the code snippets below
-                into a Python script or the Python interpreter.
-                <span className="block mt-2 bg-hyyellow/30 border border-hyyellow rounded-lg p-3">
+            </Entry>
+            <Entry id="how-do-i-try-it-out" label="How do I try it out?">
+                <Note>
+                    Many programming languages have libraries that can access web-based APIs. We will focus on the{' '}
+                    <Ext href="http://www.python.org/">Python programming language</Ext> and the{' '}
+                    <Ext href="https://pypi.org/project/requests/">Requests library</Ext> for interfacing with APIs.
+                </Note>
+                <Note>
+                    When you have Python and the Python-package requests installed, you can put the code snippets below
+                    into a Python script or the Python interpreter.
+                </Note>
+                <p className="bg-hyyellow/30 border border-hyyellow rounded-lg p-3 text-black">
                     We&apos;ve highlighted some text in yellow like this; as you go through the documentation,
                     copy-and-paste the commands provided to connect to the Hypatia Catalog API.
-                </span>
-            </Question>
-            <Question id="access-control" q="Access Control">
+                </p>
+            </Entry>
+            <Entry id="access-control" label="Access Control">
                 We require any single query to have unique star names fewer than 10,000+ the current number of stars
                 in the Hypatia Catalog, where repeated names do not add computation costs to the database query. The
                 previous versions of this API (v&lt;2.2.0) had rate limits and access controls to throttle the
                 computational effort of the API. With improved efficiency in the API throttling is no longer required,
                 so we are moving to an on-demand model to further enable our users.
-            </Question>
+            </Entry>
+            </Definitions>
 
-            <H1 id="queries">Queries</H1>
-            <P>Each query below has its inputs and outputs, the request, the Python code to run it, and an example of what it returns.</P>
-            <Ul>
-                {endpoints.map(([name, what]) => (
-                    <li key={name}><In href={`#${name}`}>GET {name}</In>: {what}</li>
-                ))}
-            </Ul>
+            <Callout kind="info">
+                <b>See below for supported query, example code, and example outputs.</b>
+                <ul className="list-disc pl-8 pt-2 font-normal">
+                    {endpoints.map(([name, what]) => (
+                        <li key={name}><In href={`#${name}`}>GET {name}</In>: {what}</li>
+                    ))}
+                </ul>
+            </Callout>
 
-            <Endpoint id="solarnorm" name="solarnorm">
+            <Definitions>
+            <Entry id="solarnorm" label="GET solarnorm" heading>
                 <Note>Returns a list of solar normalizations used by Hypatia.</Note>
-                <Fields title="Inputs"><Field name="none">{' '}</Field></Fields>
+                <Fields title="Inputs">none</Fields>
                 <Fields title="Outputs">
                     <Field name="author">Author(s) of the paper referencing the solar normalization.</Field>
                     <Field name="year">Year of the paper referencing the solar normalization.</Field>
@@ -145,13 +155,13 @@ print(entry.json())
   ...
 ]
 `}</Result>
-            </Endpoint>
+            </Entry>
 
-            <Endpoint id="element" name="element">
+            <Entry id="element" label="GET element" heading>
                 <Note>Returns a list of elements used by Hypatia.</Note>
-                <Fields title="Inputs"><Field name="none">{' '}</Field></Fields>
+                <Fields title="Inputs">none</Fields>
                 <Fields title="Outputs">
-                    <Field name="array">An array of available elements (including ionized species) with abundances in Hypatia Catalog in Periodic Table order.</Field>
+                    An array of available elements (including ionized species) with abundances in Hypatia Catalog in Periodic Table order.
                 </Fields>
                 <Request url="/hypatia/api/v2/element/"/>
                 <Python>{`
@@ -174,11 +184,11 @@ print(entry.json())
   ...
 ]
 `}</Result>
-            </Endpoint>
+            </Entry>
 
-            <Endpoint id="catalog" name="catalog">
+            <Entry id="catalog" label="GET catalog" heading>
                 <Note>Returns a list of elemental abundance catalogs available in the Hypatia Catalog database.</Note>
-                <Fields title="Inputs"><Field name="none">{' '}</Field></Fields>
+                <Fields title="Inputs">none</Fields>
                 <Fields title="Outputs">
                     <Field name="author">Author(s) of the catalog&apos;s paper.</Field>
                     <Field name="year">Year of the catalog&apos;s paper.</Field>
@@ -214,9 +224,9 @@ print(entry.json())
   ...
 ]
 `}</Result>
-            </Endpoint>
+            </Entry>
 
-            <Endpoint id="star" name="star">
+            <Entry id="star" label="GET star" heading>
                 <Note>
                     Returns data for each star in the Hypatia database as well as its planets. Multiple stars can be
                     submitted at once. <b>Warning: input-field name changed in version 2.2.0</b>: The Hypatia Catalog
@@ -429,9 +439,9 @@ HIP 113044 will found and has one planet, so far...
   }
 ]
 `}</Result>
-            </Endpoint>
+            </Entry>
 
-            <Endpoint id="composition" name="composition">
+            <Entry id="composition" label="GET composition" heading>
                 <Note>
                     Returns a list of compositions for a given element, star, and solar normalization, and computes
                     the median and mean value for that group. More than one group can be supplied by submitting each
@@ -615,9 +625,9 @@ params = {"name": ["HIP 32970", "HIP 32970"], "element": ["fe", "ca"], "solarnor
                 <Pre>{`
 params = {"name": ["HIP 32970", "HIP 32970"], "element": ["fe", "ca"]}
 `}</Pre>
-            </Endpoint>
+            </Entry>
 
-            <Endpoint id="data" name="data">
+            <Entry id="data" label="GET data" heading>
                 <Note>
                     Returns scatter plot or histogram raw data shown in the plots of the Hypatia Catalog. Default
                     parameters are used when not specified. The default mode will return the values for the scatter
@@ -729,10 +739,9 @@ print(entry.json())
   "edges": [-8.56, -8.0795, -7.599, -7.1185, -6.638, -6.1575, -5.677, -5.1965, -4.716, -4.2355, -3.755, -3.2745, -2.794, -2.3135, -1.833, -1.3525, -0.872, -0.391500000000001, 0.0890000000000004, 0.5695, 1.05]
 }
 `}</Result>
-            </Endpoint>
+            </Entry>
 
-            <H2 id="version-history">Version history</H2>
-            <Fields title="">
+            <Entry id="version-history" label="Version history" heading>
                 <Field name="2.2.0">
                     August 15, 2024 - Major database engine and pipeline upgrades promoted a review and changes this
                     API model. However, we are committed to supporting our users and have worked to deliver the
@@ -762,14 +771,14 @@ print(entry.json())
                 </Field>
                 <Field name="1.0.1">Added clarification to GET element regarding multiple set requests.</Field>
                 <Field name="1.0.0">Initial release.</Field>
-            </Fields>
+            </Entry>
 
-            <H2 id="reference">Reference</H2>
-            <P>
+            <Entry id="reference" label="Reference" heading>
                 This API is modeled on the <Ext href="https://github.com/toggl/toggl_api_docs/">Toggl API</Ext>.
                 Further reference: <Ext href="https://www.vinaysahni.com/best-practices-for-a-pragmatic-restful-api">here</Ext> and{' '}
                 <Ext href="https://semver.org/">here.</Ext>
-            </P>
+            </Entry>
+            </Definitions>
         </Page>
     );
 }
