@@ -6,24 +6,24 @@ import type {PlotSelectionEvent, PlotlyHTMLElement} from "plotly.js";
 import type {Summary} from "@/data/summary";
 import type {Settings, SettingsSchema} from "@/data/settings";
 import {isOn, searchParamsFromSettings} from "@/data/settings";
-import {fetchData, type ScatterData, type TargetsData, type HistData} from "@/data/plot_types";
-import {scatterFigure, targetsFigure, histFigure, type Figure, PLOT_WIDTH, PLOT_HEIGHT} from "@/components/plot/figures";
+import {fetchData, type ScatterData, type TargetsData, type HistData, type DensityData} from "@/data/plot_types";
+import {scatterFigure, targetsFigure, histFigure, densityFigure, type Figure, PLOT_WIDTH, PLOT_HEIGHT} from "@/components/plot/figures";
 import PlotlyFigure from "@/components/plot/PlotlyFigure";
 import HoverLabels from "@/components/plot/HoverLabels";
 import DataTable from "@/components/table/DataTable";
 import Notices from "@/components/settings/Notices";
 import {Toggle} from "@/components/settings/controls";
-import {FilterRow, AxisRow, SolarNormRow, StatisticRow, CatalogsRow, StarsRow, TargetSetsRow, SubmitRow} from "@/components/settings/rows";
+import {FilterRow, AxisRow, SolarNormRow, StatisticRow, CatalogsRow, StarsRow, TargetSetsRow, DensityRows, SubmitRow} from "@/components/settings/rows";
 import {Label} from "@/components/settings/controls";
 
-export type PlotKind = "scatter" | "targets" | "hist";
+export type PlotKind = "scatter" | "targets" | "hist" | "density";
 
 type Props = {kind: PlotKind, schema: SettingsSchema, summary: Summary, initialSettings: Settings};
 
 export default function PlotPage({kind, schema, summary, initialSettings}: Props) {
     const [settings, setSettings] = useState<Settings>(initialSettings);
     // what the API answered, and for which settings: the plot is loading while they are not the current ones
-    const [answer, setAnswer] = useState<{settings: Settings, data: ScatterData | TargetsData | HistData | null, error: string | null} | null>(null);
+    const [answer, setAnswer] = useState<{settings: Settings, data: ScatterData | TargetsData | HistData | DensityData | null, error: string | null} | null>(null);
     const data = answer?.data ?? null, error = answer?.error ?? null;
     const loading = answer?.settings !== settings;
     const [plot, setPlot] = useState<PlotlyHTMLElement | null>(null);
@@ -44,7 +44,7 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
     useEffect(() => {
         const id = ++request.current;
         const timer = setTimeout(() => {
-            fetchData<ScatterData | TargetsData | HistData>(kind, settings)
+            fetchData<ScatterData | TargetsData | HistData | DensityData>(kind, settings)
                 .then((result) => { if (id === request.current) setAnswer({settings, data: result, error: null}); })
                 .catch((problem: Error) => { if (id === request.current) setAnswer((current) => ({settings, data: current?.data ?? null, error: problem.message})); });
         }, 300);
@@ -56,6 +56,7 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
         if (!data) return null;
         if (kind === "scatter") return scatterFigure(data as ScatterData, gridlines);
         if (kind === "targets") return targetsFigure(data as TargetsData, gridlines);
+        if (kind === "density") return densityFigure(data as DensityData, gridlines);
         return histFigure(data as HistData, isOn(settings, "normalize"), isOn(settings, "xaxisinv"), gridlines);
     }, [kind, data, gridlines, settings]);
 
@@ -73,7 +74,7 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
         <div className="px-4 pb-8">
             <div className="flex flex-wrap gap-6 justify-center">
                 <div className={"relative flex items-center justify-center bg-hygrey/20 transition-opacity " + (loading ? "opacity-50" : "")}
-                     style={{width: PLOT_WIDTH, height: PLOT_HEIGHT, maxWidth: "100%"}}>
+                     style={{width: PLOT_WIDTH, height: kind === "density" ? 650 : PLOT_HEIGHT, maxWidth: "100%"}}>
                     {error && <div className="text-hyred text-xl font-semibold p-4">The plot could not be loaded: {error}</div>}
                     {!error && data && !figure && <div className="text-xl font-semibold text-hygrey">No data points to display</div>}
                     {!error && !data && <div className="text-xl font-semibold text-hygrey">Loading...</div>}
@@ -100,6 +101,7 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
                         <div className="mb-3"><Toggle name="normalize" label="Normalize the histogram" checked={isOn(settings, "normalize")} onChange={(on) => change({normalize: String(on)})}/></div>
                     )}
                     {kind === "targets" && <TargetSetsRow summary={summary} settings={settings} onChange={change}/>}
+                    {kind === "density" && <DensityRows schema={schema} settings={settings} onChange={change}/>}
                     <SolarNormRow summary={summary} settings={settings} onChange={change}/>
                     <StatisticRow settings={settings} onChange={change}/>
                     <CatalogsRow summary={summary} settings={settings} onChange={change}/>

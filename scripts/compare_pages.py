@@ -33,20 +33,19 @@ CHECKBOXES = {"show_all": "on", "show_thin_disk": "on", "show_thick_disk": "on"}
 # the density page's own settings: a keyword and a number as bin sizes, another colour scale, and the
 # marginal histograms switched off (a toggle listed in toggle_vars but not sent). Nothing the other pages share.
 DENSITY_SETTINGS = {"xhist_bin_size": "error", "yhist_bin_size": "0.05", "color_pallet": "Viridis",
-                    "toggle_vars": "show_xyhist,gridlines"}
+                    "show_xyhist": "false", "gridlines": "true"}
 STAR_LIST = "; ".join([TEST_STAR] + [f"HIP {number}" for number in range(1, 1000)])
 
 # a path, or (path, form data to POST); "catalogs": None is replaced by every catalog id
 REQUESTS = [
     # frontend pages
-    "/", "/help", "/about", "/hypatia/default/nea", "/acknowledgements",
+    "/", "/help", "/about", "/nea", "/acknowledgements",
     # the Next.js plot pages (2026-10-11) and the data they fetch through their route handler (a JSON POST)
     "/scatter", "/targets", "/hist", "/launch?mode=hist", "/hypatia/default/launch",
     ("/data/scatter", {}), ("/data/scatter", PLOT_SETTINGS), ("/data/targets", CHECKBOXES), ("/data/hist", {}),
     ("/data/table", {"tablecols": "Fe,C,O,Mg,Si,S,Ca,Ti"}), ("/data/table", {"tablecols": "names,Fe", "format": "csv", "download": "true"}),
-    # the density page (still web2py): the default plot, then its own settings changed
-    "/hypatia/default/density", "/hypatia/default/graph_density.load",
-    ("/hypatia/default/graph_density.load", DENSITY_SETTINGS),
+    # the density page: the default data, then its own settings changed
+    "/density", ("/data/density", {"show_xyhist": "true"}), ("/data/density", DENSITY_SETTINGS),
     "/hypatia/default/not_a_page",
     # API
     "/hypatia/api/", "/hypatia/api/v2/solarnorm/", "/hypatia/api/v2/element/", "/hypatia/api/v2/catalog/",
