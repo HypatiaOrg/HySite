@@ -5,6 +5,7 @@
 // figure has hovermode off and this searches the traces' arrays instead, once per animation frame.
 import React, {useEffect, useRef, useState} from "react";
 import type {PlotlyHTMLElement} from "plotly.js";
+import {plotArea, traces, traceVisible} from "@/components/plot/plotlyInternals";
 
 const MAX_LABELS = 25;
 const RADIUS = 4;  // pixels: a marker's radius (size 8)
@@ -12,41 +13,34 @@ const RADIUS = 4;  // pixels: a marker's radius (size 8)
 type Found = {name: string, text: string};
 type Shown = {items: Array<Found>, total: number, x: number, y: number};
 
-// Plotly's drawn axes, with their data-to-pixel functions
-type FullLayout = {
-    xaxis?: {d2p: (value: number) => number}, yaxis?: {d2p: (value: number) => number},
-    _size?: {l: number, t: number, w: number, h: number},
-};
-type Trace = {x: ArrayLike<number>, y: ArrayLike<number>, customdata?: ArrayLike<number>, text?: Array<string>};
-
 export default function HoverLabels({plot, labels}: {plot: PlotlyHTMLElement | null, labels: Record<string, string>}) {
     const [shown, setShown] = useState<Shown | null>(null);
     const boxRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (!plot) return;
-        const element = plot as unknown as HTMLElement & {_fullLayout?: FullLayout, _fullData?: Array<{visible: boolean | string}>, data: Array<Trace>};
+        const element = plot as HTMLElement;
         let pending: MouseEvent | null = null;
         const hide = () => setShown(null);
         const show = (event: {clientX: number, clientY: number}) => {
-            const layout = element._fullLayout;
-            if (!layout?.xaxis?.d2p || !layout.yaxis?.d2p || !layout._size) { hide(); return; }
-            const box = element.getBoundingClientRect();
-            const px = event.clientX - box.left - layout._size.l, py = event.clientY - box.top - layout._size.t;
-            if (px < 0 || py < 0 || px > layout._size.w || py > layout._size.h) { hide(); return; }
+            const area = plotArea(plot);
+            if (!area) { hide(); return; }
+            const px = event.clientX - area.left, py = event.clientY - area.top;
+            if (px < 0 || py < 0 || px > area.width || py > area.height) { hide(); return; }
+            const data = traces(plot);
             const found: Array<[number, number, number]> = [];
-            for (let c = 0; c < element.data.length; c++) {
-                if (element._fullData?.[c] && element._fullData[c].visible !== true) continue;  // hidden from the legend
-                const trace = element.data[c];
+            for (let c = 0; c < data.length; c++) {
+                if (!traceVisible(plot, c)) continue;  // hidden from the legend
+                const trace = data[c];
                 for (let i = 0; i < trace.x.length; i++) {
-                    const dx = layout.xaxis.d2p(trace.x[i]) - px, dy = layout.yaxis.d2p(trace.y[i]) - py, d = dx * dx + dy * dy;
+                    const dx = area.xaxis.d2p(trace.x[i]) - px, dy = area.yaxis.d2p(trace.y[i]) - py, d = dx * dx + dy * dy;
                     if (d <= RADIUS * RADIUS) found.push([d, c, i]);
                 }
             }
             if (!found.length) { hide(); return; }
             found.sort((a, b) => a[0] - b[0]);
             const items = found.slice(0, MAX_LABELS).map(([, c, i]) => {
-                const trace = element.data[c];
+                const trace = data[c];
                 let text = `${labels.x} = ${Number(trace.x[i]).toFixed(2)}, ${labels.y} = ${Number(trace.y[i]).toFixed(2)}`;
                 if (trace.customdata && labels.z) text += `, ${labels.z} = ${Number(trace.customdata[i]).toFixed(2)}`;
                 return {name: trace.text?.[i] ?? "", text};

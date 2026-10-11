@@ -17,6 +17,10 @@ const MARKERS: Record<string, string> = {
 
 export type Figure = {data: Array<Data>, layout: Partial<Layout>, hoverLabels?: Record<string, string>};
 
+// a trace from the API's arrays: Plotly's Data union is narrower than a trace built field by field, so this
+// is the one cast
+const trace = (spec: Record<string, unknown>): Data => spec as unknown as Data;
+
 // the range and type of an axis: the data with a margin on each side; a log axis starts at the smallest
 // positive value (its range in powers of ten, as Plotly wants it) and is linear when no value is positive
 export function axisRange(values: Array<number>, doLog = false, inverse = false, lowMargin = MARGIN, highMargin = MARGIN):
@@ -88,7 +92,7 @@ export function scatterFigure(data: ScatterData, gridlines: boolean): Figure | n
         Object.assign(marker, {color, colorscale: "Viridis", reversescale: axes.zaxis.inverse, showscale: true, colorbar, line: {width: 0}});
     }
     // WebGL points: an SVG plot of ten thousand markers is slow to draw and to hover over
-    const trace = {type: "scattergl", x, y, mode: "markers", marker, text: names, customdata, hoverinfo: "skip", showlegend: false} as unknown as Data;
+    const points = trace({type: "scattergl", x, y, mode: "markers", marker, text: names, customdata, hoverinfo: "skip", showlegend: false});
     const xr = axisRange(x, axes.xaxis.log, axes.xaxis.inverse), yr = axisRange(y, axes.yaxis.log, axes.yaxis.inverse);
     const title = data.planet_count !== null && data.planet_count !== undefined
         ? `${data.planet_count} planets selected from ${data.star_count} stars`
@@ -99,7 +103,7 @@ export function scatterFigure(data: ScatterData, gridlines: boolean): Figure | n
         yaxis: {range: yr.range, type: yr.type, ...axisStyle(labels.y, gridlines)},
         title: {text: title, x: 0.5, xanchor: "center"}, annotations: [citation()],
     };
-    return {data: [trace], layout, hoverLabels: labels};
+    return {data: [points], layout, hoverLabels: labels};
 }
 
 // the targets plot: one trace per layer the API made, with a legend entry each; a click on an entry hides its layer
@@ -107,10 +111,10 @@ export function targetsFigure(data: TargetsData, gridlines: boolean): Figure | n
     if (!data.layers?.length) return null;
     const axes = data.axes;
     const labels: Record<string, string> = {x: axes.xaxis.label || "X Axis", y: axes.yaxis.label || "Y Axis"};
-    const traces = data.layers.map((layer) => ({
+    const traces = data.layers.map((layer) => trace({
         type: "scattergl", x: layer.x, y: layer.y, mode: "markers", name: layer.label, text: layer.names, hoverinfo: "skip",
         marker: {symbol: MARKERS[layer.marker] ?? "circle", size: 8, color: layer.color, opacity: layer.fill_alpha, line: {color: layer.color, width: 1}},
-    } as unknown as Data));
+    }));
     const x = data.outputs.xaxis ?? [], y = data.outputs.yaxis ?? [];
     // room below the points for the legend, as the Bokeh plot had
     const xr = axisRange(x, axes.xaxis.log, axes.xaxis.inverse), yr = axisRange(y, axes.yaxis.log, axes.yaxis.inverse, 3 * MARGIN);
@@ -136,12 +140,12 @@ export function histFigure(data: HistData, normalize: boolean, inverse: boolean,
     const yLabel = normalize ? "Relative Frequency" : "Number of Stellar Systems";
     const opacity = normalize ? 0.5 : 1.0;
     const maxAll = Math.max(...data.series[0].counts);
-    const traces = data.series.map((series) => ({
+    const traces = data.series.map((series) => trace({
         type: "bar", x: centres, y: series.counts, width: widths, name: series.label, opacity,
         marker: {color: series.color, line: {color: "black", width: 1}},
         customdata: edges.slice(0, -1).map((edge, index) => [edge, edges[index + 1]]),
         hovertemplate: `${xLabel} %{customdata[0]:.2f} to %{customdata[1]:.2f}<br>%{y}<extra>%{fullData.name}</extra>`,
-    } as unknown as Data));
+    }));
     const range = inverse ? [data.x_range[1], data.x_range[0]] : [data.x_range[0], data.x_range[1]];
     const layout: Partial<Layout> = {
         ...baseLayout(),
@@ -166,19 +170,19 @@ export function densityFigure(data: DensityData, gridlines: boolean): Figure | n
     const histogramMarker = {color: data.histogram_color, line: {color: "black", width: 1}};
     const xType = axes.xaxis.log ? "log" : "linear", yType = axes.yaxis.log ? "log" : "linear";
     const xAutorange = axes.xaxis.inverse ? "reversed" : true, yAutorange = axes.yaxis.inverse ? "reversed" : true;
-    const heatmap = {
+    const heatmap: Record<string, unknown> = {
         type: "histogram2d", x, y, xbins, ybins, name: "Density", colorscale: data.color_scale,
         colorbar: {title: {text: "Num of<br>Stars/Bin"}}, showscale: true,
-    } as unknown as Data;
+    };
     const layout: Partial<Layout> = {
         width: PLOT_WIDTH, height: 650, plot_bgcolor: "#E5ECF6", paper_bgcolor: "white", bargap: 0.05, showlegend: false,
     };
     if (data.show_xyhist) {
         const gap = 0.008, large = 0.8 * (1 - gap), small = large + gap;
-        const top = {type: "histogram", x, xbins, marker: histogramMarker, showlegend: false, name: axes.xaxis.label || "X",
-                     hovertemplate: "%{y}", xaxis: "x", yaxis: "y2"} as unknown as Data;
-        const side = {type: "histogram", y, ybins, marker: histogramMarker, showlegend: false, name: axes.yaxis.label || "Y",
-                      hovertemplate: "%{x}", xaxis: "x2", yaxis: "y"} as unknown as Data;
+        const top = trace({type: "histogram", x, xbins, marker: histogramMarker, showlegend: false, name: axes.xaxis.label || "X",
+                     hovertemplate: "%{y}", xaxis: "x", yaxis: "y2"});
+        const side = trace({type: "histogram", y, ybins, marker: histogramMarker, showlegend: false, name: axes.yaxis.label || "Y",
+                      hovertemplate: "%{x}", xaxis: "x2", yaxis: "y"});
         Object.assign(heatmap, {xaxis: "x", yaxis: "y"});
         const edge = {showgrid: true, gridcolor: "white", gridwidth: 1, showline: true, linewidth: 1, linecolor: "black",
                       mirror: true, ticks: "outside" as const, ticklen: 6, tickwidth: 1};
@@ -188,7 +192,7 @@ export function densityFigure(data: DensityData, gridlines: boolean): Figure | n
             yaxis2: {domain: [small, 1], autorange: true, showgrid: gridlines},
             xaxis2: {domain: [small, 1], autorange: true, showgrid: gridlines},
         });
-        return {data: [top, side, heatmap], layout};
+        return {data: [top, side, trace(heatmap)], layout};
     }
     const edge = {showgrid: false, gridwidth: 1, showline: true, linewidth: 2, linecolor: "black", mirror: true,
                   ticks: "outside" as const, ticklen: 6, tickwidth: 1};
@@ -196,5 +200,5 @@ export function densityFigure(data: DensityData, gridlines: boolean): Figure | n
         xaxis: {title: {text: axes.xaxis.label}, type: xType, autorange: xAutorange, ...edge},
         yaxis: {title: {text: axes.yaxis.label}, type: yType, autorange: yAutorange, ...edge},
     });
-    return {data: [heatmap], layout};
+    return {data: [trace(heatmap)], layout};
 }

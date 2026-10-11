@@ -1,12 +1,12 @@
 'use client';
 // The data table under the plots: the API builds it (columns, display strings, hover text); this shows it,
 // sorts by a click on a header, loads every row on request, and downloads it.
-import React, {useEffect, useMemo, useRef, useState} from "react";
+import React, {useMemo, useState} from "react";
 import type {Summary} from "@/lib/summary";
 import type {Settings} from "@/lib/settings";
 import {listOf} from "@/lib/settings";
-import {fetchData} from "@/lib/api";
-import {type TableData} from "@/lib/plotTypes";
+import type {TableData} from "@/lib/plotTypes";
+import {useFetchedData} from "@/components/plot/useFetchedData";
 import PeriodicTable from "@/components/settings/PeriodicTable";
 import {buttonStyle, buttonClass} from "@/components/settings/Controls";
 import CellValues from "@/components/table/CellValues";
@@ -40,9 +40,6 @@ type Props = {summary: Summary, settings: Settings, onChange: (changes: Record<s
 export default function DataTable({summary, settings, onChange, showTargets}: Props) {
     const [sort, setSort] = useState<{column: string | null, reverse: boolean}>({column: null, reverse: false});
     const [showRows, setShowRows] = useState(false);
-    // what the API answered, and for which settings: the table is loading while they are not the current ones
-    const [answer, setAnswer] = useState<{settings: Record<string, string>, table: TableData | null, error: string | null} | null>(null);
-    const request = useRef(0);
     const columns = useMemo(() => new Set(listOf(settings, "tablecols")), [settings]);
 
     // the settings the API's table endpoint takes: the plot's, plus the table's own
@@ -51,17 +48,7 @@ export default function DataTable({summary, settings, onChange, showTargets}: Pr
         ...(sort.column ? {sort: sort.column, reverse: String(sort.reverse)} : {}),
     }), [settings, showTargets, showRows, sort]);
 
-    useEffect(() => {
-        const id = ++request.current;
-        const timer = setTimeout(() => {
-            fetchData<TableData>("table", tableSettings)
-                .then((data) => { if (id === request.current) setAnswer({settings: tableSettings, table: data, error: null}); })
-                .catch((problem: Error) => { if (id === request.current) setAnswer((current) => ({settings: tableSettings, table: current?.table ?? null, error: problem.message})); });
-        }, 300);
-        return () => clearTimeout(timer);
-    }, [tableSettings]);
-    const table = answer?.table ?? null, error = answer?.error ?? null;
-    const loading = answer?.settings !== tableSettings;
+    const {data: table, error, loading} = useFetchedData<TableData>("table", tableSettings);
 
     const toggleColumn = (id: string) => {
         const next = new Set(columns);

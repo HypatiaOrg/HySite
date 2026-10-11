@@ -1,14 +1,15 @@
 'use client';
 // A plot page: the settings form, the figure and the data table. The settings are the page's state and
 // its URL (a shareable link); every change asks the API for the plot and the table again.
-import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
 import {useElementWidth} from "@/components/plot/useElementWidth";
 import type {PlotSelectionEvent, PlotlyHTMLElement} from "plotly.js";
 import type {Summary} from "@/lib/summary";
 import type {Settings, SettingsSchema} from "@/lib/settings";
 import {isOn, listOf, searchParamsFromSettings, compactFilters, isFilterSetting, activeFilters, maxFilters} from "@/lib/settings";
-import {fetchData} from "@/lib/api";
-import {type ScatterData, type TargetsData, type HistData, type DensityData} from "@/lib/plotTypes";
+import type {ScatterData, TargetsData, HistData, DensityData} from "@/lib/plotTypes";
+import {useFetchedData} from "@/components/plot/useFetchedData";
+import {pointName} from "@/components/plot/plotlyInternals";
 import {scatterFigure, targetsFigure, histFigure, densityFigure, type Figure, PLOT_WIDTH, PLOT_HEIGHT} from "@/components/plot/figures";
 import PlotlyFigure from "@/components/plot/PlotlyFigure";
 import HoverLabels from "@/components/plot/HoverLabels";
@@ -40,12 +41,8 @@ type Props = {kind: PlotKind, schema: SettingsSchema, summary: Summary, initialS
 
 export default function PlotPage({kind, schema, summary, initialSettings}: Props) {
     const [settings, setSettings] = useState<Settings>(initialSettings);
-    // what the API answered, and for which settings: the plot is loading while they are not the current ones
-    const [answer, setAnswer] = useState<{settings: Settings, data: ScatterData | TargetsData | HistData | DensityData | null, error: string | null} | null>(null);
-    const data = answer?.data ?? null, error = answer?.error ?? null;
-    const loading = answer?.settings !== settings;
+    const {data, error, loading} = useFetchedData<ScatterData | TargetsData | HistData | DensityData>(kind, settings);
     const [plot, setPlot] = useState<PlotlyHTMLElement | null>(null);
-    const request = useRef(0);
 
     const change = useCallback((changes: Record<string, string>) => {
         setSettings((current) => {
@@ -62,17 +59,6 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
         if (url !== window.location.pathname + window.location.search) window.history.replaceState(null, "", url);
     }, [schema, settings]);
 
-    // the plot's data, asked for a moment after the last change
-    useEffect(() => {
-        const id = ++request.current;
-        const timer = setTimeout(() => {
-            fetchData<ScatterData | TargetsData | HistData | DensityData>(kind, settings)
-                .then((result) => { if (id === request.current) setAnswer({settings, data: result, error: null}); })
-                .catch((problem: Error) => { if (id === request.current) setAnswer((current) => ({settings, data: current?.data ?? null, error: problem.message})); });
-        }, 300);
-        return () => clearTimeout(timer);
-    }, [kind, settings]);
-
     const gridlines = isOn(settings, "gridlines");
     const figure: Figure | null = useMemo(() => {
         if (!data) return null;
@@ -85,8 +71,7 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
     // a box or lasso selection puts the selected stars into the star list
     const onSelected = useCallback((event: PlotSelectionEvent | undefined) => {
         if (!event || !plot) return;
-        const traces = (plot as unknown as {data: Array<{text?: Array<string>}>}).data;
-        const names = event.points.map((point) => traces[point.curveNumber]?.text?.[point.pointNumber]).filter((name): name is string => Boolean(name));
+        const names = event.points.map((point) => pointName(plot, point.curveNumber, point.pointNumber)).filter((name): name is string => Boolean(name));
         if (names.length) change({star_list: names.join(";"), star_action: "only"});
     }, [plot, change]);
 
