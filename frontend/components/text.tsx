@@ -2,7 +2,7 @@
 import React from "react";
 import Link from "next/link";
 
-export const linkStyle = "text-hyred hover:text-hypurple hover:bg-hyyellow hover:underline";
+export const linkStyle = "text-hyred hover:text-hypurple hover:bg-hyyellow hover:underline [overflow-wrap:anywhere]";
 
 export function Page({children}: {children: React.ReactNode}) {
     return <div className="w-full max-w-5xl mx-auto px-6 pb-16">{children}</div>;
