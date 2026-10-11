@@ -44,13 +44,13 @@ export default function StyleSamples() {
                     />
                 </div>
                 <div>
-                    <Label>A choice:</Label>
+                    <Label htmlFor="sample-select">A choice:</Label>
                     <Select name="sample-select" value="median" onChange={() => {}}>
                         <option value="median">Use the median</option>
                     </Select>
                 </div>
                 <div>
-                    <Label>A text field:</Label>
+                    <Label htmlFor="sample-text">A text field:</Label>
                     <TextField
                         name="sample-text"
                         value=""
