@@ -1,8 +1,11 @@
 # The Next.js frontend
 
-The website's pages (they were a web2py application until October 2026; nginx redirects the old
-`/hypatia/default/` addresses). The pages get their data from the API (`backend`) at
-`/hypatia/api/frontend/`.
+The website's pages, ported from the web2py frontend (`frontend-web2py`) in October 2026. Both
+frontends run on the same API (`backend`, at `/hypatia/api/frontend/`): nginx (`nginx/default.conf`)
+serves web2py at hypatiacatalog.com and this frontend at new.hypatiacatalog.com, for people to try it
+before it takes over. For testing, the port picks the frontend: this one on nginx's port 80
+(http://localhost/), web2py on 8082 (http://localhost:8082/); on this host every old
+`/hypatia/default/` address redirects to the page here.
 
 A new page: write it under `app/(USERSETTINGS)/<name>/page.tsx`, link it from `data/api_targets.tsx`
 and the menu (`components/header.tsx`), and add it to `scripts/smoke_test.py` and `scripts/compare_pages.py`.

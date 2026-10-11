@@ -1,0 +1,3 @@
+[submodule "frontend-web2py/web2py"]
+	path = frontend-web2py/web2py
+	url = https://github.com/web2py/web2py

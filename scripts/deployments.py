@@ -38,7 +38,7 @@ import pymongo
 
 REPO = Path(__file__).resolve().parent.parent
 # files that pin the versions, relative to the repository
-PINNED_FILES = ["versions.env", "backend/requirements.lock", "frontend/package-lock.json"]
+PINNED_FILES = ["versions.env", "backend/requirements.lock", "frontend-web2py/requirements.lock"]
 
 
 def collection() -> pymongo.collection.Collection:

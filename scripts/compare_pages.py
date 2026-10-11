@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """Capture every page and API response of a running HySite, and compare two captures.
 
-    python3 scripts/compare_pages.py capture http://localhost:8081 before.json
+    python3 scripts/compare_pages.py capture next http://localhost:8081 before.json
     ...change something, or deploy...
-    python3 scripts/compare_pages.py capture http://localhost:8081 after.json
+    python3 scripts/compare_pages.py capture next http://localhost:8081 after.json
+    (web2py in place of next for the web2py frontend, on its own port or host)
     python3 scripts/compare_pages.py compare before.json after.json
 
 Evidence that a change (an upgrade, a refactor, a deploy) changed nothing it should not have: every
 frontend page, every API endpoint, the table and its CSV export, the largest requests the pages make
 (every catalog selected, a 1000-star list), all in one browser-like session. The parts that differ on
-every request anyway (ids, dates, the host name) are
+every request anyway (session keys, form keys, web2py component ids, dates, the host name) are
 normalised before saving, so two captures of the same site are identical. Standard library only.
 
 A capture is about 45 requests, including heavy ones; it takes a minute or two and the file is large
@@ -37,10 +38,9 @@ DENSITY_SETTINGS = {"xhist_bin_size": "error", "yhist_bin_size": "0.05", "color_
 STAR_LIST = "; ".join([TEST_STAR] + [f"HIP {number}" for number in range(1, 1000)])
 
 # a path, or (path, form data to POST); "catalogs": None is replaced by every catalog id
-REQUESTS = [
-    # frontend pages
-    "/", "/help", "/about", "/nea", "/acknowledgements",
-    # the Next.js plot pages (2026-10-11) and the data they fetch through their route handler (a JSON POST)
+# the Next.js frontend's pages and the data they fetch through their route handler (a JSON POST)
+NEXT_REQUESTS = [
+    "/", "/help", "/about", "/nea", "/acknowledgements", "/api",
     "/scatter", "/targets", "/hist", "/launch?mode=hist", "/hypatia/default/launch",
     ("/data/scatter", {}), ("/data/scatter", PLOT_SETTINGS), ("/data/targets", CHECKBOXES), ("/data/hist", {}),
     # four filters (three fixed rows until October 2026)
@@ -50,7 +50,29 @@ REQUESTS = [
     # the density page: the default data, then its own settings changed
     "/density", ("/data/density", {"show_xyhist": "true"}), ("/data/density", DENSITY_SETTINGS),
     "/hypatia/default/not_a_page",
-    # API
+    # the largest requests: every catalog, a long star list, then the table of those stars
+]
+# the web2py frontend's pages and fragments, in one browser-like session
+WEB2PY_DENSITY_SETTINGS = {"xhist_bin_size": "error", "yhist_bin_size": "0.05", "color_pallet": "Viridis",
+                           "toggle_vars": "show_xyhist,gridlines"}
+WEB2PY_REQUESTS = [
+    "/", "/hypatia/default/help", "/hypatia/default/about", "/hypatia/default/nea", "/hypatia/default/credits", "/api",
+    "/hypatia/default/launch", "/hypatia/default/graph.load",
+    "/hypatia/default/dropdown.load?id=xaxis&value1=Fe&value2=H&log=True",
+    "/hypatia/default/hist", "/hypatia/default/graph_hist.load",
+    "/hypatia/default/density", "/hypatia/default/graph_density.load",
+    ("/hypatia/default/graph_density.load", WEB2PY_DENSITY_SETTINGS),
+    "/hypatia/default/targets", "/hypatia/default/graph_targets.load",
+    "/hypatia/default/table", "/hypatia/default/table.load",
+    "/hypatia/default/table.csv/hypatia.csv?download=true", "/hypatia/default/table.tsv/hypatia.tsv?download=true",
+    ("/hypatia/default/graph.load", PLOT_SETTINGS), "/hypatia/default/table.load",
+    # after a scatter change, the targets plot must still have data (issue #40)
+    "/hypatia/default/targets", "/hypatia/default/graph_targets.load",
+    "/hypatia/default/not_a_page",
+    # the largest requests the pages make: every catalog, a long star list, then the table of those stars
+]
+# the API, the same on both hosts
+API_REQUESTS = [
     "/hypatia/api/", "/hypatia/api/v2/solarnorm/", "/hypatia/api/v2/element/", "/hypatia/api/v2/catalog/",
     "/hypatia/api/v2/nea/", f"/hypatia/api/v2/star/?name={urllib.parse.quote(TEST_STAR)}",
     f"/hypatia/api/v2/composition/?name={urllib.parse.quote(TEST_STAR)}&element=Fe&element=C",
@@ -58,10 +80,6 @@ REQUESTS = [
     "/hypatia/api/stats/histogram/", "/hypatia/api/planets/", "/hypatia/api/metadata/solarnorms/",
     "/hypatia/api/db/summary/", "/hypatia/api/web2py/table/?elements=Fe&elements=C",
     "/hypatia/api/web2py/table/?elements=Fe&elements=C&elements=O&elements=Mg&elements=Si&elements=Ti&elements=Ni",
-    # the largest requests the pages make: every catalog, a long star list, then the table of those stars
-    ("/data/scatter", {"cat_action": "only", "catalogs": None}),
-    ("/data/scatter", {"star_list": STAR_LIST, "star_action": "only"}),
-    ("/data/table", {"star_list": STAR_LIST, "star_action": "only", "tablecols": "names,Fe"}),
     # the table built by the API (api.web2py.table): every column kind, a targets table, a sort, a download
     "/hypatia/api/web2py/table/?tablecols=names,names_all,planet,stellar,spread,ref,Fe,Fe_II,C,Li"
     "&show_targets=true&show_hwo_tier1=true&sort=Fe&reverse=true&statistic=median&solarnorm=lodders09",
@@ -74,8 +92,6 @@ REQUESTS = [
     # the settings model (api.web2py.settings), under the frontend API's name and its old one
     "/hypatia/api/web2py/settings/",
     "/hypatia/api/frontend/settings/",
-    # the API explanation page
-    "/api",
 ]
 DROPPED_HEADERS = {"date", "set-cookie", "content-length", "expires", "last-modified", "etag", "server",
                    "connection", "keep-alive", "transfer-encoding"}
@@ -84,17 +100,20 @@ DROPPED_HEADERS = {"date", "set-cookie", "content-length", "expires", "last-modi
 def normalise(text: str) -> str:
     text = re.sub(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "<uuid>", text)
     text = re.sub(r'"p\d+"', '"<id>"', text)                            # Bokeh model ids (captures before 2026-10-11)
+    text = re.sub(r'(_formkey|session_id_\w+)[^"&\s]*', r"\1<x>", text)  # web2py form and session keys
+    text = re.sub(r'id="c\d{10,}"', 'id="c<id>"', text)                 # web2py component ids
     text = re.sub(r"\?_=\d+|\b1[6-9]\d{8}\b", "<time>", text)           # cache busters, unix times
     text = re.sub(r"\b20\d\d-\d\d-\d\d\b|\b\d\d/\d\d/20\d\d\b", "<date>", text)
     text = re.sub(r"https?://[^/\s\"']+/", "http://<host>/", text)
     return text
 
 
-def capture(base_url: str, out_path: str) -> None:
+def capture(frontend: str, base_url: str, out_path: str) -> None:
     opener = new_session()
     catalog_ids = None
     result = {}
-    for index, item in enumerate(REQUESTS):
+    requests = (NEXT_REQUESTS if frontend == "next" else WEB2PY_REQUESTS) + API_REQUESTS
+    for index, item in enumerate(requests):
         if item == NEW_SESSION:
             opener = new_session()
             continue
@@ -177,6 +196,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     commands = parser.add_subparsers(dest="command", required=True)
     cap = commands.add_parser("capture", help="fetch every page and save the normalised responses")
+    cap.add_argument("frontend", choices=["next", "web2py"], help="which frontend the URL serves")
     cap.add_argument("base_url", help="for example http://localhost:8081 or https://hypatiacatalog.com")
     cap.add_argument("out_path", help="JSON file to write")
     cmp_ = commands.add_parser("compare", help="compare two captures; exits 1 if they differ")
@@ -185,7 +205,7 @@ def main() -> None:
     cmp_.add_argument("--lines", type=int, default=12, help="diff lines to show per differing response")
     args = parser.parse_args()
     if args.command == "capture":
-        capture(args.base_url.rstrip("/"), args.out_path)
+        capture(args.frontend, args.base_url.rstrip("/"), args.out_path)
     else:
         sys.exit(compare(args.path_a, args.path_b, args.lines))
 

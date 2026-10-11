@@ -6,7 +6,7 @@
 #
 #  1. Update the code: fast-forward to origin/$HYSITE_BRANCH.
 #  2. Resolve the newest versions: scripts/refresh_versions.py writes versions.env, the
-#     requirements.lock file and frontend/package-lock.json (all ignored by git).
+#     requirements.lock files and frontend/package-lock.json (all ignored by git).
 #  3. Stop here if neither the code nor any version changed.
 #  4. Test: build and run the whole site against the sample database (compose.test.yaml)
 #     and run the smoke tests. On failure: put the previous versions back, stop.
@@ -27,16 +27,20 @@ BRANCH=${HYSITE_BRANCH:-main}
 # false skips step 1, for testing changes that are not pushed yet
 GIT_UPDATE=${HYSITE_GIT_UPDATE:-true}
 PROD_URL=${HYSITE_URL:-http://localhost}
+# the Next.js frontend's address (new.hypatiacatalog.com; nginx picks the frontend by host name)
+NEW_URL=${HYSITE_NEW_URL:-http://localhost}
 # the HTTPS edge (HyRoute); its nginx runs the NGINX_IMAGE tested here. Skipped if the file is absent
 EDGE_COMPOSE=${HYSITE_EDGE_COMPOSE:-/home/ubuntu/HyRoute/compose.yaml}
+# the test stack: the Next.js frontend on 8081, web2py on 8083 (test.env)
 TEST_URL=http://localhost:8081
+TEST_WEB2PY_URL=http://localhost:8083
 # seconds the smoke test waits for a site to start
 SMOKE_WAIT=${HYSITE_SMOKE_WAIT:-300}
 # the backend image has pymongo, so it runs scripts/deployments.py
 OPS_IMAGE=${OPS_IMAGE:-hysite-django-api:latest}
 OPS_NETWORK=${OPS_NETWORK:-hynet}
-BUILT_IMAGES=(hysite-django-api hysite-next-frontend)
-PINNED_FILES=(versions.env backend/requirements.lock frontend/package-lock.json)
+BUILT_IMAGES=(hysite-django-api hysite-web-to-py hysite-next-frontend)
+PINNED_FILES=(versions.env backend/requirements.lock frontend-web2py/requirements.lock frontend/package-lock.json)
 KEEP_RUNS=20
 
 cd "$REPO" || exit 1
@@ -146,8 +150,10 @@ mongo_line_unchanged() {
     [ -z "$new" ] || [ "$RUNNING_MONGO_LINE" = "$NEW_MONGO_LINE" ]
 }
 installed_versions() {  # $1 = image name prefix, e.g. hysite-test
-    docker run --rm --entrypoint sh "$1-django-api" -c 'python --version; pip freeze' \
-        > "$RUN_DIR/installed-django-api.txt" 2> /dev/null
+    for service in django-api web-to-py; do
+        docker run --rm --entrypoint sh "$1-$service" -c 'python --version; pip freeze' \
+            > "$RUN_DIR/installed-$service.txt" 2> /dev/null
+    done
     # the Node packages are in the run folder's copy of package-lock.json (save_run_files)
     docker run --rm --entrypoint node "$1-next-frontend" --version \
         > "$RUN_DIR/installed-next-frontend.txt" 2> /dev/null
@@ -189,6 +195,9 @@ save_run_files
 # 3. anything new?
 if [ "$COMMIT" = "$DEPLOYED_COMMIT" ] && pins_unchanged; then
     restore_pins  # same versions; keep the old files so their timestamps stay meaningful
+    # the frontend cleans old session files when it starts; on a week without a deploy, do it here
+    prod_compose exec -T web-to-py python web2py.py -S hypatia -R scripts/sessions2trash.py -A -o -x 604800 \
+        > /dev/null 2>&1 || log "WARNING: old session files were not cleaned up"
     record unchanged "No new code or versions since the last deploy"
     finish 0
 fi
@@ -197,7 +206,8 @@ fi
 log "Testing the new versions against the sample database"
 test_compose down --volumes --remove-orphans > /dev/null 2>&1
 if test_compose build --pull && test_compose up --detach \
-        && python3 scripts/smoke_test.py "$TEST_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-test.txt"; then
+        && python3 scripts/smoke_test.py next "$TEST_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-test.txt" \
+        && python3 scripts/smoke_test.py web2py "$TEST_WEB2PY_URL" --wait "$SMOKE_WAIT" | tee -a "$RUN_DIR/smoke-test.txt"; then
     TEST_PASSED=true
 else
     TEST_PASSED=false
@@ -226,7 +236,8 @@ for image in "${BUILT_IMAGES[@]}"; do
     docker image inspect "$image:latest" > /dev/null 2>&1 && docker tag "$image:latest" "$image:previous"
 done
 if prod_compose build --pull && prod_compose up --detach --remove-orphans && edge_up \
-        && python3 scripts/smoke_test.py "$PROD_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-production.txt"; then
+        && python3 scripts/smoke_test.py web2py "$PROD_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-production.txt" \
+        && python3 scripts/smoke_test.py next "$NEW_URL" --wait "$SMOKE_WAIT" | tee -a "$RUN_DIR/smoke-production.txt"; then
     git rev-parse HEAD > .update/deployed_commit
     installed_versions hysite
     record deployed "Deployed commit ${COMMIT:0:8} and passed the production smoke test"
@@ -243,7 +254,8 @@ for image in "${BUILT_IMAGES[@]}"; do
     docker image inspect "$image:previous" > /dev/null 2>&1 && docker tag "$image:previous" "$image:latest"
 done
 if prod_compose up --detach --no-build --remove-orphans && edge_up \
-        && python3 scripts/smoke_test.py "$PROD_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-rollback.txt"; then
+        && python3 scripts/smoke_test.py web2py "$PROD_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-rollback.txt" \
+        && python3 scripts/smoke_test.py next "$NEW_URL" --wait "$SMOKE_WAIT" | tee -a "$RUN_DIR/smoke-rollback.txt"; then
     record rolled_back "Production check failed; rolled back to the previous versions, which pass. Logs: $REPO/$RUN_DIR"
 else
     record rollback_failed "Production check failed and the rollback also fails. The website needs attention now. Logs: $REPO/$RUN_DIR"
