@@ -12,20 +12,21 @@ export type Change = (changes: Record<string, string>) => void;
 export function FilterRow({index, summary, settings, onChange, onRemove}:
                           {index: number, summary: Summary, settings: Settings, onChange: Change, onRemove?: () => void}) {
     const prefix = `filter${index}_`;
+    // one line per filter: the parameter (its name shortened rather than wrapping), the range, inverse, remove
     return (
-        <div className="flex flex-wrap items-center gap-2 mb-1">
-            <ParameterPicker summary={summary} name={prefix + "1"} value={settings[prefix + "1"]} denominator={settings[prefix + "2"]} allowNone
+        <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_5.5rem_auto_1rem] gap-2 items-center mb-1">
+            <ParameterPicker summary={summary} name={prefix + "1"} value={settings[prefix + "1"]} denominator={settings[prefix + "2"]} allowNone compact
                              onChange={(value, denominator) => onChange({[prefix + "1"]: value, ...(denominator ? {[prefix + "2"]: denominator} : {})})}/>
-            <TextField name={prefix + "3"} value={settings[prefix + "3"]} placeholder="minimum" className="w-28"
+            <TextField name={prefix + "3"} value={settings[prefix + "3"]} placeholder="minimum" className="w-full"
                        onCommit={(value) => onChange({[prefix + "3"]: value})}/>
-            <TextField name={prefix + "4"} value={settings[prefix + "4"]} placeholder="maximum" className="w-28"
+            <TextField name={prefix + "4"} value={settings[prefix + "4"]} placeholder="maximum" className="w-full"
                        onCommit={(value) => onChange({[prefix + "4"]: value})}/>
             <Toggle name={prefix + "inv"} label="inverse" checked={isOn(settings, prefix + "inv")}
                     onChange={(on) => onChange({[prefix + "inv"]: String(on)})}/>
-            {onRemove && (
+            {onRemove ? (
                 <button type="button" onClick={onRemove} title="Remove this filter" aria-label="Remove this filter"
-                        className="text-hygrey hover:text-hyred text-lg leading-none px-1">×</button>
-            )}
+                        className="text-hygrey hover:text-hyred text-lg leading-none">×</button>
+            ) : <span/>}
         </div>
     );
 }
