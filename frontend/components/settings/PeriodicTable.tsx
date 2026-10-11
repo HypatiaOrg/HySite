@@ -4,7 +4,7 @@
 // several (the table's columns).
 import React from "react";
 import type {Summary} from "@/data/summary";
-import {buttonStyle, pickedStyle, onStyle} from "@/components/settings/controls";
+import {buttonClass} from "@/components/settings/controls";
 
 const PERIODS: Array<Array<string | null>> = [
     ['H', null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, 'He'],
@@ -33,10 +33,9 @@ export default function PeriodicTable({summary, selected, onPick, allowH = false
     const available = new Set(summary.element_data.map((element) => element.element_id));
     if (allowH) available.add("H");
     const names = new Map(summary.element_data.map((element) => [element.element_id, element.element_name]));
-    const highlight = onColor === "picked" ? pickedStyle : onStyle;
     const cell = (id: string, text: string, title: string) => (
         <button type="button" key={id} data-picks="1" title={title} onClick={() => onPick(id)}
-                className={buttonStyle + " px-0.5 py-0 text-xs leading-5 " + (selected.has(id) ? highlight : "")}>
+                className={buttonClass(selected.has(id) ? onColor : "plain", "px-0.5 py-0 text-xs leading-5")}>
             {text}
         </button>
     );

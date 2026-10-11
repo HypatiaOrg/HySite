@@ -7,6 +7,7 @@ import {notFound} from "next/navigation";
 import {DEBUG} from "@/data/api_targets";
 import {Page, H1, H2, P, Ul, Ext, In, DefinitionTable} from "@/components/text";
 import {Palette} from "@/components/palette";
+import StyleSamples from "@/components/style_samples";
 import {columns} from "@/data/about_columns";
 
 export const metadata: Metadata = {title: "Style | Hypatia Catalog"};
@@ -51,11 +52,48 @@ export default function StylePage() {
             <P>The first rows of the About page&apos;s column table. The header stays in view while the rows scroll.</P>
             <DefinitionTable rows={columns.slice(0, 6)} name="Sample rows of the column table"/>
 
+            <H1 id="controls">Plot page controls</H1>
+            <P>The pieces of the scatter, target lists, density and histogram pages: the parameter picker (click it), a
+                choice, a text field, a toggle, the buttons in their three states, a notice, and the hover labels.</P>
+            <StyleSamples/>
+
             <H1 id="caption">Caption</H1>
             <P>The caption under the home page&apos;s histogram: light blue on purple.</P>
             <p className="text-hyblue bg-hypurple indent-12 pt-2 pb-2 pl-6 pr-6 mb-8">
                 Number of stars for which each element abundance has been measured.
             </p>
+
+            <H1 id="decisions">Decisions to review</H1>
+            <P>Choices made while porting the pages from web2py (October 2026), for review. Each says where it is changed.</P>
+            <Ul>
+                <li><b>Body text grey.</b> The theme&apos;s grey (#8A8A8A) on white measures 3.45:1; WCAG AA asks 4.5:1 for
+                    normal text, so every page is below it, more so on the yellow and grey blocks. A darker grey such as
+                    #6E6E6E passes at about 4.9:1. Try it with the picker above. Changed in <code>app/globals.css</code>.</li>
+                <li><b>Two kinds of &quot;on&quot;.</b> A parameter picked for an axis or filter is purple on white; a column
+                    that is in the data table is green (the theme&apos;s green, otherwise unused). The old site used
+                    Bootstrap&apos;s blue and green. Changed in <code>components/settings/controls.tsx</code>.</li>
+                <li><b>Headings and links share red.</b> Main headings are purple, subheadings and links are red, so a red
+                    word in a paragraph is a link and a red line on its own is a subheading. Changed in{' '}
+                    <code>components/text.tsx</code>.</li>
+                <li><b>Callouts.</b> Light blue with a purple rule for a notice to know about (the API page, the form
+                    notices); pale yellow for the Python to copy and the version notes, carrying on the old page&apos;s
+                    yellow highlights. Changed in <code>components/api_docs.tsx</code> and <code>controls.tsx</code>.</li>
+                <li><b>The plot page layout.</b> The figure keeps its 750 by 625 size with the form beside it, as before,
+                    and the form drops below the figure on a narrow window. The grey box behind a loading plot, and the
+                    half-opacity while it refreshes, are the old page&apos;s. Changed in <code>components/plot/PlotPage.tsx</code>.</li>
+                <li><b>The parameter picker.</b> A panel under its button, leftwards over the plot like the old dropdown,
+                    with the periodic table (an element and its ionized species side by side), then the stellar and
+                    planet properties. The catalog list has a search box in place of the old select2 control.</li>
+                <li><b>The data table.</b> Alternate rows tinted light blue, a header that stays in view, the sorted
+                    column&apos;s name in red with an arrow, a star&apos;s SIMBAD link as an arrow after its name, and the
+                    catalog values behind a cell as a tooltip. Changed in <code>components/table/DataTable.tsx</code>.</li>
+                <li><b>The menu.</b> The current page is a white pill with purple text, as the old menu marked it; between
+                    the plot pages the links carry the plot settings along. Changed in <code>components/nav_link.tsx</code>.</li>
+                <li><b>The acknowledgement to copy</b> is set off as a quotation with a yellow rule. Changed in{' '}
+                    <code>app/(USERSETTINGS)/acknowledgements/page.tsx</code>.</li>
+                <li><b>Typeface.</b> Inter, from the Next.js site&apos;s original setup, for everything; the old site used
+                    Bootstrap&apos;s Helvetica stack. Changed in <code>app/layout.tsx</code>.</li>
+            </Ul>
         </Page>
     );
 }

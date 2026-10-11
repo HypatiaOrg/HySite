@@ -6,7 +6,7 @@ import type {Summary} from "@/data/summary";
 import {labelOf, hoverOf} from "@/data/summary";
 import {isElement} from "@/data/settings";
 import PeriodicTable from "@/components/settings/PeriodicTable";
-import {Popover, buttonStyle, pickedStyle} from "@/components/settings/controls";
+import {Popover, buttonClass} from "@/components/settings/controls";
 
 type Props = {
     summary: Summary,
@@ -22,7 +22,7 @@ function PropertyButtons({summary, handles, value, onPick}: {summary: Summary, h
         <div className="flex flex-wrap gap-1 mb-2">
             {handles.map((handle) => (
                 <button type="button" key={handle} data-picks="1" title={hoverOf(summary, handle)} onClick={() => onPick(handle)}
-                        className={buttonStyle + " px-1.5 py-0 text-xs leading-5 " + (value === handle ? pickedStyle : "")}>
+                        className={buttonClass(value === handle ? "picked" : "plain", "px-1.5 py-0 text-xs leading-5")}>
                     {labelOf(summary, handle)}
                 </button>
             ))}
@@ -37,7 +37,7 @@ export default function ParameterPicker({summary, name, value, denominator, onCh
                 <div className="w-[58rem]">
                     {allowNone && (
                         <button type="button" data-picks="1" onClick={() => onChange("none")}
-                                className={buttonStyle + " px-1.5 py-0 text-xs leading-5 mb-2 " + (value === "none" ? pickedStyle : "")}>none</button>
+                                className={buttonClass(value === "none" ? "picked" : "plain", "px-1.5 py-0 text-xs leading-5 mb-2")}>none</button>
                     )}
                     <div className="font-semibold text-hypurple">Element ratio:</div>
                     <PeriodicTable summary={summary} selected={new Set([value])} onPick={(id) => onChange(id)}/>

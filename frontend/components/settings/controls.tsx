@@ -4,10 +4,16 @@ import React, {useEffect, useLayoutEffect, useRef, useState} from "react";
 
 export const labelStyle = "font-semibold text-hypurple";
 export const inputStyle = "border border-hygrey/50 rounded px-2 py-1 bg-white text-black focus:outline-none focus:border-hypurple focus:ring-1 focus:ring-hypurple";
-export const buttonStyle = "border border-hygrey/50 rounded px-2 py-1 bg-white text-black hover:bg-hyblue/30 cursor-pointer";
-// a picked choice, and a column that is in the table
-export const pickedStyle = "bg-hypurple text-white border-hypurple hover:bg-hypurple";
-export const onStyle = "bg-hygreen text-white border-hygreen hover:bg-hygreen";
+// a button: the base, then one of the three states (never two: the later class in the stylesheet would win)
+export const buttonBase = "border rounded px-2 py-1 cursor-pointer";
+export const plainStyle = "border-hygrey/50 bg-white text-black hover:bg-hyblue/30";
+// a picked choice (an axis or filter parameter), and a column that is in the table
+export const pickedStyle = "border-hypurple bg-hypurple text-white";
+export const onStyle = "border-hygreen bg-hygreen text-white";
+export const buttonStyle = buttonBase + " " + plainStyle;
+// the classes of a button in a state
+export const buttonClass = (state: "plain" | "picked" | "on", extra = "") =>
+    buttonBase + " " + {plain: plainStyle, picked: pickedStyle, on: onStyle}[state] + (extra ? " " + extra : "");
 
 export function Label({children, htmlFor}: {children: React.ReactNode, htmlFor?: string}) {
     return <label htmlFor={htmlFor} className={labelStyle + " block mb-1"}>{children}</label>;
