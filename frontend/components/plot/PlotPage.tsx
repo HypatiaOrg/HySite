@@ -5,7 +5,7 @@ import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import type {PlotSelectionEvent, PlotlyHTMLElement} from "plotly.js";
 import type {Summary} from "@/data/summary";
 import type {Settings, SettingsSchema} from "@/data/settings";
-import {isOn, searchParamsFromSettings} from "@/data/settings";
+import {isOn, listOf, searchParamsFromSettings} from "@/data/settings";
 import {fetchData, type ScatterData, type TargetsData, type HistData, type DensityData} from "@/data/plot_types";
 import {scatterFigure, targetsFigure, histFigure, densityFigure, type Figure, PLOT_WIDTH, PLOT_HEIGHT} from "@/components/plot/figures";
 import PlotlyFigure from "@/components/plot/PlotlyFigure";
@@ -17,6 +17,22 @@ import {FilterRow, AxisRow, SolarNormRow, StatisticRow, CatalogsRow, StarsRow, T
 import {Label} from "@/components/settings/controls";
 
 export type PlotKind = "scatter" | "targets" | "hist" | "density";
+
+// what the current settings apply beyond the axes, in a line under the plot: a changed catalog or star
+// list often leaves the star count as it was, so this says that the request carried it
+function applied(settings: Settings, summary: Summary): string {
+    const parts: Array<string> = [];
+    const catalogs = listOf(settings, "catalogs").length;
+    if (catalogs) parts.push(`${catalogs} catalog${catalogs > 1 ? "s" : ""} ${settings.cat_action === "only" ? "allowed only" : "excluded"}`);
+    const stars = listOf(settings, "star_list").length;
+    if (stars) parts.push(`${stars} star${stars > 1 ? "s" : ""} ${settings.star_action === "only" ? "allowed only" : "excluded"}`);
+    const filters = [1, 2, 3].filter((index) => settings[`filter${index}_1`] && settings[`filter${index}_1`] !== "none").length;
+    if (filters) parts.push(`${filters} filter${filters > 1 ? "s" : ""}`);
+    const norm = summary.solarnorms.find((item) => item.id === settings.solarnorm);
+    parts.push(norm ? `${norm.author}${norm.year ? ` (${norm.year})` : ""} normalization` : `${settings.solarnorm} normalization`);
+    parts.push(settings.statistic === "mean" ? "mean of the catalogs" : "median of the catalogs");
+    return parts.join("; ");
+}
 
 type Props = {kind: PlotKind, schema: SettingsSchema, summary: Summary, initialSettings: Settings};
 
@@ -73,8 +89,9 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
     return (
         <div className="px-4 pb-8">
             <div className="flex flex-wrap gap-6 justify-center">
+                <div style={{width: PLOT_WIDTH, maxWidth: "100%"}}>
                 <div className={"relative flex items-center justify-center bg-hygrey/20 transition-opacity " + (loading ? "opacity-50" : "")}
-                     style={{width: PLOT_WIDTH, height: kind === "density" ? 650 : PLOT_HEIGHT, maxWidth: "100%"}}>
+                     style={{height: kind === "density" ? 650 : PLOT_HEIGHT}}>
                     {error && <div className="text-hyred text-xl font-semibold p-4">The plot could not be loaded: {error}</div>}
                     {!error && data && !figure && <div className="text-xl font-semibold text-hygrey">No data points to display</div>}
                     {!error && !data && <div className="text-xl font-semibold text-hygrey">Loading...</div>}
@@ -84,6 +101,11 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
                             {figure.hoverLabels && <HoverLabels plot={plot} labels={figure.hoverLabels}/>}
                         </div>
                     )}
+                </div>
+                {/* what the plot was made with, beyond its axes */}
+                <p className={"text-center text-sm text-hygrey mt-2 " + (loading ? "opacity-50" : "")} aria-live="polite">
+                    {loading ? "Updating: " : "Showing: "}{applied(settings, summary)}
+                </p>
                 </div>
 
                 <form className="w-[28rem] max-w-full" onSubmit={(event) => { event.preventDefault(); forceRefresh(); }}>
