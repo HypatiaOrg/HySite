@@ -179,9 +179,14 @@ services:
         image: ${NGINX_IMAGE:-nginx:alpine}
         restart: "${RESTART_POLICY:-no}"
         ports:
+            # the Next.js frontend (and, by host name, web2py: nginx/default.conf)
             - "${LOCAL_PORT:-80}:80"
+            # the web2py frontend for testing on any host name
+            - "${WEB2PY_PORT:-8082}:8082"
         volumes:
             - "./nginx/default.conf:/etc/nginx/conf.d/default.conf"
+            # the API locations, included by both frontends' server blocks
+            - "./nginx/api-locations.conf:/etc/nginx/hysite/api-locations.conf:ro"
             - "django_static:/django/static:ro"
         networks:
             - hynet

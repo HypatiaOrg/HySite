@@ -1,0 +1,37 @@
+{{extend "layout.html"}}
+
+<div class="col-md-3"></div>
+<div class="col-md-6">
+    <h2>Hypatia Catalog Data on the NASA Exoplanet Archive</h2>
+    <p>Stellar elemental abundances are determined using spectroscopy to measure the amount of a particular element in the photosphere of a star. </p>
+    <p>The <a href="https://www.hypatiacatalog.com" target="_blank">Hypatia Catalog</a> is a database of stellar elemental abundances that have been measured from hundreds of different
+        <a href="https://www.hypatiacatalog.com" target="_blank">literature sources</a>
+            within +11,000 stars. Stars are included within the database if they are FGKM-type stars (effective temperature = 2300-7500 K), within 500 pc of the Sun, and if the literature source measured [Fe/H] and at least one other element. We note that all exoplanet host stars are included regardless of distance. Also, in an effort to focus predominantly on
+        <span class="c12"><a class="c6" href="https://drive.google.com/file/d/0B6JubEpe8-76YjlBakJydy1OaXM/view?usp=sharing&resourcekey=0-PGfV-0IqRvm6a9Xw5dNCXw" target="_blank">high resolution data, </a></span>
+            we do not often include abundance data from large surveys such as RAVE, WEAVE, GALAH, or APOGEE. </p>
+    <p>The Hypatia Catalog is a multidimensional database, such that multiple literature sources have measured the same element within the same star. For the results on the NASA Exoplanet Archive website, the median value of all measurements is provided, where the range or spread in those measurements is given as the error. The
+        <a href="https://hypatiacatalog.com/hypatia/default/launch" target="_blank">
+            main Hypatia Catalog page</a> is available to determine the mean abundance value or toggle which literature sources are included/excluded, with an accompanying <a href="https://hypatiacatalog.com/hypatia/default/help" target="_blank">explanation on the Help page.</a></p>
+    <h2>Breaking Down Stellar Abundance Math</h2>
+    <p>The math underlying stellar abundances is anything but simple – for a full overview and helpful walkthrough example, we suggest reading
+        <a class="c6" href="https://ui.adsabs.harvard.edu/abs/2022AJ....164..256H/abstract" target="_blank">Hinkel, Young, & Wheeler (2022).</a>
+        In general, elemental abundances are usually measured for a generic element Q, which has been scaled to 10<sup>12</sup> hydrogen atoms, and is often represented as a logged ratio with respect to H or Fe, that is normalized to the Sun. The unit for element abundances is “dex”, short for “decadic logarithmic unit”, with a log base 10 – similar to the decibel scale. And because stellar abundances are normalized to the Sun, the solar value is always at 0.0 dex.</p>
+    <p>With that in mind, the Sun is the nearest and therefore most studied star, which has meant that there are dozens of solar abundance determinations. In order to ensure that the stellar abundances within Hypatia are on the same baseline, all literature sources have been renormalized to the same solar normalization, where
+        <a class="c6" href="https://ui.adsabs.harvard.edu/abs/2009LanB...4B..712L/abstract" target="_blank">Lodders et al. (2009)</a>
+        was used for data presented on the NASA Exoplanet Archive. For those wishing to employ a different solar normalization or revert to the original normalization, that function is available on the
+        <a href="https://hypatiacatalog.com/hypatia/default/launch" target="_blank">main Hypatia Catalog page</a>
+        and described on the
+        <a href="https://hypatiacatalog.com/hypatia/default/help" target="_blank"> Help page.</a></p>
+    <p>For conversions between absolute and normalized abundances, to different solar normalizations, abundance ratio denominators, and molar ratios (plus error propagation), below is helpful table from
+        <a class="c6" href="https://ui.adsabs.harvard.edu/abs/2022AJ....164..256H/abstract" target="_blank">Hinkel, Young, & Wheeler (2022).</a>
+        In the given notation, * indicates the star and &#x2299; represents the Sun, although we recommend reading the text for more detail:</p>
+    <img style="width:110%" src="{{=URL('static','images/dex-table.png')}}" alt="A section of Table 2 from Hinkel, Young, & Wheeler (2022) giving the relevant equations and alternate notations/notes for converting from [Q/H] to A(Q*) using the solar composition, renormalizing to different solar compositions, changing the abundance ratio denominator, calculating molar ratios, and propagating errors to molar ratios.">
+    <p>There are a variety of additional complications when it comes to stellar elemental abundances, such as the handling of binary stars, lines from different ionization states (e.g., neutral vs singly ionized), as well as the abundance methodologies used by each literature source. For a more thorough breakdown, we recommend reading the bottom of the
+        <a href="https://hypatiacatalog.com/hypatia/default/about" target="_blank">About</a> page,
+        <a href="http://adsabs.harvard.edu/abs/2014AJ....148...54H" target="_blank">Hinkel et al. (2014)</a>,
+        <a href="https://ui.adsabs.harvard.edu/abs/2016ApJS..226....4H/abstract" target="_blank">Hinkel et al. (2016)</a>,
+        and
+        <a href="https://ui.adsabs.harvard.edu/abs/2019ARA%26A..57..571J/abstract" target="_blank">Jofre, Heiter, & Soubiran (2019).</a></p>
+    <h2>Confusion About "Metallicity"</h2>
+    <p>We note that there is often some confusion around the term “metallicity.” By definition, metallicity is the abundance of elements within a star that are heavier than H or He, often represented as [M/H]. However, it has become common practice within the field to use metallicity and [Fe/H] interchangeably. This is primarily a historical convenience, since up until the last ~20 years, most stars only had measurements of [Fe/H]. Therefore, it was assumed that all elements behaved the same, such that the scaling of Fe would give the scaling for the total [M/H] metallicity. Through improved instrumentation and stellar models, it has become clear that abundance ratios <em>can vary substantially</em> between stars with the same [Fe/H] -- so [M/H] must be treated as a distinct quantity. Still, it is common to see references in the literature discuss a star’s “metallicity” when they are really only referring to the star’s iron content, [Fe/H].</p>
+</div>

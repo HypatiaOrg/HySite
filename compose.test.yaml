@@ -2,7 +2,8 @@
 # Used by the update job (scripts/hysite_update.sh) and to test by hand:
 #
 #   docker compose -p hysite-test --env-file test.env -f compose.yaml -f compose.test.yaml up --build --detach
-#   python scripts/smoke_test.py http://localhost:8081
+#   python scripts/smoke_test.py next http://localhost:8081
+#   python scripts/smoke_test.py web2py http://localhost:8083
 #   docker compose -p hysite-test --env-file test.env -f compose.yaml -f compose.test.yaml down --volumes
 #
 # The separate project name (-p), container names, network and port let this run next to a

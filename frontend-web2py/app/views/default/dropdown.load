@@ -1,0 +1,113 @@
+
+<div style="display:table-row">
+  
+<div class="btn-group" style="display:table-cell">
+  <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="{{=request.vars.id}}1-dropdown">
+    {{=request.vars.value1.replace('_', ' ')}} <span class="caret"></span>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-right" style="padding-left:10px">
+    
+  {{if request.vars.allownone:}}
+  <br/>
+    <btn class="btn btn-default btn-xs btn-sp btn-{{=request.vars.id}}1" id="{{=request.vars.id}}1-none" onclick='pick("{{=request.vars.id}}1","none",property=true)'>none</btn>
+    <br/><br/>
+    {{pass}}
+    
+    <b>Element ratio:</b><br/>
+    {{=XML(build_periodic_table(table_id=request.vars.id+"1",show_species=True))}}<br/>
+    <b>Stellar property:</b></br>
+    
+    {{for sp in STELLAR_PARAM_TYPES:}}
+    <btn class="btn btn-default btn-xs btn-sp btn-{{=request.vars.id}}1" id='{{=request.vars.id}}1-{{=sp}}' onclick='pick("{{=request.vars.id}}1","{{=sp}}",property=true)'>{{=COL_PREFERRED_NAME[sp]}}</btn>
+    {{pass}}
+    <br/><br/>
+    <b>Planet property:</b><br/>
+    
+    {{for pp in PLANET_PARAM_TYPES:}}
+    <btn class="btn btn-default btn-xs btn-pp btn-{{=request.vars.id}}1" id='{{=request.vars.id}}1-{{=pp}}' onclick='pick("{{=request.vars.id}}1","{{=pp}}",property=true)'>{{=COL_PREFERRED_NAME[pp]}}</btn>
+    {{pass}}
+  
+  </ul>
+</div>
+
+<div id="{{=request.vars.id}}1-hideonproperty" {{if str(request.vars.value1).islower():}}style="display:none;"{{pass}}>
+  <div class="btn-group">
+    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="{{=request.vars.id}}2-dropdown">
+      {{=request.vars.value2.replace('_', ' ')}} <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-right">
+      {{=XML(build_periodic_table(table_id=request.vars.id+"2",show_species=True,allow_h=True))}}
+    </ul>
+  </div>
+</div>
+
+{{if request.vars.filter:}}
+<div  style="display:table-cell">
+<input type="text" class="form-control" style="width:150px" placeholder="minimum" value="{{=request.vars.value3 or ''}}" name="{{=request.vars.id}}3" onblur="refresh()">
+</div>
+<div  style="display:table-cell">
+<input type="text" class="form-control" style="width:150px" placeholder="maximum" value="{{=request.vars.value4 or ''}}" name="{{=request.vars.id}}4" onblur="refresh()">
+</div>
+{{pass}}
+
+{{if request.vars.log:}}
+<div  style="display: table-cell;padding-top: 6px;padding-left: 10px;">
+<input type="checkbox" {{if request.vars.logstate:}}checked="checked"{{pass}} id="{{=request.vars.id}}log" name="{{=request.vars.id}}log" onchange="refresh()">
+<label for="{{=request.vars.id}}log">log</label>
+</div>
+{{pass}}
+
+<div  style="display: table-cell;padding-top: 6px;padding-left: 10px;">
+<input type="checkbox" {{if request.vars.inverse:}}checked="checked"{{pass}} id="{{=request.vars.id}}inv" name="{{=request.vars.id}}inv" onchange="refresh()">
+<label for="{{=request.vars.id}}inv">inverse</label>
+</div>
+
+</div>
+
+
+<input type="hidden" id="{{=request.vars.id}}1" name="{{=request.vars.id}}1" value="{{=request.vars.value1.replace('_', ' ') or ''}}">
+<input type="hidden" id="{{=request.vars.id}}2" name="{{=request.vars.id}}2" value="{{=request.vars.value2.replace('_', ' ') or ''}}">
+
+<script>
+    function toggle(btn) {
+        $(btn).toggleClass("btn-success");
+        $("#tablecols").val($(".btn-success").map(function(index,dom){return dom.id.slice(3)}).toArray().join(","));
+    }
+    $(".btn-pt").click(function() {
+        toggle(this);
+    })
+    function pick(id,value) {
+        if(id=="pt")
+        {
+            $("#"+id+"-"+value).toggleClass("btn-success");
+            $("#tablecols").val($(".btn-success").map(function(index,dom){return dom.id.slice(3)}).toArray().join(","));
+        }
+        else
+        {
+            $(".btn-"+id).removeClass("btn-primary");
+            $("#"+id+"-"+value).addClass("btn-primary");
+            $("#"+id+"-dropdown").html(value.replace('_', ' ')+' <span class="caret"></span>');
+            $("#"+id).val(value);
+            if(value[0].toLowerCase() == value[0])
+            {
+                $("#"+id+"-hideonproperty").hide();
+            }
+            else
+            {
+                $("#"+id+"-hideonproperty").show();
+                $("#"+id+"-hideonproperty").attr("display","table-cell");
+            }
+            if(value=="disk")
+            {
+                $("#diskalert").show();
+            }
+            if(value=="sptype")
+            {
+                $("#specalert").show();
+            }
+        }
+        refresh();
+    }
+    pick("{{=request.vars.id}}1","{{=request.vars.value1.replace('_', ' ')}}");
+    pick("{{=request.vars.id}}2","{{=request.vars.value2.replace('_', ' ')}}");
+</script>

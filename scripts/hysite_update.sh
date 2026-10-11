@@ -27,9 +27,13 @@ BRANCH=${HYSITE_BRANCH:-main}
 # false skips step 1, for testing changes that are not pushed yet
 GIT_UPDATE=${HYSITE_GIT_UPDATE:-true}
 PROD_URL=${HYSITE_URL:-http://localhost}
+# the Next.js frontend's address (new.hypatiacatalog.com; nginx picks the frontend by host name)
+NEW_URL=${HYSITE_NEW_URL:-http://localhost}
 # the HTTPS edge (HyRoute); its nginx runs the NGINX_IMAGE tested here. Skipped if the file is absent
 EDGE_COMPOSE=${HYSITE_EDGE_COMPOSE:-/home/ubuntu/HyRoute/compose.yaml}
+# the test stack: the Next.js frontend on 8081, web2py on 8083 (test.env)
 TEST_URL=http://localhost:8081
+TEST_WEB2PY_URL=http://localhost:8083
 # seconds the smoke test waits for a site to start
 SMOKE_WAIT=${HYSITE_SMOKE_WAIT:-300}
 # the backend image has pymongo, so it runs scripts/deployments.py
@@ -202,7 +206,8 @@ fi
 log "Testing the new versions against the sample database"
 test_compose down --volumes --remove-orphans > /dev/null 2>&1
 if test_compose build --pull && test_compose up --detach \
-        && python3 scripts/smoke_test.py "$TEST_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-test.txt"; then
+        && python3 scripts/smoke_test.py next "$TEST_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-test.txt" \
+        && python3 scripts/smoke_test.py web2py "$TEST_WEB2PY_URL" --wait "$SMOKE_WAIT" | tee -a "$RUN_DIR/smoke-test.txt"; then
     TEST_PASSED=true
 else
     TEST_PASSED=false
@@ -231,7 +236,8 @@ for image in "${BUILT_IMAGES[@]}"; do
     docker image inspect "$image:latest" > /dev/null 2>&1 && docker tag "$image:latest" "$image:previous"
 done
 if prod_compose build --pull && prod_compose up --detach --remove-orphans && edge_up \
-        && python3 scripts/smoke_test.py "$PROD_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-production.txt"; then
+        && python3 scripts/smoke_test.py web2py "$PROD_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-production.txt" \
+        && python3 scripts/smoke_test.py next "$NEW_URL" --wait "$SMOKE_WAIT" | tee -a "$RUN_DIR/smoke-production.txt"; then
     git rev-parse HEAD > .update/deployed_commit
     installed_versions hysite
     record deployed "Deployed commit ${COMMIT:0:8} and passed the production smoke test"
@@ -248,7 +254,8 @@ for image in "${BUILT_IMAGES[@]}"; do
     docker image inspect "$image:previous" > /dev/null 2>&1 && docker tag "$image:previous" "$image:latest"
 done
 if prod_compose up --detach --no-build --remove-orphans && edge_up \
-        && python3 scripts/smoke_test.py "$PROD_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-rollback.txt"; then
+        && python3 scripts/smoke_test.py web2py "$PROD_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-rollback.txt" \
+        && python3 scripts/smoke_test.py next "$NEW_URL" --wait "$SMOKE_WAIT" | tee -a "$RUN_DIR/smoke-rollback.txt"; then
     record rolled_back "Production check failed; rolled back to the previous versions, which pass. Logs: $REPO/$RUN_DIR"
 else
     record rollback_failed "Production check failed and the rollback also fails. The website needs attention now. Logs: $REPO/$RUN_DIR"
