@@ -30,6 +30,13 @@ npm run dev        # http://localhost:3000, fetching from the API at http://loca
 sets the API container's address). The browser fetches from the page's own origin. `DEBUG=true`
 logs the fetches.
 
+## The style page
+
+`/style` (not in the menu) shows every piece of the site on one page: the six named colors with a picker
+to try other values against everything at once, the headings, paragraphs, links, buttons and the table.
+It answers only while `DEBUG` is true. To remove it for good, delete `app/(USERSETTINGS)/style/` and
+`components/palette.tsx`.
+
 ## Versions
 
 `package.json` holds the ranges to follow (`^16` for Next.js: a new major version is a decision,

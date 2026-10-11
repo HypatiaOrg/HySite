@@ -1,6 +1,6 @@
 // The columns of the Hypatia Catalog table, as described on the About page.
 import React from "react";
-import {Ext} from "@/components/text";
+import {Ext, definitionType} from "@/components/text";
 
 // the data sources the descriptions cite
 const gaiaDR3 = <Ext href="https://vizier.cds.unistra.fr/viz-bin/VizieR-3?-source=I/355">Gaia DR3</Ext>;
@@ -11,13 +11,7 @@ const nea = <Ext href="https://exoplanetarchive.ipac.caltech.edu/">NASA Exoplane
 const tic = <Ext href="https://heasarc.gsfc.nasa.gov/docs/tess/tess-input-catalog-version-8-tic-8-is-now-available-at-mast.html">the TESS Input Catalog</Ext>;
 export const simbad = <Ext href="http://simbad.u-strasbg.fr/simbad/sim-fid">SIMBAD</Ext>;
 
-export type columnType = {
-    label: string,
-    unit: string | null,
-    description: React.ReactNode,
-};
-
-export const columns: Array<columnType> = [
+export const columns: Array<definitionType> = [
     {label: "HIP", unit: null, description: "Hipparcos name"},
     {label: "HD", unit: null, description: "Henry-Draper catalog name"},
     {label: "2MASS", unit: null, description: "2MASS name"},

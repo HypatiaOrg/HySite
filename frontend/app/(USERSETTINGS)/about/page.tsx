@@ -1,5 +1,5 @@
 import type {Metadata} from "next";
-import {Page, H1, H2, P, Ext, In} from "@/components/text";
+import {Page, H1, H2, P, Ext, In, DefinitionTable} from "@/components/text";
 import {columns, simbad} from "@/data/about_columns";
 import {nea_url} from "@/data/api_targets";
 
@@ -7,13 +7,6 @@ export const metadata: Metadata = {
     title: "About | Hypatia Catalog",
     description: "The columns of the Hypatia Catalog, their units and data sources, and how the catalog handles ionization states and binary stars.",
 };
-
-// a row of the column table: label and unit side by side on a phone, with the description beneath;
-// three columns on a wider screen
-const rowStyle = "grid grid-cols-[auto_1fr] md:grid-cols-[10rem_7rem_1fr] gap-x-6 gap-y-1 py-3 border-b border-hyblue";
-const labelStyle = "font-semibold text-hypurple";
-const unitStyle = "text-hygrey text-sm md:text-base md:pt-0.5";
-const descriptionStyle = "col-span-2 md:col-span-1 text-hygrey";
 
 export default function AboutPage() {
     return (
@@ -25,20 +18,7 @@ export default function AboutPage() {
                 <In href={nea_url}>page is here</In>).
             </P>
 
-            <div className="text-lg md:text-xl mb-8" role="table" aria-label="The columns of the Hypatia Catalog">
-                <div className={rowStyle + " sticky top-0 bg-white border-b-2 border-hypurple"} role="row">
-                    <div className={labelStyle} role="columnheader">Label</div>
-                    <div className={unitStyle + " font-semibold"} role="columnheader">Unit</div>
-                    <div className={descriptionStyle + " font-semibold hidden md:block"} role="columnheader">Description</div>
-                </div>
-                {columns.map((column, index) => (
-                    <div className={rowStyle} role="row" key={index}>
-                        <div className={labelStyle} role="cell">{column.label}</div>
-                        <div className={unitStyle} role="cell">{column.unit ?? "—"}</div>
-                        <div className={descriptionStyle} role="cell">{column.description}</div>
-                    </div>
-                ))}
-            </div>
+            <DefinitionTable rows={columns} name="The columns of the Hypatia Catalog"/>
 
             <H2 id="catalogs">The catalogs</H2>
             <P>
