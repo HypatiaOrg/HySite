@@ -15,6 +15,7 @@ example msmtp-mta. Used by scripts/send_alert.sh; standard library only.
     ALERT_SMTP_IPV4      true: connect to the name's IPv4 address only
 """
 import email
+import email.message
 import os
 import smtplib
 import socket
@@ -40,8 +41,8 @@ def print_debug_masked(self, *args):
     print(text, file=sys.stderr)
 
 
-def main() -> None:
-    message = email.message_from_string(sys.stdin.read())
+def send(message: email.message.Message) -> None:
+    """Send one message with the ALERT_SMTP_* account, or sendmail without one."""
     host = os.environ.get("ALERT_SMTP_HOST", "").strip()
     if not host:
         sendmail = os.environ.get("SENDMAIL", "/usr/sbin/sendmail")
@@ -85,6 +86,10 @@ def main() -> None:
             server.auth("PLAIN", server.auth_plain, initial_response_ok=True)
             server.in_login = False
         server.send_message(message)
+
+
+def main() -> None:
+    send(email.message_from_string(sys.stdin.read()))
 
 
 if __name__ == "__main__":
