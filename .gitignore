@@ -182,3 +182,6 @@ mongo/backups/
 # the production data directory and the ones scripts/restore_mongo.sh builds
 mongo/data/
 mongo/data-*/
+
+# copied from the plotly package when the frontend image is built (frontend-web2py/Dockerfile)
+frontend-web2py/app/static/js/plotly.min.js

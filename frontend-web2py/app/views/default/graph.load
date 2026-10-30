@@ -1,7 +1,5 @@
 {{=XML(div)}}
 
-{{=XML(script)}}
-
 <script>
     //$("#stars").get(0).reload();
     refresh_table();

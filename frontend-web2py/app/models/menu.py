@@ -9,5 +9,6 @@ response.logo = A("Hypatia Catalog",
 response.menu = [
 (T('Scatter'),request.url=='/hypatia/default/launch','/hypatia/default/launch',[]),
 (T('Target Lists'),request.url=='/hypatia/default/targets','/hypatia/default/targets',[]),
+(T('Density Map'),request.url=='/hypatia/default/density','/hypatia/default/density',[]),
 (T('Histogram'),request.url=='/hypatia/default/hist','/hypatia/default/hist',[]),
 ]
