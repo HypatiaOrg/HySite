@@ -34,6 +34,9 @@ CHECKS = [
     ("/hypatia/default/graph.load", '"tickfont":{"size":16}'),
     ("/hypatia/default/hist", "Hypatia Catalog"),
     ("/hypatia/default/graph_hist.load", "plotly-graph-div"),
+    # the histogram page's bin size: a typed width, then the default rule again
+    ("/hypatia/default/graph_hist.load", "plotly-graph-div", {"hist_bin_size": "0.5"}),
+    ("/hypatia/default/graph_hist.load", "plotly-graph-div", {"hist_bin_size": ""}),
     # the density page (the plotly branch): the plot is a Plotly figure; then its own settings changed
     # (bin sizes by keyword and by number, another colour scale, the marginal histograms off)
     ("/hypatia/default/density", "Hypatia Catalog"),
@@ -78,6 +81,7 @@ CHECKS = [
     ("/hypatia/api/web2py/table/?elements=Fe&elements=C", "json"),
     # the frontend API's density data (api.web2py.density): the points, the bins of each axis, the colours
     ("/hypatia/api/frontend/density/?xaxis1=Fe&yaxis1=Si", "json"),
+    ("/hypatia/api/frontend/hist/?xaxis1=Fe&hist_bin_size=error", "json"),
 ]
 
 

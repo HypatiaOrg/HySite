@@ -54,6 +54,8 @@ DEFAULTS = {
     # the histograms' bin sizes (a number, or a keyword), shared by the three pages like the axes; the colour palette
     'xhist_bin_size': '',
     'yhist_bin_size': '',
+    # the histogram page's bin width, the same rule
+    'hist_bin_size': '',
     'color_pallet': DEFAULT_COLOR_PALLET,
 }
 
@@ -102,6 +104,7 @@ def settings_schema() -> dict:
                            'about': 'the histograms\' x bin width in data units, or a keyword: the standard '
                                     'deviation of the data (the default) or the representative error of the parameter'},
         'yhist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS, 'about': 'the histograms\' y bin width, as for x'},
+        'hist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS, 'about': 'histogram page: the bin width, as for x'},
         'color_pallet': {'kind': 'choice', 'choices': list(COLOR_PALLETS), 'about': 'density: the colour scale'},
         'tablecols': {'kind': 'list', 'choices': TABLE_TOKENS + list(available_elements_v2),
                       'about': 'the table columns: option tokens and element symbols'},

@@ -1,0 +1,35 @@
+{{
+# The plot's own controls, under the plot: the histograms toggle, the bin size boxes and (density map) the colour
+# scale. The page sets plot_controls before including this:
+#   plot_controls = dict(toggle=<session key of the toggle, or None>, bins=[(session key, label), ...], palette=bool)
+# A form of its own: refresh() and toggle_vars collect every form's fields, and the page's script makes Enter in a
+# box apply it in place (the form never posts). The bin size rule is the API's (api.web2py.density.BIN_TAGS).
+bin_hint = 'Float or keywords: (' + DENSITY_BIN_TAGS[0] + ' [default], ' + ', '.join(DENSITY_BIN_TAGS[1:]) + ')'
+}}
+<form method="post" class="form-inline plot-controls" style="margin:-5px 0 20px 0;font-size:14px;font-weight:normal">
+    {{if plot_controls.get('toggle') or plot_controls.get('palette'):}}
+    <div style="margin-bottom:8px">
+        {{if plot_controls.get('toggle'):}}
+        <div class="checkbox" style="margin:0 25px 0 0">
+            <label><input type="checkbox" {{if session[plot_controls['toggle']]:}}checked="checked"{{pass}} id="{{=plot_controls['toggle']}}" name="{{=plot_controls['toggle']}}" onchange="refresh()"> Show X and Y histograms</label>
+        </div>
+        {{pass}}
+        {{if plot_controls.get('palette'):}}
+        <div class="form-group">
+            <label for="color_pallet" style="margin-right:5px">Color pallet</label>
+            <select class="form-control" id="color_pallet" name="color_pallet" onchange="refresh()">
+                {{for color_pallet in DENSITY_COLOR_PALLETS:}}
+                <option value="{{=color_pallet}}" {{if session.color_pallet==color_pallet:}}selected="selected"{{pass}}>{{=color_pallet}}</option>
+                {{pass}}
+            </select>
+        </div>
+        {{pass}}
+    </div>
+    {{pass}}
+    {{for key, label in plot_controls['bins']:}}
+    <div class="form-group" style="margin:0 0 8px 0">
+        <label for="{{=key}}" style="width:85px;text-align:right;margin-right:8px">{{=label}}</label>
+        <input type="text" id="{{=key}}" name="{{=key}}" class="form-control" style="width:340px" placeholder="{{=bin_hint}}" value="{{=session[key] or ''}}" onchange="refresh()">
+    </div>
+    {{pass}}
+</form>

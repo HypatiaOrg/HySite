@@ -43,6 +43,8 @@ REQUESTS = [
     "/hypatia/default/launch", "/hypatia/default/graph.load",
     "/hypatia/default/dropdown.load?id=xaxis&value1=Fe&value2=H&log=True",
     "/hypatia/default/hist", "/hypatia/default/graph_hist.load",
+    # the histogram page's bin size: a typed width, then the default rule again
+    ("/hypatia/default/graph_hist.load", {"hist_bin_size": "0.5"}), ("/hypatia/default/graph_hist.load", {"hist_bin_size": ""}),
     # the density page (the plotly branch): the default plot, then its own settings changed
     "/hypatia/default/density", "/hypatia/default/graph_density.load",
     ("/hypatia/default/graph_density.load", DENSITY_SETTINGS),
@@ -78,6 +80,7 @@ REQUESTS = [
     # the density data (api.web2py.density): the defaults, then every bin size rule, the heatmap alone,
     # an element ratio and a stellar parameter as the axes, and a log axis
     "/hypatia/api/frontend/density/?xaxis1=Fe&yaxis1=Si",
+    "/hypatia/api/frontend/hist/?xaxis1=Fe&hist_bin_size=error",
     "/hypatia/api/frontend/density/?xaxis1=Fe&xaxis2=C&yaxis1=teff&xhist_bin_size=error&yhist_bin_size=0.05"
     "&color_pallet=Viridis&yaxislog=true",
     # the settings model (api.web2py.settings), under the frontend API's name and its old one

@@ -5,10 +5,14 @@
 <script src="{{=URL('static','js/plotly.min.js')}}"></script>
 {{end}}
 
-<div style="float:left;width:750px;height:625px;display:table;font-size:20px;font-weight:bold;margin-bottom:20px">
+<div style="float:left;width:750px">
+<div style="width:750px;height:625px;display:table;font-size:20px;font-weight:bold;margin-bottom:20px">
     <div style="display:table-cell;vertical-align:middle;text-align:center;background:#dddddd;height:625px" id="density">
     {{=LOAD("default","graph_density.load",ajax=True,content="Loading...")}}
     </div>
+</div>
+{{plot_controls = dict(toggle='show_xyhist', bins=[('xhist_bin_size', 'X bin size'), ('yhist_bin_size', 'Y bin size')], palette=True)}}
+{{include 'default/plot_controls.html'}}
 </div>
 
 
@@ -36,27 +40,6 @@
             <dd>
                 {{=LOAD("default","dropdown.load",vars=dict(id="yaxis",value1=session.yaxis1,value2=session.yaxis2,inverse=session.yaxisinv))}}
             </dd>
-            <br/>
-            <dd>
-                <input type="checkbox" {{if session.show_xyhist:}}checked="checked"{{pass}} id="show_xyhist" name="show_xyhist" onchange="refresh()">
-                <label for="show_xyhist">
-                    Show X and Y histograms
-                </label>
-            </dd>
-            <dt>X histograms bin size</dt>
-            <input type="text" id="xhist_bin_size" name="xhist_bin_size"  placeholder="{{='Float or keywords: (' + DENSITY_BIN_TAGS[0] + ' [default], ' + ', '.join(DENSITY_BIN_TAGS[1:]) + ')'}}" value="{{=session.xhist_bin_size}}" class="form-control" onchange="refresh()">
-            <dt>Y histograms bin size</dt>
-            <input type="text" id="yhist_bin_size" name="yhist_bin_size" placeholder="{{='Float or keywords: (' + DENSITY_BIN_TAGS[0] + ' [default], ' + ', '.join(DENSITY_BIN_TAGS[1:]) + ')'}}" class="form-control" value="{{=session.yhist_bin_size}}" onchange="refresh()">
-            <br/>
-            <dt>Choose a Color Pallet</dt>
-            <dd>
-                <select class="form-control" name="color_pallet" onchange="refresh()">
-                    {{for color_pallet in DENSITY_COLOR_PALLETS:}}
-                    <option name="color_pallet" value="{{=color_pallet}}" {{if session.color_pallet==color_pallet:}}selected="selected"{{pass}}>{{=color_pallet}}</option>
-
-                    {{pass}}
-                </select>
-            <br/>
             <dt>Solar normalization:</dt>
             <dd>
             <select class="form-control" name="solarnorm" onchange="refresh()">
@@ -149,7 +132,7 @@
     // Enter in a text box, or the Submit button, applies the settings like every other control does: the plot
     // refreshes in place. The form used to post a page reload, which raced the box's own refresh and lost the
     // value just typed (issue #35). stopPropagation keeps web2py.js from greying the button out as "Working..."
-    $("form:has(#toggle_vars)").on("submit", function(event) {
+    $("form:has(#toggle_vars), form.plot-controls").on("submit", function(event) {
         event.preventDefault();
         event.stopPropagation();
         refresh();

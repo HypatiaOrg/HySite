@@ -157,6 +157,20 @@ def marginal_bins(xaxis: np.ndarray, yaxis: np.ndarray, axis_mapping: dict, sett
     }
 
 
+def histogram_edges(values, requested: str | float | None, axis: tuple) -> dict | None:
+    """The histogram page's bins: axis_bins for its one axis, with the bin edges spelled out (the last edge at
+    the end of the range or past it, so the largest value is counted); None without values."""
+    values = np.asarray(values, dtype=float)
+    if not len(values):
+        return None
+    bins = axis_bins(values, requested, *axis)
+    count = max(1, int(math.ceil((bins['end'] - bins['start']) / bins['size'])))
+    edges = bins['start'] + bins['size'] * np.arange(count + 1)
+    edges[-1] = max(edges[-1], bins['end'])
+    bins['edges'] = edges.tolist()
+    return bins
+
+
 def density_data(graph_data: dict, axis_mapping: dict, settings) -> dict:
     """
     The density page's data from a scatter response (api.web2py.views.get_graph_data): the points with a
