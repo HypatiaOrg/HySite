@@ -12,13 +12,25 @@ example msmtp-mta. Used by scripts/send_alert.sh; standard library only.
     ALERT_SMTP_PASSWORD  its password; for Gmail an app password (the 16 letters, spaces optional)
     ALERT_SMTP_DEBUG     true: print the conversation with the server (not the login) to stderr, for
                          the journal of hysite-alert@test.service
+    ALERT_SMTP_IPV6      true: allow IPv6. Off by default: the server connects over IPv4, since
+                         a name that resolves to IPv6 first (smtp.gmail.com) hung on the AWS server
 """
 import email
 import os
 import smtplib
+import socket
 import ssl
 import subprocess
 import sys
+
+
+def connect_ipv4(self, host, port, timeout):
+    """smtplib's socket, but to the name's IPv4 address; the name itself still goes into EHLO and TLS."""
+    family, kind, proto, _, address = socket.getaddrinfo(host, port, socket.AF_INET, socket.SOCK_STREAM)[0]
+    sock = socket.socket(family, kind, proto)
+    sock.settimeout(timeout)
+    sock.connect(address)
+    return sock
 
 
 def main() -> None:
@@ -32,12 +44,22 @@ def main() -> None:
     user = os.environ.get("ALERT_SMTP_USER", "")
     password = os.environ.get("ALERT_SMTP_PASSWORD", "").replace(" ", "")
     debug = os.environ.get("ALERT_SMTP_DEBUG", "").lower() in ("true", "1", "yes")
+    ipv6 = os.environ.get("ALERT_SMTP_IPV6", "").lower() in ("true", "1", "yes")
     context = ssl.create_default_context()
     if port == 465:
-        server = smtplib.SMTP_SSL(host, port, timeout=60, context=context)
+        client = smtplib.SMTP_SSL
+        if not ipv6:
+            class client(smtplib.SMTP_SSL):  # noqa: the same class, connecting over IPv4
+                def _get_socket(self, host, port, timeout):
+                    return context.wrap_socket(connect_ipv4(self, host, port, timeout), server_hostname=host)
+        server = client(host, port, timeout=60, context=context)
         server.set_debuglevel(debug)
     else:
-        server = smtplib.SMTP(host, port, timeout=60)
+        client = smtplib.SMTP
+        if not ipv6:
+            class client(smtplib.SMTP):  # noqa: the same class, connecting over IPv4
+                _get_socket = connect_ipv4
+        server = client(host, port, timeout=60)
         server.set_debuglevel(debug)
         server.ehlo()
         if server.has_extn("starttls"):
