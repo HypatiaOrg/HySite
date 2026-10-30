@@ -11,8 +11,10 @@
 #  4. Test: build and run the whole site against the sample database (compose.test.yaml)
 #     and run the smoke tests. On failure: put the previous versions back, stop.
 #  5. Deploy: rebuild production from the tested versions and recreate changed containers,
-#     keeping the old images as :previous. The HTTPS edge (HyRoute's nginx, when its compose file
-#     is on this server) gets the same tested NGINX_IMAGE. Smoke test production. On failure: roll back.
+#     keeping the old images as :previous. The nginx of the other sites on this server (the HTTPS
+#     edge in HyRoute, the CWSite page; their compose files are listed in HYSITE_NGINX_COMPOSE) is
+#     recreated with the same tested NGINX_IMAGE. Smoke test production and check that every one of
+#     those sites answers. On failure: roll back, them included.
 #  6. Every step is recorded in the hysite_ops.deployments collection (scripts/deployments.py).
 #
 # Exits non-zero on any failure, so systemd starts hysite-alert@ to send an email.
@@ -27,8 +29,14 @@ BRANCH=${HYSITE_BRANCH:-main}
 # false skips step 1, for testing changes that are not pushed yet
 GIT_UPDATE=${HYSITE_GIT_UPDATE:-true}
 PROD_URL=${HYSITE_URL:-http://localhost}
-# the HTTPS edge (HyRoute); its nginx runs the NGINX_IMAGE tested here. Skipped if the file is absent
-EDGE_COMPOSE=${HYSITE_EDGE_COMPOSE:-/home/ubuntu/HyRoute/compose.yaml}
+# compose files of the other sites on this server whose "nginx" service runs the NGINX_IMAGE tested here:
+# the HTTPS edge (HyRoute) and the CWSite page. Space-separated; a file that is absent is skipped.
+# HYSITE_EDGE_COMPOSE is the older name for the edge alone and still works.
+NGINX_COMPOSE=${HYSITE_NGINX_COMPOSE:-/home/ubuntu/HyRoute/compose.yaml /home/ubuntu/CWSite/compose.yaml}
+NGINX_COMPOSE="${HYSITE_EDGE_COMPOSE:-} $NGINX_COMPOSE"
+# addresses of those sites that must answer 200 after a deploy (space-separated; production itself
+# has the smoke test). Empty: only check that their containers run
+NGINX_CHECK_URLS=${HYSITE_NGINX_CHECK_URLS:-}
 TEST_URL=http://localhost:8081
 # seconds the smoke test waits for a site to start
 SMOKE_WAIT=${HYSITE_SMOKE_WAIT:-300}
@@ -67,16 +75,31 @@ test_compose() {
         COMPOSE_ENV_FILES=test.env,versions.env docker compose "$@"
 }
 
-# the HTTPS edge: HyRoute's own .env (if any), then versions.env, which sets NGINX_IMAGE
-edge_compose() {
-    local env_files="$REPO/versions.env"
-    [ -f "$(dirname "$EDGE_COMPOSE")/.env" ] && env_files="$(dirname "$EDGE_COMPOSE")/.env,$env_files"
-    COMPOSE_ENV_FILES=$env_files docker compose --file "$EDGE_COMPOSE" "$@"
+# another site's compose file ($1): its own .env (if any), then versions.env, which sets NGINX_IMAGE
+nginx_compose() {
+    local file=$1 env_files="$REPO/versions.env"
+    shift
+    [ -f "$(dirname "$file")/.env" ] && env_files="$(dirname "$file")/.env,$env_files"
+    COMPOSE_ENV_FILES=$env_files docker compose --file "$file" "$@"
 }
-# recreate the edge nginx with the NGINX_IMAGE in versions.env (nothing to do without an edge here)
-edge_up() {
-    [ -f "$EDGE_COMPOSE" ] || return 0
-    edge_compose up --detach --no-build nginx
+# recreate every other site's nginx with the NGINX_IMAGE in versions.env, and check that each one still
+# runs and answers. A missing compose file is skipped (that site is not on this server)
+nginx_up() {
+    local file url done=" "
+    for file in $NGINX_COMPOSE; do
+        [ -f "$file" ] || continue
+        case "$done" in *" $file "*) continue ;; esac  # listed twice (HYSITE_EDGE_COMPOSE and the default)
+        done="$done$file "
+        log "Recreating the nginx of $(dirname "$file") with the tested image"
+        nginx_compose "$file" up --detach --no-build nginx || return 1
+        sleep 3
+        [ "$(nginx_compose "$file" ps --status running --services nginx 2> /dev/null)" = nginx ] \
+            || { log "The nginx of $(dirname "$file") is not running"; return 1; }
+    done
+    for url in $NGINX_CHECK_URLS; do
+        curl --silent --show-error --fail --output /dev/null --retry 5 --retry-delay 3 --retry-all-errors \
+            --max-time 30 "$url" || { log "$url does not answer"; return 1; }
+    done
 }
 
 # scripts/deployments.py inside the backend image, with the hysite_ops credentials
@@ -227,7 +250,7 @@ log "Deploying to production"
 for image in "${BUILT_IMAGES[@]}"; do
     docker image inspect "$image:latest" > /dev/null 2>&1 && docker tag "$image:latest" "$image:previous"
 done
-if prod_compose build --pull && prod_compose up --detach --remove-orphans && edge_up \
+if prod_compose build --pull && prod_compose up --detach --remove-orphans && nginx_up \
         && python3 scripts/smoke_test.py "$PROD_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-production.txt"; then
     git rev-parse HEAD > .update/deployed_commit
     installed_versions hysite
@@ -244,7 +267,7 @@ restore_pins
 for image in "${BUILT_IMAGES[@]}"; do
     docker image inspect "$image:previous" > /dev/null 2>&1 && docker tag "$image:previous" "$image:latest"
 done
-if prod_compose up --detach --no-build --remove-orphans && edge_up \
+if prod_compose up --detach --no-build --remove-orphans && nginx_up \
         && python3 scripts/smoke_test.py "$PROD_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-rollback.txt"; then
     record rolled_back "Production check failed; rolled back to the previous versions, which pass. Logs: $REPO/$RUN_DIR"
 else
