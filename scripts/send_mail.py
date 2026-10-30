@@ -81,6 +81,7 @@ def main() -> None:
             server.in_login = True
             # one AUTH PLAIN, not smtplib's login(): that one retries with another method after a
             # rejection, and a server that hangs up after rejecting (Gmail) then hides its reply
+            server.user, server.password = user, password
             server.auth("PLAIN", server.auth_plain, initial_response_ok=True)
             server.in_login = False
         server.send_message(message)
