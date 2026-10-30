@@ -130,4 +130,13 @@
         }
         ajax('/hypatia/default/graph.load',items,'graph');
     }
+
+    // Enter in a text box, or the Submit button, applies the settings like every other control does: the plot
+    // refreshes in place. The form used to post a page reload, which raced the box's own refresh and lost the
+    // value just typed (issue #35). stopPropagation keeps web2py.js from greying the button out as "Working..."
+    $("form:has(#toggle_vars)").on("submit", function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        refresh();
+    });
 </script>

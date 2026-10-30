@@ -108,9 +108,12 @@ class DensityView(View):
     def get(self, request):
         if DEBUG:
             print(request.get_full_path())
-        # the density map has two axes: a z axis the scatter page left in the session must not restrict the stars
+        # the density map has two axes: a z axis the scatter page left in the session must not restrict the stars.
+        # Its axes are never logarithmic: the bins are in data units, and the page has no log toggles (issue #35)
         settings = request.GET.copy()
         settings['zaxis1'] = 'none'
+        settings['xaxislog'] = 'false'
+        settings['yaxislog'] = 'false'
         graph_settings = graph_settings_from_request(settings, mode='scatter')
         return JsonResponse(density_data(graph_data=get_graph_data(settings),
                                          axis_mapping=graph_settings['axis_mapping'], settings=settings))
