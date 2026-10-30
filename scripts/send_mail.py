@@ -10,6 +10,8 @@ example msmtp-mta. Used by scripts/send_alert.sh; standard library only.
     ALERT_SMTP_PORT      587 (STARTTLS, the default) or 465 (TLS from the start)
     ALERT_SMTP_USER      the account, e.g. the Gmail address
     ALERT_SMTP_PASSWORD  its password; for Gmail an app password (the 16 letters, spaces optional)
+    ALERT_SMTP_DEBUG     true: print the conversation with the server (not the login) to stderr, for
+                         the journal of hysite-alert@test.service
 """
 import email
 import os
@@ -29,11 +31,14 @@ def main() -> None:
     port = int(os.environ.get("ALERT_SMTP_PORT", "587"))
     user = os.environ.get("ALERT_SMTP_USER", "")
     password = os.environ.get("ALERT_SMTP_PASSWORD", "").replace(" ", "")
+    debug = os.environ.get("ALERT_SMTP_DEBUG", "").lower() in ("true", "1", "yes")
     context = ssl.create_default_context()
     if port == 465:
         server = smtplib.SMTP_SSL(host, port, timeout=60, context=context)
+        server.set_debuglevel(debug)
     else:
         server = smtplib.SMTP(host, port, timeout=60)
+        server.set_debuglevel(debug)
         server.ehlo()
         if server.has_extn("starttls"):
             server.starttls(context=context)
@@ -42,7 +47,9 @@ def main() -> None:
             sys.exit(f"{host}:{port} does not offer STARTTLS; the password would be sent in the clear")
     with server:
         if user:
+            server.set_debuglevel(0)  # never print the credentials
             server.login(user, password)
+            server.set_debuglevel(debug)
         server.send_message(message)
 
 
