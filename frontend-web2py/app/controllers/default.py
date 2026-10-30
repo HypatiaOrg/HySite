@@ -170,10 +170,10 @@ def graph_hist():
     settings = get_settings()
     graph_data = api_json('hist/', settings)
     # the plot: the API made the series over shared bins (api.web2py.plots)
-    labels = graph_data['labels']
+    labels = graph_data['labels']   # the API names them by axis: 'xaxis', 'yaxis'
     div = create_plotly_hist(series=graph_data['series'], edges=graph_data['edges'],
                                     x_range=graph_data['x_range'],
-                                    x_label=labels.get('x_label', None),
+                                    x_label=labels.get('xaxis', None),
                                     normalize=settings['normalize'], xaxisinv=settings['xaxisinv'],
                                     do_gridlines=settings['gridlines'],
                                     )

@@ -150,6 +150,13 @@ def axis_range(values: np.ndarray, do_log: bool = False, inverse: bool = False,
     return ([high, low] if inverse else [low, high]), axis_type
 
 
+# the toolbar (zoom, pan, save...) stands upright along the right edge of the plots with a title, as the Bokeh
+# plots had it: laid flat along the top it covered the title (issue #35). The right margin leaves it room beside
+# the plot area. The histogram (legend on the right) and the density map (colour bar) keep it flat along the top.
+MODEBAR = dict(orientation='v')
+MODEBAR_MARGIN = 60
+
+
 def axis_style(label: str | None, do_gridlines: bool, **kwargs) -> dict:
     """What every axis gets: the label (underscores as spaces), the font size, the gridlines toggle."""
     return dict(title=dict(text=label.replace('_', ' ') if label else None, font=dict(size=AXIS_FONT_SIZE)),
@@ -163,11 +170,15 @@ def citation() -> dict:
                 x=0, y=0, xanchor='left', yanchor='bottom', xshift=10, yshift=10, showarrow=False, opacity=0.5)
 
 
-def figure_html(fig: go.Figure, div_id: str, hover_labels: dict[str, str] | None = None) -> str:
+def figure_html(fig: go.Figure, div_id: str, hover_labels: dict[str, str] | None = None,
+                upright_toolbar: bool = True) -> str:
     """The figure as an HTML fragment (the page has plotly.min.js). With hover_labels (the axis labels for
-    the hover text), the points plot gets the stacked hover labels and the selection into the star list."""
+    the hover text), the points plot gets the stacked hover labels and the selection into the star list.
+    The toolbar stands on the right (upright_toolbar) unless something else is there."""
     fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, paper_bgcolor='white', plot_bgcolor='white',
-                      margin=dict(l=70, r=30, t=50, b=60))
+                      margin=dict(l=70, r=MODEBAR_MARGIN if upright_toolbar else 30, t=50, b=60))
+    if upright_toolbar:
+        fig.update_layout(modebar=MODEBAR)
     if hover_labels:
         fig.update_layout(hovermode=False)
     html = fig.to_html(include_plotlyjs=False, full_html=False, div_id=div_id)
@@ -298,7 +309,7 @@ def create_plotly_hist(series: list[dict], edges: list[float], x_range: list[flo
     fig.update_xaxes(range=x_range, **axis_style(labels['xaxis'], do_gridlines))
     fig.update_yaxes(range=[0, max_hist_all * 1.20], **axis_style(labels['yaxis'], do_gridlines))
     fig.update_layout(barmode='overlay', bargap=0, annotations=[citation()])
-    return figure_html(fig, div_id='hist-plot')
+    return figure_html(fig, div_id='hist-plot', upright_toolbar=False)
 
 
 def create_plotly_density(xaxis: list[float], yaxis: list[float],
@@ -418,5 +429,7 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
             mirror=True, ticks="outside", ticklen=6, tickwidth=1
         )
 
+    # (the toolbar stays flat along the top here: this figure has no title for it to cover, and upright it
+    # would sit on the colour bar)
     # the figure only: the page loads static/js/plotly.min.js once (frontend-web2py/Dockerfile)
     return fig.to_html(include_plotlyjs=False, full_html=False, div_id='density-plot')
