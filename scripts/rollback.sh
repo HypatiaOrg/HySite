@@ -7,6 +7,16 @@
 set -uo pipefail
 cd "${HYSITE_REPO:-/home/ubuntu/HySite}" || exit 1
 prod_compose() { COMPOSE_ENV_FILES=.env,versions.env docker compose "$@"; }
+# the other sites' nginx (HyRoute, CWSite) follow the NGINX_IMAGE in versions.env too; same list as the job
+nginx_up() {
+    local file env_files
+    for file in ${HYSITE_EDGE_COMPOSE:-} ${HYSITE_NGINX_COMPOSE:-/home/ubuntu/HyRoute/compose.yaml /home/ubuntu/CWSite/compose.yaml}; do
+        [ -f "$file" ] || continue
+        env_files=versions.env
+        [ -f "$(dirname "$file")/.env" ] && env_files="$(dirname "$file")/.env,$env_files"
+        COMPOSE_ENV_FILES=$env_files docker compose --file "$file" up --detach --no-build nginx || return 1
+    done
+}
 ops() {
     sudo cat /etc/hysite/update.env | docker run --rm --interactive --network "${OPS_NETWORK:-hynet}" \
         --user "$(id -u):$(id -g)" --volume "$PWD:/repo" --workdir /repo --entrypoint sh \
@@ -39,11 +49,11 @@ case "${1:-}" in
                 || { echo "No $image:previous image to roll back to; try: scripts/rollback.sh --list"; exit 1; }
             docker tag "$image:previous" "$image:latest"
         done
-        prod_compose up --detach --no-build --remove-orphans || exit
+        prod_compose up --detach --no-build --remove-orphans && nginx_up || exit
         echo "Rolled back to the images and versions from before the last deploy." ;;
     *)
         ops restore "$1" || exit
-        prod_compose build --pull && prod_compose up --detach --remove-orphans || exit
+        prod_compose build --pull && prod_compose up --detach --remove-orphans && nginx_up || exit
         echo "Rebuilt production with the versions recorded for run $1." ;;
 esac
 echo "The git checkout is unchanged (run: git log --oneline -5). The next weekly update moves to the newest versions again."
