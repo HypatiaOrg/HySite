@@ -4,9 +4,10 @@
 #   plot_controls = dict(toggle=<session key of the toggle, or None>, bins=[(session key, label), ...], palette=bool)
 # A form of its own: refresh() and toggle_vars collect every form's fields, and the page's script makes Enter in a
 # box apply it in place (the form never posts). The bin size rule is the API's (api.web2py.density.BIN_TAGS).
+# The form starts where the plot area does (the figures' left margin, models/plot_plotly.py), in line with the y axis.
 bin_hint = 'Float or keywords: (' + DENSITY_BIN_TAGS[0] + ' [default], ' + ', '.join(DENSITY_BIN_TAGS[1:]) + ')'
 }}
-<form method="post" class="form-inline plot-controls" style="margin:-5px 0 20px 0;font-size:14px;font-weight:normal">
+<form method="post" class="form-inline plot-controls" style="margin:-5px 0 20px {{=PLOT_MARGIN_LEFT}}px;font-size:14px;font-weight:normal">
     {{if plot_controls.get('toggle') or plot_controls.get('palette'):}}
     <div style="margin-bottom:8px">
         {{if plot_controls.get('toggle'):}}
@@ -28,7 +29,7 @@ bin_hint = 'Float or keywords: (' + DENSITY_BIN_TAGS[0] + ' [default], ' + ', '.
     {{pass}}
     {{for key, label in plot_controls['bins']:}}
     <div class="form-group" style="margin:0 0 8px 0">
-        <label for="{{=key}}" style="width:85px;text-align:right;margin-right:8px">{{=label}}</label>
+        <label for="{{=key}}" style="width:85px;text-align:left;margin-right:8px">{{=label}}</label>{{# left-aligned: the toggle above starts at the same edge }}
         <input type="text" id="{{=key}}" name="{{=key}}" class="form-control" style="width:340px" placeholder="{{=bin_hint}}" value="{{=session[key] or ''}}" onchange="refresh()">
     </div>
     {{pass}}

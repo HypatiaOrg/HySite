@@ -19,6 +19,7 @@ from plotly.subplots import make_subplots
 
 hypatia_purple = '#4E11B7'
 PLOT_WIDTH = 750
+PLOT_MARGIN_LEFT = 70   # the figures' left margin: the y axis line is here (the pages' controls line up with it)
 PLOT_HEIGHT = 625
 AXIS_FONT_SIZE = 16  # pixels: the 12pt of the Bokeh plots
 MARGIN = 0.10  # of the data range, on each side
@@ -197,8 +198,9 @@ def add_marginal_histograms(fig: go.Figure, series: list[dict], bins: dict | Non
         fig.add_trace(go.Histogram(y=one['y'], ybins=y_bins, xaxis='x2', **common))
     counts = dict(title=None, tickfont=dict(size=12), showgrid=do_gridlines, gridcolor='#e5e5e5', zeroline=False,
                   showline=True, linecolor='black', ticks='outside', fixedrange=True)
+    # the points' axes drawn on all four sides (mirror), so the points and the histograms are framed apart
     fig.update_layout(barmode='overlay', bargap=0,
-                      xaxis=dict(domain=POINTS_DOMAIN), yaxis=dict(domain=POINTS_DOMAIN),
+                      xaxis=dict(domain=POINTS_DOMAIN, mirror=True), yaxis=dict(domain=POINTS_DOMAIN, mirror=True),
                       yaxis2=dict(domain=HISTOGRAM_DOMAIN, anchor='x', **counts),
                       xaxis2=dict(domain=HISTOGRAM_DOMAIN, anchor='y', **counts))
 
@@ -218,7 +220,7 @@ def figure_html(fig: go.Figure, div_id: str, hover_labels: dict[str, str] | None
     """The figure as an HTML fragment (the page has plotly.min.js). With hover_labels (the axis labels for
     the hover text), the points plot gets the stacked hover labels and the selection into the star list."""
     fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, paper_bgcolor='white', plot_bgcolor='white',
-                      margin=dict(l=70, r=30, t=50, b=60))
+                      margin=dict(l=PLOT_MARGIN_LEFT, r=30, t=50, b=60))
     if hover_labels:
         fig.update_layout(hovermode=False)
     html = fig.to_html(include_plotlyjs=False, full_html=False, div_id=div_id, config=PLOT_CONFIG)
@@ -436,7 +438,7 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
     fig.update_layout(
         width=PLOT_WIDTH,
         height=PLOT_HEIGHT,
-        margin=dict(l=70, r=30, t=50, b=140),   # room under the x axis for the colour bar and its title
+        margin=dict(l=PLOT_MARGIN_LEFT, r=30, t=50, b=140),   # room under the x axis for the colour bar and its title
         plot_bgcolor='#E5ECF6',
         paper_bgcolor='white',
         bargap=0.05,
