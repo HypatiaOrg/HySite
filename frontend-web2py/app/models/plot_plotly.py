@@ -150,18 +150,16 @@ def axis_range(values: np.ndarray, do_log: bool = False, inverse: bool = False,
     return ([high, low] if inverse else [low, high]), axis_type
 
 
-# the toolbar (zoom, pan, save...) stands upright along the right edge of the plots with a title, as the Bokeh
-# plots had it: laid flat along the top it covered the title (issue #35). The right margin leaves it room beside
-# the plot area. The histogram (legend on the right) and the density map (colour bar) keep it flat along the top.
-MODEBAR = dict(orientation='v')
-MODEBAR_MARGIN = 60
-
-
 def axis_style(label: str | None, do_gridlines: bool, **kwargs) -> dict:
     """What every axis gets: the label (underscores as spaces), the font size, the gridlines toggle."""
     return dict(title=dict(text=label.replace('_', ' ') if label else None, font=dict(size=AXIS_FONT_SIZE)),
                 tickfont=dict(size=AXIS_FONT_SIZE), showgrid=do_gridlines, gridcolor='#e5e5e5', zeroline=False,
                 showline=True, linecolor='black', ticks='outside', **kwargs)
+
+
+def plot_title(text: str) -> dict:
+    """The title, over the left edge of the plot area: the toolbar lies along the top right (issue #35)."""
+    return dict(text=text, xref='paper', x=0, xanchor='left')
 
 
 def citation() -> dict:
@@ -170,15 +168,11 @@ def citation() -> dict:
                 x=0, y=0, xanchor='left', yanchor='bottom', xshift=10, yshift=10, showarrow=False, opacity=0.5)
 
 
-def figure_html(fig: go.Figure, div_id: str, hover_labels: dict[str, str] | None = None,
-                upright_toolbar: bool = True) -> str:
+def figure_html(fig: go.Figure, div_id: str, hover_labels: dict[str, str] | None = None) -> str:
     """The figure as an HTML fragment (the page has plotly.min.js). With hover_labels (the axis labels for
-    the hover text), the points plot gets the stacked hover labels and the selection into the star list.
-    The toolbar stands on the right (upright_toolbar) unless something else is there."""
+    the hover text), the points plot gets the stacked hover labels and the selection into the star list."""
     fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, paper_bgcolor='white', plot_bgcolor='white',
-                      margin=dict(l=70, r=MODEBAR_MARGIN if upright_toolbar else 30, t=50, b=60))
-    if upright_toolbar:
-        fig.update_layout(modebar=MODEBAR)
+                      margin=dict(l=70, r=30, t=50, b=60))
     if hover_labels:
         fig.update_layout(hovermode=False)
     html = fig.to_html(include_plotlyjs=False, full_html=False, div_id=div_id)
@@ -233,7 +227,7 @@ def create_plotly_scatter(name: list[str],
         title = f'{planet_count} planets selected from {star_count} stars'
     else:
         title = f'{star_count} stars selected'
-    fig.update_layout(title=dict(text=title, x=0.5, xanchor='center'), annotations=[citation()])
+    fig.update_layout(title=plot_title(title), annotations=[citation()])
     return figure_html(fig, div_id='scatter-plot', hover_labels=labels)
 
 
@@ -265,7 +259,7 @@ def create_plotly_targets(xaxis: list[float], yaxis: list[float],
     fig.update_xaxes(range=x_range, type=x_type, **axis_style(labels['xaxis'], do_gridlines))
     fig.update_yaxes(range=y_range, type=y_type, **axis_style(labels['yaxis'], do_gridlines))
     fig.update_layout(
-        title=dict(text=f'{number_of_targets} Targets selected', x=0.5, xanchor='center'),
+        title=plot_title(f'{number_of_targets} Targets selected'),
         legend=dict(orientation='h', x=1, xanchor='right', y=0, yanchor='bottom', bgcolor='rgba(255,255,255,0.3)',
                     itemclick='toggle', itemdoubleclick='toggleothers'),
         annotations=[citation()],
@@ -309,7 +303,7 @@ def create_plotly_hist(series: list[dict], edges: list[float], x_range: list[flo
     fig.update_xaxes(range=x_range, **axis_style(labels['xaxis'], do_gridlines))
     fig.update_yaxes(range=[0, max_hist_all * 1.20], **axis_style(labels['yaxis'], do_gridlines))
     fig.update_layout(barmode='overlay', bargap=0, annotations=[citation()])
-    return figure_html(fig, div_id='hist-plot', upright_toolbar=False)
+    return figure_html(fig, div_id='hist-plot')
 
 
 def create_plotly_density(xaxis: list[float], yaxis: list[float],
@@ -429,7 +423,5 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
             mirror=True, ticks="outside", ticklen=6, tickwidth=1
         )
 
-    # (the toolbar stays flat along the top here: this figure has no title for it to cover, and upright it
-    # would sit on the colour bar)
     # the figure only: the page loads static/js/plotly.min.js once (frontend-web2py/Dockerfile)
     return fig.to_html(include_plotlyjs=False, full_html=False, div_id='density-plot')
