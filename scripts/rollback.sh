@@ -14,7 +14,8 @@ nginx_up() {
         [ -f "$file" ] || continue
         env_files=versions.env
         [ -f "$(dirname "$file")/.env" ] && env_files="$(dirname "$file")/.env,$env_files"
-        COMPOSE_ENV_FILES=$env_files docker compose --file "$file" up --detach --no-build nginx || return 1
+        COMPOSE_ENV_FILES=$env_files docker compose --file "$file" build --pull nginx \
+            && COMPOSE_ENV_FILES=$env_files docker compose --file "$file" up --detach nginx || return 1
     done
 }
 ops() {

@@ -31,7 +31,8 @@ BRANCH=${HYSITE_BRANCH:-main}
 GIT_UPDATE=${HYSITE_GIT_UPDATE:-true}
 PROD_URL=${HYSITE_URL:-http://localhost}
 # compose files of the other sites on this server whose "nginx" service runs the NGINX_IMAGE tested here:
-# the HTTPS edge (HyRoute) and the CWSite page. Space-separated; a file that is absent is skipped.
+# the HTTPS edge (HyRoute) and the CWSite page, whose nginx is built on it (its Dockerfile adds the site).
+# Space-separated; a file that is absent is skipped.
 # HYSITE_EDGE_COMPOSE is the older name for the edge alone and still works.
 NGINX_COMPOSE=${HYSITE_NGINX_COMPOSE:-/home/ubuntu/HyRoute/compose.yaml /home/ubuntu/CWSite/compose.yaml}
 NGINX_COMPOSE="${HYSITE_EDGE_COMPOSE:-} $NGINX_COMPOSE"
@@ -92,7 +93,8 @@ nginx_up() {
         case "$done" in *" $file "*) continue ;; esac  # listed twice (HYSITE_EDGE_COMPOSE and the default)
         done="$done$file "
         log "Recreating the nginx of $(dirname "$file") with the tested image"
-        nginx_compose "$file" up --detach --no-build nginx || return 1
+        # built on the tested image when the service has a build section (CWSite), else just pulled
+        nginx_compose "$file" build --pull nginx && nginx_compose "$file" up --detach nginx || return 1
         sleep 3
         [ "$(nginx_compose "$file" ps --status running --services nginx 2> /dev/null)" = nginx ] \
             || { log "The nginx of $(dirname "$file") is not running"; return 1; }
