@@ -157,6 +157,11 @@ def axis_style(label: str | None, do_gridlines: bool, **kwargs) -> dict:
                 showline=True, linecolor='black', ticks='outside', **kwargs)
 
 
+# the toolbar's tooltips: Plotly's "Zoom" is the drag-a-rectangle zoom, which the Bokeh toolbar called "Box Zoom";
+# visitors looked for that name (issue #35). A locale with one entry; the other tooltips keep Plotly's text
+PLOT_CONFIG = dict(locale='en-hypatia', locales={'en-hypatia': {'dictionary': {'Zoom': 'Box zoom: drag a rectangle'}}})
+
+
 def plot_title(text: str) -> dict:
     """The title, over the left edge of the plot area: the toolbar lies along the top right (issue #35)."""
     return dict(text=text, xref='paper', x=0, xanchor='left')
@@ -175,7 +180,7 @@ def figure_html(fig: go.Figure, div_id: str, hover_labels: dict[str, str] | None
                       margin=dict(l=70, r=30, t=50, b=60))
     if hover_labels:
         fig.update_layout(hovermode=False)
-    html = fig.to_html(include_plotlyjs=False, full_html=False, div_id=div_id)
+    html = fig.to_html(include_plotlyjs=False, full_html=False, div_id=div_id, config=PLOT_CONFIG)
     if hover_labels:
         labels = {axis[0]: label.replace('_', ' ') for axis, label in hover_labels.items()}
         html += SELECT_SCRIPT % dict(div_id=div_id)
@@ -424,4 +429,4 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
         )
 
     # the figure only: the page loads static/js/plotly.min.js once (frontend-web2py/Dockerfile)
-    return fig.to_html(include_plotlyjs=False, full_html=False, div_id='density-plot')
+    return fig.to_html(include_plotlyjs=False, full_html=False, div_id='density-plot', config=PLOT_CONFIG)
