@@ -335,7 +335,7 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
     # the colour bar lies under the plot, so the heat map keeps the width and shape of the other pages' plots;
     # centred under the heat map's column (80% of the width beside the side histogram, all of it without)
     heatmap_width = 0.8 if show_xyhist else 1.0
-    colorbar = dict(title=dict(text='Number of stars per bin', side='top'), orientation='h',
+    colorbar = dict(title=dict(text='Number of stars per bin', side='bottom'), orientation='h',
                     x=heatmap_width / 2, xanchor='center', len=heatmap_width, y=-0.13, yanchor='top',
                     thickness=15, outlinecolor='#cccccc', outlinewidth=1)
 
@@ -386,7 +386,7 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
     fig.update_layout(
         width=PLOT_WIDTH,
         height=PLOT_HEIGHT,
-        margin=dict(l=70, r=30, t=50, b=130),   # room under the x axis for the colour bar
+        margin=dict(l=70, r=30, t=50, b=140),   # room under the x axis for the colour bar and its title
         plot_bgcolor='#E5ECF6',
         paper_bgcolor='white',
         bargap=0.05,
