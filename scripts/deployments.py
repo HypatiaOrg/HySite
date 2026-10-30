@@ -7,6 +7,7 @@ needed to see what production ran and to rebuild it:
     status        latest status: running, unchanged, test_failed, deployed, rolled_back, ...
     events        [{time, status, message}], every status change in order
     host, git     server name; branch, commit and commit subject deployed
+    sites         {folder: {commit, new, subject}}, the other sites' checkouts (HyRoute, CWSite)
     versions_env  the exact image versions, {variable: "tag@sha256:..."}
     lock_files    {path: file contents}, the exact package versions
     installed     {service: {python, packages: {name: version}}}, what the built images contain
@@ -75,6 +76,7 @@ def record(args: argparse.Namespace) -> None:
         "updated": now,
         "host": run.get("host"),
         "git": run.get("git"),
+        "sites": run.get("sites"),
         "started": datetime.fromisoformat(run["started"]),
     }
     if (run_dir / "pinned").exists():
