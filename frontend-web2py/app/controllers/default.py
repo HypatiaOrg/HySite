@@ -141,7 +141,8 @@ def graph():
                                        do_zlog=zaxis.get('log', False),
                                        xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
                                        zaxisinv=zaxis.get('inverse', False), has_zaxis='zaxis' in axes,
-                                       do_gridlines=settings['gridlines'])
+                                       do_gridlines=settings['gridlines'],
+                                       bins=graph_data.get('bins'), show_hist=settings['show_scatter_hist'])
     # send back to the browser
     return dict(div=div)
 
@@ -161,7 +162,8 @@ def graph_targets():
                                        y_label=axes['yaxis']['label'],
                                        do_xlog=axes['xaxis']['log'], do_ylog=axes['yaxis']['log'],
                                        xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
-                                       do_gridlines=settings['gridlines'])
+                                       do_gridlines=settings['gridlines'],
+                                       bins=graph_data.get('bins'), show_hist=settings['show_targets_hist'])
     return dict(div=div)
 
 

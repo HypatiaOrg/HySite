@@ -42,6 +42,14 @@ CHECKS = [
      {"xhist_bin_size": "error", "yhist_bin_size": "0.05", "color_pallet": "Viridis", "toggle_vars": "show_xyhist"}),
     ("/hypatia/default/targets", "Hypatia Catalog"),
     ("/hypatia/default/graph_targets.load", "plotly-graph-div"),
+    # the scatter and targets plots with their histograms along the axes (the toggle on, a bin size typed; the
+    # top histogram is the trace on the second y axis), then off again
+    ("/hypatia/default/graph.load", '"yaxis":"y2"',
+     {"show_scatter_hist": "on", "xhist_bin_size": "0.1", "toggle_vars": "show_scatter_hist"}),
+    ("/hypatia/default/graph.load", "plotly-graph-div", {"toggle_vars": "show_scatter_hist"}),
+    ("/hypatia/default/graph_targets.load", '"yaxis":"y2"',
+     {"show_targets_hist": "on", "toggle_vars": "show_targets_hist"}),
+    ("/hypatia/default/graph_targets.load", "plotly-graph-div", {"toggle_vars": "show_targets_hist"}),
     ("/hypatia/default/table", "<table"),
     ("/hypatia/default/table.load", "<table"),
     # changing the plot settings (last, since the new settings stay in the session) must change the plot. Posted the way the page's jQuery does it, with

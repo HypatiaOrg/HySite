@@ -47,6 +47,11 @@ REQUESTS = [
     "/hypatia/default/density", "/hypatia/default/graph_density.load",
     ("/hypatia/default/graph_density.load", DENSITY_SETTINGS),
     "/hypatia/default/targets", "/hypatia/default/graph_targets.load",
+    # the scatter and targets plots with their histograms along the axes, then off again
+    ("/hypatia/default/graph.load", {"show_scatter_hist": "on", "xhist_bin_size": "0.1", "toggle_vars": "show_scatter_hist"}),
+    ("/hypatia/default/graph.load", {"toggle_vars": "show_scatter_hist"}),
+    ("/hypatia/default/graph_targets.load", {"show_targets_hist": "on", "toggle_vars": "show_targets_hist"}),
+    ("/hypatia/default/graph_targets.load", {"toggle_vars": "show_targets_hist"}),
     "/hypatia/default/table", "/hypatia/default/table.load",
     "/hypatia/default/table.csv/hypatia.csv?download=true", "/hypatia/default/table.tsv/hypatia.tsv?download=true",
     ("/hypatia/default/graph.load", PLOT_SETTINGS), "/hypatia/default/table.load",

@@ -37,6 +37,17 @@
                 {{=LOAD("default","dropdown.load",vars=dict(id="yaxis",value1=session.yaxis1,value2=session.yaxis2,log=True,logstate=session.yaxislog,inverse=session.yaxisinv))}}
             </dd>
             <br/>
+            <dd>
+                <input type="checkbox" {{if session.show_targets_hist:}}checked="checked"{{pass}} id="show_targets_hist" name="show_targets_hist" onchange="refresh()">
+                <label for="show_targets_hist">
+                    Show X and Y histograms
+                </label>
+            </dd>
+            <dt>X histograms bin size</dt>
+            <input type="text" id="xhist_bin_size" name="xhist_bin_size" placeholder="{{='Float or keywords: (' + DENSITY_BIN_TAGS[0] + ' [default], ' + ', '.join(DENSITY_BIN_TAGS[1:]) + ')'}}" value="{{=session.xhist_bin_size}}" class="form-control" onchange="refresh()">
+            <dt>Y histograms bin size</dt>
+            <input type="text" id="yhist_bin_size" name="yhist_bin_size" placeholder="{{='Float or keywords: (' + DENSITY_BIN_TAGS[0] + ' [default], ' + ', '.join(DENSITY_BIN_TAGS[1:]) + ')'}}" class="form-control" value="{{=session.yhist_bin_size}}" onchange="refresh()">
+            <br/>
             <dt>Select Target Sets:</dt>
             <div>
                 <input type="checkbox" {{if session.show_all:}}checked="checked"{{pass}} id="show_all" name="show_all" onchange="refresh()"> All Hypatia Catalog

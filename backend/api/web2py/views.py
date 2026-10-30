@@ -8,7 +8,7 @@ from api.v2.data_process import available_catalogs_v2, representative_error
 from api.web2py.table import table_from_request, table_download_lines, DOWNLOAD_FORMATS
 from api.web2py.settings import settings_schema
 from api.web2py.plots import axes_from_settings, group_targets, requested_target_handles, histogram_series
-from api.web2py.density import density_data
+from api.web2py.density import density_data, marginal_bins, valid_points
 from api.web2py.data_process import (home_data, units_and_fields_v2, stellar_param_types_v2, is_true_str,
                                      planet_param_types_v2, ranked_string_params, plot_norms,
                                      graph_settings_from_request, graph_query_pipeline_web2py, histogram_format,
@@ -76,6 +76,9 @@ def get_graph_data(settings, return_targets: bool = False):
         # the axis decisions the settings imply (api.web2py.plots)
         'axes': axes_from_settings(settings, labels, is_loggable),
     }
+    # the bins of the optional histograms along the axes (api.web2py.density), from the points with both values
+    _names, x_values, y_values = valid_points(return_data['outputs'])
+    return_data['bins'] = marginal_bins(x_values, y_values, axis_mapping, settings)
     if return_targets:
         return_data['targets'] = [data_row['target_handles'] for data_row in graph_data]
         outputs = return_data['outputs']
