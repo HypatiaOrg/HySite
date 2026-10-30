@@ -332,6 +332,12 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
     xbins = dict(start=x_bins['start'], end=x_bins['end'], size=x_bins['size'])
     ybins = dict(start=y_bins['start'], end=y_bins['end'], size=y_bins['size'])
     histogram_marker = dict(color=histogram_color, line=dict(color="black", width=1))
+    # the colour bar lies under the plot, so the heat map keeps the width and shape of the other pages' plots;
+    # centred under the heat map's column (80% of the width beside the side histogram, all of it without)
+    heatmap_width = 0.8 if show_xyhist else 1.0
+    colorbar = dict(title=dict(text='Number of stars per bin', side='top'), orientation='h',
+                    x=heatmap_width / 2, xanchor='center', len=heatmap_width, y=-0.13, yanchor='top',
+                    thickness=15, outlinecolor='#cccccc', outlinewidth=1)
 
     # CASE 1 (heatmap with marginal histograms)
     if show_xyhist:
@@ -357,7 +363,7 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
         fig.add_trace(
             go.Histogram2d(
                 x=xaxis, y=yaxis, xbins=xbins, ybins=ybins, name='Density',
-                colorscale=color_scale, colorbar=dict(title='Num of<br>Stars/Bin'), showscale=True
+                colorscale=color_scale, colorbar=colorbar, showscale=True
             ),
             row=2, col=1
         )
@@ -370,7 +376,7 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
         fig.add_trace(
             go.Histogram2d(
                 x=xaxis, y=yaxis, xbins=xbins, ybins=ybins, name='Density',
-                colorscale=color_scale, colorbar=dict(title='Num of<br>Stars/Bin'), showscale=True
+                colorscale=color_scale, colorbar=colorbar, showscale=True
             )
         )
         fig.update_xaxes(title_text=x_label)
@@ -378,8 +384,9 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
 
     # formatting
     fig.update_layout(
-        width=750,
-        height=650,
+        width=PLOT_WIDTH,
+        height=PLOT_HEIGHT,
+        margin=dict(l=70, r=30, t=50, b=130),   # room under the x axis for the colour bar
         plot_bgcolor='#E5ECF6',
         paper_bgcolor='white',
         bargap=0.05,
