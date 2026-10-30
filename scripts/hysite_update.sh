@@ -16,6 +16,7 @@
 #     recreated with the same tested NGINX_IMAGE. Smoke test production and check that every one of
 #     those sites answers. On failure: roll back, them included.
 #  6. Every step is recorded in the hysite_ops.deployments collection (scripts/deployments.py).
+#  7. A report of the run is emailed to HYSITE_REPORT_EMAIL, if set (scripts/send_report.py).
 #
 # Exits non-zero on any failure, so systemd starts hysite-alert@ to send an email.
 #
@@ -112,10 +113,21 @@ ops() {
 }
 record() {
     log "Status: $1 - $2"
+    echo "$(date -u +%H:%M:%S) $1 $2" >> "$RUN_DIR/events.txt"
     ops record "$RUN_DIR" --status "$1" --message "$2" \
         || { log "WARNING: could not record to hysite_ops.deployments"; RECORD_FAILED=true; }
 }
+# the report email, after every run, to HYSITE_REPORT_EMAIL (nothing without it); a problem with it is only logged
+send_report() {
+    [ -n "${HYSITE_REPORT_EMAIL:-}" ] || return 0
+    if python3 scripts/send_report.py "$RUN_DIR"; then
+        log "Report emailed to $HYSITE_REPORT_EMAIL"
+    else
+        log "WARNING: the report email was not sent"
+    fi
+}
 finish() {
+    send_report
     # keep the newest run folders; the database keeps every run
     ls -1d .update/runs/*/ | head -n "-$KEEP_RUNS" | xargs --no-run-if-empty rm -rf
     if [ "$1" -eq 0 ] && [ "$RECORD_FAILED" = true ]; then
