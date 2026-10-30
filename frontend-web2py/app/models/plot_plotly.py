@@ -157,9 +157,11 @@ def axis_style(label: str | None, do_gridlines: bool, **kwargs) -> dict:
                 showline=True, linecolor='black', ticks='outside', **kwargs)
 
 
-# the toolbar's tooltips: Plotly's "Zoom" is the drag-a-rectangle zoom, which the Bokeh toolbar called "Box Zoom";
-# visitors looked for that name (issue #35). A locale with one entry; the other tooltips keep Plotly's text
-PLOT_CONFIG = dict(locale='en-hypatia', locales={'en-hypatia': {'dictionary': {'Zoom': 'Box zoom: drag a rectangle'}}})
+# the toolbar: Plotly's "Zoom" is the drag-a-rectangle zoom, which the Bokeh toolbar called "Box Zoom", and visitors
+# looked for that name (issue #35): a locale with that one entry, the other tooltips keep Plotly's text. No
+# "Share chart..." button: it uploads the figure to Plotly's web service, which is not this site's business
+PLOT_CONFIG = dict(locale='en-hypatia', locales={'en-hypatia': {'dictionary': {'Zoom': 'Box zoom: drag a rectangle'}}},
+                   modeBarButtonsToRemove=['sendChartToCloud'], showSendToCloud=False)
 
 
 def plot_title(text: str) -> dict:
