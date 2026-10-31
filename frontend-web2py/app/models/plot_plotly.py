@@ -284,6 +284,21 @@ def create_plotly_scatter(name: list[str],
     return figure_html(fig, div_id='scatter-plot', hover_labels=labels)
 
 
+LEGEND_ROW_HEIGHT = 0.036   # of the figure's height: one tight legend row
+
+
+def legend_rows(count: int, rows: int) -> list[str]:
+    """Which legend ('legend', 'legend2', ...; the bottom row first) each of count entries goes to, dealt out
+    evenly from the top row down (the top rows take the odd one out)."""
+    base, extra = divmod(count, rows)
+    names = []
+    for row in range(rows):   # row 0 is the top one
+        size = base + (1 if row < extra else 0)
+        legend_name = 'legend' if rows - row == 1 else f'legend{rows - row}'
+        names.extend([legend_name] * size)
+    return names
+
+
 def create_plotly_targets(xaxis: list[float], yaxis: list[float],
                           layers: list[dict], number_of_targets: int,
                           x_label: str = None, y_label: str = None,
@@ -301,13 +316,15 @@ def create_plotly_targets(xaxis: list[float], yaxis: list[float],
     yaxis = np.asarray(yaxis, dtype=float)
     labels = {'xaxis': x_label if x_label else 'X Axis', 'yaxis': y_label if y_label else 'Y Axis'}
     fig = go.Figure()
-    # with the histograms, the legend stops at the points' box and stacks in two rows: the first half of the
-    # lists in a second legend above the first (Plotly draws each legend as a row)
-    upper_row = len(layers) // 2 if show_hist else 0
+    # with the histograms, the legend stops at the points' box and stacks in rows, two of them, three for more
+    # than four lists: each row is a legend of its own (Plotly draws a legend as one row), 'legend' the bottom
+    # one, 'legend2' above it, 'legend3' above that; the lists are dealt out from the top row down
+    rows = (3 if len(layers) > 4 else 2) if show_hist else 1
+    row_of = legend_rows(len(layers), rows)
     for index, layer in enumerate(layers):
         fig.add_trace(go.Scattergl(
             x=np.asarray(layer['x'], dtype=float), y=np.asarray(layer['y'], dtype=float), mode='markers',
-            name=layer['label'], legendgroup=layer['label'], legend='legend2' if index < upper_row else 'legend',
+            name=layer['label'], legendgroup=layer['label'], legend=row_of[index],
             text=list(layer['names']), hoverinfo='skip',
             marker=dict(symbol=MARKERS.get(layer['marker'], 'circle'), size=8, color=layer['color'],
                         opacity=layer['fill_alpha'], line=dict(color=layer['color'], width=1)),
@@ -324,15 +341,15 @@ def create_plotly_targets(xaxis: list[float], yaxis: list[float],
                                 bins, x_type, y_type, do_gridlines, opacity=HISTOGRAM_OPACITY)
     legend = dict(orientation='h', x=POINTS_DOMAIN[1] if show_hist else 1, xanchor='right', y=0, yanchor='bottom',
                   bgcolor='rgba(255,255,255,0.3)', itemclick='toggle', itemdoubleclick='toggleothers')
-    if upper_row:   # two tight rows: smaller text, no padding around the entries
+    if rows > 1:   # tight rows: smaller text, no padding around the entries
         legend.update(font=dict(size=11), itemwidth=30, borderwidth=0)
     fig.update_layout(
         title=plot_title(f'{number_of_targets} Targets selected'),
         legend=legend,
         annotations=[citation()],
     )
-    if upper_row:
-        fig.update_layout(legend2=dict(legend, y=0.036))
+    for row in range(2, rows + 1):
+        fig.update_layout({f'legend{row}': dict(legend, y=LEGEND_ROW_HEIGHT * (row - 1))})
     return figure_html(fig, div_id='targets-plot', hover_labels=labels)
 
 
