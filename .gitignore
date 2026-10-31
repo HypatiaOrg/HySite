@@ -13,7 +13,7 @@
 backend/examples/db/stars/nea_host.csv
 # Exact versions made on the server by scripts/refresh_versions.py (versions.env is covered by *.env)
 requirements.lock
-# state for scripts/hysite_update.sh: backups and run records
+# state of the server's update job, from when it lived here (now HyRoute's update/update.sh)
 .update/
 # database copies made by scripts/backup_mongo.sh
 mongo/backups/

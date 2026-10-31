@@ -10,7 +10,7 @@ This script resolves those to exact versions, in files that git ignores:
     REQUIREMENTS=requirements.lock so builds use the lock files
   - backend/requirements.lock, frontend-web2py/requirements.lock: every package at an exact version
 
-The weekly update job on the server (scripts/hysite_update.sh) runs this, tests the result and
+The weekly update job on the server (HyRoute's update/update.sh) runs this, tests the result and
 deploys it, and records the versions in the hysite_ops.deployments database collection.
 Compose reads versions.env when it is listed in COMPOSE_ENV_FILES (e.g. COMPOSE_ENV_FILES=.env,versions.env).
 
