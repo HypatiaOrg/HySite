@@ -312,9 +312,10 @@ def create_plotly_targets(xaxis: list[float], yaxis: list[float],
             marker=dict(symbol=MARKERS.get(layer['marker'], 'circle'), size=8, color=layer['color'],
                         opacity=layer['fill_alpha'], line=dict(color=layer['color'], width=1)),
         ))
-    # room below the points for the legend, as the Bokeh plot had (two rows of it with the histograms)
+    # room below the points for the legend, as the Bokeh plot had (the same room with the histograms' two rows,
+    # which are set tight, so the data keeps its proportions)
     x_range, x_type = axis_range(xaxis, do_log=do_xlog, inverse=xaxisinv)
-    y_range, y_type = axis_range(yaxis, do_log=do_ylog, inverse=yaxisinv, low_margin=(5 if show_hist else 3) * MARGIN)
+    y_range, y_type = axis_range(yaxis, do_log=do_ylog, inverse=yaxisinv, low_margin=3 * MARGIN)
     fig.update_xaxes(range=x_range, type=x_type, **axis_style(labels['xaxis'], do_gridlines))
     fig.update_yaxes(range=y_range, type=y_type, **axis_style(labels['yaxis'], do_gridlines))
     if show_hist:
@@ -323,13 +324,15 @@ def create_plotly_targets(xaxis: list[float], yaxis: list[float],
                                 bins, x_type, y_type, do_gridlines, opacity=HISTOGRAM_OPACITY)
     legend = dict(orientation='h', x=POINTS_DOMAIN[1] if show_hist else 1, xanchor='right', y=0, yanchor='bottom',
                   bgcolor='rgba(255,255,255,0.3)', itemclick='toggle', itemdoubleclick='toggleothers')
+    if upper_row:   # two tight rows: smaller text, no padding around the entries
+        legend.update(font=dict(size=11), itemwidth=30, borderwidth=0)
     fig.update_layout(
         title=plot_title(f'{number_of_targets} Targets selected'),
         legend=legend,
         annotations=[citation()],
     )
     if upper_row:
-        fig.update_layout(legend2=dict(legend, y=0.055))
+        fig.update_layout(legend2=dict(legend, y=0.036))
     return figure_html(fig, div_id='targets-plot', hover_labels=labels)
 
 
