@@ -6,12 +6,29 @@
 !local.env
 !test.env
 # ignore the JetBrains IDE files
-.idea/
+.idea
 # the DS_Store files on macOS
 *.DS_Store
 # examples datafiles created by running the demonstations
 backend/examples/db/stars/nea_host.csv
+# Exact versions made on the server by scripts/refresh_versions.py (versions.env is covered by *.env)
+requirements.lock
+# state for scripts/hysite_update.sh: backups and run records
+.update/
+# database copies made by scripts/backup_mongo.sh
+mongo/backups/
+# the production data directory and the ones scripts/restore_mongo.sh builds
+mongo/data/
+mongo/data-*/
+# copied from the plotly package when the frontend image is built (frontend-web2py/Dockerfile)
+frontend-web2py/app/static/js/plotly.min.js
+# sandboxes data folders
+.claude
+CWSite
+HyRoute
+screenshots
 
+# # Standard Python .gitignore
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -165,23 +182,3 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
-
-# PyCharm
-#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-#  and can be added to the global gitignore or merged into this file.  For a more nuclear
-#  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
-
-# Exact versions made on the server by scripts/refresh_versions.py (versions.env is covered by *.env)
-requirements.lock
-# state for scripts/hysite_update.sh: backups and run records
-.update/
-# database copies made by scripts/backup_mongo.sh
-mongo/backups/
-# the production data directory and the ones scripts/restore_mongo.sh builds
-mongo/data/
-mongo/data-*/
-
-# copied from the plotly package when the frontend image is built (frontend-web2py/Dockerfile)
-frontend-web2py/app/static/js/plotly.min.js
