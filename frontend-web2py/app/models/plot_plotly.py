@@ -165,7 +165,7 @@ def axis_style(label: str | None, do_gridlines: bool, **kwargs) -> dict:
 # the toolbar: Plotly's "Zoom" is the drag-a-rectangle zoom, which the Bokeh toolbar called "Box Zoom", and visitors
 # looked for that name (issue #35): a locale with that one entry, the other tooltips keep Plotly's text. No
 # "Share chart..." button: it uploads the figure to Plotly's web service, which is not this site's business
-PLOT_CONFIG = dict(locale='en-hypatia', locales={'en-hypatia': {'dictionary': {'Zoom': 'Box zoom: drag a rectangle'}}},
+PLOT_CONFIG = dict(locale='en-hypatia', locales={'en-hypatia': {'dictionary': {'Zoom': 'Box Zoom'}}},
                    modeBarButtonsToRemove=['sendChartToCloud'], showSendToCloud=False)
 
 
