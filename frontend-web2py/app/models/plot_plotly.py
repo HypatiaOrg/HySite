@@ -301,28 +301,35 @@ def create_plotly_targets(xaxis: list[float], yaxis: list[float],
     yaxis = np.asarray(yaxis, dtype=float)
     labels = {'xaxis': x_label if x_label else 'X Axis', 'yaxis': y_label if y_label else 'Y Axis'}
     fig = go.Figure()
-    for layer in layers:
+    # with the histograms, the legend stops at the points' box and stacks in two rows: the first half of the
+    # lists in a second legend above the first (Plotly draws each legend as a row)
+    upper_row = len(layers) // 2 if show_hist else 0
+    for index, layer in enumerate(layers):
         fig.add_trace(go.Scattergl(
             x=np.asarray(layer['x'], dtype=float), y=np.asarray(layer['y'], dtype=float), mode='markers',
-            name=layer['label'], legendgroup=layer['label'], text=list(layer['names']), hoverinfo='skip',
+            name=layer['label'], legendgroup=layer['label'], legend='legend2' if index < upper_row else 'legend',
+            text=list(layer['names']), hoverinfo='skip',
             marker=dict(symbol=MARKERS.get(layer['marker'], 'circle'), size=8, color=layer['color'],
                         opacity=layer['fill_alpha'], line=dict(color=layer['color'], width=1)),
         ))
-    # room below the points for the legend, as the Bokeh plot had
+    # room below the points for the legend, as the Bokeh plot had (two rows of it with the histograms)
     x_range, x_type = axis_range(xaxis, do_log=do_xlog, inverse=xaxisinv)
-    y_range, y_type = axis_range(yaxis, do_log=do_ylog, inverse=yaxisinv, low_margin=3 * MARGIN)
+    y_range, y_type = axis_range(yaxis, do_log=do_ylog, inverse=yaxisinv, low_margin=(5 if show_hist else 3) * MARGIN)
     fig.update_xaxes(range=x_range, type=x_type, **axis_style(labels['xaxis'], do_gridlines))
     fig.update_yaxes(range=y_range, type=y_type, **axis_style(labels['yaxis'], do_gridlines))
     if show_hist:
         add_marginal_histograms(fig, [dict(x=np.asarray(layer['x'], dtype=float), y=np.asarray(layer['y'], dtype=float),
                                            color=layer['color'], name=layer['label']) for layer in layers],
                                 bins, x_type, y_type, do_gridlines, opacity=HISTOGRAM_OPACITY)
+    legend = dict(orientation='h', x=POINTS_DOMAIN[1] if show_hist else 1, xanchor='right', y=0, yanchor='bottom',
+                  bgcolor='rgba(255,255,255,0.3)', itemclick='toggle', itemdoubleclick='toggleothers')
     fig.update_layout(
         title=plot_title(f'{number_of_targets} Targets selected'),
-        legend=dict(orientation='h', x=1, xanchor='right', y=0, yanchor='bottom', bgcolor='rgba(255,255,255,0.3)',
-                    itemclick='toggle', itemdoubleclick='toggleothers'),
+        legend=legend,
         annotations=[citation()],
     )
+    if upper_row:
+        fig.update_layout(legend2=dict(legend, y=0.055))
     return figure_html(fig, div_id='targets-plot', hover_labels=labels)
 
 
