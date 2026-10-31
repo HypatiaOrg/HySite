@@ -14,3 +14,11 @@ We are providing services beacuse we love astronomy and data, so please be respe
 
 Our [Apache 2.0 License](https://github.com/HypatiaOrg/HySite/blob/main/LICENSE), we welcome you to fork our repository and make your own version of our code.
 
+## How the server deploys this
+
+The production server pulls `main` weekly and deploys it only after a test: the job lives in the server's
+repository, HyRoute (`update/update.sh`), and uses this repository's own tools, `scripts/refresh_versions.py`
+for the newest images and packages (written to `versions.env` and the `requirements.lock` files, which git
+ignores), `compose.test.yaml` with the sample database for the test stack, and `scripts/smoke_test.py` for
+the checks. The wiki page "Keeping the server up to date" explains the job; to run it now on the server:
+`~/HyRoute/update/run.sh`.
