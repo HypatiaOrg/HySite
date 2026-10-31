@@ -3,7 +3,7 @@ services:
         container_name: mongoDB
         # The MongoDB release line to follow. MONGO_IMAGE (versions.env on the server) pins the exact
         # tested image within this line. Changing the line is the manual procedure in the wiki page
-        # "MongoDB Upgrade Plan": the update job refuses to deploy a different line (scripts/hysite_update.sh).
+        # "MongoDB Upgrade Plan": the update job refuses to deploy a different line (HyRoute's update/update.sh).
         image: ${MONGO_IMAGE:-mongo:9.0}
         restart: "${RESTART_POLICY:-no}"
         healthcheck:
