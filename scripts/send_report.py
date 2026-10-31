@@ -115,6 +115,19 @@ def report(run_dir: Path, before_dir: Path) -> tuple[str, str]:
     lines += ["", "Packages"]
     for name, lock in LOCK_FILES.items():
         lines += package_lines(name, packages(before_dir / lock), packages(pinned / lock))
+    sites = [line.split(" ") for line in read_text(run_dir / "sites.txt").splitlines() if line.strip()]
+    if sites:
+        lines += ["", "Other sites (HyRoute, CWSite)"]
+        for kind, *rest in sites:
+            if kind == "site":
+                folder, commit, state, *subject = rest
+                lines.append(f"  {folder}  {commit[:8]}  {'new commit' if state == 'new' else 'same commit'}  {' '.join(subject)}".rstrip())
+            elif kind == "up":
+                lines.append(f"  nginx of {rest[0]}: {' '.join(rest[1:])}")
+            elif kind == "check":
+                lines.append(f"  {rest[0]}: {rest[1]}")
+            elif kind == "reset":
+                lines.append(f"  {rest[0]} put back to {rest[1]}")
     lines += ["", "Tests",
               f"  sample database: {smoke_line(run_dir / 'smoke-test.txt')}",
               f"  production:      {smoke_line(run_dir / 'smoke-production.txt')}"]

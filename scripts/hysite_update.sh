@@ -7,14 +7,16 @@
 #  1. Update the code: fast-forward to origin/$HYSITE_BRANCH.
 #  2. Resolve the newest versions: scripts/refresh_versions.py writes versions.env and the
 #     requirements.lock files (ignored by git).
-#  3. Stop here if neither the code nor any version changed.
+#  3. Stop here if neither the code, nor any version, nor one of the other sites' checkouts changed.
 #  4. Test: build and run the whole site against the sample database (compose.test.yaml)
-#     and run the smoke tests. On failure: put the previous versions back, stop.
+#     and run the smoke tests; build the other sites' images on the tested nginx. On failure: put the
+#     previous versions back, stop.
 #  5. Deploy: rebuild production from the tested versions and recreate changed containers,
 #     keeping the old images as :previous. The nginx of the other sites on this server (the HTTPS
 #     edge in HyRoute, the CWSite page; their compose files are listed in HYSITE_NGINX_COMPOSE) is
-#     recreated with the same tested NGINX_IMAGE. Smoke test production and check that every one of
-#     those sites answers. On failure: roll back, them included.
+#     recreated with the same tested NGINX_IMAGE, or with the image built on it in step 4. Smoke test
+#     production and check that every one of those sites answers. On failure: roll back, them
+#     included (a site's checkout goes back to the commit deployed before).
 #  6. Every step is recorded in the hysite_ops.deployments collection (scripts/deployments.py).
 #  7. A report of the run is emailed to HYSITE_REPORT_EMAIL, if set (scripts/send_report.py).
 #
@@ -31,7 +33,8 @@ BRANCH=${HYSITE_BRANCH:-main}
 GIT_UPDATE=${HYSITE_GIT_UPDATE:-true}
 PROD_URL=${HYSITE_URL:-http://localhost}
 # compose files of the other sites on this server whose "nginx" service runs the NGINX_IMAGE tested here:
-# the HTTPS edge (HyRoute) and the CWSite page. Space-separated; a file that is absent is skipped.
+# the HTTPS edge (HyRoute) and the CWSite page, whose nginx is built on it (its Dockerfile adds the site).
+# Space-separated; a file that is absent is skipped.
 # HYSITE_EDGE_COMPOSE is the older name for the edge alone and still works.
 NGINX_COMPOSE=${HYSITE_NGINX_COMPOSE:-/home/ubuntu/HyRoute/compose.yaml /home/ubuntu/CWSite/compose.yaml}
 NGINX_COMPOSE="${HYSITE_EDGE_COMPOSE:-} $NGINX_COMPOSE"
@@ -83,24 +86,72 @@ nginx_compose() {
     [ -f "$(dirname "$file")/.env" ] && env_files="$(dirname "$file")/.env,$env_files"
     COMPOSE_ENV_FILES=$env_files docker compose --file "$file" "$@"
 }
-# recreate every other site's nginx with the NGINX_IMAGE in versions.env, and check that each one still
-# runs and answers. A missing compose file is skipped (that site is not on this server)
-nginx_up() {
-    local file url done=" "
+# The other sites on this server: HyRoute (the HTTPS edge) and CWSite. Each has a compose file with an
+# "nginx" service on ${NGINX_IMAGE}, as the image or as the base of a build. Their code arrives by a
+# git push from the owner's computer into the checkout (README of each); this job never pulls them.
+# the compose files that are on this server, each once (a file can be listed twice: HYSITE_EDGE_COMPOSE
+# and the default)
+site_files() {
+    local file done=" "
     for file in $NGINX_COMPOSE; do
         [ -f "$file" ] || continue
-        case "$done" in *" $file "*) continue ;; esac  # listed twice (HYSITE_EDGE_COMPOSE and the default)
+        case "$done" in *" $file "*) continue ;; esac
         done="$done$file "
-        log "Recreating the nginx of $(dirname "$file") with the tested image"
-        nginx_compose "$file" up --detach --no-build nginx || return 1
+        echo "$file"
+    done
+}
+# "<folder> <commit>" for each site whose folder is a git checkout
+site_commits() {
+    local file dir
+    for file in $(site_files); do
+        dir=$(dirname "$file")
+        git -C "$dir" rev-parse HEAD > /dev/null 2>&1 && echo "$dir $(git -C "$dir" rev-parse HEAD)"
+    done
+}
+# build the sites' images on the NGINX_IMAGE in versions.env (nothing to build for a site whose nginx is
+# the plain image, such as HyRoute), before production is touched
+site_build() {
+    local file
+    for file in $(site_files); do
+        log "Building the site in $(dirname "$file") on the tested nginx image"
+        nginx_compose "$file" build --pull nginx || return 1
+    done
+}
+# recreate every site's nginx with the tested or built image, and check that each one runs and answers
+site_up() {
+    local file dir url
+    for file in $(site_files); do
+        dir=$(dirname "$file")
+        log "Recreating the nginx of $dir"
+        nginx_compose "$file" up --detach nginx || { echo "up $dir failed" >> "$RUN_DIR/sites.txt"; return 1; }
         sleep 3
         [ "$(nginx_compose "$file" ps --status running --services nginx 2> /dev/null)" = nginx ] \
-            || { log "The nginx of $(dirname "$file") is not running"; return 1; }
+            || { log "The nginx of $dir is not running"; echo "up $dir not running" >> "$RUN_DIR/sites.txt"; return 1; }
+        echo "up $dir ok" >> "$RUN_DIR/sites.txt"
     done
     for url in $NGINX_CHECK_URLS; do
-        curl --silent --show-error --fail --output /dev/null --retry 5 --retry-delay 3 --retry-all-errors \
-            --max-time 30 "$url" || { log "$url does not answer"; return 1; }
+        if curl --silent --show-error --fail --output /dev/null --retry 5 --retry-delay 3 --retry-all-errors \
+                --max-time 30 "$url"; then
+            echo "check $url ok" >> "$RUN_DIR/sites.txt"
+        else
+            log "$url does not answer"; echo "check $url failed" >> "$RUN_DIR/sites.txt"; return 1
+        fi
     done
+}
+# put each site's checkout back to the commit deployed before (.update/deployed_sites), when a push moved
+# it and the checkout is clean; a hand-edited checkout is left alone, with a warning
+site_rollback() {
+    local dir commit deployed
+    while read -r dir commit; do
+        deployed=$(grep "^$dir " .update/deployed_sites 2> /dev/null | cut -d' ' -f2)
+        [ -n "$deployed" ] && [ "$deployed" != "$commit" ] || continue
+        if [ -n "$(git -C "$dir" status --porcelain)" ]; then
+            log "WARNING: $dir has uncommitted changes; not put back to ${deployed:0:8}"
+            continue
+        fi
+        log "Putting $dir back to the commit deployed before, ${deployed:0:8}"
+        git -C "$dir" reset --hard --quiet "$deployed" && echo "reset $dir ${deployed:0:8}" >> "$RUN_DIR/sites.txt"
+    done <<< "$(site_commits)"
 }
 
 # scripts/deployments.py inside the backend image, with the hysite_ops credentials
@@ -190,6 +241,7 @@ installed_versions() {  # $1 = image name prefix, e.g. hysite-test
 log "HySite update run $RUN_ID"
 backup_pins
 DEPLOYED_COMMIT=$(cat .update/deployed_commit 2> /dev/null || echo none)
+DEPLOYED_SITES=$(cat .update/deployed_sites 2> /dev/null)
 
 # 1. code
 if [ "$GIT_UPDATE" = true ]; then
@@ -202,12 +254,26 @@ if [ "$GIT_UPDATE" = true ]; then
     fi
 fi
 COMMIT=$(git rev-parse HEAD)
+# the other sites' checkouts: "site <folder> <commit> new|same <subject>" (new: not the commit deployed before)
+SITES=$(site_commits)
+while read -r dir commit; do
+    [ -n "$dir" ] || continue
+    state=same
+    grep -q "^$dir $commit\$" <<< "$DEPLOYED_SITES" || state=new
+    echo "site $dir $commit $state $(git -C "$dir" log -1 --format=%s)" >> "$RUN_DIR/sites.txt"
+done <<< "$SITES"
 python3 - "$RUN_DIR/run.json" "$RUN_ID" "$(git rev-parse --abbrev-ref HEAD)" "$COMMIT" "$(git log -1 --format=%s)" "$(hostname)" <<'EOF'
 import json, sys
 from datetime import datetime, timezone
+from pathlib import Path
 path, run_id, branch, commit, subject, host = sys.argv[1:]
+sites = {}
+for line in Path(path).with_name("sites.txt").read_text().splitlines() if Path(path).with_name("sites.txt").exists() else []:
+    kind, folder, site_commit, state, *subject_words = line.split(" ")
+    if kind == "site":
+        sites[folder.replace(".", "_")] = {"commit": site_commit, "new": state == "new", "subject": " ".join(subject_words)}
 json.dump({"run_id": run_id, "started": datetime.now(timezone.utc).isoformat(), "host": host,
-           "git": {"branch": branch, "commit": commit, "subject": subject}}, open(path, "w"))
+           "git": {"branch": branch, "commit": commit, "subject": subject}, "sites": sites}, open(path, "w"))
 EOF
 record running "Started at commit ${COMMIT:0:8}"
 
@@ -221,19 +287,19 @@ fi
 save_run_files
 
 # 3. anything new?
-if [ "$COMMIT" = "$DEPLOYED_COMMIT" ] && pins_unchanged; then
+if [ "$COMMIT" = "$DEPLOYED_COMMIT" ] && [ "$SITES" = "$DEPLOYED_SITES" ] && pins_unchanged; then
     restore_pins  # same versions; keep the old files so their timestamps stay meaningful
     # the frontend cleans old session files when it starts; on a week without a deploy, do it here
     prod_compose exec -T web-to-py python web2py.py -S hypatia -R scripts/sessions2trash.py -A -o -x 604800 \
         > /dev/null 2>&1 || log "WARNING: old session files were not cleaned up"
-    record unchanged "No new code or versions since the last deploy"
+    record unchanged "No new code, versions or site checkouts since the last deploy"
     finish 0
 fi
 
 # 4. test against the sample database
 log "Testing the new versions against the sample database"
 test_compose down --volumes --remove-orphans > /dev/null 2>&1
-if test_compose build --pull && test_compose up --detach \
+if test_compose build --pull && site_build && test_compose up --detach \
         && python3 scripts/smoke_test.py "$TEST_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-test.txt"; then
     TEST_PASSED=true
 else
@@ -244,7 +310,7 @@ installed_versions hysite-test
 test_compose down --volumes --remove-orphans > /dev/null 2>&1
 if [ "$TEST_PASSED" = false ]; then
     restore_pins
-    record test_failed "Tests failed; production was not changed. Logs: $REPO/$RUN_DIR"
+    record test_failed "Tests or a site's build failed; production was not changed. Logs: $REPO/$RUN_DIR"
     finish 1
 fi
 record tested "All smoke tests passed on the sample database"
@@ -262,9 +328,10 @@ log "Deploying to production"
 for image in "${BUILT_IMAGES[@]}"; do
     docker image inspect "$image:latest" > /dev/null 2>&1 && docker tag "$image:latest" "$image:previous"
 done
-if prod_compose build --pull && prod_compose up --detach --remove-orphans && nginx_up \
+if prod_compose build --pull && prod_compose up --detach --remove-orphans && site_up \
         && python3 scripts/smoke_test.py "$PROD_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-production.txt"; then
     git rev-parse HEAD > .update/deployed_commit
+    site_commits > .update/deployed_sites
     installed_versions hysite
     record deployed "Deployed commit ${COMMIT:0:8} and passed the production smoke test"
     docker image prune --force > /dev/null
@@ -272,14 +339,15 @@ if prod_compose build --pull && prod_compose up --detach --remove-orphans && ngi
     finish 0
 fi
 
-# production failed: go back to the previous images and versions
+# production failed: go back to the previous images, versions and site checkouts
 log "Production check failed; rolling back"
 prod_compose logs --no-color > "$RUN_DIR/production-logs.txt" 2>&1
 restore_pins
 for image in "${BUILT_IMAGES[@]}"; do
     docker image inspect "$image:previous" > /dev/null 2>&1 && docker tag "$image:previous" "$image:latest"
 done
-if prod_compose up --detach --no-build --remove-orphans && nginx_up \
+site_rollback
+if prod_compose up --detach --no-build --remove-orphans && site_build && site_up \
         && python3 scripts/smoke_test.py "$PROD_URL" --wait "$SMOKE_WAIT" | tee "$RUN_DIR/smoke-rollback.txt"; then
     record rolled_back "Production check failed; rolled back to the previous versions, which pass. Logs: $REPO/$RUN_DIR"
 else
