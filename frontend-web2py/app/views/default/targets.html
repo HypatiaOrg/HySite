@@ -1,10 +1,18 @@
 {{extend 'layout.html'}}
 {{from datetime import datetime}}
+{{block head}}
+<!-- Plotly, copied from the python package when the image is built (Dockerfile); the plot component embeds only the figure -->
+<script src="{{=URL('static','js/plotly.min.js')}}"></script>
+{{end}}
 
-<div style="float:left;width:750px;height:625px;display:table;font-size:20px;font-weight:bold;margin-bottom:20px">
+<div style="float:left;width:750px">
+<div style="width:750px;height:625px;display:table;font-size:20px;font-weight:bold;margin-bottom:20px">
     <div style="display:table-cell;vertical-align:middle;text-align:center;background:#dddddd;height:625px" id="graph_targets">
     {{=LOAD("default","graph_targets.load",ajax=True,content="Loading...")}}
     </div>
+</div>
+{{plot_controls = dict(toggle='show_targets_hist', bins=[('xhist_bin_size', 'X bin size'), ('yhist_bin_size', 'Y bin size')], palette=False)}}
+{{include 'default/plot_controls.html'}}
 </div>
 
 
@@ -154,4 +162,13 @@
         ajax('/hypatia/default/graph.load',items,'graph');
         ajax('/hypatia/default/graph_targets.load',items,'graph_targets');
     }
+
+    // Enter in a text box, or the Submit button, applies the settings like every other control does: the plot
+    // refreshes in place. The form used to post a page reload, which raced the box's own refresh and lost the
+    // value just typed (issue #35). stopPropagation keeps web2py.js from greying the button out as "Working..."
+    $("form:has(#toggle_vars), form.plot-controls").on("submit", function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        refresh();
+    });
 </script>

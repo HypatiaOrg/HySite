@@ -83,6 +83,9 @@ session_defaults_launch = settings_data['defaults']
 exported_session_vars = sorted(set(session_defaults_launch.keys()) | toggle_graph_vars)
 # the request variables that may be saved in the session; other variables a request sends are ignored
 session_request_vars = set(settings_data['session_keys'])
+# the density page's controls: the colour scales and the bin size keywords, as the settings model names them
+DENSITY_COLOR_PALLETS = settings_data['fields']['color_pallet']['choices']
+DENSITY_BIN_TAGS = settings_data['fields']['xhist_bin_size']['keywords']
 
 for name_handle, name_label in name_handles_labels.items():
     COL_PREFERRED_NAME[name_handle] = name_label
