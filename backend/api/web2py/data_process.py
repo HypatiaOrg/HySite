@@ -464,15 +464,15 @@ def graph_query_pipeline_web2py(graph_settings: dict[str, any]) -> tuple[
 
 
 def histogram_format(graph_data: list[dict[str, any]], labels: dict[str, str],
-                     from_v2: dict[str, str], normalize_hist: bool = False) \
+                     from_v2: dict[str, str], normalize_hist: bool = False, bins: int | list[float] = 20) \
         -> tuple[np.ndarray, np.ndarray, np.ndarray, list[float]]:
     # histogram
     db_field = from_v2['xaxis']
     # value_type, param_id = axis_mapping['x']
     x_data = [db_return[db_field] for db_return in graph_data]
     x_data_with_planet = [db_return[db_field] for db_return in graph_data if 'nea_name' in db_return.keys()]
-    # builds the histogram
-    hist_all, edges = np.histogram(x_data, bins=20)
+    # builds the histogram (bins: a count, or the edges the caller chose)
+    hist_all, edges = np.histogram(x_data, bins=bins)
     hist_planet, edges = np.histogram(x_data_with_planet, bins=edges)
     # get maximum point on the histogram
     max_hist_all = float(max(hist_all))

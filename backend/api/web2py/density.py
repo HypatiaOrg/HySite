@@ -136,27 +136,51 @@ def axis_bins(values: np.ndarray, requested: str | float | None, value_type: str
     return {'start': start, 'end': end, 'size': check_bin_size(width, end - start), 'mode': mode}
 
 
+def valid_points(outputs: dict) -> tuple[list[str], np.ndarray, np.ndarray]:
+    """The names and the x and y values of the points with a value on both axes."""
+    names = outputs.get('name', [])
+    xaxis = np.array([np.nan if value is None else value for value in outputs.get('xaxis', [])], dtype=float)
+    yaxis = np.array([np.nan if value is None else value for value in outputs.get('yaxis', [])], dtype=float)
+    valid = np.isfinite(xaxis) & np.isfinite(yaxis)
+    return [name for name, is_valid in zip(names, valid) if is_valid], xaxis[valid], yaxis[valid]
+
+
+def marginal_bins(xaxis: np.ndarray, yaxis: np.ndarray, axis_mapping: dict, settings) -> dict | None:
+    """The bins of the histograms along the x and y axes (axis_bins for each), for the density page and for
+    the scatter and targets pages' optional histograms; None without points."""
+    if not len(xaxis):
+        return None
+    range_mode = settings.get('range_mode', 'full data')
+    return {
+        'xaxis': axis_bins(xaxis, settings.get('xhist_bin_size', None), *axis_mapping['x'], range_mode=range_mode),
+        'yaxis': axis_bins(yaxis, settings.get('yhist_bin_size', None), *axis_mapping['y'], range_mode=range_mode),
+    }
+
+
+def histogram_edges(values, requested: str | float | None, axis: tuple) -> dict | None:
+    """The histogram page's bins: axis_bins for its one axis, with the bin edges spelled out (the last edge at
+    the end of the range or past it, so the largest value is counted); None without values."""
+    values = np.asarray(values, dtype=float)
+    if not len(values):
+        return None
+    bins = axis_bins(values, requested, *axis)
+    count = max(1, int(math.ceil((bins['end'] - bins['start']) / bins['size'])))
+    edges = bins['start'] + bins['size'] * np.arange(count + 1)
+    edges[-1] = max(edges[-1], bins['end'])
+    bins['edges'] = edges.tolist()
+    return bins
+
+
 def density_data(graph_data: dict, axis_mapping: dict, settings) -> dict:
     """
     The density page's data from a scatter response (api.web2py.views.get_graph_data): the points with a
     value on both axes, the bins of each axis, the colour scale, the histograms toggle, and the axes with
     the log decision made (a logarithmic axis needs every value positive).
     """
-    outputs = graph_data['outputs']
-    names = outputs.get('name', [])
-    xaxis = np.array([np.nan if value is None else value for value in outputs.get('xaxis', [])], dtype=float)
-    yaxis = np.array([np.nan if value is None else value for value in outputs.get('yaxis', [])], dtype=float)
-    valid = np.isfinite(xaxis) & np.isfinite(yaxis)
-    xaxis, yaxis = xaxis[valid], yaxis[valid]
-    names = [name for name, is_valid in zip(names, valid) if is_valid]
+    names, xaxis, yaxis = valid_points(graph_data['outputs'])
     axes = {axis: dict(axis_data) for axis, axis_data in graph_data['axes'].items()}
-    bins = None
+    bins = marginal_bins(xaxis, yaxis, axis_mapping, settings)
     if len(xaxis):
-        range_mode = settings.get('range_mode', 'full data')
-        bins = {
-            'xaxis': axis_bins(xaxis, settings.get('xhist_bin_size', None), *axis_mapping['x'], range_mode=range_mode),
-            'yaxis': axis_bins(yaxis, settings.get('yhist_bin_size', None), *axis_mapping['y'], range_mode=range_mode),
-        }
         axes['xaxis']['log'] = bool(axes['xaxis']['log'] and np.all(xaxis > 0))
         axes['yaxis']['log'] = bool(axes['yaxis']['log'] and np.all(yaxis > 0))
     color_pallet, scale, histogram_color = color_scale(settings.get('color_pallet', None))

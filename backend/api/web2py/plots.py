@@ -101,10 +101,11 @@ def group_targets(names: list[str], xaxis: list, yaxis: list, target_handles: li
 
 
 def histogram_series(graph_data: list[dict], labels: dict[str, str], from_v2: dict[str, str],
-                     normalize: bool) -> dict:
-    """The histogram as named series over shared bin edges, plus the x range of the data."""
+                     normalize: bool, bins: int | list[float] = 20) -> dict:
+    """The histogram as named series over shared bin edges (bins: a count, or the edges), plus the x range
+    of the data."""
     hist_all, hist_planet, edges, x_data = histogram_format(graph_data=graph_data, labels=labels, from_v2=from_v2,
-                                                            normalize_hist=normalize)
+                                                            normalize_hist=normalize, bins=bins)
     counts = {'all': hist_all.tolist(), 'exo_hosts': hist_planet.tolist()}
     return dict(
         hist_all=counts['all'], hist_planet=counts['exo_hosts'], edges=edges.tolist(), x_data=x_data,

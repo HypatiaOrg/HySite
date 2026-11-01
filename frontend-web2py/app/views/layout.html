@@ -64,12 +64,19 @@
       .bk-root .bk-toolbar-right .bk-toolbar-button.bk-active {
         border-left-color: #4E11B7;
       }
+      /* the page we are on: white, and light grey under the mouse (Bootstrap's hover would make it
+         transparent, purple text on the purple bar); the same for the pages on the right (issue #35) */
       .web2py-menu-active a {
         background: white;
         color: #4E11B7 !important;
         border-radius: 8px;
         padding: 7px !important;
         margin: 8px !important;
+      }
+      .navbar-inverse .navbar-nav>.web2py-menu-active>a:hover,
+      .navbar-inverse .navbar-nav>.web2py-menu-active>a:focus {
+        background: #c8c8c8;
+        color: #4E11B7 !important;
       }
     </style>
   </head>
@@ -90,10 +97,11 @@
         </div>
         <div class="collapse navbar-collapse navbar-ex1-collapse" style="color:white !important">
           <ul class="nav navbar-nav navbar-right">
-            <li><a href="/hypatia/default/help">Help</a></li>
-            <li><a href="/hypatia/default/about">About</a></li>
-            <li><a href="/hypatia/default/credits">Acknowledgements</a></li>
-            <li><a href="/api">API</a></li>
+            {{# the information pages, the one we are on marked like the plot pages on the left (models/menu.py) }}
+            {{for label, function, href in [('Help', 'help', '/hypatia/default/help'), ('About', 'about', '/hypatia/default/about'),
+                                            ('Acknowledgements', 'credits', '/hypatia/default/credits'), ('API', 'api', '/api')]:}}
+            <li{{if request.controller == 'default' and request.function == function:}} class="web2py-menu-active"{{pass}}><a href="{{=href}}">{{=label}}</a></li>
+            {{pass}}
           </ul>
           {{if response.menu:}}
           {{=MENU(response.menu, _class='nav navbar-nav',li_class='dropdown',ul_class='dropdown-menu')}}

@@ -141,7 +141,8 @@ def graph():
                                        do_zlog=zaxis.get('log', False),
                                        xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
                                        zaxisinv=zaxis.get('inverse', False), has_zaxis='zaxis' in axes,
-                                       do_gridlines=settings['gridlines'])
+                                       do_gridlines=settings['gridlines'],
+                                       bins=graph_data.get('bins'), show_hist=settings['show_scatter_hist'])
     # send back to the browser
     return dict(div=div)
 
@@ -161,7 +162,8 @@ def graph_targets():
                                        y_label=axes['yaxis']['label'],
                                        do_xlog=axes['xaxis']['log'], do_ylog=axes['yaxis']['log'],
                                        xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
-                                       do_gridlines=settings['gridlines'])
+                                       do_gridlines=settings['gridlines'],
+                                       bins=graph_data.get('bins'), show_hist=settings['show_targets_hist'])
     return dict(div=div)
 
 
@@ -170,10 +172,10 @@ def graph_hist():
     settings = get_settings()
     graph_data = api_json('hist/', settings)
     # the plot: the API made the series over shared bins (api.web2py.plots)
-    labels = graph_data['labels']
+    labels = graph_data['labels']   # the API names them by axis: 'xaxis', 'yaxis'
     div = create_plotly_hist(series=graph_data['series'], edges=graph_data['edges'],
                                     x_range=graph_data['x_range'],
-                                    x_label=labels.get('x_label', None),
+                                    x_label=labels.get('xaxis', None),
                                     normalize=settings['normalize'], xaxisinv=settings['xaxisinv'],
                                     do_gridlines=settings['gridlines'],
                                     )
