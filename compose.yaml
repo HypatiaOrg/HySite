@@ -3,7 +3,7 @@ services:
         container_name: mongoDB
         # The MongoDB release line to follow. MONGO_IMAGE (versions.env on the server) pins the exact
         # tested image within this line. Changing the line is the manual procedure in the wiki page
-        # "MongoDB Upgrade Plan": the update job refuses to deploy a different line (scripts/hysite_update.sh).
+        # "MongoDB Upgrade Plan": the update job refuses to deploy a different line (HyRoute's update/update.sh).
         image: ${MONGO_IMAGE:-mongo:9.0}
         restart: "${RESTART_POLICY:-no}"
         healthcheck:
@@ -49,7 +49,7 @@ services:
                 # The Python minor version to follow (patch releases arrive through the weekly update job;
                 # versions.env on the server pins the exact tested image). Moving to a new minor version
                 # is a manual, once-a-year decision: see the wiki page "Keeping HySite Up to Date".
-                BASE_IMAGE: ${FRONTEND_BASE_IMAGE:-python:3.14-alpine}
+                BASE_IMAGE: ${FRONTEND_BASE_IMAGE:-python:3.15-alpine}
                 # requirements.txt (newest) unless versions.env selects requirements.lock (tested)
                 REQUIREMENTS: ${REQUIREMENTS:-requirements.txt}
         pull_policy: always
@@ -90,7 +90,7 @@ services:
                 # The Python minor version to follow (patch releases arrive through the weekly update job;
                 # versions.env on the server pins the exact tested image). Moving to a new minor version
                 # is a manual, once-a-year decision: see the wiki page "Keeping HySite Up to Date".
-                BASE_IMAGE: ${BACKEND_BASE_IMAGE:-python:3.14-alpine}
+                BASE_IMAGE: ${BACKEND_BASE_IMAGE:-python:3.15-alpine}
                 # requirements.txt (newest) unless versions.env selects requirements.lock (tested)
                 REQUIREMENTS: ${REQUIREMENTS:-requirements.txt}
         restart: "${RESTART_POLICY:-no}"
