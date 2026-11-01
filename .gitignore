@@ -27,6 +27,7 @@ frontend-web2py/app/static/js/plotly.min.js
 CWSite
 HyRoute
 screenshots
+sandboxfiles
 
 # # Standard Python .gitignore
 # Byte-compiled / optimized / DLL files
