@@ -14,7 +14,8 @@ from api.web2py.density import COLOR_PALLETS, DEFAULT_COLOR_PALLET, BIN_TAGS
 TOGGLES = ['normalize', 'gridlines', 'xaxislog', 'yaxislog', 'zaxislog',
            'xaxisinv', 'yaxisinv', 'zaxisinv', 'filter1_inv', 'filter2_inv', 'filter3_inv',
            'show_all', 'or_logic', 'show_hwo_tier1', 'show_hwo_tier2',
-           'show_thick_disk', 'show_thin_disk', 'show_has_exo', 'show_xyhist']
+           'show_thick_disk', 'show_thin_disk', 'show_has_exo', 'show_xyhist',
+           'show_scatter_hist', 'show_targets_hist']
 
 # the state a new session starts with (the keys the pages' forms send, with their first values)
 DEFAULTS = {
@@ -47,9 +48,14 @@ DEFAULTS = {
     'show_thin_disk': True,
     'show_thick_disk': True,
     'show_xyhist': True,
-    # the density page: the marginal histograms' bin sizes (a number, or a keyword) and the colour palette
+    # the scatter and targets pages can show the same histograms along their axes, off to begin with
+    'show_scatter_hist': False,
+    'show_targets_hist': False,
+    # the histograms' bin sizes (a number, or a keyword), shared by the three pages like the axes; the colour palette
     'xhist_bin_size': '',
     'yhist_bin_size': '',
+    # the histogram page's bin width, the same rule
+    'hist_bin_size': '',
     'color_pallet': DEFAULT_COLOR_PALLET,
 }
 
@@ -92,10 +98,13 @@ def settings_schema() -> dict:
         'show_hwo_tier1': {'kind': 'toggle', 'about': 'targets: the HWO tier 1 list'},
         'show_hwo_tier2': {'kind': 'toggle', 'about': 'targets: the HWO tier 2 list'},
         'show_xyhist': {'kind': 'toggle', 'about': 'density: the histograms along the x and y axes'},
+        'show_scatter_hist': {'kind': 'toggle', 'about': 'scatter: the histograms along the x and y axes'},
+        'show_targets_hist': {'kind': 'toggle', 'about': 'targets: the histograms along the x and y axes, one per list'},
         'xhist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS,
-                           'about': 'density: the x bin width in data units, or a keyword: the standard deviation '
-                                    'of the data (the default) or the representative error of the parameter'},
-        'yhist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS, 'about': 'density: the y bin width, as for x'},
+                           'about': 'the histograms\' x bin width in data units, or a keyword: the standard '
+                                    'deviation of the data (the default) or the representative error of the parameter'},
+        'yhist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS, 'about': 'the histograms\' y bin width, as for x'},
+        'hist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS, 'about': 'histogram page: the bin width, as for x'},
         'color_pallet': {'kind': 'choice', 'choices': list(COLOR_PALLETS), 'about': 'density: the colour scale'},
         'tablecols': {'kind': 'list', 'choices': TABLE_TOKENS + list(available_elements_v2),
                       'about': 'the table columns: option tokens and element symbols'},

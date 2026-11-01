@@ -19,6 +19,7 @@ from plotly.subplots import make_subplots
 
 hypatia_purple = '#4E11B7'
 PLOT_WIDTH = 750
+PLOT_MARGIN_LEFT = 70   # the figures' left margin: the y axis line is here (the pages' controls line up with it)
 PLOT_HEIGHT = 625
 AXIS_FONT_SIZE = 16  # pixels: the 12pt of the Bokeh plots
 MARGIN = 0.10  # of the data range, on each side
@@ -35,7 +36,9 @@ SELECT_SCRIPT = """
         if (!plot || !plot.on) { return; }
         plot.on("plotly_selected", function(event) {
             if (!event) { return; }
-            var names = event.points.map(function(point) {
+            var names = event.points.filter(function(point) {
+                return plot.data[point.curveNumber].type === "scattergl";  // not the histograms' bars
+            }).map(function(point) {
                 return (plot.data[point.curveNumber].text || [])[point.pointNumber];
             });
             $("#star_list").val(names.join(","));
@@ -81,10 +84,12 @@ HOVER_SCRIPT = """
             var layout = plot._fullLayout;
             if (!layout || !layout.xaxis || !layout.xaxis.d2p) { hide(); return; }
             var box = plot.getBoundingClientRect();
-            var px = event.clientX - box.left - layout._size.l, py = event.clientY - box.top - layout._size.t;
-            if (px < 0 || py < 0 || px > layout._size.w || py > layout._size.h) { hide(); return; }
+            // pixels from the top left of the points' axes (with the histograms shown, the axes take part of the figure)
             var xa = layout.xaxis, ya = layout.yaxis, found = [];
+            var px = event.clientX - box.left - xa._offset, py = event.clientY - box.top - ya._offset;
+            if (px < 0 || py < 0 || px > xa._length || py > ya._length) { hide(); return; }
             for (var c = 0; c < plot.data.length; c++) {
+                if (plot.data[c].type !== "scattergl") { continue; }  // the histograms' bars are not stars
                 if (plot._fullData[c] && plot._fullData[c].visible !== true) { continue; }  // hidden from the legend
                 var data = columns(c);
                 for (var i = 0; i < data.x.length; i++) {
@@ -157,6 +162,54 @@ def axis_style(label: str | None, do_gridlines: bool, **kwargs) -> dict:
                 showline=True, linecolor='black', ticks='outside', **kwargs)
 
 
+# the toolbar: Plotly's "Zoom" is the drag-a-rectangle zoom, which the Bokeh toolbar called "Box Zoom", and visitors
+# looked for that name (issue #35): a locale with that one entry, the other tooltips keep Plotly's text. No
+# "Share chart..." button: it uploads the figure to Plotly's web service, which is not this site's business
+PLOT_CONFIG = dict(locale='en-hypatia', locales={'en-hypatia': {'dictionary': {'Zoom': 'Box Zoom'}}},
+                   modeBarButtonsToRemove=['sendChartToCloud'], showSendToCloud=False)
+
+
+# the histograms along the axes of the scatter and targets plots: the points keep the lower left of the figure,
+# the histograms take a strip above and beside them, on the same x and y axes
+POINTS_DOMAIN = [0, 0.78]
+HISTOGRAM_DOMAIN = [0.8, 1]
+HISTOGRAM_OPACITY = 0.5   # the targets' histograms, one per list, drawn over each other
+
+
+def plotly_bins(bins: dict | None, axis_type: str) -> dict | None:
+    """An axis's bins as Plotly wants them, or None for Plotly's own bins: the API's bins are in data units,
+    which a logarithmic axis cannot use."""
+    if not bins or axis_type == 'log':
+        return None
+    return dict(start=bins['start'], end=bins['end'], size=bins['size'])
+
+
+def add_marginal_histograms(fig: go.Figure, series: list[dict], bins: dict | None, x_type: str, y_type: str,
+                            do_gridlines: bool, opacity: float = 1.0) -> None:
+    """The histograms along the x and y axes: one pair per series (x, y, color, name), over each other when
+    there are several. The points' axes shrink to POINTS_DOMAIN; the histograms' count axes take the rest."""
+    bins = bins or {}
+    x_bins, y_bins = plotly_bins(bins.get('xaxis'), x_type), plotly_bins(bins.get('yaxis'), y_type)
+    for one in series:
+        marker = dict(color=one['color'], line=dict(color='black', width=1))
+        common = dict(marker=marker, opacity=opacity, name=one['name'], legendgroup=one['name'],
+                      showlegend=False, hoverinfo='skip')
+        fig.add_trace(go.Histogram(x=one['x'], xbins=x_bins, yaxis='y2', **common))
+        fig.add_trace(go.Histogram(y=one['y'], ybins=y_bins, xaxis='x2', **common))
+    counts = dict(title=None, tickfont=dict(size=12), showgrid=do_gridlines, gridcolor='#e5e5e5', zeroline=False,
+                  showline=True, linecolor='black', ticks='outside', fixedrange=True)
+    # the points' axes drawn on all four sides (mirror), so the points and the histograms are framed apart
+    fig.update_layout(barmode='overlay', bargap=0,
+                      xaxis=dict(domain=POINTS_DOMAIN, mirror=True), yaxis=dict(domain=POINTS_DOMAIN, mirror=True),
+                      yaxis2=dict(domain=HISTOGRAM_DOMAIN, anchor='x', **counts),
+                      xaxis2=dict(domain=HISTOGRAM_DOMAIN, anchor='y', **counts))
+
+
+def plot_title(text: str) -> dict:
+    """The title, over the left edge of the plot area: the toolbar lies along the top right (issue #35)."""
+    return dict(text=text, xref='paper', x=0, xanchor='left')
+
+
 def citation() -> dict:
     """The "Hypatia Catalog <date>" note in the bottom left corner."""
     return dict(text='Hypatia Catalog ' + datetime.now().strftime('%Y-%m-%d'), xref='paper', yref='paper',
@@ -167,10 +220,10 @@ def figure_html(fig: go.Figure, div_id: str, hover_labels: dict[str, str] | None
     """The figure as an HTML fragment (the page has plotly.min.js). With hover_labels (the axis labels for
     the hover text), the points plot gets the stacked hover labels and the selection into the star list."""
     fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, paper_bgcolor='white', plot_bgcolor='white',
-                      margin=dict(l=70, r=30, t=50, b=60))
+                      margin=dict(l=PLOT_MARGIN_LEFT, r=30, t=50, b=60))
     if hover_labels:
         fig.update_layout(hovermode=False)
-    html = fig.to_html(include_plotlyjs=False, full_html=False, div_id=div_id)
+    html = fig.to_html(include_plotlyjs=False, full_html=False, div_id=div_id, config=PLOT_CONFIG)
     if hover_labels:
         labels = {axis[0]: label.replace('_', ' ') for axis, label in hover_labels.items()}
         html += SELECT_SCRIPT % dict(div_id=div_id)
@@ -185,8 +238,10 @@ def create_plotly_scatter(name: list[str],
                           do_xlog: bool = False, do_ylog: bool = False, do_zlog: bool = False,
                           xaxisinv: bool = False, yaxisinv: bool = False, zaxisinv: bool = False,
                           has_zaxis: bool = False, do_gridlines: bool = False,
+                          bins: dict | None = None, show_hist: bool = False,
                           ) -> str:
-    """The scatter plot; with a z axis, the points are coloured on a Viridis scale with a colour bar."""
+    """The scatter plot; with a z axis, the points are coloured on a Viridis scale with a colour bar. With
+    show_hist, histograms of the points along each axis (bins from the API, api.web2py.density)."""
     # if there is no data, then return a message
     if not xaxis:
         return 'No data points to display'
@@ -218,12 +273,30 @@ def create_plotly_scatter(name: list[str],
     y_range, y_type = axis_range(yaxis, do_log=do_ylog, inverse=yaxisinv)
     fig.update_xaxes(range=x_range, type=x_type, **axis_style(labels['xaxis'], do_gridlines))
     fig.update_yaxes(range=y_range, type=y_type, **axis_style(labels['yaxis'], do_gridlines))
+    if show_hist:
+        add_marginal_histograms(fig, [dict(x=xaxis, y=yaxis, color=hypatia_purple, name='Stars')], bins,
+                                x_type, y_type, do_gridlines)
     if planet_count is not None:
         title = f'{planet_count} planets selected from {star_count} stars'
     else:
         title = f'{star_count} stars selected'
-    fig.update_layout(title=dict(text=title, x=0.5, xanchor='center'), annotations=[citation()])
+    fig.update_layout(title=plot_title(title), annotations=[citation()])
     return figure_html(fig, div_id='scatter-plot', hover_labels=labels)
+
+
+LEGEND_ROW_HEIGHT = 0.036   # of the figure's height: one tight legend row
+
+
+def legend_rows(count: int, rows: int) -> list[str]:
+    """Which legend ('legend', 'legend2', ...; the bottom row first) each of count entries goes to, dealt out
+    evenly from the top row down (the top rows take the odd one out)."""
+    base, extra = divmod(count, rows)
+    names = []
+    for row in range(rows):   # row 0 is the top one
+        size = base + (1 if row < extra else 0)
+        legend_name = 'legend' if rows - row == 1 else f'legend{rows - row}'
+        names.extend([legend_name] * size)
+    return names
 
 
 def create_plotly_targets(xaxis: list[float], yaxis: list[float],
@@ -232,33 +305,51 @@ def create_plotly_targets(xaxis: list[float], yaxis: list[float],
                           do_xlog: bool = False, do_ylog: bool = False,
                           xaxisinv: bool = False, yaxisinv: bool = False,
                           do_gridlines: bool = False,
+                          bins: dict | None = None, show_hist: bool = False,
                           ) -> str:
     """The targets plot: one scatter trace per layer the API made (api.web2py.plots.group_targets), with a
-    legend entry each; a click on an entry hides its layer."""
+    legend entry each; a click on an entry hides its layer. With show_hist, a histogram of each layer along
+    each axis, in the layer's colour, drawn over each other (bins from the API, shared by the layers)."""
     if not layers:
         return 'No data points to display'
     xaxis = np.asarray(xaxis, dtype=float)
     yaxis = np.asarray(yaxis, dtype=float)
     labels = {'xaxis': x_label if x_label else 'X Axis', 'yaxis': y_label if y_label else 'Y Axis'}
     fig = go.Figure()
-    for layer in layers:
+    # with the histograms, the legend stops at the points' box and stacks in rows, two of them, three for more
+    # than four lists: each row is a legend of its own (Plotly draws a legend as one row), 'legend' the bottom
+    # one, 'legend2' above it, 'legend3' above that; the lists are dealt out from the top row down
+    rows = (3 if len(layers) > 4 else 2) if show_hist else 1
+    row_of = legend_rows(len(layers), rows)
+    for index, layer in enumerate(layers):
         fig.add_trace(go.Scattergl(
             x=np.asarray(layer['x'], dtype=float), y=np.asarray(layer['y'], dtype=float), mode='markers',
-            name=layer['label'], text=list(layer['names']), hoverinfo='skip',
+            name=layer['label'], legendgroup=layer['label'], legend=row_of[index],
+            text=list(layer['names']), hoverinfo='skip',
             marker=dict(symbol=MARKERS.get(layer['marker'], 'circle'), size=8, color=layer['color'],
                         opacity=layer['fill_alpha'], line=dict(color=layer['color'], width=1)),
         ))
-    # room below the points for the legend, as the Bokeh plot had
+    # room below the points for the legend, as the Bokeh plot had (the same room with the histograms' two rows,
+    # which are set tight, so the data keeps its proportions)
     x_range, x_type = axis_range(xaxis, do_log=do_xlog, inverse=xaxisinv)
     y_range, y_type = axis_range(yaxis, do_log=do_ylog, inverse=yaxisinv, low_margin=3 * MARGIN)
     fig.update_xaxes(range=x_range, type=x_type, **axis_style(labels['xaxis'], do_gridlines))
     fig.update_yaxes(range=y_range, type=y_type, **axis_style(labels['yaxis'], do_gridlines))
+    if show_hist:
+        add_marginal_histograms(fig, [dict(x=np.asarray(layer['x'], dtype=float), y=np.asarray(layer['y'], dtype=float),
+                                           color=layer['color'], name=layer['label']) for layer in layers],
+                                bins, x_type, y_type, do_gridlines, opacity=HISTOGRAM_OPACITY)
+    legend = dict(orientation='h', x=POINTS_DOMAIN[1] if show_hist else 1, xanchor='right', y=0, yanchor='bottom',
+                  bgcolor='rgba(255,255,255,0.3)', itemclick='toggle', itemdoubleclick='toggleothers')
+    if rows > 1:   # tight rows: smaller text, no padding around the entries
+        legend.update(font=dict(size=11), itemwidth=30, borderwidth=0)
     fig.update_layout(
-        title=dict(text=f'{number_of_targets} Targets selected', x=0.5, xanchor='center'),
-        legend=dict(orientation='h', x=1, xanchor='right', y=0, yanchor='bottom', bgcolor='rgba(255,255,255,0.3)',
-                    itemclick='toggle', itemdoubleclick='toggleothers'),
+        title=plot_title(f'{number_of_targets} Targets selected'),
+        legend=legend,
         annotations=[citation()],
     )
+    for row in range(2, rows + 1):
+        fig.update_layout({f'legend{row}': dict(legend, y=LEGEND_ROW_HEIGHT * (row - 1))})
     return figure_html(fig, div_id='targets-plot', hover_labels=labels)
 
 
@@ -320,6 +411,12 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
     xbins = dict(start=x_bins['start'], end=x_bins['end'], size=x_bins['size'])
     ybins = dict(start=y_bins['start'], end=y_bins['end'], size=y_bins['size'])
     histogram_marker = dict(color=histogram_color, line=dict(color="black", width=1))
+    # the colour bar lies under the plot, so the heat map keeps the width and shape of the other pages' plots;
+    # centred under the heat map's column (80% of the width beside the side histogram, all of it without)
+    heatmap_width = 0.8 if show_xyhist else 1.0
+    colorbar = dict(title=dict(text='Number of stars per bin', side='bottom'), orientation='h',
+                    x=heatmap_width / 2, xanchor='center', len=heatmap_width, y=-0.13, yanchor='top',
+                    thickness=15, outlinecolor='#cccccc', outlinewidth=1)
 
     # CASE 1 (heatmap with marginal histograms)
     if show_xyhist:
@@ -345,7 +442,7 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
         fig.add_trace(
             go.Histogram2d(
                 x=xaxis, y=yaxis, xbins=xbins, ybins=ybins, name='Density',
-                colorscale=color_scale, colorbar=dict(title='Num of<br>Stars/Bin'), showscale=True
+                colorscale=color_scale, colorbar=colorbar, showscale=True
             ),
             row=2, col=1
         )
@@ -358,7 +455,7 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
         fig.add_trace(
             go.Histogram2d(
                 x=xaxis, y=yaxis, xbins=xbins, ybins=ybins, name='Density',
-                colorscale=color_scale, colorbar=dict(title='Num of<br>Stars/Bin'), showscale=True
+                colorscale=color_scale, colorbar=colorbar, showscale=True
             )
         )
         fig.update_xaxes(title_text=x_label)
@@ -366,8 +463,9 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
 
     # formatting
     fig.update_layout(
-        width=750,
-        height=650,
+        width=PLOT_WIDTH,
+        height=PLOT_HEIGHT,
+        margin=dict(l=PLOT_MARGIN_LEFT, r=30, t=50, b=140),   # room under the x axis for the colour bar and its title
         plot_bgcolor='#E5ECF6',
         paper_bgcolor='white',
         bargap=0.05,
@@ -419,4 +517,4 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
         )
 
     # the figure only: the page loads static/js/plotly.min.js once (frontend-web2py/Dockerfile)
-    return fig.to_html(include_plotlyjs=False, full_html=False, div_id='density-plot')
+    return fig.to_html(include_plotlyjs=False, full_html=False, div_id='density-plot', config=PLOT_CONFIG)

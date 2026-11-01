@@ -34,6 +34,9 @@ CHECKS = [
     ("/hypatia/default/graph.load", '"tickfont":{"size":16}'),
     ("/hypatia/default/hist", "Hypatia Catalog"),
     ("/hypatia/default/graph_hist.load", "plotly-graph-div"),
+    # the histogram page's bin size: a typed width, then the default rule again
+    ("/hypatia/default/graph_hist.load", "plotly-graph-div", {"hist_bin_size": "0.5"}),
+    ("/hypatia/default/graph_hist.load", "plotly-graph-div", {"hist_bin_size": ""}),
     # the density page (the plotly branch): the plot is a Plotly figure; then its own settings changed
     # (bin sizes by keyword and by number, another colour scale, the marginal histograms off)
     ("/hypatia/default/density", "Hypatia Catalog"),
@@ -42,6 +45,14 @@ CHECKS = [
      {"xhist_bin_size": "error", "yhist_bin_size": "0.05", "color_pallet": "Viridis", "toggle_vars": "show_xyhist"}),
     ("/hypatia/default/targets", "Hypatia Catalog"),
     ("/hypatia/default/graph_targets.load", "plotly-graph-div"),
+    # the scatter and targets plots with their histograms along the axes (the toggle on, a bin size typed; the
+    # top histogram is the trace on the second y axis), then off again
+    ("/hypatia/default/graph.load", '"yaxis":"y2"',
+     {"show_scatter_hist": "on", "xhist_bin_size": "0.1", "toggle_vars": "show_scatter_hist"}),
+    ("/hypatia/default/graph.load", "plotly-graph-div", {"toggle_vars": "show_scatter_hist"}),
+    ("/hypatia/default/graph_targets.load", '"yaxis":"y2"',
+     {"show_targets_hist": "on", "toggle_vars": "show_targets_hist"}),
+    ("/hypatia/default/graph_targets.load", "plotly-graph-div", {"toggle_vars": "show_targets_hist"}),
     ("/hypatia/default/table", "<table"),
     ("/hypatia/default/table.load", "<table"),
     # changing the plot settings (last, since the new settings stay in the session) must change the plot. Posted the way the page's jQuery does it, with
@@ -70,6 +81,7 @@ CHECKS = [
     ("/hypatia/api/web2py/table/?elements=Fe&elements=C", "json"),
     # the frontend API's density data (api.web2py.density): the points, the bins of each axis, the colours
     ("/hypatia/api/frontend/density/?xaxis1=Fe&yaxis1=Si", "json"),
+    ("/hypatia/api/frontend/hist/?xaxis1=Fe&hist_bin_size=error", "json"),
 ]
 
 
