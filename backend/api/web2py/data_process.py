@@ -14,8 +14,9 @@ stellar_param_types_v2 = ['raj2000', 'decj2000', 'dist', 'x_pos', 'y_pos', 'z_po
                           'sptype', 'sptype_num', 'vmag', 'bmag', 'bv', 'pm_ra', 'pm_dec', 'u_vel', 'v_vel', 'w_vel',
                           'disk', 'disk_num', 'mass', 'rad']
 stellar_param_types_v2_set = set(stellar_param_types_v2)
-planet_param_types_v2 = ['semi_major_axis', 'eccentricity', 'inclination', 'pl_mass', 'pl_radius', 'planet_letter',
-                         'period']
+# in the order the menus show them (the owner's choice, 2026-11-02), the planet letter last
+planet_param_types_v2 = ['pl_radius', 'pl_mass', 'period', 'semi_major_axis', 'eccentricity', 'inclination',
+                         'planet_letter']
 planet_param_types_v2_set = set(planet_param_types_v2)
 # the planet parameters a visitor can put on an axis: the planet letter is a name, not a number, so it is
 # offered in the filter menus but not in the axis menus (the dropdown menus and the settings' choices)
