@@ -184,6 +184,25 @@ def plotly_bins(bins: dict | None, axis_type: str) -> dict | None:
     return dict(start=bins['start'], end=bins['end'], size=bins['size'])
 
 
+# what the bin size box says while its axis is logarithmic (the owner's words, 2026-11-02)
+LOG_BINS_WARNING = 'Bins on a log axis are chosen automatically'
+
+
+def log_bin_warnings(warnings: dict, axes: dict, outputs: dict, show_hist: bool) -> dict:
+    """
+    plotly_bins gives a logarithmic axis Plotly's own bins whatever its bin size box says, so while the
+    histograms are shown the box gets LOG_BINS_WARNING (after any warning it has; controllers/default.py).
+    The axis is logarithmic when the API allowed it (an element or a ratio is in log notation already, so its
+    log toggle changes nothing and brings no warning) and a value is positive, as axis_range decides.
+    """
+    if show_hist:
+        for box, axis in (('xhist_bin_size', 'xaxis'), ('yhist_bin_size', 'yaxis')):
+            values = [value for value in outputs.get(axis, []) if value is not None]
+            if axes.get(axis, {}).get('log') and any(value > 0 for value in values):
+                warnings[box] = f'{warnings[box]} {LOG_BINS_WARNING}' if box in warnings else LOG_BINS_WARNING
+    return warnings
+
+
 def add_marginal_histograms(fig: go.Figure, series: list[dict], bins: dict | None, x_type: str, y_type: str,
                             do_gridlines: bool, opacity: float = 1.0) -> None:
     """The histograms along the x and y axes: one pair per series (x, y, color, name), over each other when

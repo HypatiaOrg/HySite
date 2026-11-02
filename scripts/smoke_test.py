@@ -60,6 +60,13 @@ CHECKS = [
     ("/hypatia/default/graph_targets.load", '"yaxis":"y2"',
      {"show_targets_hist": "on", "toggle_vars": "show_targets_hist"}),
     ("/hypatia/default/graph_targets.load", "plotly-graph-div", {"toggle_vars": "show_targets_hist"}),
+    # the histograms along a logarithmic axis use Plotly's own bins, and the page says so next to the bin size box
+    # (a stellar parameter on a log x axis, the histograms on); then the default axis and the toggles off again
+    ("/hypatia/default/graph.load", "Bins on a log axis are chosen automatically",
+     {"xaxis1": "teff", "xaxis2": "H", "show_scatter_hist": "on", "xaxislog": "on",
+      "toggle_vars": "show_scatter_hist,xaxislog"}),
+    ("/hypatia/default/graph.load", "plotly-graph-div",
+     {"xaxis1": "Fe", "xaxis2": "H", "toggle_vars": "show_scatter_hist,xaxislog"}),
     ("/hypatia/default/table", "<table"),
     ("/hypatia/default/table.load", "<table"),
     # changing the plot settings (last, since the new settings stay in the session) must change the plot. Posted the way the page's jQuery does it, with
