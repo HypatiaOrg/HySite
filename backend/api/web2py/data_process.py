@@ -14,8 +14,10 @@ stellar_param_types_v2 = ['raj2000', 'decj2000', 'dist', 'x_pos', 'y_pos', 'z_po
                           'sptype', 'sptype_num', 'vmag', 'bmag', 'bv', 'pm_ra', 'pm_dec', 'u_vel', 'v_vel', 'w_vel',
                           'disk', 'disk_num', 'mass', 'rad']
 stellar_param_types_v2_set = set(stellar_param_types_v2)
-planet_param_types_v2 = ['semi_major_axis', 'eccentricity', 'inclination', 'pl_mass', 'pl_radius', 'planet_letter',
-                         'period']
+# the planet parameters a visitor can put on an axis or a filter (the dropdown menus and the settings' choices).
+# The planet letter is a name, not a number: it stays a column of the table (api.web2py.table.TABLE_PLANET)
+# and is not offered here.
+planet_param_types_v2 = ['semi_major_axis', 'eccentricity', 'inclination', 'pl_mass', 'pl_radius', 'period']
 planet_param_types_v2_set = set(planet_param_types_v2)
 ranked_string_params = {'sptype': 'sptype_num', 'disk': 'disk_num'}
 nones = {None, 'none', ''}
