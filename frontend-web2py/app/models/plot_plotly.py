@@ -185,7 +185,7 @@ def plotly_bins(bins: dict | None, axis_type: str) -> dict | None:
 
 
 # what the bin size box says while its axis is logarithmic (the owner's words, 2026-11-02)
-LOG_BINS_WARNING = 'Bins on a log axis are chosen automatically'
+LOG_BINS_WARNING = 'Logged bins chosen automatically'
 
 
 def log_bin_warnings(warnings: dict, axes: dict, outputs: dict, show_hist: bool) -> dict:
