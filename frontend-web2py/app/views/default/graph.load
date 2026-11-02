@@ -3,5 +3,10 @@
 <script>
     //$("#stars").get(0).reload();
     refresh_table();
+    // the bin size boxes' warnings (controllers/default.py, bin_warnings): shown next to the box, or cleared
+    $(".bin-warning").hide().text("");
+    {{for key, text in warnings.items():}}
+    $("#{{=key}}-warning").text("{{=text}}").show();
+    {{pass}}
     $("#graph").css("background","white");
 </script>

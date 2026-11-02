@@ -31,6 +31,7 @@ bin_hint = 'Float or keywords: (' + DENSITY_BIN_TAGS[0] + ' [default], ' + ', '.
     <div class="form-group" style="margin:0 0 8px 0">
         <label for="{{=key}}" style="width:85px;text-align:left;margin-right:8px">{{=label}}</label>{{# left-aligned: the toggle above starts at the same edge }}
         <input type="text" id="{{=key}}" name="{{=key}}" class="form-control" style="width:340px" placeholder="{{=bin_hint}}" value="{{=session[key] or ''}}" onchange="refresh()">
+        <span id="{{=key}}-warning" class="bin-warning text-danger" style="display:none;margin-left:10px"></span>{{# filled by the plot fragment (graph*.load) }}
     </div>
     {{pass}}
 </form>
