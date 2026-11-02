@@ -92,6 +92,31 @@ def get_settings() -> dict[str, any]:
             all_settings[graph_var] = session_value
     return all_settings
 
+# the bin size boxes of a page and the axis setting each one bins
+BIN_BOXES_XY = [('xhist_bin_size', 'xaxis1'), ('yhist_bin_size', 'yaxis1')]
+BIN_BOXES_HIST = [('hist_bin_size', 'xaxis1')]
+
+
+def bin_warnings(settings: dict, boxes: list) -> dict:
+    """
+    The "error" bin rule needs a parameter with an error. When a box asks for it with Spectral Type or Disk on
+    its axis (DENSITY_BIN_WARNINGS, from the API), the page shows the warning and the bins stay as they were:
+    the box keeps "error", so the rule applies as soon as another parameter is chosen, and this request carries
+    the bin size last applied instead (kept in the session as <box>_applied). The warnings, by box.
+    """
+    warnings = {}
+    for box, axis in boxes:
+        applied_key = f'{box}_applied'
+        requested = str(settings.get(box) or '').lower().strip().replace(' ', '')
+        warning = DENSITY_BIN_WARNINGS.get(str(settings.get(axis)), None)
+        if requested == 'error' and warning:
+            warnings[box] = warning
+            settings[box] = session[applied_key]
+        else:
+            session[applied_key] = settings[box]
+    return warnings
+
+
 def plot_settings():
     all_request_vars = set(request.vars.keys())
     # set new session values (non-toggles controls) from the request; only known settings are kept
@@ -123,6 +148,7 @@ def plot_settings():
 def graph():
     plot_settings()
     settings = get_settings()
+    warnings = bin_warnings(settings, BIN_BOXES_XY)
     graph_data = api_json('scatter/', settings)
     # the plot: the API decided the labels and the log/inverted axes (api.web2py.plots); Plotly draws (models/plot_plotly.py)
     axes = graph_data['axes']
@@ -144,12 +170,13 @@ def graph():
                                        do_gridlines=settings['gridlines'],
                                        bins=graph_data.get('bins'), show_hist=settings['show_scatter_hist'])
     # send back to the browser
-    return dict(div=div)
+    return dict(div=div, warnings=warnings)
 
 
 def graph_targets():
     plot_settings()
     settings = get_settings()
+    warnings = bin_warnings(settings, BIN_BOXES_XY)
     graph_data = api_json('targets/', settings)
     # the plot: the API grouped the stars into layers and decided the axes (api.web2py.plots)
     axes = graph_data['axes']
@@ -164,12 +191,13 @@ def graph_targets():
                                        xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
                                        do_gridlines=settings['gridlines'],
                                        bins=graph_data.get('bins'), show_hist=settings['show_targets_hist'])
-    return dict(div=div)
+    return dict(div=div, warnings=warnings)
 
 
 def graph_hist():
     plot_settings()
     settings = get_settings()
+    warnings = bin_warnings(settings, BIN_BOXES_HIST)
     graph_data = api_json('hist/', settings)
     # the plot: the API made the series over shared bins (api.web2py.plots)
     labels = graph_data['labels']   # the API names them by axis: 'xaxis', 'yaxis'
@@ -180,11 +208,12 @@ def graph_hist():
                                     do_gridlines=settings['gridlines'],
                                     )
     # send back to the browser
-    return dict(div=div)
+    return dict(div=div, warnings=warnings)
 
 def graph_density():
     plot_settings()
     settings = get_settings()
+    warnings = bin_warnings(settings, BIN_BOXES_XY)
     graph_data = api_json('density/', settings)
     # the plot: the API chose the points, the bins, the colours and the axes (api.web2py.density)
     axes = graph_data['axes']
@@ -203,7 +232,7 @@ def graph_density():
                                 show_xyhist=graph_data['show_xyhist'],
                                 )
     # send back to the browser
-    return dict(div=div)
+    return dict(div=div, warnings=warnings)
 
 
 def table():

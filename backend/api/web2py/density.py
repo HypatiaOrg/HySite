@@ -8,14 +8,14 @@ draws what comes back.
 Until October 2026 these rules lived in web2py's plot code (models/plot_plotly.py on the plotly branch);
 they moved here with the same arithmetic, so the plot is the same bin for bin. Two cases that raised an
 error there are decided here instead: the "error" bin size of an element ratio (the two representative
-errors added in quadrature) and of a stellar or planet parameter (from its displayed precision).
+errors added in quadrature) and of a stellar or planet parameter (the hand-set table PARAMETER_ERRORS).
 """
 import math
 
 import numpy as np
 
 from api.v2.data_process import representative_error
-from api.web2py.data_process import units_and_fields_v2, is_true_str
+from api.web2py.data_process import is_true_str
 
 # the colour scales a visitor can choose: Hypatia's own as colour stops, the others by their Plotly names
 COLOR_PALLETS = {
@@ -35,6 +35,20 @@ DEFAULT_HISTOGRAM_COLOR = '#4e11b7'
 
 # the keywords a bin size field accepts; the first is what an empty or unreadable field means
 BIN_TAGS = ['std dev', 'error']
+# the representative error of each stellar and planet parameter, the "error" bin size, in the parameter's units
+# (the owner's table of 2026-11-02; elements and ratios come from the catalog summary instead)
+PARAMETER_ERRORS = {
+    'raj2000': 1.0, 'decj2000': 1.0, 'dist': 1.0, 'x_pos': 0.1, 'y_pos': 0.1, 'z_pos': 0.1,
+    'teff': 150.0, 'logg': 0.1, 'sptype_num': 1.0, 'vmag': 0.1, 'bmag': 0.1, 'bv': 0.15,
+    'pm_ra': 0.1, 'pm_dec': 0.1, 'u_vel': 1.0, 'v_vel': 1.0, 'w_vel': 1.0, 'disk_num': 1.0,
+    'mass': 0.1, 'rad': 0.1,
+    'pl_radius': 0.1, 'pl_mass': 0.05, 'period': 0.01, 'semi_major_axis': 0.05, 'eccentricity': 0.05,
+    'inclination': 1.0,
+}
+# the menu choices that have no error of their own (the plot shows their ranked number, data_process.ranked_string_params)
+# and what to tell a visitor who asks for "error" bins with one of them on the axis. The frontend keeps the bins
+# it had until another parameter is chosen (controllers/default.py, bin_warnings); the API falls back to "std dev"
+BIN_WARNINGS = {'sptype': 'Please plot Spectral Type Number', 'disk': 'Please plot Disk Number'}
 MAX_BINS = 200
 # how the plotted range is chosen: the whole data, the mean +- sigma standard deviations, or typed limits.
 # The page offers only the first today; the others are ready for the controls to come.
@@ -79,8 +93,8 @@ def sample_std(values: list[float]) -> float:
 def parameter_error(value_type: str, param_id) -> float | None:
     """
     The representative error of a plotted parameter, the "error" bin size: an element's from the catalog
-    summary, a ratio's from both elements added in quadrature, a stellar or planet parameter's from its
-    displayed precision (10 to the power 2 - decimals). None when nothing is known.
+    summary, a ratio's from both elements added in quadrature, a stellar or planet parameter's from the
+    hand-set table PARAMETER_ERRORS. None when nothing is known.
     """
     if value_type == 'element':
         return representative_error.get(str(param_id), None)
@@ -90,10 +104,7 @@ def parameter_error(value_type: str, param_id) -> float | None:
         if numerator is None or denominator is None:
             return None
         return math.sqrt(numerator ** 2 + denominator ** 2)
-    decimals = units_and_fields_v2.get(param_id, {}).get('decimals', None)
-    if decimals is None:
-        return None
-    return float(f'1.e{2 - int(decimals)}')
+    return PARAMETER_ERRORS.get(param_id, None)
 
 
 def check_bin_size(bin_size: float, range_size: float) -> float:
@@ -119,21 +130,28 @@ def axis_range(values: np.ndarray, range_mode: str = 'full data', sigma: float =
 
 def axis_bins(values: np.ndarray, requested: str | float | None, value_type: str, param_id,
               range_mode: str = 'full data', sigma: float = DEFAULT_SIGMA,
-              manual_min: float | None = None, manual_max: float | None = None) -> dict:
+              manual_min: float | None = None, manual_max: float | None = None,
+              selected: str | None = None) -> dict:
     """
     One axis's bins: the range (start, end), the bin width (size) and how it was chosen (mode: "number",
     "error" or "std dev"; "error" falls back to "std dev" when the parameter has no representative error).
+    With "error" asked for a menu choice in BIN_WARNINGS (selected: the setting as the visitor chose it), the
+    bins carry its warning text and use "std dev".
     """
     start, end = axis_range(values, range_mode=range_mode, sigma=sigma, manual_min=manual_min, manual_max=manual_max)
     request = bin_request(requested)
+    warning = BIN_WARNINGS.get(selected, None) if request == 'error' else None
     width = None
     if isinstance(request, float):
         width, mode = request, 'number'
-    elif request == 'error':
+    elif request == 'error' and warning is None:
         width, mode = parameter_error(value_type, param_id), 'error'
     if width is None:
         width, mode = sample_std(list(values)), 'std dev'
-    return {'start': start, 'end': end, 'size': check_bin_size(width, end - start), 'mode': mode}
+    bins = {'start': start, 'end': end, 'size': check_bin_size(width, end - start), 'mode': mode}
+    if warning:
+        bins['warning'] = warning
+    return bins
 
 
 def valid_points(outputs: dict) -> tuple[list[str], np.ndarray, np.ndarray]:
@@ -152,18 +170,20 @@ def marginal_bins(xaxis: np.ndarray, yaxis: np.ndarray, axis_mapping: dict, sett
         return None
     range_mode = settings.get('range_mode', 'full data')
     return {
-        'xaxis': axis_bins(xaxis, settings.get('xhist_bin_size', None), *axis_mapping['x'], range_mode=range_mode),
-        'yaxis': axis_bins(yaxis, settings.get('yhist_bin_size', None), *axis_mapping['y'], range_mode=range_mode),
+        'xaxis': axis_bins(xaxis, settings.get('xhist_bin_size', None), *axis_mapping['x'], range_mode=range_mode,
+                           selected=settings.get('xaxis1', None)),
+        'yaxis': axis_bins(yaxis, settings.get('yhist_bin_size', None), *axis_mapping['y'], range_mode=range_mode,
+                           selected=settings.get('yaxis1', None)),
     }
 
 
-def histogram_edges(values, requested: str | float | None, axis: tuple) -> dict | None:
+def histogram_edges(values, requested: str | float | None, axis: tuple, selected: str | None = None) -> dict | None:
     """The histogram page's bins: axis_bins for its one axis, with the bin edges spelled out (the last edge at
     the end of the range or past it, so the largest value is counted); None without values."""
     values = np.asarray(values, dtype=float)
     if not len(values):
         return None
-    bins = axis_bins(values, requested, *axis)
+    bins = axis_bins(values, requested, *axis, selected=selected)
     count = max(1, int(math.ceil((bins['end'] - bins['start']) / bins['size'])))
     edges = bins['start'] + bins['size'] * np.arange(count + 1)
     edges[-1] = max(edges[-1], bins['end'])

@@ -8,7 +8,7 @@ API parsed the same names in graph_settings_from_request(); this module is the s
 """
 from api.web2py.data_process import (stellar_param_types_v2, planet_param_types_v2, axis_planet_param_types_v2,
                                      plot_norms, available_elements_v2)
-from api.web2py.density import COLOR_PALLETS, DEFAULT_COLOR_PALLET, BIN_TAGS
+from api.web2py.density import COLOR_PALLETS, DEFAULT_COLOR_PALLET, BIN_TAGS, BIN_WARNINGS
 
 # checkboxes: a page sends a toggle only when it is on, and lists its own toggles in "toggle_vars" so
 # the server knows which missing ones mean "off" (issue #40)
@@ -102,11 +102,11 @@ def settings_schema() -> dict:
         'show_xyhist': {'kind': 'toggle', 'about': 'density: the histograms along the x and y axes'},
         'show_scatter_hist': {'kind': 'toggle', 'about': 'scatter: the histograms along the x and y axes'},
         'show_targets_hist': {'kind': 'toggle', 'about': 'targets: the histograms along the x and y axes, one per list'},
-        'xhist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS,
+        'xhist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS, 'warnings': BIN_WARNINGS,
                            'about': 'the histograms\' x bin width in data units, or a keyword: the standard '
                                     'deviation of the data (the default) or the representative error of the parameter'},
-        'yhist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS, 'about': 'the histograms\' y bin width, as for x'},
-        'hist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS, 'about': 'histogram page: the bin width, as for x'},
+        'yhist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS, 'warnings': BIN_WARNINGS, 'about': 'the histograms\' y bin width, as for x'},
+        'hist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS, 'warnings': BIN_WARNINGS, 'about': 'histogram page: the bin width, as for x'},
         'color_pallet': {'kind': 'choice', 'choices': list(COLOR_PALLETS), 'about': 'density: the colour scale'},
         'tablecols': {'kind': 'list', 'choices': TABLE_TOKENS + list(available_elements_v2),
                       'about': 'the table columns: option tokens and element symbols'},

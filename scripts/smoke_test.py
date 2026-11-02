@@ -43,6 +43,13 @@ CHECKS = [
     ("/hypatia/default/graph_density.load", "plotly-graph-div"),
     ("/hypatia/default/graph_density.load", "plotly-graph-div",
      {"xhist_bin_size": "error", "yhist_bin_size": "0.05", "color_pallet": "Viridis", "toggle_vars": "show_xyhist"}),
+    # the "error" rule with a menu choice that has no error (Spectral Type): the fragment shows the API's warning
+    # next to the bin size box and keeps the bins it had; then the default axis and rule again (settings stay in
+    # the session)
+    ("/hypatia/default/graph_density.load", "Please plot Spectral Type Number",
+     {"xaxis1": "sptype", "xaxis2": "H", "xhist_bin_size": "error"}),
+    ("/hypatia/default/graph_density.load", "plotly-graph-div",
+     {"xaxis1": "Fe", "xaxis2": "H", "xhist_bin_size": "", "yhist_bin_size": ""}),
     ("/hypatia/default/targets", "Hypatia Catalog"),
     ("/hypatia/default/graph_targets.load", "plotly-graph-div"),
     # the scatter and targets plots with their histograms along the axes (the toggle on, a bin size typed; the
@@ -82,6 +89,10 @@ CHECKS = [
     # the frontend API's density data (api.web2py.density): the points, the bins of each axis, the colours
     ("/hypatia/api/frontend/density/?xaxis1=Fe&yaxis1=Si", "json"),
     ("/hypatia/api/frontend/hist/?xaxis1=Fe&hist_bin_size=error", "json"),
+    # a stellar parameter's "error" bins from the hand-set table (api.web2py.density.PARAMETER_ERRORS: 150 K), and the
+    # warning for a menu choice without an error (Disk) instead of a failure
+    ("/hypatia/api/frontend/hist/?xaxis1=teff&hist_bin_size=error", '"size": 150.0'),
+    ("/hypatia/api/frontend/density/?xaxis1=disk&yaxis1=Fe&xhist_bin_size=error", "Please plot Disk Number"),
 ]
 
 
