@@ -65,7 +65,7 @@
 </div>
 
 
-<input type="hidden" id="{{=request.vars.id}}1" name="{{=request.vars.id}}1" value="{{=request.vars.value1.replace('_', ' ') or ''}}">
+<input type="hidden" class="param-choice" id="{{=request.vars.id}}1" name="{{=request.vars.id}}1" value="{{=request.vars.value1.replace('_', ' ') or ''}}">
 <input type="hidden" id="{{=request.vars.id}}2" name="{{=request.vars.id}}2" value="{{=request.vars.value2.replace('_', ' ') or ''}}">
 
 <script>
@@ -97,16 +97,16 @@
                 $("#"+id+"-hideonproperty").show();
                 $("#"+id+"-hideonproperty").attr("display","table-cell");
             }
-            if(value=="disk")
-            {
-                $("#diskalert").show();
-            }
-            if(value=="sptype")
-            {
-                $("#specalert").show();
-            }
+            update_notices();
         }
         refresh();
+    }
+    // the notices about Disk and Spectral Type (notice.html) show while any axis or filter uses them
+    // (the hidden inputs of every menu on the page), and clear when none does
+    function update_notices() {
+        var chosen = $("input.param-choice").map(function() { return this.value; }).get();
+        $("#diskalert").toggle(chosen.indexOf("disk") >= 0);
+        $("#specalert").toggle(chosen.indexOf("sptype") >= 0);
     }
     pick("{{=request.vars.id}}1","{{=request.vars.value1.replace('_', ' ')}}");
     pick("{{=request.vars.id}}2","{{=request.vars.value2.replace('_', ' ')}}");
