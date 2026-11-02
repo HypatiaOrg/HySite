@@ -17,9 +17,9 @@ import numpy as np
 from api.v2.data_process import representative_error
 from api.web2py.data_process import is_true_str
 
-# the colour scales a visitor can choose: Hypatia's own as colour stops, the others by their Plotly names
+# the colour scales a visitor can choose: Hypatia's own (HyPurple) as colour stops, the others by their Plotly names
 COLOR_PALETTES = {
-    'Hypatia': [[0.0, '#4e11b7'], [0.2, '#6c5ce7'], [0.4, '#dfe6e9'], [0.6, '#81ecec'],
+    'HyPurple': [[0.0, '#4e11b7'], [0.2, '#6c5ce7'], [0.4, '#dfe6e9'], [0.6, '#81ecec'],
                 [0.8, '#92F7B0'], [0.9, '#F7C492'], [1.0, '#d63031']],
     'Viridis': 'Viridis',
     'Plasma': 'Plasma',
@@ -27,7 +27,7 @@ COLOR_PALETTES = {
     'Inferno': 'Inferno',
     'Turbo': 'Turbo',
 }
-DEFAULT_COLOR_PALETTE = 'Hypatia'
+DEFAULT_COLOR_PALETTE = 'HyPurple'
 # the histograms take the first colour of the scale
 HISTOGRAM_COLORS = {'Viridis': '#440154', 'Plasma': '#0d0887', 'Inferno': '#000004', 'Cividis': '#00224e',
                     'Turbo': '#30123b'}
