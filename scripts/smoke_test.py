@@ -62,7 +62,7 @@ CHECKS = [
     ("/hypatia/default/graph_targets.load", "plotly-graph-div", {"toggle_vars": "show_targets_hist"}),
     # the histograms along a logarithmic axis use Plotly's own bins, and the page says so next to the bin size box
     # (a stellar parameter on a log x axis, the histograms on); then the default axis and the toggles off again
-    ("/hypatia/default/graph.load", "Bins on a log axis are chosen automatically",
+    ("/hypatia/default/graph.load", "Logged bins chosen automatically",
      {"xaxis1": "teff", "xaxis2": "H", "show_scatter_hist": "on", "xaxislog": "on",
       "toggle_vars": "show_scatter_hist,xaxislog"}),
     ("/hypatia/default/graph.load", "plotly-graph-div",
