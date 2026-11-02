@@ -6,7 +6,8 @@ frontend (web2py today, Next.js next) builds its state from it instead of keepin
 Until October 2026 the defaults and the toggle list lived in the web2py models (summary.py) while the
 API parsed the same names in graph_settings_from_request(); this module is the single place for both.
 """
-from api.web2py.data_process import stellar_param_types_v2, planet_param_types_v2, plot_norms, available_elements_v2
+from api.web2py.data_process import (stellar_param_types_v2, planet_param_types_v2, axis_planet_param_types_v2,
+                                     plot_norms, available_elements_v2)
 from api.web2py.density import COLOR_PALLETS, DEFAULT_COLOR_PALLET, BIN_TAGS
 
 # checkboxes: a page sends a toggle only when it is on, and lists its own toggles in "toggle_vars" so
@@ -68,6 +69,7 @@ TABLE_TOKENS = ['names', 'names_all', 'planet', 'stellar', 'spread', 'ref']
 def settings_schema() -> dict:
     """The settings, their defaults and kinds; the choices where the set is finite."""
     parameters = ['none'] + list(available_elements_v2) + stellar_param_types_v2 + planet_param_types_v2
+    axis_parameters = ['none'] + list(available_elements_v2) + stellar_param_types_v2 + axis_planet_param_types_v2
     denominators = ['H'] + list(available_elements_v2)
     fields = {}
     for prefix in ('filter1', 'filter2', 'filter3'):
@@ -77,7 +79,7 @@ def settings_schema() -> dict:
         fields[f'{prefix}_4'] = {'kind': 'number', 'about': 'the filter maximum, or empty'}
         fields[f'{prefix}_inv'] = {'kind': 'toggle', 'about': 'keep the values outside the range instead'}
     for axis in ('xaxis', 'yaxis', 'zaxis'):
-        fields[f'{axis}1'] = {'kind': 'choice', 'choices': parameters, 'about': f'the {axis[0]} axis parameter'}
+        fields[f'{axis}1'] = {'kind': 'choice', 'choices': axis_parameters, 'about': f'the {axis[0]} axis parameter'}
         fields[f'{axis}2'] = {'kind': 'choice', 'choices': denominators, 'about': 'the denominator of an element ratio'}
         fields[f'{axis}log'] = {'kind': 'toggle', 'about': 'logarithmic axis, where the parameter allows it'}
         fields[f'{axis}inv'] = {'kind': 'toggle', 'about': 'inverted axis'}

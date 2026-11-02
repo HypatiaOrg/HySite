@@ -24,6 +24,8 @@ param_data = json.loads(webURL.read().decode(webURL.info().get_content_charset('
 units_and_fields = param_data['units_and_fields']
 STELLAR_PARAM_TYPES = param_data['stellar_param_types']
 PLANET_PARAM_TYPES = param_data['planet_param_types']
+# the planet parameters for an axis menu: the filter menus offer all of PLANET_PARAM_TYPES
+AXIS_PLANET_PARAM_TYPES = param_data['axis_planet_param_types']
 ranked_string_params = param_data['ranked_string_params']
 CATALOGS = [AttrDict(cat_dict) for cat_dict in param_data['catalogs']]
 SOLAR_NORMS = [AttrDict(norm_dict) for norm_dict in param_data['solarnorms']]
