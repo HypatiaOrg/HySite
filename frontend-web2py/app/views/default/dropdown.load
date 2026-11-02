@@ -23,7 +23,7 @@
     <br/><br/>
     <b>Planet property:</b><br/>
     
-    {{for pp in PLANET_PARAM_TYPES:}}
+    {{for pp in (PLANET_PARAM_TYPES if request.vars.filter else AXIS_PLANET_PARAM_TYPES):}}
     <btn class="btn btn-default btn-xs btn-pp btn-{{=request.vars.id}}1" id='{{=request.vars.id}}1-{{=pp}}' onclick='pick("{{=request.vars.id}}1","{{=pp}}",property=true)'>{{=COL_PREFERRED_NAME[pp]}}</btn>
     {{pass}}
   
