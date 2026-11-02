@@ -17,10 +17,10 @@ bin_hint = 'Float or keywords: (' + DENSITY_BIN_TAGS[0] + ' [default], ' + ', '.
         {{pass}}
         {{if plot_controls.get('palette'):}}
         <div class="form-group">
-            <label for="color_pallet" style="margin-right:5px">Color palette</label>
-            <select class="form-control" id="color_pallet" name="color_pallet" onchange="refresh()">
-                {{for color_pallet in DENSITY_COLOR_PALLETS:}}
-                <option value="{{=color_pallet}}" {{if session.color_pallet==color_pallet:}}selected="selected"{{pass}}>{{=color_pallet}}</option>
+            <label for="color_palette" style="margin-right:5px">Color palette</label>
+            <select class="form-control" id="color_palette" name="color_palette" onchange="refresh()">
+                {{for color_palette in DENSITY_COLOR_PALETTES:}}
+                <option value="{{=color_palette}}" {{if session.color_palette==color_palette:}}selected="selected"{{pass}}>{{=color_palette}}</option>
                 {{pass}}
             </select>
         </div>

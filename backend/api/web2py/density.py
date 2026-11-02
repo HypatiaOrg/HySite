@@ -18,7 +18,7 @@ from api.v2.data_process import representative_error
 from api.web2py.data_process import is_true_str
 
 # the colour scales a visitor can choose: Hypatia's own as colour stops, the others by their Plotly names
-COLOR_PALLETS = {
+COLOR_PALETTES = {
     'Hypatia': [[0.0, '#4e11b7'], [0.2, '#6c5ce7'], [0.4, '#dfe6e9'], [0.6, '#81ecec'],
                 [0.8, '#92F7B0'], [0.9, '#F7C492'], [1.0, '#d63031']],
     'Viridis': 'Viridis',
@@ -27,7 +27,7 @@ COLOR_PALLETS = {
     'Inferno': 'Inferno',
     'Turbo': 'Turbo',
 }
-DEFAULT_COLOR_PALLET = 'Hypatia'
+DEFAULT_COLOR_PALETTE = 'Hypatia'
 # the histograms take the first colour of the scale
 HISTOGRAM_COLORS = {'Viridis': '#440154', 'Plasma': '#0d0887', 'Inferno': '#000004', 'Cividis': '#00224e',
                     'Turbo': '#30123b'}
@@ -56,10 +56,10 @@ RANGE_MODES = ['full data', 'std dev', 'manual']
 DEFAULT_SIGMA = 4.0
 
 
-def color_scale(color_pallet: str | None) -> tuple[str, list | str, str]:
+def color_scale(color_palette: str | None) -> tuple[str, list | str, str]:
     """The palette's name, its colour scale and its histogram colour; an unknown choice gets the default."""
-    name = color_pallet if color_pallet in COLOR_PALLETS else DEFAULT_COLOR_PALLET
-    scale = COLOR_PALLETS[name]
+    name = color_palette if color_palette in COLOR_PALETTES else DEFAULT_COLOR_PALETTE
+    scale = COLOR_PALETTES[name]
     if isinstance(scale, list):
         histogram_color = scale[0][1]
     else:
@@ -203,7 +203,7 @@ def density_data(graph_data: dict, axis_mapping: dict, settings) -> dict:
     if len(xaxis):
         axes['xaxis']['log'] = bool(axes['xaxis']['log'] and np.all(xaxis > 0))
         axes['yaxis']['log'] = bool(axes['yaxis']['log'] and np.all(yaxis > 0))
-    color_pallet, scale, histogram_color = color_scale(settings.get('color_pallet', None))
+    color_palette, scale, histogram_color = color_scale(settings.get('color_palette', None))
     return dict(
         labels=graph_data['labels'],
         star_count=graph_data['star_count'],
@@ -213,7 +213,7 @@ def density_data(graph_data: dict, axis_mapping: dict, settings) -> dict:
         outputs={'name': names, 'xaxis': xaxis.tolist(), 'yaxis': yaxis.tolist()},
         bins=bins,
         show_xyhist=is_true_str(settings.get('show_xyhist', 'false')),
-        color_pallet=color_pallet,
+        color_palette=color_palette,
         color_scale=scale,
         histogram_color=histogram_color,
         bin_tags=BIN_TAGS,
