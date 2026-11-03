@@ -32,7 +32,8 @@ DEFAULTS = {
     'yaxis2': 'H',
     'zaxis1': 'none',
     'zaxis2': 'H',
-    'tablecols': 'Fe,C,O,Mg,Si,S,Ca,Ti',
+    # the columns the table shows at first (the owner's choice, 2026-11-03); the table orders them by element
+    'tablecols': 'Fe,C,O,Na,Mg,Al,Si,S,Ca,Sc_II,Ti,Ni,Ba_II,Eu_II',
     'filter1_3': '',
     'filter1_4': '',
     'filter2_3': '',
