@@ -1,4 +1,4 @@
-<div style="width:100%;padding-left:10px;padding-right:20px">{{# a little room between the window edges and the first and last columns; more on the right, clear of the scroll bar }}
+<div style="width:100%;padding-left:10px;padding-right:30px">{{# a little room between the window edges and the first and last columns; more on the right, clear of the scroll bar }}
 	<table id="stars" class="table table-condensed table-striped stickyHeader" style="border-collapse: collapse;background:white">
 		<thead>
 			<tr>
