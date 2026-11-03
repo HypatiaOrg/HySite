@@ -16,7 +16,9 @@
 						{{elif cell.endswith("_max_err"):}}
 							<small style="color:#555">+err</small>
 						{{else:}}
-							{{=A(COL_SHORT_DESC.get(cell) or cell, _title=COL_LONG_DESC.get(cell) or cell,_href=URL('table.load',vars=dict(sort=cell)), cid=request.cid)}}
+							{{label = COL_SHORT_DESC.get(cell) or cell}}
+							{{# an ionised element's heading ("Sc II") stays on one line: the column is narrow and centred, and the "II" wrapped under the name }}
+							{{=A(label, _title=COL_LONG_DESC.get(cell) or cell, _href=URL('table.load',vars=dict(sort=cell)), cid=request.cid, _style='white-space:nowrap' if label.endswith(' II') else None)}}
 							<br/>
 							<small class="text-uppercase" style="color:#555">{{=COL_UNITS.get(cell) or ' '}}</small>
 						{{pass}}
