@@ -1,4 +1,4 @@
-<div style="width:100%;padding-left:10px;padding-right:30px;overflow-x:auto">{{# a little room between the window edges and the first and last columns, more on the right, clear of the scroll bar. A table wider than the page (many columns, the errors on) scrolls sideways inside this box instead of running off the page and under the scroll bar }}
+<div style="width:100%;padding-left:10px;padding-right:20px;overflow-x:auto">{{# a little room between the window edges and the first and last columns, more on the right, clear of the scroll bar. A table wider than the page (many columns, the errors on) scrolls sideways inside this box instead of running off the page and under the scroll bar }}
 	<table id="stars" class="table table-condensed table-striped stickyHeader" style="border-collapse: collapse;background:white">
 		<thead>
 			<tr>
