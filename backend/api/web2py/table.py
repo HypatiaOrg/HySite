@@ -30,7 +30,8 @@ MAX_TABLE_CELLS_TO_SHOW = 250_000
 TABLE_NAMES = ['star_id', 'hd', '2mass', 'wds']
 TABLE_STELLAR = ['raj2000', 'decj2000', 'x_pos', 'y_pos', 'z_pos', 'dist', 'disk', 'sptype', 'vmag', 'bv',
                  'u_vel', 'v_vel', 'w_vel', 'teff', 'logg', 'mass', 'rad']
-TABLE_PLANET = ['planet_letter', 'period', 'eccentricity', 'semi_major_axis', 'pl_mass', 'pl_radius', 'inclination']
+# the planet columns of the table, in the order the page shows them (the owner's choice, 2026-11-03)
+TABLE_PLANET = ['planet_letter', 'pl_radius', 'pl_mass', 'period', 'semi_major_axis', 'eccentricity', 'inclination']
 TARGET_HANDLE_SETTINGS = [('show_has_exo', 'has_exo'), ('show_thin_disk', 'thin_disk'),
                           ('show_thick_disk', 'thick_disk'), ('show_hwo_tier2', 'hwo_tier2'),
                           ('show_hwo_tier1', 'hwo_tier1')]
