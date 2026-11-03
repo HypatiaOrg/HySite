@@ -25,7 +25,7 @@
 			{{for row in table:}}
 				<tr>
 					{{for cell, col_name in zip(row, columns):}}
-						<td>
+						<td style="text-align:center">{{# every value centred under its heading, the error and reference columns too; the cell padding (the spacing between columns) is Bootstrap's as before }}
 							{{if not isinstance(cell, list):}}
                         		{{cell = [cell]}}
                     		{{pass}}
