@@ -1,4 +1,4 @@
-<div style="width:100%;padding-left:10px">{{# a little room between the window edge and the first column (the longest names) }}
+<div style="width:100%;padding-left:10px;padding-right:10px">{{# a little room between the window edges and the first and last columns }}
 	<table id="stars" class="table table-condensed table-striped stickyHeader" style="border-collapse: collapse;background:white">
 		<thead>
 			<tr>
