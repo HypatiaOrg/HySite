@@ -88,8 +88,6 @@ session_request_vars = set(settings_data['session_keys'])
 # the density page's controls: the colour scales and the bin size keywords, as the settings model names them
 DENSITY_COLOR_PALETTES = settings_data['fields']['color_palette']['choices']
 DENSITY_BIN_TAGS = settings_data['fields']['xhist_bin_size']['keywords']
-# the menu choices the "error" rule cannot bin (Spectral Type, Disk) and the warning to show (api.web2py.density)
-DENSITY_BIN_WARNINGS = settings_data['fields']['xhist_bin_size']['warnings']
 
 for name_handle, name_label in name_handles_labels.items():
     COL_PREFERRED_NAME[name_handle] = name_label

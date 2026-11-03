@@ -44,8 +44,8 @@ CHECKS = [
     ("/hypatia/default/graph_density.load", "plotly-graph-div",
      {"xhist_bin_size": "error", "yhist_bin_size": "0.05", "color_palette": "Viridis", "toggle_vars": "show_xyhist"}),
     # the "error" rule with a menu choice that has no error (Spectral Type): the fragment shows the API's warning
-    # next to the bin size box and keeps the bins it had; then the default axis and rule again (settings stay in
-    # the session)
+    # next to the bin size box (the API binned by the standard deviation instead); then the default axis and rule
+    # again (settings stay in the session)
     ("/hypatia/default/graph_density.load", "Please plot Spectral Type Number",
      {"xaxis1": "sptype", "xaxis2": "H", "xhist_bin_size": "error"}),
     ("/hypatia/default/graph_density.load", "plotly-graph-div",

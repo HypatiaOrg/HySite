@@ -46,8 +46,8 @@ PARAMETER_ERRORS = {
     'inclination': 1.0,
 }
 # the menu choices that have no error of their own (the plot shows their ranked number, data_process.ranked_string_params)
-# and what to tell a visitor who asks for "error" bins with one of them on the axis. The frontend keeps the bins
-# it had until another parameter is chosen (controllers/default.py, bin_warnings); the API falls back to "std dev"
+# and what to tell a visitor who asks for "error" bins with one of them on the axis: the bins fall back to "std dev"
+# and carry the text, which the frontend shows next to the bin size box (controllers/default.py, bin_warnings)
 BIN_WARNINGS = {'sptype': 'Please plot Spectral Type Number', 'disk': 'Please plot Disk Number'}
 MAX_BINS = 200
 # how the plotted range is chosen: the whole data, the mean +- sigma standard deviations, or typed limits.
