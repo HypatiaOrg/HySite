@@ -2,8 +2,11 @@
 	<table id="stars" class="table table-condensed table-striped stickyHeader" style="border-collapse: collapse;background:white">
 		<thead>
 			<tr>
-				{{for cell in columns:}}
-					<th style="text-align:center;border-bottom:2px solid #4e11b7">
+				{{# the first column (the star's name) is only as wide as its names: the table fills the page, and the browser }}
+				{{# would give the widest column the biggest share of the spare width, leaving the centred names afloat in it; }}
+				{{# the other columns share the spare width instead }}
+				{{for column_index, cell in enumerate(columns):}}
+					<th style="text-align:center;border-bottom:2px solid #4e11b7{{if column_index == 0:}};width:1%;white-space:nowrap{{pass}}">
 						{{if cell.endswith("_err"):}}
 							<small style="color:#555">err</small>
 						{{elif cell.endswith("_ref"):}}
@@ -24,8 +27,8 @@
 		<tbody>
 			{{for row in table:}}
 				<tr>
-					{{for cell, col_name in zip(row, columns):}}
-						<td style="text-align:center">{{# every value centred under its heading, the error and reference columns too; the cell padding (the spacing between columns) is Bootstrap's as before }}
+					{{for column_index, (cell, col_name) in enumerate(zip(row, columns)):}}
+						<td style="text-align:center{{if column_index == 0:}};width:1%;white-space:nowrap{{pass}}">{{# every value centred under its heading, the error and reference columns too; the cell padding (the spacing between columns) is Bootstrap's as before }}
 							{{if not isinstance(cell, list):}}
                         		{{cell = [cell]}}
                     		{{pass}}
