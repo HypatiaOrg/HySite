@@ -19,6 +19,8 @@ type Props = {
     compact?: boolean;
     // what the picker is for, for a screen reader: "X-axis parameter", "filter 2 parameter"
     label: string;
+    // the planet parameters to offer: a filter menu offers them all, an axis menu leaves out the planet letter
+    planetHandles?: Array<string>;
 };
 
 function PropertyButtons({
@@ -33,7 +35,7 @@ function PropertyButtons({
     onPick: (id: string) => void;
 }) {
     return (
-        <div className="flex flex-wrap gap-1 mb-2">
+        <div className="flex flex-wrap gap-y-1 mb-2">
             {handles.map((handle) => (
                 <button
                     type="button"
@@ -41,7 +43,7 @@ function PropertyButtons({
                     data-picks="1"
                     title={hoverOf(summary, handle)}
                     onClick={() => onPick(handle)}
-                    className={buttonClass(value === handle ? "picked" : "plain", "px-1.5 py-0 text-xs leading-5")}
+                    className={buttonClass(value === handle ? "picked" : "plain", "btn-xs")}
                 >
                     {labelOf(summary, handle)}
                 </button>
@@ -59,6 +61,7 @@ export default function ParameterPicker({
     allowNone = false,
     compact = false,
     label,
+    planetHandles,
 }: Props) {
     return (
         <span className={"inline-flex items-center gap-1" + (compact ? " min-w-0" : "")}>
@@ -82,19 +85,19 @@ export default function ParameterPicker({
                             none
                         </button>
                     )}
-                    <div className="font-semibold text-hypurple">Element ratio:</div>
+                    <div className="font-bold text-[#333]">Element ratio:</div>
                     <PeriodicTable summary={summary} selected={new Set([value])} onPick={(id) => onChange(id)} />
-                    <div className="font-semibold text-hypurple mt-2">Stellar property:</div>
+                    <div className="font-bold text-[#333] mt-2">Stellar property:</div>
                     <PropertyButtons
                         summary={summary}
                         handles={summary.stellar_param_types}
                         value={value}
                         onPick={(id) => onChange(id)}
                     />
-                    <div className="font-semibold text-hypurple">Planet property:</div>
+                    <div className="font-bold text-[#333] mt-2">Planet property:</div>
                     <PropertyButtons
                         summary={summary}
-                        handles={summary.planet_param_types}
+                        handles={planetHandles ?? summary.planet_param_types}
                         value={value}
                         onPick={(id) => onChange(id)}
                     />
@@ -107,7 +110,7 @@ export default function ParameterPicker({
                     ariaLabel={`${label}, denominator of the ratio: ${labelOf(summary, denominator)}`}
                 >
                     <div className="w-[68rem]">
-                        <div className="font-semibold text-hypurple">Denominator:</div>
+                        <div className="font-bold text-[#333]">Denominator:</div>
                         <PeriodicTable
                             summary={summary}
                             selected={new Set([denominator])}

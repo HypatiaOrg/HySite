@@ -24,9 +24,9 @@ export default function Menu({children}: {children: React.ReactNode}) {
     }, [open]);
 
     return (
-        <nav className="flex-none w-full bg-hypurple text-white font-sans p-2 text-xl md:text-base lg:p-4 lg:text-xl 2xl:text-2xl 2xl:p-6">
+        <nav className="flex-none w-full bg-hypurple text-white text-sm leading-5 border border-[#080808] mb-5 px-[15px]">
             <div className="flex items-center justify-between md:hidden">
-                <Link href="/" className="font-bold px-2">
+                <Link href="/" className="text-[30px] leading-5 py-[15px]">
                     Hypatia Catalog
                 </Link>
                 <button
@@ -44,9 +44,13 @@ export default function Menu({children}: {children: React.ReactNode}) {
                 id="site-menu"
                 className={
                     (open ? "block pt-2" : "hidden") +
-                    " md:flex w-full md:overflow-x-auto md:whitespace-nowrap lg:overflow-visible [scrollbar-width:thin]"
+                    " md:flex md:items-center w-full md:overflow-x-auto md:whitespace-nowrap lg:overflow-visible [scrollbar-width:thin] md:min-h-[50px]"
                 }
             >
+                {/* the site's name, the way home, at the left of the bar (the web2py site's navbar brand) */}
+                <Link href="/" className="hidden md:block text-[30px] leading-5 py-[15px] pr-[15px] text-white">
+                    Hypatia Catalog
+                </Link>
                 {children}
             </div>
         </nav>

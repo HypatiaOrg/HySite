@@ -1,8 +1,0 @@
-{{=XML(div)}}
-
-
-<script>
-    //$("#stars").get(0).reload();
-    refresh_table();
-    $("#density").css("background","white");
-</script>

@@ -8,44 +8,26 @@ draws what comes back.
 Until October 2026 these rules lived in web2py's plot code (models/plot_plotly.py on the plotly branch);
 they moved here with the same arithmetic, so the plot is the same bin for bin. Two cases that raised an
 error there are decided here instead: the "error" bin size of an element ratio (the two representative
-errors added in quadrature) and of a stellar or planet parameter (from its displayed precision).
+errors added in quadrature) and of a stellar or planet parameter (the hand-set table PARAMETER_ERRORS).
 """
 import math
 
 import numpy as np
 
 from api.v2.data_process import representative_error
-from api.web2py.data_process import units_and_fields_v2, is_true_str
+from api.web2py.data_process import is_true_str
 
-# the colour scales a visitor can choose: Hypatia's own as colour stops, the others by their Plotly names
-COLOR_PALLETS = {
-    'Hypatia': [[0.0, '#4e11b7'], [0.2, '#6c5ce7'], [0.4, '#dfe6e9'], [0.6, '#81ecec'],
-                [0.8, '#92F7B0'], [0.9, '#F7C492'], [1.0, '#d63031']],
-    'Viridis': 'Viridis',
-    'Plasma': 'Plasma',
-    'Cividis': 'Cividis',
-    'Inferno': 'Inferno',
-    'Turbo': 'Turbo',
-}
-DEFAULT_COLOR_PALLET = 'Hypatia'
-# the histograms take the first colour of the scale
-HISTOGRAM_COLORS = {'Viridis': '#440154', 'Plasma': '#0d0887', 'Inferno': '#000004', 'Cividis': '#00224e',
-                    'Turbo': '#30123b'}
-DEFAULT_HISTOGRAM_COLOR = '#4e11b7'
-
-# the keywords a bin size field accepts; the first is what an empty or unreadable field means
-BIN_TAGS = ['std dev', 'error']
-MAX_BINS = 200
-# how the plotted range is chosen: the whole data, the mean +- sigma standard deviations, or typed limits.
-# The page offers only the first today; the others are ready for the controls to come.
-RANGE_MODES = ['full data', 'std dev', 'manual']
-DEFAULT_SIGMA = 4.0
+# the website's choices (hypatia.configs.website_settings): the colour scales, the bin size keywords, the
+# parameters' representative errors, the warnings, the bin count cap and the range rules
+from hypatia.configs.website_settings import (COLOR_PALETTES, DEFAULT_COLOR_PALETTE, HISTOGRAM_COLORS,
+                                              DEFAULT_HISTOGRAM_COLOR, BIN_TAGS, PARAMETER_ERRORS, BIN_WARNINGS,
+                                              MAX_BINS, RANGE_MODES, DEFAULT_SIGMA, BIN_SIZE_WIDENED, BIN_SIZE_CUT)
 
 
-def color_scale(color_pallet: str | None) -> tuple[str, list | str, str]:
+def color_scale(color_palette: str | None) -> tuple[str, list | str, str]:
     """The palette's name, its colour scale and its histogram colour; an unknown choice gets the default."""
-    name = color_pallet if color_pallet in COLOR_PALLETS else DEFAULT_COLOR_PALLET
-    scale = COLOR_PALLETS[name]
+    name = color_palette if color_palette in COLOR_PALETTES else DEFAULT_COLOR_PALETTE
+    scale = COLOR_PALETTES[name]
     if isinstance(scale, list):
         histogram_color = scale[0][1]
     else:
@@ -54,9 +36,12 @@ def color_scale(color_pallet: str | None) -> tuple[str, list | str, str]:
 
 
 def bin_request(bin_size: str | float | None) -> float | str:
-    """What a bin size field asks for: the number typed, or one of BIN_TAGS (the first for anything else)."""
+    """What a bin size field asks for: the number typed, if it is a width (finite and positive; "nan", "inf",
+    zero and negatives are not), or one of BIN_TAGS (the first for anything else)."""
     try:
-        return float(bin_size)
+        width = float(bin_size)
+        if math.isfinite(width) and width > 0:
+            return width
     except (ValueError, TypeError):
         pass
     key = str(bin_size or '').lower().strip().replace(' ', '')
@@ -79,8 +64,8 @@ def sample_std(values: list[float]) -> float:
 def parameter_error(value_type: str, param_id) -> float | None:
     """
     The representative error of a plotted parameter, the "error" bin size: an element's from the catalog
-    summary, a ratio's from both elements added in quadrature, a stellar or planet parameter's from its
-    displayed precision (10 to the power 2 - decimals). None when nothing is known.
+    summary, a ratio's from both elements added in quadrature, a stellar or planet parameter's from
+    params_units.toml (PARAMETER_ERRORS). None when nothing is known.
     """
     if value_type == 'element':
         return representative_error.get(str(param_id), None)
@@ -90,10 +75,7 @@ def parameter_error(value_type: str, param_id) -> float | None:
         if numerator is None or denominator is None:
             return None
         return math.sqrt(numerator ** 2 + denominator ** 2)
-    decimals = units_and_fields_v2.get(param_id, {}).get('decimals', None)
-    if decimals is None:
-        return None
-    return float(f'1.e{2 - int(decimals)}')
+    return PARAMETER_ERRORS.get(param_id, None)
 
 
 def check_bin_size(bin_size: float, range_size: float) -> float:
@@ -119,21 +101,38 @@ def axis_range(values: np.ndarray, range_mode: str = 'full data', sigma: float =
 
 def axis_bins(values: np.ndarray, requested: str | float | None, value_type: str, param_id,
               range_mode: str = 'full data', sigma: float = DEFAULT_SIGMA,
-              manual_min: float | None = None, manual_max: float | None = None) -> dict:
+              manual_min: float | None = None, manual_max: float | None = None,
+              selected: str | None = None) -> dict:
     """
     One axis's bins: the range (start, end), the bin width (size) and how it was chosen (mode: "number",
     "error" or "std dev"; "error" falls back to "std dev" when the parameter has no representative error).
+    With "error" asked for a menu choice in BIN_WARNINGS (selected: the setting as the visitor chose it), the
+    bins carry its warning text and use "std dev". A width changed to fit the range (check_bin_size) is marked
+    adjusted ("widened" or "cut") with a note (BIN_SIZE_WIDENED, BIN_SIZE_CUT); the frontend puts the width used
+    into the box.
     """
     start, end = axis_range(values, range_mode=range_mode, sigma=sigma, manual_min=manual_min, manual_max=manual_max)
     request = bin_request(requested)
+    warning = BIN_WARNINGS.get(selected, None) if request == 'error' else None
     width = None
     if isinstance(request, float):
         width, mode = request, 'number'
-    elif request == 'error':
+    elif request == 'error' and warning is None:
         width, mode = parameter_error(value_type, param_id), 'error'
     if width is None:
         width, mode = sample_std(list(values)), 'std dev'
-    return {'start': start, 'end': end, 'size': check_bin_size(width, end - start), 'mode': mode}
+    size = check_bin_size(width, end - start)
+    bins = {'start': start, 'end': end, 'size': size, 'mode': mode}
+    notes = [warning] if warning else []
+    if size > width:
+        bins['adjusted'] = 'widened'
+        notes.append(BIN_SIZE_WIDENED.format(size=size, max_bins=MAX_BINS))
+    elif size < width:
+        bins['adjusted'] = 'cut'
+        notes.append(BIN_SIZE_CUT.format(size=size))
+    if notes:
+        bins['warning'] = ' '.join(notes)
+    return bins
 
 
 def valid_points(outputs: dict) -> tuple[list[str], np.ndarray, np.ndarray]:
@@ -152,18 +151,20 @@ def marginal_bins(xaxis: np.ndarray, yaxis: np.ndarray, axis_mapping: dict, sett
         return None
     range_mode = settings.get('range_mode', 'full data')
     return {
-        'xaxis': axis_bins(xaxis, settings.get('xhist_bin_size', None), *axis_mapping['x'], range_mode=range_mode),
-        'yaxis': axis_bins(yaxis, settings.get('yhist_bin_size', None), *axis_mapping['y'], range_mode=range_mode),
+        'xaxis': axis_bins(xaxis, settings.get('xhist_bin_size', None), *axis_mapping['x'], range_mode=range_mode,
+                           selected=settings.get('xaxis1', None)),
+        'yaxis': axis_bins(yaxis, settings.get('yhist_bin_size', None), *axis_mapping['y'], range_mode=range_mode,
+                           selected=settings.get('yaxis1', None)),
     }
 
 
-def histogram_edges(values, requested: str | float | None, axis: tuple) -> dict | None:
+def histogram_edges(values, requested: str | float | None, axis: tuple, selected: str | None = None) -> dict | None:
     """The histogram page's bins: axis_bins for its one axis, with the bin edges spelled out (the last edge at
     the end of the range or past it, so the largest value is counted); None without values."""
     values = np.asarray(values, dtype=float)
     if not len(values):
         return None
-    bins = axis_bins(values, requested, *axis)
+    bins = axis_bins(values, requested, *axis, selected=selected)
     count = max(1, int(math.ceil((bins['end'] - bins['start']) / bins['size'])))
     edges = bins['start'] + bins['size'] * np.arange(count + 1)
     edges[-1] = max(edges[-1], bins['end'])
@@ -183,7 +184,7 @@ def density_data(graph_data: dict, axis_mapping: dict, settings) -> dict:
     if len(xaxis):
         axes['xaxis']['log'] = bool(axes['xaxis']['log'] and np.all(xaxis > 0))
         axes['yaxis']['log'] = bool(axes['yaxis']['log'] and np.all(yaxis > 0))
-    color_pallet, scale, histogram_color = color_scale(settings.get('color_pallet', None))
+    color_palette, scale, histogram_color = color_scale(settings.get('color_palette', None))
     return dict(
         labels=graph_data['labels'],
         star_count=graph_data['star_count'],
@@ -193,7 +194,7 @@ def density_data(graph_data: dict, axis_mapping: dict, settings) -> dict:
         outputs={'name': names, 'xaxis': xaxis.tolist(), 'yaxis': yaxis.tolist()},
         bins=bins,
         show_xyhist=is_true_str(settings.get('show_xyhist', 'false')),
-        color_pallet=color_pallet,
+        color_palette=color_palette,
         color_scale=scale,
         histogram_color=histogram_color,
         bin_tags=BIN_TAGS,

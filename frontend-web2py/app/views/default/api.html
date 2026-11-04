@@ -584,9 +584,9 @@ Any star name on SIMBAD can be used.
 Spaces and letter case are ignored star names searches.
 However, if you want to use spaces, substitute '%20' for the space, which is the
 URL safe-version of the plus operator '+' to append the two components in the URL path.
-For example, 'HIP 32970' should be 'HIP%2032970'.
+For example, 'HIP 32970' should be 'HIP%2012345'.
 
-GET <a href="/hypatia/api/v2/composition?name=HIP32970&element=ca&solarnorm=asplund09">https://hypatiacatalog.com/hypatia/api/v2/composition?name=HIP32970&element=ca&solarnorm=asplund09</a>
+GET <a href="/hypatia/api/v2/composition/?name=HIP62875&element=fe&solarnorm=asplund09">https://hypatiacatalog.com/hypatia/api/v2/composition/?name=HIP62875&element=fe&solarnorm=asplund09</a>
 
 
 Python code:
@@ -692,7 +692,7 @@ Result:
       }
     ],
     "match_name": "hip32970",
-    "requested_name": "HIP32970",
+    "requested_name": "HIP62875",
     "requested_element": "ca",
     "requested_solarnorm": "asplund09"
   }
@@ -802,7 +802,7 @@ Result:
 }
 </pre>
 <pre>
-GET <a href="hypatia/api/v2/data?mode=hist">https://hypatiacatalog.com/hypatia/api/v2/data?mode=hist</a>
+GET <a href="hypatia/api/v2/data?mode=hist">https://hypatiacatalog.com/hypatia/api/v2/data/?mode=hist</a>
 
 Python code:
 <mark>import requests

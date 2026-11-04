@@ -1,4 +1,4 @@
-<div style="background:#f8f8f8;text-align:center;padding:8px;border-top: 2px solid #4e11b7">
+<div style="background:#f8f8f8;text-align:center;padding:8px;border-top: 2px solid {{=HYPATIA_PURPLE}}">
     <big>
         <b>
             <span class="glyphicon glyphicon-chevron-down" aria-hidden="true"></span>
@@ -8,7 +8,7 @@
     </big>
 </div>
 
-<form method="post" style="padding-bottom:20px; background: #f8f8f8; border-bottom: 2px solid #4e11b7">
+<form method="post" style="padding-bottom:20px; background: #f8f8f8; border-bottom: 2px solid {{=HYPATIA_PURPLE}}">
     <input class="hidden" name="table_submit" value="true">
     <div id="tablesettings" style=" margin-left:auto;margin-right:auto;width:880px">
         <input style="display:none" type="radio" id="tablesource_graph" name="tablesource" value="graph" {{if session.tablesource=="graph":}}checked="checked"{{pass}}>
@@ -79,7 +79,7 @@
         display:none;
     }
     a {
-        color: #4e11b7;
+        color: {{=HYPATIA_PURPLE}};
     }
 </style>
 
@@ -94,15 +94,11 @@
     }
 
     function reset() {
+        // the default columns, from the API's settings (models/summary.py, DEFAULT_TABLECOLS)
         $(".btn-pt").removeClass("btn-success");
-        $("#pt-Fe").addClass("btn-success");
-        $("#pt-C").addClass("btn-success");
-        $("#pt-O").addClass("btn-success");
-        $("#pt-Mg").addClass("btn-success");
-        $("#pt-Si").addClass("btn-success");
-        $("#pt-S").addClass("btn-success");
-        $("#pt-Ca").addClass("btn-success");
-        $("#pt-Ti").addClass("btn-success");
+        {{for item in DEFAULT_TABLECOLS:}}
+        $("#pt-{{=item}}").addClass("btn-success");
+        {{pass}}
         $("#tablecols").val($(".btn-success").map(function(index,dom){return dom.id.slice(3)}).toArray().join(","));
         refresh_table();
     }

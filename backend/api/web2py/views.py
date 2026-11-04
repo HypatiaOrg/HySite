@@ -10,7 +10,7 @@ from api.web2py.settings import settings_schema
 from api.web2py.plots import axes_from_settings, group_targets, requested_target_handles, histogram_series
 from api.web2py.density import density_data, marginal_bins, valid_points, histogram_edges
 from api.web2py.data_process import (home_data, units_and_fields_v2, stellar_param_types_v2, is_true_str,
-                                     planet_param_types_v2, ranked_string_params, plot_norms,
+                                     planet_param_types_v2, axis_planet_param_types_v2, ranked_string_params, plot_norms,
                                      graph_settings_from_request, graph_query_pipeline_web2py, histogram_format,
                                      element_data, table_query_from_request, targets_metadata,
                                      )
@@ -33,6 +33,7 @@ class Summary(View):
             units_and_fields=units_and_fields_v2,
             stellar_param_types=stellar_param_types_v2,
             planet_param_types=planet_param_types_v2,
+            axis_planet_param_types=axis_planet_param_types_v2,
             ranked_string_params=ranked_string_params,
             catalogs=available_catalogs_v2,
             solarnorms=plot_norms,
@@ -134,12 +135,13 @@ class HistView(View):
         # of the data (api.web2py.density, the rule of the other pages' histograms); the series share the edges
         x_field = from_v2['xaxis']
         x_values = [row[x_field] for row in graph_data if row.get(x_field) is not None]
-        bins = histogram_edges(x_values, request.GET.get('hist_bin_size', None), graph_settings['axis_mapping']['x'])
+        bins = histogram_edges(x_values, request.GET.get('hist_bin_size', None), graph_settings['axis_mapping']['x'],
+                               selected=request.GET.get('xaxis1', None))
         # the histogram as named series (api.web2py.plots); hist_all/hist_planet/edges/x_data as before
         histogram = histogram_series(graph_data=graph_data, labels=labels, from_v2=from_v2,
                                      normalize=graph_settings['normalize_hist'],
                                      bins=bins['edges'] if bins else 20)
-        bins_made = {key: bins[key] for key in ('start', 'end', 'size', 'mode')} if bins else None
+        bins_made = {key: bins[key] for key in ('start', 'end', 'size', 'mode', 'warning', 'adjusted') if key in bins} if bins else None
         return JsonResponse({'labels': labels, 'bins': bins_made, **histogram})
 
 

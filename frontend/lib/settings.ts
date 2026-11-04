@@ -18,6 +18,9 @@ export type SettingsSchema = {
     session_keys: Array<string>;
     fields: Record<string, SettingsField>;
     max_filters?: number;
+    // the words and colours the pages draw with (hypatia.configs.website_settings)
+    words?: {log_bins_warning?: string};
+    colors?: {hypatia_purple?: string};
 };
 
 // the most filters a request may carry (filter1 .. filterN), as the API's model says

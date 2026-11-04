@@ -11,7 +11,6 @@ import PeriodicTable from "@/components/settings/PeriodicTable";
 import {buttonStyle, buttonClass} from "@/components/settings/Controls";
 import CellValues from "@/components/table/CellValues";
 
-const DEFAULT_COLUMNS = "Fe,C,O,Mg,Si,S,Ca,Ti";
 // the column options beyond the elements, as the API's table tokens
 const OPTIONS: Array<[string, string]> = [
     ["stellar", "Stellar Properties"],
@@ -41,6 +40,27 @@ function columnLabel(summary: Summary, column: string): {text: string; hover: st
     return {text: column, hover: column, units: ""};
 }
 
+// the chevron the web2py page's bands show before "Data Table" and "Download this table" (a glyphicon there)
+function Chevron() {
+    return (
+        <span aria-hidden="true" className="inline-block w-3 mr-1 align-middle">
+            <svg viewBox="0 0 12 8" width="12" height="8">
+                <path d="M1 1l5 5 5-5" fill="none" stroke="#333" strokeWidth="2.4" />
+            </svg>
+        </span>
+    );
+}
+
+// the "new window" glyph the web2py page shows after a star's name, for its SIMBAD page
+function NewWindowIcon() {
+    return (
+        <svg viewBox="0 0 12 12" width="11" height="11" aria-hidden="true" className="inline-block">
+            <path d="M2 1h4v1.5H3.5v6h6V6H11v4H2z" fill="#4e11b7" />
+            <path d="M7 1h4v4l-1.4-1.4L6 7.2 4.8 6l3.6-3.6z" fill="#4e11b7" />
+        </svg>
+    );
+}
+
 function simbadLink(name: string) {
     return (
         "http://simbad.u-strasbg.fr/simbad/sim-basic?Ident=" +
@@ -54,9 +74,11 @@ type Props = {
     settings: Settings;
     onChange: (changes: Record<string, string>) => void;
     showTargets: boolean;
+    // the columns a new visitor sees (the settings model's default), which Reset restores
+    defaultColumns: string;
 };
 
-export default function DataTable({summary, settings, onChange, showTargets}: Props) {
+export default function DataTable({summary, settings, onChange, showTargets, defaultColumns}: Props) {
     const [sort, setSort] = useState<{column: string | null; reverse: boolean}>({column: null, reverse: false});
     const [showRows, setShowRows] = useState(false);
     const columns = useMemo(() => new Set(listOf(settings, "tablecols")), [settings]);
@@ -101,52 +123,62 @@ export default function DataTable({summary, settings, onChange, showTargets}: Pr
     };
 
     return (
-        <section className="mt-6">
-            <div className="bg-hygrey/10 border-t-2 border-hypurple text-center py-2 text-lg">
-                <b className="text-hypurple">Data Table</b> <span className="text-hygrey">{table?.status ?? ""}</span>
+        <section className="mt-6 -mx-[30px]">
+            {/* the bands of the web2py page: the heading with its chevron, then the controls on light grey */}
+            <div className="bg-[#f8f8f8] border-t-2 border-hypurple text-center p-2 text-[16.8px] leading-6">
+                <b>
+                    <Chevron />
+                    Data Table
+                </b>{" "}
+                <span>{table?.status ?? ""}</span>
             </div>
-            <div className="bg-hygrey/10 border-b-2 border-hypurple pb-4">
-                <div className="mx-auto w-fit max-w-full overflow-x-auto px-2">
+            <div className="bg-[#f8f8f8] border-b-2 border-hypurple pb-5">
+                <div className="mx-auto w-[880px] max-w-full overflow-x-auto">
                     <PeriodicTable summary={summary} selected={columns} onPick={toggleColumn} onColor="on" />
-                    <div className="flex flex-wrap gap-1 mt-2">
+                    <br />
+                    <div>
                         {OPTIONS.map(([token, label]) => (
                             <button
                                 type="button"
                                 key={token}
                                 onClick={() => toggleColumn(token)}
-                                className={buttonClass(columns.has(token) ? "on" : "plain")}
+                                className={buttonClass(columns.has(token) ? "on" : "plain", "mr-1")}
                             >
                                 {label}
                             </button>
                         ))}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3 mt-3">
+                        <br />
+                        <br />
                         <button
                             type="button"
                             className={buttonStyle}
-                            onClick={() => onChange({tablecols: DEFAULT_COLUMNS})}
+                            onClick={() => onChange({tablecols: defaultColumns})}
                         >
                             Reset
                         </button>
-                        <span className="text-hygrey">Download this table:</span>
-                        {(["csv", "tsv", "psv"] as const).map((format) => (
-                            <button
-                                type="button"
-                                key={format}
-                                className="text-hyred hover:text-hypurple hover:underline uppercase"
-                                onClick={() => download(format)}
-                            >
-                                {format}
-                            </button>
-                        ))}
                     </div>
                 </div>
             </div>
-
-            {error && <div className="text-hyred p-4">The table could not be loaded: {error}</div>}
-            <div className={"overflow-x-auto transition-opacity " + (loading ? "opacity-50" : "")}>
+            <div className="bg-white text-[#333] p-2 mb-2">
+                <Chevron />
+                Download this table:
+                {(["csv", "tsv", "psv"] as const).map((format) => (
+                    <button
+                        type="button"
+                        key={format}
+                        className="btn btn-link uppercase"
+                        onClick={() => download(format)}
+                    >
+                        {format}
+                    </button>
+                ))}
+            </div>
+            {error && <div className="text-[#a94442] p-4">The table could not be loaded: {error}</div>}
+            {/* the table in its box: a little room between the window edges and the first and last columns, more on
+                the right, clear of the scroll bar; a table wider than the page scrolls sideways inside the box */}
+            <div className={"overflow-x-auto pl-2.5 pr-5 transition-opacity " + (loading ? "opacity-50" : "")}>
                 {table && (
-                    <table className="w-full border-collapse bg-white text-sm">
+                    <table className="w-full border-collapse bg-white text-sm leading-5 text-[#333]">
                         <thead className="sticky top-0 bg-white z-10">
                             <tr>
                                 {table.columns.map((column) => {
@@ -164,7 +196,11 @@ export default function DataTable({summary, settings, onChange, showTargets}: Pr
                                         <th
                                             key={column}
                                             scope="col"
-                                            className="text-center border-b-2 border-hypurple px-2 py-1 align-bottom font-normal"
+                                            className={
+                                                "text-center border-b-2 border-hypurple p-[5px] align-bottom font-bold" +
+                                                // the first column (the star's name) is only as wide as its names
+                                                (column === "star_id" ? " w-[1%] whitespace-nowrap" : "")
+                                            }
                                             aria-sort={
                                                 sort.column === column
                                                     ? sort.reverse
@@ -174,7 +210,7 @@ export default function DataTable({summary, settings, onChange, showTargets}: Pr
                                             }
                                         >
                                             {sub ? (
-                                                <small className="text-hygrey">{sub}</small>
+                                                <small className="text-[#555]">{sub}</small>
                                             ) : (
                                                 <>
                                                     <button
@@ -182,18 +218,17 @@ export default function DataTable({summary, settings, onChange, showTargets}: Pr
                                                         title={label.hover}
                                                         onClick={() => sortBy(column)}
                                                         aria-label={`Sort by ${label.text}`}
-                                                        className={
-                                                            "font-semibold hover:underline " +
-                                                            (sort.column === column ? "text-hyred" : "text-hypurple")
-                                                        }
+                                                        className="font-bold text-hypurple hover:underline whitespace-nowrap"
                                                     >
                                                         {label.text}
                                                         {sort.column === column ? (sort.reverse ? " ▾" : " ▴") : ""}
                                                     </button>
-                                                    <br />
-                                                    <small className="text-hygrey uppercase">
-                                                        {label.units || " "}
-                                                    </small>
+                                                    {label.units && (
+                                                        <>
+                                                            <br />
+                                                            <small className="text-[#555]">{label.units}</small>
+                                                        </>
+                                                    )}
                                                 </>
                                             )}
                                         </th>
@@ -203,19 +238,19 @@ export default function DataTable({summary, settings, onChange, showTargets}: Pr
                         </thead>
                         <tbody>
                             {table.rows.map((row, r) => (
-                                <tr key={r} className="odd:bg-hyblue/10">
+                                <tr key={r} className="odd:bg-[#f9f9f9]">
                                     {row.map((cell, c) => {
                                         const column = table.columns[c];
                                         const lines = Array.isArray(cell) ? cell : [cell];
                                         const hover = table.hover[r]?.[c] ?? undefined;
                                         return (
-                                            <td key={c} className="px-2 py-0.5 whitespace-nowrap">
+                                            <td key={c} className="p-[5px] text-center whitespace-nowrap">
                                                 {lines.map((line, i) => (
                                                     <span
                                                         key={i}
                                                         className={
                                                             "block " +
-                                                            (SMALL_COLUMNS.test(column) ? "text-xs text-hygrey" : "")
+                                                            (SMALL_COLUMNS.test(column) ? "text-xs text-[#555]" : "")
                                                         }
                                                     >
                                                         {hover ? <CellValues value={line} values={hover} /> : line}
@@ -224,11 +259,11 @@ export default function DataTable({summary, settings, onChange, showTargets}: Pr
                                                                 href={simbadLink(line)}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
-                                                                className="text-hyred ml-1"
+                                                                className="bs-link ml-1 inline-block align-middle"
                                                                 aria-label={`${line} on SIMBAD`}
                                                                 title="SIMBAD"
                                                             >
-                                                                ↗
+                                                                <NewWindowIcon />
                                                             </a>
                                                         )}
                                                     </span>
@@ -243,20 +278,16 @@ export default function DataTable({summary, settings, onChange, showTargets}: Pr
                 )}
             </div>
             {table?.moreRows && (
-                <div className="p-3 text-hygrey">
+                <div className="px-2.5 py-3 text-[#333]">
                     Showing the first {table.rows.length} of {table.totalRows} rows.{" "}
                     {table.canLoadAll ? (
-                        <button type="button" className="text-hyred hover:underline" onClick={() => setShowRows(true)}>
+                        <button type="button" className="bs-link" onClick={() => setShowRows(true)}>
                             Load All
                         </button>
                     ) : (
                         <>
                             This table is too large to show on the page;{" "}
-                            <button
-                                type="button"
-                                className="text-hyred hover:underline"
-                                onClick={() => download("csv")}
-                            >
+                            <button type="button" className="bs-link" onClick={() => download("csv")}>
                                 download it as CSV
                             </button>{" "}
                             to get all {table.totalRows} rows.

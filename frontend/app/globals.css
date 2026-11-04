@@ -11,7 +11,164 @@
   --color-hygrey: #8a8a8a;
 }
 
+/* The look of the web2py site (Bootstrap 3 with its theme), so a visitor does not notice the change of
+   frontend: its typeface and text colour, its buttons, form controls, menus and notices. The home page
+   alone has its own design (app/page.tsx). */
 body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  color: #333;
   background: white;
-  color: #171717;
+}
+
+/* a link in running text: Bootstrap's blue, underlined under the mouse */
+.bs-link {
+  color: #337ab7;
+}
+.bs-link:hover,
+.bs-link:focus {
+  color: #23527c;
+  text-decoration: underline;
+}
+
+/* buttons: the default (white to light grey), the chosen one (blue), the one that is on (green), and the
+   small size of the periodic table and the parameter menus */
+.btn {
+  display: inline-block;
+  padding: 6px 12px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+.btn-default {
+  color: #333;
+  background-color: #fff;
+  background-image: linear-gradient(#fff 0, #e0e0e0 100%);
+  border-color: #ccc;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 1px 1px rgba(0, 0, 0, 0.075);
+}
+.btn-default:hover,
+.btn-default:focus {
+  background-color: #e0e0e0;
+  background-image: none;
+  border-color: #adadad;
+}
+.btn-primary {
+  color: #fff;
+  background-color: #337ab7;
+  background-image: linear-gradient(#337ab7 0, #265a88 100%);
+  border-color: #245580;
+}
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: #265a88;
+  background-image: none;
+}
+.btn-success {
+  color: #fff;
+  background-color: #5cb85c;
+  background-image: linear-gradient(#5cb85c 0, #419641 100%);
+  border-color: #3e8f3e;
+}
+.btn-success:hover,
+.btn-success:focus {
+  background-color: #419641;
+  background-image: none;
+}
+.btn-xs {
+  padding: 1px 5px;
+  font-size: 12px;
+  line-height: 18px;
+  border-radius: 3px;
+}
+.btn-link {
+  color: #337ab7;
+  background: none;
+  border-color: transparent;
+}
+.btn-link:hover {
+  color: #23527c;
+  text-decoration: underline;
+}
+.caret {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 2px;
+  vertical-align: middle;
+  border-top: 4px dashed;
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+}
+
+/* text boxes and menus */
+.form-control {
+  display: block;
+  height: 34px;
+  padding: 6px 12px;
+  font-size: 14px;
+  line-height: 20px;
+  color: #555;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+}
+.form-control:focus {
+  border-color: #66afe9;
+  outline: 0;
+  box-shadow:
+    inset 0 1px 1px rgba(0, 0, 0, 0.075),
+    0 0 8px rgba(102, 175, 233, 0.6);
+}
+.form-control::placeholder {
+  color: #999;
+}
+.form-control-inline {
+  display: inline-block;
+  width: auto;
+  vertical-align: middle;
+}
+
+/* a menu that drops down from a button */
+.dropdown-panel {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+  padding: 5px 10px;
+}
+
+/* a notice beside the form (Bootstrap's alert-info) */
+.alert-info {
+  color: #31708f;
+  background-color: #d9edf7;
+  background-image: linear-gradient(#d9edf7 0, #b9def0 100%);
+  border: 1px solid #9acfea;
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 1px 2px rgba(0, 0, 0, 0.05);
+}
+/* the API page's note (Bootstrap's alert-warning, in black as the web2py page sets it) */
+.alert-note {
+  color: #000;
+  background-color: #fcf8e3;
+  background-image: linear-gradient(#fcf8e3 0, #f8efc0 100%);
+  border: 1px solid #f5e79e;
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 20px;
 }

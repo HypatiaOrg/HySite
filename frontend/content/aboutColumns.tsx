@@ -47,7 +47,7 @@ export const columns: Array<definitionType> = [
     },
     {
         label: "pmRA",
-        unit: "km/s",
+        unit: "mas/yr",
         description: (
             <>
                 proper motion for Right Ascension (from {gaiaDR3}, {gaiaDR2}, and {anderson})
@@ -56,7 +56,7 @@ export const columns: Array<definitionType> = [
     },
     {
         label: "pmDec",
-        unit: "km/s",
+        unit: "mas/yr",
         description: (
             <>
                 proper motion for Declination (from {gaiaDR3}, {gaiaDR2}, and {anderson})
@@ -101,12 +101,14 @@ export const columns: Array<definitionType> = [
     {label: "Bmag", unit: "mag", description: <>B magnitude (from {pastel})</>},
     {label: "Vmag", unit: "mag", description: <>V magnitude (from {pastel})</>},
     {label: "B-V", unit: "mag", description: <>B-V color (from {pastel})</>},
+    // the planet columns in the table's order (hypatia.configs.website_settings TABLE_PLANET)
     {label: "letter", unit: null, description: <>planet letter (from {nea})</>},
-    {label: "multi", unit: null, description: <>number of planets in the system (from {nea})</>},
+    {label: "prad", unit: "R_Jupiter", description: <>planetary radius (from {nea})</>},
     {label: "pmass", unit: "M_Jupiter", description: <>planetary mass (from {nea})</>},
     {label: "period", unit: "days", description: <>planetary period (from {nea})</>},
-    {label: "ecc", unit: null, description: <>planetary eccentricity (from {nea})</>},
     {label: "sma", unit: "AU", description: <>planetary semimajor axis (from {nea})</>},
+    {label: "ecc", unit: null, description: <>planetary eccentricity (from {nea})</>},
+    {label: "inc", unit: "deg", description: <>planetary orbital inclination (from {nea})</>},
     {label: "smass", unit: "M_Sun", description: <>stellar mass (from {tic})</>},
     {label: "radius", unit: "R_Sun", description: <>stellar radius (from {tic})</>},
     {

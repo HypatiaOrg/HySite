@@ -1,13 +1,26 @@
+import React from "react";
 import type {Metadata} from "next";
 import {Page, H1, H2, P, Ul, Ext, In} from "@/components/Text";
 import {aboutURL, neaURL} from "@/lib/urls";
+import {getHomeData, getSettingsSchema, getSummary} from "@/lib/api.server";
 
 export const metadata: Metadata = {
     title: "Help | Hypatia Catalog",
     description: "How to use the plots, the table and the advanced controls of the Hypatia Catalog.",
 };
 
-export default function HelpPage() {
+// the page reads the API when it is served, not when the site is built (the API is not there at build time)
+export const dynamic = "force-dynamic";
+
+export default async function HelpPage() {
+    // what the text names comes from the API, like the home page's numbers, so it cannot go stale
+    const [counts, schema, summary] = await Promise.all([getHomeData(), getSettingsSchema(), getSummary()]);
+    const keywords = schema.fields.xhist_bin_size?.keywords ?? [];
+    const defaultNorm = summary.solarnorms.find((norm) => norm.id === schema.defaults.solarnorm);
+    const otherNorms = summary.solarnorms
+        .filter((norm) => norm.year && norm.id !== defaultNorm?.id)
+        .sort((a, b) => (b.year ?? 0) - (a.year ?? 0));
+    const normName = (norm: {author: string; year: number | null}) => `${norm.author} (${norm.year})`;
     return (
         <Page>
             <H1 id="getting-started">GETTING STARTED</H1>
@@ -32,26 +45,26 @@ export default function HelpPage() {
             <P>
                 The plot and table can be filtered using the filter rows on the right, each with a minimum and a maximum
                 value (either can be left blank in place of infinity); up to ten filters can be set, and a new row
-                appears as each one is filled. Changes are enacted by pausing for a few seconds (it is no longer
-                necessary to click the “Submit” button at the bottom of the plot). Options for the filter criteria can
-                be accessed by clicking on the dropdown menu that says “none” as default. From the dropdown menu, if an
-                element is chosen from the Periodic Table, the filter changes to become an X/Y ratio where both the
-                numerator and denominator can be specified. In addition to the neutral state of the element, if the
-                singly ionized element has been measured, the “II” next to the element can be selected (see the{" "}
-                <In href={aboutURL}>About</In> page). Stellar properties are listed along the bottom of the drop down
-                menu in addition to planetary properties. If any of planetary properties are chosen, then the graph will
-                show only planet hosting stars. To look at those stars that have planets without a filter, simply click
-                on “planet letter” in one of the filters (without having to add anything into the “min” or “max”
-                regions). The graph will then plot all of the planets, regardless of whether another planet property has
-                been selected for the x-, y-, or z-axes, such that a star that hosts multiple planets will be plotted
-                multiple times. The table will also update to include NEA names. The X and Y axes can plot any of the
-                element ratios, stellar properties, or planet properties. Additionally, the Z-axis, or color, can be
-                initialized to show another dimension.
+                appears as each one is filled. Options for the filter criteria can be accessed by clicking on the
+                dropdown menu that says “none” as default. From the dropdown menu, if an element is chosen from the
+                Periodic Table, the filter changes to become an X/Y ratio where both the numerator and denominator can
+                be specified. In addition to the neutral state of the element, if the singly ionized element has been
+                measured, the “II” next to the element can be selected (see the <In href={aboutURL}>About</In> page).
+                Stellar properties are listed along the bottom of the drop down menu in addition to planetary
+                properties. If any of planetary properties are chosen, then the graph will show only planet hosting
+                stars. To look at those stars that have planets without a filter, simply click on “planet letter” in one
+                of the filters (without having to add anything into the “min” or “max” regions). The graph will then
+                plot all of the planets, regardless of whether another planet property has been selected for the x-, y-,
+                or z-axes, such that a star that hosts multiple planets will be plotted multiple times. The table will
+                also update to include NEA names. The X and Y axes can plot any of the element ratios, stellar
+                properties, or planet properties. Additionally, the Z-axis, or color, can be initialized to show another
+                dimension.
             </P>
             <P>
-                To move, adjust, zoom, or generally change the properties of the plot, the tools listed vertically along
-                the right side of the plot can be toggled to make the appropriate adjustments. Additionally, the figure
-                can be saved by clicking the “Save” button near the bottom.
+                To move, zoom, or reset the plot, use the toolbar that appears along the top right of the plot: “Box
+                Zoom” zooms into a dragged rectangle, a double-click resets the view, and the camera icon saves the
+                figure as a PNG image. Hovering over a point shows the star’s name and values; selecting points with the
+                box or lasso tool puts their names into the star list below the plot.
             </P>
 
             <H1 as="h2" id="plots">
@@ -65,6 +78,40 @@ export default function HelpPage() {
                 parameter with respect to another. The scatter plot has extremely high functionality and flexibility.
                 The X and Y axes can plot any of the element ratios, stellar properties, or planet properties.
                 Additionally, the Z-axis, or color, can be initialized to show another dimension.
+            </P>
+            <P>
+                Beneath the Scatter plot is a checkbox that shows histograms of the plotted stars along the x- and
+                y-axes; the X and Y bin size boxes appear with them. A bin size can be one of the keywords{" "}
+                {keywords.map((keyword, index) => (
+                    <React.Fragment key={keyword}>
+                        {index > 0 && ", "}“{keyword}”
+                    </React.Fragment>
+                ))}{" "}
+                or a number:
+            </P>
+            <Ul>
+                <li>
+                    The default bin size is 1 standard deviation of the sample with Bessel’s correction of n-1. This can
+                    also be written as “std dev”.
+                </li>
+                <li>
+                    Using “error” defines the bin sizes using the respective errors associated with each property. For
+                    abundance ratios when H is in the denominator, the error used is simply the error of the numerator
+                    (since{" "}
+                    <Ext href="https://ui.adsabs.harvard.edu/abs/2022AJ....164..256H/abstract">
+                        H is a scalar for abundances
+                    </Ext>
+                    ). When a non-H element is in the denominator, the error of the two elements is added in quadrature.
+                    For a stellar or planetary property, the error is a representative value set by the Hypatia team
+                    (for example 150 K for Teff). Spectral Type and Disk are words rather than numbers, so they have no
+                    error: choose Spectral Type Number or Disk Number instead.
+                </li>
+                <li>Lastly, a float can be used as input as bin sizes (e.g., 0.08 or 150).</li>
+            </Ul>
+            <P>
+                When the x- or y-axes are toggled to be plotted on a log-scale (note: this feature does not change the
+                abundance ratios since they are already on a log-scale), the histogram bins are chosen automatically and
+                may not conform to the specified bin size inputs.
             </P>
 
             <H2 as="h3" id="target-lists">
@@ -101,20 +148,33 @@ export default function HelpPage() {
             <P>
                 A user may plot multiple target lists at once, either individually or using &quot;union&quot; logic to
                 show which stars are in multiple target lists. The user may also plot the rest of the Hypatia Catalog
-                stars that are not in any of the target lists selected.
+                stars that are not in any of the target lists selected. Similar to the Scatter plot, below the plot are
+                toggleable x- and y-axis histograms and their respective bin size inputs.
+            </P>
+
+            <H2 as="h3" id="density-map">
+                Density Map
+            </H2>
+            <P>
+                The density map plot is functionally similar to the scatter plot, but it offers the ability to observe
+                trends that lie in the bulk of the data. The x- and y-axes of the density plot are the same as the
+                scatter plot, but the data is binned according to the provided bin size input (shown below the plot).
+                Similar to the Scatter plot, below the plot are toggleable x- and y-axis histograms and their respective
+                bin size inputs. The Density Map was created such that switching between the Scatter Plot, Target Lists,
+                and Density Map is seamless, making direct comparisons more flexible and the data easier to understand.
             </P>
 
             <H2 as="h3" id="histogram">
                 Histogram
             </H2>
             <P>
-                While the plot showing “Elements and Properties” enables a user to look at <em>either</em> planet
-                hosting stars or stars that are not currently known to have planets, we wanted to provide the ability to
-                look at the two populations simultaneously. Therefore, we have provided a 1D histogram that shows both
-                stars with and without planets. Similar to the other plot, the filter bar can be used to make cuts on
-                those stars analyzed. Additionally, the histogram can be viewed either in terms of total number of stars
-                in a bin or normalized (by checking the “Normalize the histogram” toggle) according to the bin with most
-                number of stars, which has a height of 1 by definition.
+                While the plot showing “Scatter” enables a user to look at <em>either</em> planet hosting stars or stars
+                that are not currently known to have planets, we wanted to provide the ability to look at the two
+                populations simultaneously. Therefore, we have provided a 1D histogram that shows an overlay of stars
+                with and without exoplanets. Similar to the other plot, the filter bar can be used to make cuts on those
+                stars analyzed. Additionally, the histogram can be viewed either in terms of the total number of stars
+                in a bin or normalized (by checking the “Normalize the histogram” toggle) according to the bin with the
+                most stars, which has a height of 1 by definition.
             </P>
 
             <H1 as="h2" id="advanced-controls">
@@ -124,17 +184,18 @@ export default function HelpPage() {
                 For those users wishing to change some of the more nuanced aspects of the stellar abundances within the
                 Hypatia Catalog, we provide the ability to make adjustments. In order to ensure that all of the stellar
                 abundances within Hypatia are on the same baseline, all individual catalogs have been renormalized to
-                the same solar normalization. The default is Lodders et al. (2009). As part of the database, the user
-                can change the solar normalization to be with respect to Asplund et al. (2009), Grevesse et al. (2007),
-                Asplund et al. (2005), Grevesse &amp; Sauval (1998), and Anders &amp; Grevesse (1989). If the user would
-                like to view the stellar abundances with respect to the solar normalization employed by each of the
-                catalogs individually, the “Original” option can be chosen. We note that abundances originally published
-                in absolute A(X) notation cannot be shown when the “Original” normalization is selected, since no solar
-                normalization was specified by the authors at the time of publication. However, when a solar
-                normalization is chosen by the Hypatia Catalog user, then all abundances -- [X/H], [X/Fe], or A(X) --
-                are placed on the same solar scale. The absolute abundances, namely without a solar normalization, can
-                be viewed by choosing “Absolute.” If an element is selected (with respect to H or Fe) and the plot
-                returns “No data points to display,” the original data may be only available as absolute. See{" "}
+                the same solar normalization. The default is{" "}
+                {defaultNorm ? normName(defaultNorm) : "Lodders et al. (2009)"}. As part of the database, the user can
+                change the solar normalization to be with respect to {otherNorms.slice(0, -1).map(normName).join(", ")},
+                and {normName(otherNorms[otherNorms.length - 1])}. If the user would like to view the stellar abundances
+                with respect to the solar normalization employed by each of the catalogs individually, the “Original”
+                option can be chosen. We note that abundances originally published in absolute A(X) notation cannot be
+                shown when the “Original” normalization is selected, since no solar normalization was specified by the
+                authors at the time of publication. However, when a solar normalization is chosen by the Hypatia Catalog
+                user, then all abundances -- [X/H], [X/Fe], or A(X) -- are placed on the same solar scale. The absolute
+                abundances, namely without a solar normalization, can be viewed by choosing “Absolute.” If an element is
+                selected (with respect to H or Fe) and the plot returns “No data points to display,” the original data
+                may be only available as absolute. See{" "}
                 <Ext href="https://ui.adsabs.harvard.edu/abs/2022AJ....164..256H/abstract">
                     Hinkel, Young, &amp; Wheeler (2022)
                 </Ext>{" "}
@@ -142,11 +203,11 @@ export default function HelpPage() {
             </P>
             <P>
                 The Hypatia Catalog is a multidimensional database, which utilizes all stellar abundances measurements
-                made for an element within a star by 360+ catalogs (see details on the <In href="/">Home page</In>).
-                Therefore, to provide a 2-dimensional table, those measurements must be collapsed or reduced. The toggle
-                “If an element ratio is in multiple catalogs” changes the reduction method to either take the median
-                (default) or mean of all measurements of an element in a star. We note that the stellar abundance dex
-                notation is inherently in log-space, which is explained in{" "}
+                made for an element within a star by {counts.catalogs.toLocaleString("en-US")} catalogs (see details on
+                the <In href="/">Home page</In>). Therefore, to provide a 2-dimensional table, those measurements must
+                be collapsed or reduced. The toggle “If an element ratio is in multiple catalogs” changes the reduction
+                method to either take the median (default) or mean of all measurements of an element in a star. We note
+                that the stellar abundance dex notation is inherently in log-space, which is explained in{" "}
                 <Ext href="https://ui.adsabs.harvard.edu/abs/2022AJ....164..256H/abstract">
                     Hinkel, Young, &amp; Wheeler (2022)
                 </Ext>
@@ -178,12 +239,13 @@ export default function HelpPage() {
             </H1>
             <P>
                 The table is filtered using the filter bars at the top. The columns that are shown in the table can be
-                adjusted using the “Add/remove columns” button, which gives the user the ability to include individual
-                elements (shown as [X/H] unless the Absolute solar normalization is chosen). Additionally, all stellar
-                properties (RA, Dec, XYZ position, distance, disk, spectral type, V mag, B-V, UVW galactic velocity,
-                Teff, and logg) and all planetary properties (planet letter, period, planet mass, eccentricity, and
-                semimajor axis, where applicable) can be shown in the table (see the <In href={aboutURL}>About</In>{" "}
-                page).
+                adjusted using the buttons in the Periodic Table, including neutral and singly ionized elements, which
+                gives the user the ability to include individual elements (shown as [X/H] unless the Absolute solar
+                normalization is chosen). Additionally, all stellar properties (RA, Dec, XYZ position, distance, disk,
+                spectral type, V mag, B-V, UVW galactic velocity, Teff, logg, mass, and radius) and all planetary
+                properties (planet letter, planet radius, planet mass, period, semi-major axis, eccentricity, and
+                inclination, where applicable) can be shown in the table (see the <In href={aboutURL}>About</In> page),
+                which can be shown by clicking on the respective property button.
             </P>
             <P>
                 The user can also view the spread (or error) in the stellar abundances. Per the original Hypatia Catalog

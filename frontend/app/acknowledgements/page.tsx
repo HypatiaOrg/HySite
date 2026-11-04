@@ -15,7 +15,7 @@ export default function AcknowledgementsPage() {
                 acknowledgement:
             </P>
             {/* the acknowledgement to copy into a paper, set off from the page's own text */}
-            <blockquote className="border-l-4 border-hyyellow pl-6 my-6 text-hypurple text-lg md:text-xl">
+            <blockquote className="text-[#333] text-sm leading-5 mb-2.5">
                 The research shown here acknowledges use of the Hypatia Catalog, an online compilation of stellar
                 abundance data as described in{" "}
                 <Ext href="http://adsabs.harvard.edu/abs/2014AJ....148...54H">Hinkel et al. (2014, AJ, 148, 54)</Ext>.
@@ -27,7 +27,7 @@ export default function AcknowledgementsPage() {
                 </Ext>
                 .
             </P>
-            <hr className="border-hyblue my-8" />
+            <hr className="border-[#eee] my-5" />
             <P>
                 In the event that a small number of catalogs was used within an analysis, we highly encourage the
                 citation of those individual papers. However, we still appreciate the acknowledgment of the Hypatia

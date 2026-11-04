@@ -1,3 +1,4 @@
+import {Inter} from "next/font/google";
 import Link from "next/link";
 import Image from "next/image";
 import {getHomeData} from "@/lib/api.server";
@@ -13,13 +14,16 @@ export const dynamic = "force-dynamic";
 const homeGrid = "bg-white grid grid-cols-16";
 const paragraphStyle = "text-hygrey col-span-14 col-start-2 indent-12 pt-4 text-lg md:text-xl";
 
+// the home page has its own design and typeface; the other pages look like the web2py site (app/globals.css)
+const inter = Inter({subsets: ["latin"]});
+
 export default async function Home() {
     const counts = await getHomeData();
     if (DEBUG) {
         console.log("Home page counts:", counts);
     }
     return (
-        <>
+        <div className={inter.className}>
             <div className="px-8 bg-radial-[at_50%_75%] from-yellow-400 via-yellow-200 to-hypurple to-90%">
                 <div className="max-w-6xl mx-auto py-4 w-full md:flex flex-row md:items-center gap-20">
                     <div className="flex flex-row justify-center items-center">
@@ -118,6 +122,6 @@ export default async function Home() {
                     </p>
                 </div>
             </div>
-        </>
+        </div>
     );
 }

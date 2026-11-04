@@ -1,7 +1,0 @@
-{{=XML(div)}}
-
-<script>
-    //$("#stars").get(0).reload();
-    refresh_table();
-    $("#graph").css("background","white");
-</script>

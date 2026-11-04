@@ -5,9 +5,10 @@ import Link from "next/link";
 import {usePathname, useSearchParams} from "next/navigation";
 import {plotURLs} from "@/lib/urls";
 
-const style =
-    "block px-4 md:px-3 xl:px-4 py-1 md:py-0 mb-1 md:mb-0 hover:underline hover:text-hyyellow border-2 md:border-none border-hyyellow hover:bg-hygrey hover:text-hypurple rounded-lg";
-const currentStyle = " bg-white text-hypurple";
+// a link as the web2py menu drew it: white on the purple bar, 15px of padding; the current page white with purple
+// text in a rounded pill, light grey under the mouse (issue #35)
+const style = "block px-[15px] py-[15px] leading-5 text-white hover:text-white";
+const currentStyle = " !bg-white !text-hypurple rounded-lg !p-[7px] !m-2 hover:!bg-[#c8c8c8]";
 
 export default function NavLink({href, children}: {href: string; children: React.ReactNode}) {
     const pathname = usePathname();

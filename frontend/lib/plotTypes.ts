@@ -2,6 +2,12 @@
 
 export type AxisInfo = {label: string; log: boolean; inverse: boolean};
 
+// one axis's histogram bins (api.web2py.density.axis_bins): the range, the width and how it was chosen; a
+// warning when the "error" rule had no error to use, and "widened" or "cut" when the width was changed to
+// fit the range (the page puts the width used into the bin size box)
+export type Bins = {start: number; end: number; size: number; mode: string; warning?: string; adjusted?: string};
+export type AxesBins = {xaxis: Bins; yaxis: Bins};
+
 export type ScatterData = {
     outputs: {name?: Array<string>; xaxis?: Array<number>; yaxis?: Array<number>; zaxis?: Array<number>};
     labels: Record<string, string>;
@@ -9,6 +15,8 @@ export type ScatterData = {
     star_count: number | null;
     planet_count: number | null;
     is_loggable: Record<string, boolean>;
+    // the bins of the optional histograms along the axes
+    bins?: AxesBins | null;
 };
 
 export type Layer = {
@@ -31,14 +39,13 @@ export type HistData = {
     series: Array<{id: string; label: string; color: string; counts: Array<number>}>;
     edges: Array<number>;
     x_range: Array<number> | null;
+    bins?: Bins | null;
 };
 
-export type DensityBins = {start: number; end: number; size: number; mode: string};
-
 export type DensityData = ScatterData & {
-    bins: {xaxis: DensityBins; yaxis: DensityBins} | null;
+    bins: AxesBins | null;
     show_xyhist: boolean;
-    color_pallet: string;
+    color_palette: string;
     color_scale: Array<[number, string]> | string;
     histogram_color: string;
     bin_tags: Array<string>;

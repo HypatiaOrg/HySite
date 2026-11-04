@@ -16,7 +16,9 @@ The checks are written for the sample database (mongo/test_data), but all except
 named-star check also pass against the full database.
 """
 import argparse
+import html
 import http.cookiejar
+import re
 import json
 import sys
 import time
@@ -28,8 +30,37 @@ import urllib.request
 # catalog names such as HIP or HD numbers, not common names
 TEST_STAR = "HIP 62875"
 
+def bins_check(axis: str | None, **expected):
+    """A check on the bins in an API response (api.web2py.density: start, end, size, mode, warning), as data
+    rather than as a substring of the JSON: the fields named must have these values. axis picks one axis's
+    bins ("xaxis", "yaxis") where the response has one per axis; None where it has the one set."""
+    def problem(body: str) -> str | None:
+        bins = json.loads(body).get("bins") or {}
+        if axis:
+            bins = bins.get(axis) or {}
+        wrong = {key: bins.get(key) for key, value in expected.items() if bins.get(key) != value}
+        return f"bins have {wrong}, expected {expected}" if wrong else None
+    return problem
+
+
+def page_text(body: str) -> str:
+    """A page's HTML as text: the entities decoded (so "&amp;" reads "&"), the comments React puts between
+    adjacent pieces of text removed, and the JSON escapes of a Next.js page's data undone."""
+    return html.unescape(re.sub(r"<!--.*?-->", "", body)).replace("\\u0026", "&")
+
+
+def mentions(*words: str):
+    """A check that a page's text says each of the words."""
+    def problem(body: str) -> str | None:
+        text = page_text(body)
+        missing = [word for word in words if word not in text]
+        return f"the page does not mention {missing}" if missing else None
+    return problem
+
+
 # (path, what the response must be[, form data to POST]): "json" parses as non-empty JSON, "found" is
-# JSON for a star the API found, "png" is an image, any other string must appear in the page
+# JSON for a star the API found, "png" is an image, a function is given the response's text and returns what
+# is wrong or None, any other string must appear in the page
 NEXT_CHECKS = [
     # the home page, with the counts from the API (the sample database has planet hosts)
     ("/", "Hypatia Catalog"),
@@ -75,10 +106,19 @@ NEXT_CHECKS = [
     # another colour scale, the marginal histograms off)
     ("/data/density", "json", {"xaxis1": "Fe", "yaxis1": "Si", "show_xyhist": "true"}),
     ("/data/density", '"mode": "error"', {"xaxis1": "Fe", "yaxis1": "Si", "xhist_bin_size": "error", "yhist_bin_size": "0.05",
-                                          "color_pallet": "Viridis", "show_xyhist": "false"}),
+                                          "color_palette": "Viridis", "show_xyhist": "false"}),
+    # the scatter and targets data carry the bins of the optional histograms along the axes; the "error" rule with a
+    # menu choice that has no error (Spectral Type) carries the API's warning, which the page shows by the bin size box
+    ("/data/scatter", bins_check("xaxis", mode="number", size=0.1), {"xaxis1": "Fe", "yaxis1": "Si", "xhist_bin_size": "0.1"}),
+    ("/data/targets", bins_check("yaxis", mode="std dev"), {"xaxis1": "Fe", "yaxis1": "Si", "show_all": "true"}),
+    ("/data/density", bins_check("xaxis", mode="std dev", warning="Please plot Spectral Type Number"),
+     {"xaxis1": "sptype", "yaxis1": "Si", "xhist_bin_size": "error"}),
+    # a width too narrow for the bin cap: the page puts the width the API used into the box (bins "adjusted")
+    ("/data/hist", bins_check(None, mode="number", adjusted="widened"), {"xaxis1": "Fe", "hist_bin_size": "0.00001"}),
 ]
 
 WEB2PY_CHECKS = [
+    # web2py frontend pages
     ("/", "Hypatia Catalog"),
     # each .load fragment needs the session settings its parent page makes, so the parent comes first
     ("/hypatia/default/launch", "Hypatia Catalog"),
@@ -90,12 +130,24 @@ WEB2PY_CHECKS = [
     # the histogram page's bin size: a typed width, then the default rule again
     ("/hypatia/default/graph_hist.load", "plotly-graph-div", {"hist_bin_size": "0.5"}),
     ("/hypatia/default/graph_hist.load", "plotly-graph-div", {"hist_bin_size": ""}),
+    # a width too narrow for the bin cap: the page shows the API's note by the box and puts the width used into the
+    # box; then the default rule again
+    ("/hypatia/default/graph_hist.load", "bin maximum", {"hist_bin_size": "0.00001"}),
+    ("/hypatia/default/graph_hist.load", 'var sizes = {"hist_bin_size": "', {"hist_bin_size": "0.00001"}),
+    ("/hypatia/default/graph_hist.load", "plotly-graph-div", {"hist_bin_size": ""}),
     # the density page (the plotly branch): the plot is a Plotly figure; then its own settings changed
     # (bin sizes by keyword and by number, another colour scale, the marginal histograms off)
     ("/hypatia/default/density", "Hypatia Catalog"),
     ("/hypatia/default/graph_density.load", "plotly-graph-div"),
     ("/hypatia/default/graph_density.load", "plotly-graph-div",
-     {"xhist_bin_size": "error", "yhist_bin_size": "0.05", "color_pallet": "Viridis", "toggle_vars": "show_xyhist"}),
+     {"xhist_bin_size": "error", "yhist_bin_size": "0.05", "color_palette": "Viridis", "toggle_vars": "show_xyhist"}),
+    # the "error" rule with a menu choice that has no error (Spectral Type): the fragment shows the API's warning
+    # next to the bin size box (the API binned by the standard deviation instead); then the default axis and rule
+    # again (settings stay in the session)
+    ("/hypatia/default/graph_density.load", "Please plot Spectral Type Number",
+     {"xaxis1": "sptype", "xaxis2": "H", "xhist_bin_size": "error"}),
+    ("/hypatia/default/graph_density.load", "plotly-graph-div",
+     {"xaxis1": "Fe", "xaxis2": "H", "xhist_bin_size": "", "yhist_bin_size": ""}),
     ("/hypatia/default/targets", "Hypatia Catalog"),
     ("/hypatia/default/graph_targets.load", "plotly-graph-div"),
     # the scatter and targets plots with their histograms along the axes (the toggle on, a bin size typed; the
@@ -106,6 +158,13 @@ WEB2PY_CHECKS = [
     ("/hypatia/default/graph_targets.load", '"yaxis":"y2"',
      {"show_targets_hist": "on", "toggle_vars": "show_targets_hist"}),
     ("/hypatia/default/graph_targets.load", "plotly-graph-div", {"toggle_vars": "show_targets_hist"}),
+    # the histograms along a logarithmic axis use Plotly's own bins, and the page says so next to the bin size box
+    # (a stellar parameter on a log x axis, the histograms on); then the default axis and the toggles off again
+    ("/hypatia/default/graph.load", "Logged bins chosen automatically",
+     {"xaxis1": "teff", "xaxis2": "H", "show_scatter_hist": "on", "xaxislog": "on",
+      "toggle_vars": "show_scatter_hist,xaxislog"}),
+    ("/hypatia/default/graph.load", "plotly-graph-div",
+     {"xaxis1": "Fe", "xaxis2": "H", "toggle_vars": "show_scatter_hist,xaxislog"}),
     ("/hypatia/default/table", "<table"),
     ("/hypatia/default/table.load", "<table"),
     ("/hypatia/default/help", "GETTING STARTED"),
@@ -143,7 +202,67 @@ API_CHECKS = [
     # the frontend API's density data (api.web2py.density): the points, the bins of each axis, the colours
     ("/hypatia/api/frontend/density/?xaxis1=Fe&yaxis1=Si", "json"),
     ("/hypatia/api/frontend/hist/?xaxis1=Fe&hist_bin_size=error", "json"),
+    # a stellar parameter's "error" bins from the hand-set table (api.web2py.density.PARAMETER_ERRORS: 150 K; the bin
+    # count cap, MAX_BINS, would only widen them over a 30,000 K range), and for a menu choice without an error (Disk)
+    # the fallback to the standard deviation with its warning, instead of a failure
+    ("/hypatia/api/frontend/hist/?xaxis1=teff&hist_bin_size=error", bins_check(None, mode="error", size=150.0)),
+    ("/hypatia/api/frontend/density/?xaxis1=disk&yaxis1=Fe&xhist_bin_size=error",
+     bins_check("xaxis", mode="std dev", warning="Please plot Disk Number")),
+    # a typed bin size that is not a width ("nan" once failed the request; "inf", zero and negatives are no better)
+    # means the default rule
+    ("/hypatia/api/frontend/hist/?xaxis1=Fe&hist_bin_size=nan", bins_check(None, mode="std dev")),
+    ("/hypatia/api/frontend/hist/?xaxis1=Fe&hist_bin_size=inf", bins_check(None, mode="std dev")),
+    ("/hypatia/api/frontend/density/?xaxis1=Fe&yaxis1=Si&xhist_bin_size=-1&yhist_bin_size=0",
+     bins_check("yaxis", mode="std dev")),
+    # a width the range cannot hold is changed and the bins say so: too narrow for the bin cap, or wider than the range
+    ("/hypatia/api/frontend/hist/?xaxis1=Fe&hist_bin_size=0.00001", bins_check(None, mode="number", adjusted="widened")),
+    ("/hypatia/api/frontend/hist/?xaxis1=Fe&hist_bin_size=1000", bins_check(None, mode="number", adjusted="cut")),
 ]
+
+
+def documentation_checks(frontend: str, base_url: str) -> list[tuple]:
+    """The site's documentation against the build it describes: the Help page names every bin size keyword
+    and solar normalization the API offers and the catalog count the home page shows (it reads them from the
+    API, so this guards the wording around them); the About page describes the table's columns as the table
+    has them; and every example address on the API page answers with JSON, the star example with a star the
+    catalog has."""
+    settings = json.loads(fetch(base_url + "/hypatia/api/frontend/settings/")[1])
+    norms = json.loads(fetch(base_url + "/hypatia/api/v2/solarnorm/")[1])
+    counts = json.loads(fetch(base_url + "/hypatia/api/frontend/home/")[1])
+    help_words = (settings["fields"]["xhist_bin_size"]["keywords"]
+                  + [f'{norm["author"]} ({norm["year"]})' for norm in norms if norm["year"]]
+                  + ["{:,} catalogs".format(counts["catalogs"]), "Normalize the histogram"])
+
+    def api_examples_answer(body: str) -> str | None:
+        """Every example address with a query answers with JSON; a bare endpoint address may also ask for
+        parameters. The star example answers for each name it asks about, found or not: the page explains that
+        one of its names (HIP 12345) is not in the catalog, and the others are not in the sample database."""
+        addresses = sorted(set(re.findall(r"/hypatia/api/v2/[A-Za-z0-9_/?=&%.-]+", page_text(body))))
+        if not any("?" in address for address in addresses):
+            return "no example addresses found on the API page"
+        problems = []
+        for address in addresses:
+            status, answer = fetch(base_url + address)
+            try:
+                data = json.loads(answer)
+            except ValueError:
+                data = None
+            if "?" not in address:
+                if status not in (200, 400):
+                    problems.append(f"{address}: HTTP {status}")
+            elif status != 200 or not data:
+                problems.append(f"{address}: HTTP {status}, {answer[:60]!r}")
+            elif "/star/" in address and not all("status" in star and "requested_name" in star for star in data):
+                problems.append(f"{address}: an entry without a status or the name asked for")
+        return "; ".join(problems) if problems else None
+
+    help_page, about_page, api_page = (
+        ("/help", "/about", "/api") if frontend == "next" else ("/hypatia/default/help", "/hypatia/default/about", "/hypatia/default/api"))
+    return [
+        (help_page, mentions(*help_words)),
+        (about_page, mentions("mas/yr", "planetary radius", "planetary orbital inclination")),
+        (api_page, api_examples_answer),
+    ]
 
 
 def large_request_checks(frontend: str, base_url: str) -> list[tuple]:
@@ -203,7 +322,7 @@ def fetch(url: str, data: dict | None = None) -> tuple[int, bytes]:
         return error.code, error.read()
 
 
-def check(base_url: str, path: str, expect: str, data: dict | None = None) -> str | None:
+def check(base_url: str, path: str, expect, data: dict | None = None) -> str | None:
     """None if the check passes, otherwise what went wrong."""
     try:
         status, body = fetch(base_url + path, data)
@@ -212,6 +331,11 @@ def check(base_url: str, path: str, expect: str, data: dict | None = None) -> st
         return f"no response: {error}"
     if status != 200:
         return f"HTTP {status}: {body[:200]!r}"
+    if callable(expect):
+        try:
+            return expect(body.decode(errors="replace"))
+        except ValueError as error:
+            return f"not the response expected ({error}): {body[:200]!r}"
     if expect in ("json", "found"):
         try:
             data = json.loads(body)
@@ -255,7 +379,7 @@ def main() -> None:
         sys.exit(f"The site at {base_url} did not start within {args.wait} seconds")
     failures = 0
     pages = NEXT_CHECKS if args.frontend == "next" else WEB2PY_CHECKS
-    checks = pages + API_CHECKS + large_request_checks(args.frontend, base_url)
+    checks = pages + API_CHECKS + documentation_checks(args.frontend, base_url) + large_request_checks(args.frontend, base_url)
     for path, expect, *data in checks:
         if path == NEW_SESSION:
             new_session()

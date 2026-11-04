@@ -1,12 +1,8 @@
 import Script from "next/script";
 import type {Metadata} from "next";
 import React from "react";
-import {Inter} from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
-
-// the site's typeface, served with the site
-const inter = Inter({subsets: ["latin"]});
 
 export const metadata: Metadata = {
     title: "Hypatia Catalog",
@@ -55,7 +51,7 @@ export default function RootLayout({
                     `}
                 </Script>
             </head>
-            <body className={inter.className}>
+            <body>
                 <div className="flex flex-col h-full w-full absolute top-0 left-0 z-10">
                     {/* for keyboard users: past the menu (and a plot's tool bar) to the page */}
                     <a
@@ -67,9 +63,13 @@ export default function RootLayout({
                     <header>
                         <Header />
                     </header>
-                    <main id="main" tabIndex={-1} className="outline-none">
+                    <main id="main" tabIndex={-1} className="outline-none flex-grow">
                         {children}
                     </main>
+                    {/* the web2py layout's footer: a dark band with the year */}
+                    <footer className="flex-none w-full h-[60px] bg-[#333] text-[#aaa] text-sm">
+                        <div className="px-[15px] m-5">Copyright &copy; {new Date().getFullYear()}</div>
+                    </footer>
                 </div>
             </body>
         </html>
