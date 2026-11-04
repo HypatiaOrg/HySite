@@ -21,7 +21,7 @@ from api.web2py.data_process import is_true_str
 # parameters' representative errors, the warnings, the bin count cap and the range rules
 from hypatia.configs.website_settings import (COLOR_PALETTES, DEFAULT_COLOR_PALETTE, HISTOGRAM_COLORS,
                                               DEFAULT_HISTOGRAM_COLOR, BIN_TAGS, PARAMETER_ERRORS, BIN_WARNINGS,
-                                              MAX_BINS, RANGE_MODES, DEFAULT_SIGMA)
+                                              MAX_BINS, RANGE_MODES, DEFAULT_SIGMA, BIN_SIZE_WIDENED, BIN_SIZE_CUT)
 
 
 def color_scale(color_palette: str | None) -> tuple[str, list | str, str]:
@@ -107,7 +107,8 @@ def axis_bins(values: np.ndarray, requested: str | float | None, value_type: str
     One axis's bins: the range (start, end), the bin width (size) and how it was chosen (mode: "number",
     "error" or "std dev"; "error" falls back to "std dev" when the parameter has no representative error).
     With "error" asked for a menu choice in BIN_WARNINGS (selected: the setting as the visitor chose it), the
-    bins carry its warning text and use "std dev".
+    bins carry its warning text and use "std dev". A width changed to fit the range (check_bin_size) adds a
+    note saying the width used (BIN_SIZE_WIDENED, BIN_SIZE_CUT).
     """
     start, end = axis_range(values, range_mode=range_mode, sigma=sigma, manual_min=manual_min, manual_max=manual_max)
     request = bin_request(requested)
@@ -119,9 +120,15 @@ def axis_bins(values: np.ndarray, requested: str | float | None, value_type: str
         width, mode = parameter_error(value_type, param_id), 'error'
     if width is None:
         width, mode = sample_std(list(values)), 'std dev'
-    bins = {'start': start, 'end': end, 'size': check_bin_size(width, end - start), 'mode': mode}
-    if warning:
-        bins['warning'] = warning
+    size = check_bin_size(width, end - start)
+    bins = {'start': start, 'end': end, 'size': size, 'mode': mode}
+    notes = [warning] if warning else []
+    if size > width:
+        notes.append(BIN_SIZE_WIDENED.format(size=size, max_bins=MAX_BINS))
+    elif size < width:
+        notes.append(BIN_SIZE_CUT.format(size=size))
+    if notes:
+        bins['warning'] = ' '.join(notes)
     return bins
 
 

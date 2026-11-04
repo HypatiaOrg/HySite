@@ -51,6 +51,10 @@ BIN_WARNINGS = {param: f'Please plot {expected_params_dict[number]["label"]}'
 LOG_BINS_WARNING = 'Logged bins chosen automatically'
 # the most bins an axis gets: a narrower width than the range allows is widened to this many
 MAX_BINS = 200
+# what a bin size box says when the width it asked for was changed to fit the plotted range: widened to keep to
+# MAX_BINS, or cut to the range itself ({size} is the width used, {max_bins} the cap)
+BIN_SIZE_WIDENED = 'Bin size widened to {size:g}: at most {max_bins} bins over the plotted range'
+BIN_SIZE_CUT = 'Bin size cut to {size:g}, the width of the plotted range'
 # the range of the bins: the whole data, a number of standard deviations about the mean, or a manual range
 RANGE_MODES = ['full data', 'std dev', 'manual']
 DEFAULT_SIGMA = 4.0
