@@ -238,11 +238,14 @@ def citation() -> dict:
                 x=0, y=0, xanchor='left', yanchor='bottom', xshift=10, yshift=10, showarrow=False, opacity=0.5)
 
 
-def figure_html(fig: go.Figure, div_id: str, hover_labels: dict[str, str] | None = None) -> str:
-    """The figure as an HTML fragment (the page has plotly.min.js). With hover_labels (the axis labels for
-    the hover text), the points plot gets the stacked hover labels and the selection into the star list."""
+def figure_html(fig: go.Figure, div_id: str, hover_labels: dict[str, str] | None = None, **layout) -> str:
+    """The figure as an HTML fragment (the page has plotly.min.js): every figure's size, white background and
+    margins, then any layout of the figure's own. With hover_labels (the axis labels for the hover text), the
+    points plot gets the stacked hover labels and the selection into the star list."""
     fig.update_layout(width=PLOT_WIDTH, height=PLOT_HEIGHT, paper_bgcolor='white', plot_bgcolor='white',
                       margin=dict(l=PLOT_MARGIN_LEFT, r=30, t=50, b=60))
+    if layout:
+        fig.update_layout(**layout)
     if hover_labels:
         fig.update_layout(hovermode=False)
     html = fig.to_html(include_plotlyjs=False, full_html=False, div_id=div_id, config=PLOT_CONFIG)
@@ -416,6 +419,18 @@ def create_plotly_hist(series: list[dict], edges: list[float], x_range: list[flo
     return figure_html(fig, div_id='hist-plot')
 
 
+def density_axis(axis_type: str, inverse: bool, gridcolor: str | None = None, linewidth: int | None = None) -> dict:
+    """A density map axis: log or linear, reversed when inverted, gridlines in gridcolor (none without), and with
+    linewidth a frame: a line on all four sides with the ticks outside."""
+    style = dict(type=axis_type, autorange='reversed' if inverse else True, showgrid=gridcolor is not None, gridwidth=1)
+    if gridcolor:
+        style['gridcolor'] = gridcolor
+    if linewidth:
+        style.update(showline=True, linewidth=linewidth, linecolor='black', mirror=True, ticks='outside', ticklen=6,
+                     tickwidth=1)
+    return style
+
+
 def create_plotly_density(xaxis: list[float], yaxis: list[float],
                           x_bins: dict | None, y_bins: dict | None,
                           color_scale: list | str, histogram_color: str,
@@ -434,16 +449,17 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
     yaxis = np.asarray(yaxis, dtype=float)
     xbins = dict(start=x_bins['start'], end=x_bins['end'], size=x_bins['size'])
     ybins = dict(start=y_bins['start'], end=y_bins['end'], size=y_bins['size'])
-    histogram_marker = dict(color=histogram_color, line=dict(color="black", width=1))
+    x_type, y_type = ('log' if do_xlog else 'linear'), ('log' if do_ylog else 'linear')
     # the colour bar lies under the plot, so the heat map keeps the width and shape of the other pages' plots;
     # centred under the heat map's column (80% of the width beside the side histogram, all of it without)
     heatmap_width = 0.8 if show_xyhist else 1.0
     colorbar = dict(title=dict(text='Number of stars per bin', side='bottom'), orientation='h',
                     x=heatmap_width / 2, xanchor='center', len=heatmap_width, y=-0.13, yanchor='top',
                     thickness=15, outlinecolor='#cccccc', outlinewidth=1)
-
-    # CASE 1 (heatmap with marginal histograms)
+    heatmap = go.Histogram2d(x=xaxis, y=yaxis, xbins=xbins, ybins=ybins, name='Density',
+                             colorscale=color_scale, colorbar=colorbar, showscale=True)
     if show_xyhist:
+        # the heat map in the lower left, a histogram above it and one beside it, on shared axes
         fig = make_subplots(
             rows=2, cols=2, column_widths=[0.8, 0.2], row_heights=[0.2, 0.8],
             shared_xaxes=True, shared_yaxes=True, horizontal_spacing=0.008, vertical_spacing=0.008,
@@ -452,93 +468,29 @@ def create_plotly_density(xaxis: list[float], yaxis: list[float],
                 [{"type": "histogram2d"}, {"type": "histogram"}]
             ]
         )
-        # top histogram
-        # (named after the axis, the hover text being the bin's count alone; the count is on y for the top
-        # histogram and on x for the side one)
+        # the histograms are named after the axis, the hover text being the bin's count alone; the count is on
+        # y for the top histogram and on x for the side one
+        histogram_marker = dict(color=histogram_color, line=dict(color="black", width=1))
         fig.add_trace(go.Histogram(x=xaxis, xbins=xbins, marker=histogram_marker, showlegend=False,
                                    name=x_label or 'X', hovertemplate='%{y}'),
                       row=1, col=1)
-        # side histogram
         fig.add_trace(go.Histogram(y=yaxis, ybins=ybins, marker=histogram_marker, showlegend=False,
                                    name=y_label or 'Y', hovertemplate='%{x}'),
                       row=2, col=2)
-        # main heatmap
-        fig.add_trace(
-            go.Histogram2d(
-                x=xaxis, y=yaxis, xbins=xbins, ybins=ybins, name='Density',
-                colorscale=color_scale, colorbar=colorbar, showscale=True
-            ),
-            row=2, col=1
-        )
-        fig.update_xaxes(title_text=x_label, row=2, col=1)
-        fig.update_yaxes(title_text=y_label, row=2, col=1)
-
-    # CASE 2: heatmap only
-    else:
-        fig = go.Figure()
-        fig.add_trace(
-            go.Histogram2d(
-                x=xaxis, y=yaxis, xbins=xbins, ybins=ybins, name='Density',
-                colorscale=color_scale, colorbar=colorbar, showscale=True
-            )
-        )
-        fig.update_xaxes(title_text=x_label)
-        fig.update_yaxes(title_text=y_label)
-
-    # formatting
-    fig.update_layout(
-        width=PLOT_WIDTH,
-        height=PLOT_HEIGHT,
-        margin=dict(l=PLOT_MARGIN_LEFT, r=30, t=50, b=140),   # room under the x axis for the colour bar and its title
-        plot_bgcolor='#E5ECF6',
-        paper_bgcolor='white',
-        bargap=0.05,
-        showlegend=False,
-        title=None
-    )
-
-    # axis toggles and specific formatting
-    x_axis_type = "log" if do_xlog else "linear"
-    y_axis_type = "log" if do_ylog else "linear"
-    x_autorange = "reversed" if xaxisinv else True
-    y_autorange = "reversed" if yaxisinv else True
-    if show_xyhist:
-        # the heatmap
-        fig.update_xaxes(
-            type=x_axis_type, autorange=x_autorange, showgrid=True, gridcolor="white", gridwidth=1,
-            showline=True, linewidth=1, linecolor="black",
-            mirror=True, ticks="outside", ticklen=6, tickwidth=1,
-            row=2, col=1
-        )
-        fig.update_yaxes(
-            type=y_axis_type, autorange=y_autorange, showgrid=True, gridcolor="white", gridwidth=1,
-            showline=True, linewidth=1, linecolor="black",
-            mirror=True, ticks="outside", ticklen=6, tickwidth=1,
-            row=2, col=1
-        )
-        # top histogram
-        fig.update_xaxes(
-            type=x_axis_type, autorange=x_autorange, showgrid=True, gridcolor="white", gridwidth=1,
-            row=1, col=1
-        )
+        fig.add_trace(heatmap, row=2, col=1)
+        # the heat map's axes framed, with white gridlines on the coloured background; the histograms' data axes
+        # with the same gridlines, their count axes with the page's gridlines toggle
+        fig.update_xaxes(title_text=x_label, row=2, col=1, **density_axis(x_type, xaxisinv, gridcolor='white', linewidth=1))
+        fig.update_yaxes(title_text=y_label, row=2, col=1, **density_axis(y_type, yaxisinv, gridcolor='white', linewidth=1))
+        fig.update_xaxes(row=1, col=1, **density_axis(x_type, xaxisinv, gridcolor='white'))
         fig.update_yaxes(autorange=True, showgrid=do_gridlines, row=1, col=1)
-        # side histogram
-        fig.update_yaxes(
-            type=y_axis_type, autorange=y_autorange, showgrid=True, gridcolor="white", gridwidth=1,
-            row=2, col=2
-        )
+        fig.update_yaxes(row=2, col=2, **density_axis(y_type, yaxisinv, gridcolor='white'))
         fig.update_xaxes(autorange=True, showgrid=do_gridlines, row=2, col=2)
     else:
-        fig.update_xaxes(
-            type=x_axis_type, autorange=x_autorange, showgrid=False, gridwidth=1,
-            showline=True, linewidth=2, linecolor="black",
-            mirror=True, ticks="outside", ticklen=6, tickwidth=1
-        )
-        fig.update_yaxes(
-            type=y_axis_type, autorange=y_autorange, showgrid=False, gridwidth=1,
-            showline=True, linewidth=2, linecolor="black",
-            mirror=True, ticks="outside", ticklen=6, tickwidth=1
-        )
-
-    # the figure only: the page loads static/js/plotly.min.js once (frontend-web2py/Dockerfile)
-    return fig.to_html(include_plotlyjs=False, full_html=False, div_id='density-plot', config=PLOT_CONFIG)
+        fig = go.Figure(heatmap)
+        fig.update_xaxes(title_text=x_label, **density_axis(x_type, xaxisinv, linewidth=2))
+        fig.update_yaxes(title_text=y_label, **density_axis(y_type, yaxisinv, linewidth=2))
+    # the figure's own layout over the shared one: a tinted plot area, room under the x axis for the colour bar
+    # and its title
+    return figure_html(fig, div_id='density-plot', plot_bgcolor='#E5ECF6', bargap=0.05, showlegend=False,
+                       margin=dict(l=PLOT_MARGIN_LEFT, r=30, t=50, b=140))
