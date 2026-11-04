@@ -9,7 +9,8 @@ create_bokeh_targets); it moved here unchanged, so the plots are the same point 
 from api.web2py.data_process import targets_metadata, is_true_str, histogram_format
 from api.web2py.table import TARGET_HANDLE_SETTINGS
 
-HISTOGRAM_SERIES = [('all', 'All Hypatia', 'maroon'), ('exo_hosts', 'Exo-Hosts', 'orange')]
+# the histogram's series and their colours: the website's choices (hypatia.configs.website_settings)
+from hypatia.configs.website_settings import HISTOGRAM_SERIES
 
 
 def requested_target_handles(settings) -> list[str]:

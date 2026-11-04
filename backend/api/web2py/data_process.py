@@ -3,6 +3,8 @@ from copy import copy
 import numpy as np
 
 from hypatia.element_error import get_representative_error
+from hypatia.configs.website_settings import (STELLAR_MENU, PLANET_MENU, PLANET_AXIS_MENU, RANKED_STRING_PARAMS,
+                                              DEFAULT_TABLE_COLUMNS)
 from api.db import summary_doc, hypatia_db, number_of_catalogs
 from hypatia.pipeline.star.aggregation import string_names_types
 from hypatia.elements import ElementID, RatioID, hydrogen_id, element_rank
@@ -10,22 +12,17 @@ from api.v2.data_process import (get_norm_key, get_catalog_summary, total_stars,
                                  available_wds_stars, available_nea_names, available_elements_v2, normalizations_v2)
 
 
-stellar_param_types_v2 = ['raj2000', 'decj2000', 'dist', 'x_pos', 'y_pos', 'z_pos', 'teff', 'logg',
-                          'sptype', 'sptype_num', 'vmag', 'bmag', 'bv', 'pm_ra', 'pm_dec', 'u_vel', 'v_vel', 'w_vel',
-                          'disk', 'disk_num', 'mass', 'rad']
+# the menus' parameters and order, and the table's default columns: the website's choices (hypatia.configs.website_settings)
+stellar_param_types_v2 = list(STELLAR_MENU)
 stellar_param_types_v2_set = set(stellar_param_types_v2)
-# in the order the menus show them (the owner's choice, 2026-11-02), the planet letter last
-planet_param_types_v2 = ['pl_radius', 'pl_mass', 'period', 'semi_major_axis', 'eccentricity', 'inclination',
-                         'planet_letter']
+planet_param_types_v2 = list(PLANET_MENU)
 planet_param_types_v2_set = set(planet_param_types_v2)
-# the planet parameters a visitor can put on an axis: the planet letter is a name, not a number, so it is
-# offered in the filter menus but not in the axis menus (the dropdown menus and the settings' choices)
-axis_planet_param_types_v2 = [param for param in planet_param_types_v2 if param != 'planet_letter']
-ranked_string_params = {'sptype': 'sptype_num', 'disk': 'disk_num'}
+axis_planet_param_types_v2 = list(PLANET_AXIS_MENU)
+ranked_string_params = dict(RANKED_STRING_PARAMS)
 nones = {None, 'none', ''}
 none_denominators = {None, 'none', '', 'h', 'H'}
 true_set = {'true', 1, 1.0, '1.0', '1', 't', 'yes', 'y', 'on', True}
-default_table_elements = ['Fe', 'C', 'O', 'Mg', 'Si', 'S', 'Ca', 'Ti']
+default_table_elements = list(DEFAULT_TABLE_COLUMNS)
 
 home_data = {
     'stars': total_stars,

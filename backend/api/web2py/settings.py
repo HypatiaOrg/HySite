@@ -8,7 +8,9 @@ API parsed the same names in graph_settings_from_request(); this module is the s
 """
 from api.web2py.data_process import (stellar_param_types_v2, planet_param_types_v2, axis_planet_param_types_v2,
                                      plot_norms, available_elements_v2)
-from api.web2py.density import COLOR_PALETTES, DEFAULT_COLOR_PALETTE, BIN_TAGS, BIN_WARNINGS
+from hypatia.configs.website_settings import (COLOR_PALETTES, DEFAULT_COLOR_PALETTE, BIN_TAGS, BIN_WARNINGS,
+                                              LOG_BINS_WARNING, HYPATIA_PURPLE, DEFAULT_X_AXIS, DEFAULT_Y_AXIS,
+                                              DEFAULT_SOLARNORM, DEFAULT_STATISTIC, DEFAULT_TABLE_COLUMNS)
 
 # checkboxes: a page sends a toggle only when it is on, and lists its own toggles in "toggle_vars" so
 # the server knows which missing ones mean "off" (issue #40)
@@ -26,14 +28,14 @@ DEFAULTS = {
     'filter2_2': 'H',
     'filter3_1': 'none',
     'filter3_2': 'H',
-    'xaxis1': 'Fe',
-    'xaxis2': 'H',
-    'yaxis1': 'Si',
-    'yaxis2': 'H',
+    'xaxis1': DEFAULT_X_AXIS[0],
+    'xaxis2': DEFAULT_X_AXIS[1],
+    'yaxis1': DEFAULT_Y_AXIS[0],
+    'yaxis2': DEFAULT_Y_AXIS[1],
     'zaxis1': 'none',
     'zaxis2': 'H',
-    # the columns the table shows at first (the owner's choice, 2026-11-03); the table orders them by element
-    'tablecols': 'Fe,C,O,Na,Mg,Al,Si,S,Ca,Sc_II,Ti,Ni,Ba_II,Eu_II',
+    # the columns the table shows at first (hypatia.configs.website_settings); the table orders them by element
+    'tablecols': ','.join(DEFAULT_TABLE_COLUMNS),
     'filter1_3': '',
     'filter1_4': '',
     'filter2_3': '',
@@ -41,8 +43,8 @@ DEFAULTS = {
     'filter3_3': '',
     'filter3_4': '',
     'cat_action': 'exclude',
-    'statistic': 'median',
-    'solarnorm': 'lodders09',
+    'statistic': DEFAULT_STATISTIC,
+    'solarnorm': DEFAULT_SOLARNORM,
     'catalogs': [],
     'star_action': 'exclude',
     'star_list': [],
@@ -119,4 +121,7 @@ def settings_schema() -> dict:
             field['default'] = False
     return dict(defaults=DEFAULTS, toggles=TOGGLES,
                 session_keys=sorted(set(DEFAULTS) | set(TOGGLES) | set(EXTRA_SESSION_KEYS)),
-                fields=fields)
+                fields=fields,
+                # the words and colours the frontend's own drawing needs (hypatia.configs.website_settings)
+                words=dict(log_bins_warning=LOG_BINS_WARNING),
+                colors=dict(hypatia_purple=HYPATIA_PURPLE))
