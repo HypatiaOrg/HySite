@@ -10,7 +10,9 @@ The checks are written for the sample database (mongo/test_data), but all except
 named-star check also pass against the full database.
 """
 import argparse
+import html
 import http.cookiejar
+import re
 import json
 import sys
 import time
@@ -26,8 +28,8 @@ def bins_check(axis: str | None, **expected):
     """A check on the bins in an API response (api.web2py.density: start, end, size, mode, warning), as data
     rather than as a substring of the JSON: the fields named must have these values. axis picks one axis's
     bins ("xaxis", "yaxis") where the response has one per axis; None where it has the one set."""
-    def problem(data: dict) -> str | None:
-        bins = data.get("bins") or {}
+    def problem(body: str) -> str | None:
+        bins = json.loads(body).get("bins") or {}
         if axis:
             bins = bins.get(axis) or {}
         wrong = {key: bins.get(key) for key, value in expected.items() if bins.get(key) != value}
@@ -35,9 +37,18 @@ def bins_check(axis: str | None, **expected):
     return problem
 
 
+def mentions(*words: str):
+    """A check that a page's text says each of the words (the HTML's entities decoded, so "&amp;" reads "&")."""
+    def problem(body: str) -> str | None:
+        text = html.unescape(body)
+        missing = [word for word in words if word not in text]
+        return f"the page does not mention {missing}" if missing else None
+    return problem
+
+
 # (path, what the response must be[, form data to POST]): "json" parses as non-empty JSON, "found" is
-# JSON for a star the API found, "png" is an image, a function is given the parsed JSON and returns what is
-# wrong or None, any other string must appear in the page
+# JSON for a star the API found, "png" is an image, a function is given the response's text and returns what
+# is wrong or None, any other string must appear in the page
 CHECKS = [
     # web2py frontend pages
     ("/", "Hypatia Catalog"),
@@ -119,6 +130,48 @@ CHECKS = [
 ]
 
 
+def documentation_checks(base_url: str) -> list[tuple]:
+    """The site's documentation against the build it describes: the Help page names every bin size keyword,
+    colour palette and solar normalization the API offers and the catalog count the home page shows (it reads
+    them from the API, so this guards the wording around them); the About page describes the table's columns
+    as the table has them; and every example address on the API page answers with JSON, the star example
+    with a star the catalog has."""
+    settings = json.loads(fetch(base_url + "/hypatia/api/frontend/settings/")[1])
+    norms = json.loads(fetch(base_url + "/hypatia/api/v2/solarnorm/")[1])
+    counts = json.loads(fetch(base_url + "/hypatia/api/frontend/home/")[1])
+    help_words = (settings["fields"]["xhist_bin_size"]["keywords"] + settings["fields"]["color_palette"]["choices"]
+                  + [f'{norm["author"]} ({norm["year"]})' for norm in norms if norm["year"]]
+                  + ["{:,} catalogs".format(counts["catalogs"]), "Normalize the histogram", "Reset", "Load All"])
+
+    def api_examples_answer(body: str) -> str | None:
+        """Every example address with a query answers with JSON (the star example with a star the catalog has,
+        38 Vir, which the sample database keeps for this); a bare endpoint address may also ask for parameters."""
+        addresses = sorted(set(re.findall(r"/hypatia/api/v2/[A-Za-z0-9_/?=&%.-]+", html.unescape(body))))
+        if not any("?" in address for address in addresses):
+            return "no example addresses found on the API page"
+        problems = []
+        for address in addresses:
+            status, answer = fetch(base_url + address)
+            try:
+                data = json.loads(answer)
+            except ValueError:
+                data = None
+            if "?" not in address:
+                if status not in (200, 400):
+                    problems.append(f"{address}: HTTP {status}")
+            elif status != 200 or not data:
+                problems.append(f"{address}: HTTP {status}, {answer[:60]!r}")
+            elif "/star/" in address and not any(star.get("status") == "found" for star in data):
+                problems.append(f"{address}: no star found")
+        return "; ".join(problems) if problems else None
+
+    return [
+        ("/hypatia/default/help", mentions(*help_words)),
+        ("/hypatia/default/about", mentions("mas/yr", "planetary radius", "planetary orbital inclination")),
+        ("/hypatia/default/api", api_examples_answer),
+    ]
+
+
 def large_request_checks(base_url: str) -> list[tuple]:
     """The largest requests the plot and table pages make: every catalog selected, and a long pasted
     star list. web2py passes these settings to the API in the URL, which once failed above 4 KB."""
@@ -168,9 +221,9 @@ def check(base_url: str, path: str, expect, data: dict | None = None) -> str | N
         return f"HTTP {status}: {body[:200]!r}"
     if callable(expect):
         try:
-            return expect(json.loads(body))
-        except ValueError:
-            return f"not JSON: {body[:200]!r}"
+            return expect(body.decode(errors="replace"))
+        except ValueError as error:
+            return f"not the response expected ({error}): {body[:200]!r}"
     if expect in ("json", "found"):
         try:
             data = json.loads(body)
@@ -212,7 +265,7 @@ def main() -> None:
     if not wait_for_site(base_url, args.wait):
         sys.exit(f"The site at {base_url} did not start within {args.wait} seconds")
     failures = 0
-    checks = CHECKS + large_request_checks(base_url)
+    checks = CHECKS + documentation_checks(base_url) + large_request_checks(base_url)
     for path, expect, *data in checks:
         if path == NEW_SESSION:
             new_session()

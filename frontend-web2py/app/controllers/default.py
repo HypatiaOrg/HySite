@@ -20,7 +20,8 @@ def index():
 
 def help():
     session.forget(response)
-    return dict()
+    # the catalog count in the text, like the home page's numbers
+    return dict(counts=api_json('home/'))
 
 
 def about():
