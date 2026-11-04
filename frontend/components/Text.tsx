@@ -12,7 +12,10 @@ export function Page({children}: {children: React.ReactNode}) {
 // a page has one h1; a later section with the h1's look is an h2 (as="h2"), its subsections h3
 export function H1({id, children, as: Tag = "h1"}: {id?: string; children: React.ReactNode; as?: "h1" | "h2"}) {
     return (
-        <Tag id={id} className="text-[36px] leading-[1.1] font-medium text-[#333] mt-5 mb-2.5">
+        <Tag
+            id={id}
+            className="text-[36px] max-sm:text-[28px] leading-[1.1] font-medium text-[#333] mt-5 mb-2.5 [overflow-wrap:anywhere]"
+        >
             {children}
         </Tag>
     );
@@ -20,7 +23,10 @@ export function H1({id, children, as: Tag = "h1"}: {id?: string; children: React
 
 export function H2({id, children, as: Tag = "h2"}: {id?: string; children: React.ReactNode; as?: "h2" | "h3"}) {
     return (
-        <Tag id={id} className="text-[30px] leading-[1.1] font-medium text-[#333] mt-5 mb-2.5">
+        <Tag
+            id={id}
+            className="text-[30px] max-sm:text-[24px] leading-[1.1] font-medium text-[#333] mt-5 mb-2.5 [overflow-wrap:anywhere]"
+        >
             {children}
         </Tag>
     );
