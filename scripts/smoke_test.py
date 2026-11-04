@@ -22,8 +22,22 @@ import urllib.request
 # catalog names such as HIP or HD numbers, not common names
 TEST_STAR = "HIP 62875"
 
+def bins_check(axis: str | None, **expected):
+    """A check on the bins in an API response (api.web2py.density: start, end, size, mode, warning), as data
+    rather than as a substring of the JSON: the fields named must have these values. axis picks one axis's
+    bins ("xaxis", "yaxis") where the response has one per axis; None where it has the one set."""
+    def problem(data: dict) -> str | None:
+        bins = data.get("bins") or {}
+        if axis:
+            bins = bins.get(axis) or {}
+        wrong = {key: bins.get(key) for key, value in expected.items() if bins.get(key) != value}
+        return f"bins have {wrong}, expected {expected}" if wrong else None
+    return problem
+
+
 # (path, what the response must be[, form data to POST]): "json" parses as non-empty JSON, "found" is
-# JSON for a star the API found, "png" is an image, any other string must appear in the page
+# JSON for a star the API found, "png" is an image, a function is given the parsed JSON and returns what is
+# wrong or None, any other string must appear in the page
 CHECKS = [
     # web2py frontend pages
     ("/", "Hypatia Catalog"),
@@ -96,10 +110,12 @@ CHECKS = [
     # the frontend API's density data (api.web2py.density): the points, the bins of each axis, the colours
     ("/hypatia/api/frontend/density/?xaxis1=Fe&yaxis1=Si", "json"),
     ("/hypatia/api/frontend/hist/?xaxis1=Fe&hist_bin_size=error", "json"),
-    # a stellar parameter's "error" bins from the hand-set table (api.web2py.density.PARAMETER_ERRORS: 150 K), and the
-    # warning for a menu choice without an error (Disk) instead of a failure
-    ("/hypatia/api/frontend/hist/?xaxis1=teff&hist_bin_size=error", '"size": 150.0'),
-    ("/hypatia/api/frontend/density/?xaxis1=disk&yaxis1=Fe&xhist_bin_size=error", "Please plot Disk Number"),
+    # a stellar parameter's "error" bins from the hand-set table (api.web2py.density.PARAMETER_ERRORS: 150 K; the bin
+    # count cap, MAX_BINS, would only widen them over a 30,000 K range), and for a menu choice without an error (Disk)
+    # the fallback to the standard deviation with its warning, instead of a failure
+    ("/hypatia/api/frontend/hist/?xaxis1=teff&hist_bin_size=error", bins_check(None, mode="error", size=150.0)),
+    ("/hypatia/api/frontend/density/?xaxis1=disk&yaxis1=Fe&xhist_bin_size=error",
+     bins_check("xaxis", mode="std dev", warning="Please plot Disk Number")),
 ]
 
 
@@ -145,11 +161,16 @@ def fetch(url: str, data: dict | None = None) -> tuple[int, bytes]:
         return error.code, error.read()
 
 
-def check(base_url: str, path: str, expect: str, data: dict | None = None) -> str | None:
+def check(base_url: str, path: str, expect, data: dict | None = None) -> str | None:
     """None if the check passes, otherwise what went wrong."""
     status, body = fetch(base_url + path, data)
     if status != 200:
         return f"HTTP {status}: {body[:200]!r}"
+    if callable(expect):
+        try:
+            return expect(json.loads(body))
+        except ValueError:
+            return f"not JSON: {body[:200]!r}"
     if expect in ("json", "found"):
         try:
             data = json.loads(body)
