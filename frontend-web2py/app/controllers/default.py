@@ -92,17 +92,18 @@ def get_settings() -> dict[str, any]:
             all_settings[graph_var] = session_value
     return all_settings
 
-# the bin size boxes of a page and the axis whose bins the API makes for each one
-BIN_BOXES_XY = [('xhist_bin_size', 'xaxis'), ('yhist_bin_size', 'yaxis')]
-BIN_BOXES_HIST = [('hist_bin_size', 'xaxis')]
+# the plot fragments of the four plot pages share one view (plot.load): the figure, the bin size boxes' warnings
+# and the id of the page's plot container
+PLOT_FRAGMENT_VIEW = 'default/plot.load'
 
 
 def bin_warnings(bins: dict | None, boxes: list) -> dict:
     """
-    The warnings the API put on a page's bins, by bin size box: the "error" rule was asked for a menu choice
-    without an error (Spectral Type, Disk), so the API binned by the standard deviation instead and says why
-    (api.web2py.density.BIN_WARNINGS). The page shows the text next to the box, which keeps "error", so the
-    rule applies as soon as another parameter is chosen.
+    The warnings the API put on a page's bins, by bin size box (boxes: BIN_BOXES_XY or BIN_BOXES_HIST,
+    models/plot_plotly.py): the "error" rule was asked for a menu choice without an error (Spectral Type, Disk),
+    so the API binned by the standard deviation instead and says why (api.web2py.density.BIN_WARNINGS). The
+    page shows the text next to the box, which keeps "error", so the rule applies as soon as another parameter
+    is chosen.
     """
     bins = bins or {}
     return {box: bins[axis]['warning'] for box, axis in boxes if (bins.get(axis) or {}).get('warning')}
@@ -145,7 +146,7 @@ def graph():
     axes = graph_data['axes']
     zaxis = axes.get('zaxis', {})
     outputs = graph_data['outputs']
-    div = create_plotly_scatter(name=outputs.get('name', []),
+    div, axis_types = create_plotly_scatter(name=outputs.get('name', []),
                                        xaxis=outputs.get('xaxis', []),
                                        yaxis=outputs.get('yaxis', []),
                                        zaxis=outputs.get('zaxis', []),
@@ -160,9 +161,9 @@ def graph():
                                        zaxisinv=zaxis.get('inverse', False), has_zaxis='zaxis' in axes,
                                        do_gridlines=settings['gridlines'],
                                        bins=graph_data.get('bins'), show_hist=settings['show_scatter_hist'])
-    log_bin_warnings(warnings, axes, outputs)
-    # send back to the browser
-    return dict(div=div, warnings=warnings)
+    log_bin_warnings(warnings, axis_types)
+    response.view = PLOT_FRAGMENT_VIEW
+    return dict(div=div, warnings=warnings, container='graph')
 
 
 def graph_targets():
@@ -173,7 +174,7 @@ def graph_targets():
     # the plot: the API grouped the stars into layers and decided the axes (api.web2py.plots)
     axes = graph_data['axes']
     outputs = graph_data['outputs']
-    div = create_plotly_targets(xaxis=outputs.get('xaxis', []),
+    div, axis_types = create_plotly_targets(xaxis=outputs.get('xaxis', []),
                                        yaxis=outputs.get('yaxis', []),
                                        layers=graph_data['layers'],
                                        number_of_targets=graph_data['number_of_targets'],
@@ -183,8 +184,9 @@ def graph_targets():
                                        xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
                                        do_gridlines=settings['gridlines'],
                                        bins=graph_data.get('bins'), show_hist=settings['show_targets_hist'])
-    log_bin_warnings(warnings, axes, outputs)
-    return dict(div=div, warnings=warnings)
+    log_bin_warnings(warnings, axis_types)
+    response.view = PLOT_FRAGMENT_VIEW
+    return dict(div=div, warnings=warnings, container='graph_targets')
 
 
 def graph_hist():
@@ -200,8 +202,9 @@ def graph_hist():
                                     normalize=settings['normalize'], xaxisinv=settings['xaxisinv'],
                                     do_gridlines=settings['gridlines'],
                                     )
-    # send back to the browser
-    return dict(div=div, warnings=warnings)
+    response.view = PLOT_FRAGMENT_VIEW
+    return dict(div=div, warnings=warnings, container='hist')
+
 
 def graph_density():
     plot_settings()
@@ -224,8 +227,8 @@ def graph_density():
                                 do_gridlines=settings['gridlines'],
                                 show_xyhist=graph_data['show_xyhist'],
                                 )
-    # send back to the browser
-    return dict(div=div, warnings=warnings)
+    response.view = PLOT_FRAGMENT_VIEW
+    return dict(div=div, warnings=warnings, container='density')
 
 
 def table():

@@ -184,22 +184,24 @@ def plotly_bins(bins: dict | None, axis_type: str) -> dict | None:
     return dict(start=bins['start'], end=bins['end'], size=bins['size'])
 
 
+# the bin size boxes of a page and the axis whose bins each one sets (the API's bins, api.web2py.density, are
+# named by axis; controllers/default.py bin_warnings)
+BIN_BOXES_XY = [('xhist_bin_size', 'xaxis'), ('yhist_bin_size', 'yaxis')]
+BIN_BOXES_HIST = [('hist_bin_size', 'xaxis')]
 # what the bin size box says while its axis is logarithmic (the owner's words, 2026-11-02)
 LOG_BINS_WARNING = 'Logged bins chosen automatically'
 
 
-def log_bin_warnings(warnings: dict, axes: dict, outputs: dict) -> dict:
+def log_bin_warnings(warnings: dict, axis_types: dict) -> dict:
     """
     plotly_bins gives a logarithmic axis Plotly's own bins whatever its bin size box says, so the box gets
-    LOG_BINS_WARNING (after any warning it has; controllers/default.py). Like the API's warning on the bins,
-    this one is made whether or not the histograms are shown: the page hides the box with them
-    (plot_controls.html). The axis is logarithmic when the API allowed it (an element or a ratio is in log
-    notation already, so its log toggle changes nothing and brings no warning) and a value is positive, as
-    axis_range decides.
+    LOG_BINS_WARNING (after any warning it has; controllers/default.py). axis_types is what the figure drew,
+    by axis ('log' or 'linear', from axis_range: the API allowed the log and a value was positive), as
+    create_plotly_scatter and create_plotly_targets return it. Like the API's warning on the bins, this one
+    is made whether or not the histograms are shown: the page hides the box with them (plot_controls.html).
     """
-    for box, axis in (('xhist_bin_size', 'xaxis'), ('yhist_bin_size', 'yaxis')):
-        values = [value for value in outputs.get(axis, []) if value is not None]
-        if axes.get(axis, {}).get('log') and any(value > 0 for value in values):
+    for box, axis in BIN_BOXES_XY:
+        if axis_types.get(axis) == 'log':
             warnings[box] = f'{warnings[box]} {LOG_BINS_WARNING}' if box in warnings else LOG_BINS_WARNING
     return warnings
 
@@ -259,12 +261,13 @@ def create_plotly_scatter(name: list[str],
                           xaxisinv: bool = False, yaxisinv: bool = False, zaxisinv: bool = False,
                           has_zaxis: bool = False, do_gridlines: bool = False,
                           bins: dict | None = None, show_hist: bool = False,
-                          ) -> str:
+                          ) -> tuple[str, dict]:
     """The scatter plot; with a z axis, the points are coloured on a Viridis scale with a colour bar. With
-    show_hist, histograms of the points along each axis (bins from the API, api.web2py.density)."""
+    show_hist, histograms of the points along each axis (bins from the API, api.web2py.density). Returns the
+    figure's HTML and the axis types it drew ('log' or 'linear', by axis; log_bin_warnings)."""
     # if there is no data, then return a message
     if not xaxis:
-        return 'No data points to display'
+        return 'No data points to display', {}
     xaxis = np.asarray(xaxis, dtype=float)
     yaxis = np.asarray(yaxis, dtype=float)
     labels = {'xaxis': x_label if x_label else 'X Axis', 'yaxis': y_label if y_label else 'Y Axis'}
@@ -301,7 +304,7 @@ def create_plotly_scatter(name: list[str],
     else:
         title = f'{star_count} stars selected'
     fig.update_layout(title=plot_title(title), annotations=[citation()])
-    return figure_html(fig, div_id='scatter-plot', hover_labels=labels)
+    return figure_html(fig, div_id='scatter-plot', hover_labels=labels), {'xaxis': x_type, 'yaxis': y_type}
 
 
 LEGEND_ROW_HEIGHT = 0.036   # of the figure's height: one tight legend row
@@ -326,12 +329,13 @@ def create_plotly_targets(xaxis: list[float], yaxis: list[float],
                           xaxisinv: bool = False, yaxisinv: bool = False,
                           do_gridlines: bool = False,
                           bins: dict | None = None, show_hist: bool = False,
-                          ) -> str:
+                          ) -> tuple[str, dict]:
     """The targets plot: one scatter trace per layer the API made (api.web2py.plots.group_targets), with a
     legend entry each; a click on an entry hides its layer. With show_hist, a histogram of each layer along
-    each axis, in the layer's colour, drawn over each other (bins from the API, shared by the layers)."""
+    each axis, in the layer's colour, drawn over each other (bins from the API, shared by the layers). Returns
+    the figure's HTML and the axis types it drew ('log' or 'linear', by axis; log_bin_warnings)."""
     if not layers:
-        return 'No data points to display'
+        return 'No data points to display', {}
     xaxis = np.asarray(xaxis, dtype=float)
     yaxis = np.asarray(yaxis, dtype=float)
     labels = {'xaxis': x_label if x_label else 'X Axis', 'yaxis': y_label if y_label else 'Y Axis'}
@@ -370,7 +374,7 @@ def create_plotly_targets(xaxis: list[float], yaxis: list[float],
     )
     for row in range(2, rows + 1):
         fig.update_layout({f'legend{row}': dict(legend, y=LEGEND_ROW_HEIGHT * (row - 1))})
-    return figure_html(fig, div_id='targets-plot', hover_labels=labels)
+    return figure_html(fig, div_id='targets-plot', hover_labels=labels), {'xaxis': x_type, 'yaxis': y_type}
 
 
 def create_plotly_hist(series: list[dict], edges: list[float], x_range: list[float] | None,
