@@ -566,7 +566,7 @@ However, if you want to use spaces, substitute '%20' for the space, which is the
 URL safe-version of the plus operator '+' to append the two components in the URL path.
 For example, 'HIP 32970' should be 'HIP%2032970'.
 `}</Pre>
-                    <Request url="/hypatia/api/v2/composition?name=HIP32970&element=ca&solarnorm=asplund09" />
+                    <Request url="/hypatia/api/v2/composition/?name=HIP62875&element=fe&solarnorm=asplund09" />
                     <Python>{`
 import requests
 params = {"name": ["HIP 32970"], "element": ["ca"], "solarnorm": ["asp05"]}

@@ -146,6 +146,7 @@ export function AxisRow({
                     value={settings[name + "1"]}
                     denominator={settings[name + "2"]}
                     allowNone={allowNone}
+                    planetHandles={summary.axis_planet_param_types}
                     label={`${label.replace(/:$/, "")} parameter`}
                     onChange={(value, denominator) =>
                         onChange({[name + "1"]: value, ...(denominator ? {[name + "2"]: denominator} : {})})
@@ -363,60 +364,5 @@ export function SubmitRow({onSubmit}: {onSubmit: () => void}) {
         <button type="button" onClick={onSubmit} className={buttonStyle + " px-4"}>
             Submit
         </button>
-    );
-}
-
-// the density page: the histograms along the axes, their bin sizes (a number, or a keyword) and the colour scale
-export function DensityRows({
-    schema,
-    settings,
-    onChange,
-}: {
-    schema: SettingsSchema;
-    settings: Settings;
-    onChange: Change;
-}) {
-    const keywords = schema.fields.xhist_bin_size?.keywords ?? [];
-    const placeholder = `Float or keywords: (${keywords.join(", ")})`;
-    return (
-        <div className="mb-3">
-            <div className="mb-2">
-                <Toggle
-                    name="show_xyhist"
-                    label="Show X and Y histograms"
-                    checked={isOn(settings, "show_xyhist")}
-                    onChange={(on) => onChange({show_xyhist: String(on)})}
-                />
-            </div>
-            <Label htmlFor="xhist_bin_size">X histograms bin size</Label>
-            <TextField
-                name="xhist_bin_size"
-                value={settings.xhist_bin_size}
-                placeholder={placeholder}
-                className="w-full mb-2"
-                onCommit={(value) => onChange({xhist_bin_size: value})}
-            />
-            <Label htmlFor="yhist_bin_size">Y histograms bin size</Label>
-            <TextField
-                name="yhist_bin_size"
-                value={settings.yhist_bin_size}
-                placeholder={placeholder}
-                className="w-full mb-2"
-                onCommit={(value) => onChange({yhist_bin_size: value})}
-            />
-            <Label htmlFor="color_pallet">Choose a Color Pallet</Label>
-            <Select
-                name="color_pallet"
-                value={settings.color_pallet}
-                onChange={(value) => onChange({color_pallet: value})}
-                className="w-full"
-            >
-                {(schema.fields.color_pallet?.choices ?? []).map((choice) => (
-                    <option key={choice} value={choice}>
-                        {choice}
-                    </option>
-                ))}
-            </Select>
-        </div>
     );
 }

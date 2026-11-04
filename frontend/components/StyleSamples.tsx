@@ -12,6 +12,7 @@ const sampleSummary: Summary = {
     },
     stellar_param_types: ["teff", "dist"],
     planet_param_types: [],
+    axis_planet_param_types: [],
     ranked_string_params: {},
     catalogs: [],
     solarnorms: [],

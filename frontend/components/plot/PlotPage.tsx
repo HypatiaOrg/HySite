@@ -14,8 +14,9 @@ import {
     isFilterSetting,
     activeFilters,
     maxFilters,
+    defaultSettings,
 } from "@/lib/settings";
-import type {ScatterData, TargetsData, HistData, DensityData} from "@/lib/plotTypes";
+import type {ScatterData, TargetsData, HistData, DensityData, AxesBins} from "@/lib/plotTypes";
 import {useFetchedData} from "@/components/plot/useFetchedData";
 import {pointName} from "@/components/plot/plotlyInternals";
 import {
@@ -26,8 +27,10 @@ import {
     type Figure,
     PLOT_WIDTH,
     PLOT_HEIGHT,
+    PLOT_CONFIG,
 } from "@/components/plot/figures";
 import PlotlyFigure from "@/components/plot/PlotlyFigure";
+import PlotControls from "@/components/plot/PlotControls";
 import HoverLabels from "@/components/plot/HoverLabels";
 import DataTable from "@/components/table/DataTable";
 import Notices from "@/components/settings/Notices";
@@ -40,7 +43,6 @@ import {
     CatalogsRow,
     StarsRow,
     TargetSetsRow,
-    DensityRows,
     SubmitRow,
 } from "@/components/settings/Rows";
 import {Label} from "@/components/settings/Controls";
@@ -99,13 +101,25 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
     }, [schema, settings]);
 
     const gridlines = isOn(settings, "gridlines");
+    // the histograms along the axes of the scatter and targets plots, and the site's purple, from the settings
+    const showHist = isOn(settings, kind === "scatter" ? "show_scatter_hist" : "show_targets_hist");
+    const purple = schema.colors?.hypatia_purple;
     const figure: Figure | null = useMemo(() => {
         if (!data) return null;
-        if (kind === "scatter") return scatterFigure(data as ScatterData, gridlines);
-        if (kind === "targets") return targetsFigure(data as TargetsData, gridlines);
+        if (kind === "scatter") return scatterFigure(data as ScatterData, gridlines, {showHist, purple});
+        if (kind === "targets") return targetsFigure(data as TargetsData, gridlines, {showHist, purple});
         if (kind === "density") return densityFigure(data as DensityData, gridlines);
         return histFigure(data as HistData, isOn(settings, "normalize"), isOn(settings, "xaxisinv"), gridlines);
-    }, [kind, data, gridlines, settings]);
+    }, [kind, data, gridlines, settings, showHist, purple]);
+    // the bins the API made, by axis, for the controls' warnings and widths (the histogram page has one set)
+    const bins: AxesBins | null | undefined = useMemo(() => {
+        if (!data) return null;
+        if (kind === "hist") {
+            const histBins = (data as HistData).bins;
+            return histBins ? {xaxis: histBins, yaxis: histBins} : null;
+        }
+        return (data as ScatterData).bins;
+    }, [kind, data]);
 
     // a box or lasso selection puts the selected stars into the star list
     const onSelected = useCallback(
@@ -123,12 +137,14 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
 
     // the figure at its 750 by 625 size where the screen allows, scaled down to the screen's width otherwise
     const [plotBox, plotBoxWidth] = useElementWidth<HTMLDivElement>();
-    const fullHeight = kind === "density" ? 650 : PLOT_HEIGHT;
     const scale = plotBoxWidth ? Math.min(1, plotBoxWidth / PLOT_WIDTH) : 1;
     const plotWidth = Math.round(PLOT_WIDTH * scale),
-        plotHeight = Math.round(fullHeight * scale);
+        plotHeight = Math.round(PLOT_HEIGHT * scale);
     // no mode bar on a small figure: it would sit on the title, and its tools are for a mouse
-    const plotConfig = useMemo(() => ({displayModeBar: scale < 0.8 ? false : ("hover" as const)}), [scale]);
+    const plotConfig = useMemo(
+        () => ({...PLOT_CONFIG, displayModeBar: scale < 0.8 ? false : ("hover" as const)}),
+        [scale],
+    );
     const sizedLayout = useMemo(
         () =>
             figure && {
@@ -182,6 +198,15 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
                             </div>
                         )}
                     </div>
+                    {/* the plot's own controls: the histograms toggle, the bin sizes, the colour palette */}
+                    <PlotControls
+                        kind={kind}
+                        schema={schema}
+                        settings={settings}
+                        bins={bins}
+                        axisTypes={figure?.axisTypes}
+                        onChange={change}
+                    />
                     {/* what the plot was made with, beyond its axes */}
                     <p
                         className={"text-center text-sm text-hygrey mt-2 " + (loading ? "opacity-50" : "")}
@@ -233,7 +258,6 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
                         </div>
                     )}
                     {kind === "targets" && <TargetSetsRow summary={summary} settings={settings} onChange={change} />}
-                    {kind === "density" && <DensityRows schema={schema} settings={settings} onChange={change} />}
                     <SolarNormRow summary={summary} settings={settings} onChange={change} />
                     <StatisticRow settings={settings} onChange={change} />
                     <CatalogsRow summary={summary} settings={settings} onChange={change} />
@@ -250,7 +274,13 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
                 </form>
             </div>
 
-            <DataTable summary={summary} settings={settings} onChange={change} showTargets={kind === "targets"} />
+            <DataTable
+                summary={summary}
+                settings={settings}
+                onChange={change}
+                showTargets={kind === "targets"}
+                defaultColumns={defaultSettings(schema).tablecols}
+            />
         </div>
     );
 }

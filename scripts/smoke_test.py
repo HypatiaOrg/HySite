@@ -43,10 +43,16 @@ def bins_check(axis: str | None, **expected):
     return problem
 
 
+def page_text(body: str) -> str:
+    """A page's HTML as text: the entities decoded (so "&amp;" reads "&"), the comments React puts between
+    adjacent pieces of text removed, and the JSON escapes of a Next.js page's data undone."""
+    return html.unescape(re.sub(r"<!--.*?-->", "", body)).replace("\\u0026", "&")
+
+
 def mentions(*words: str):
-    """A check that a page's text says each of the words (the HTML's entities decoded, so "&amp;" reads "&")."""
+    """A check that a page's text says each of the words."""
     def problem(body: str) -> str | None:
-        text = html.unescape(body)
+        text = page_text(body)
         missing = [word for word in words if word not in text]
         return f"the page does not mention {missing}" if missing else None
     return problem
@@ -101,6 +107,14 @@ NEXT_CHECKS = [
     ("/data/density", "json", {"xaxis1": "Fe", "yaxis1": "Si", "show_xyhist": "true"}),
     ("/data/density", '"mode": "error"', {"xaxis1": "Fe", "yaxis1": "Si", "xhist_bin_size": "error", "yhist_bin_size": "0.05",
                                           "color_palette": "Viridis", "show_xyhist": "false"}),
+    # the scatter and targets data carry the bins of the optional histograms along the axes; the "error" rule with a
+    # menu choice that has no error (Spectral Type) carries the API's warning, which the page shows by the bin size box
+    ("/data/scatter", bins_check("xaxis", mode="number", size=0.1), {"xaxis1": "Fe", "yaxis1": "Si", "xhist_bin_size": "0.1"}),
+    ("/data/targets", bins_check("yaxis", mode="std dev"), {"xaxis1": "Fe", "yaxis1": "Si", "show_all": "true"}),
+    ("/data/density", bins_check("xaxis", mode="std dev", warning="Please plot Spectral Type Number"),
+     {"xaxis1": "sptype", "yaxis1": "Si", "xhist_bin_size": "error"}),
+    # a width too narrow for the bin cap: the page puts the width the API used into the box (bins "adjusted")
+    ("/data/hist", bins_check(None, mode="number", adjusted="widened"), {"xaxis1": "Fe", "hist_bin_size": "0.00001"}),
 ]
 
 WEB2PY_CHECKS = [
@@ -223,7 +237,7 @@ def documentation_checks(frontend: str, base_url: str) -> list[tuple]:
         """Every example address with a query answers with JSON; a bare endpoint address may also ask for
         parameters. The star example answers for each name it asks about, found or not: the page explains that
         one of its names (HIP 12345) is not in the catalog, and the others are not in the sample database."""
-        addresses = sorted(set(re.findall(r"/hypatia/api/v2/[A-Za-z0-9_/?=&%.-]+", html.unescape(body))))
+        addresses = sorted(set(re.findall(r"/hypatia/api/v2/[A-Za-z0-9_/?=&%.-]+", page_text(body))))
         if not any("?" in address for address in addresses):
             return "no example addresses found on the API page"
         problems = []

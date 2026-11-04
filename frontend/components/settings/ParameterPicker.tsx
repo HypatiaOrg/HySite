@@ -19,6 +19,8 @@ type Props = {
     compact?: boolean;
     // what the picker is for, for a screen reader: "X-axis parameter", "filter 2 parameter"
     label: string;
+    // the planet parameters to offer: a filter menu offers them all, an axis menu leaves out the planet letter
+    planetHandles?: Array<string>;
 };
 
 function PropertyButtons({
@@ -59,6 +61,7 @@ export default function ParameterPicker({
     allowNone = false,
     compact = false,
     label,
+    planetHandles,
 }: Props) {
     return (
         <span className={"inline-flex items-center gap-1" + (compact ? " min-w-0" : "")}>
@@ -94,7 +97,7 @@ export default function ParameterPicker({
                     <div className="font-semibold text-hypurple">Planet property:</div>
                     <PropertyButtons
                         summary={summary}
-                        handles={summary.planet_param_types}
+                        handles={planetHandles ?? summary.planet_param_types}
                         value={value}
                         onPick={(id) => onChange(id)}
                     />

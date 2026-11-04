@@ -26,6 +26,8 @@ export type Summary = {
     units_and_fields: Record<string, ColumnInfo>;
     stellar_param_types: Array<string>;
     planet_param_types: Array<string>;
+    // the planet parameters an axis menu offers: the planet letter is a name, so only the filters offer it
+    axis_planet_param_types: Array<string>;
     ranked_string_params: Record<string, string>;
     catalogs: Array<Catalog>;
     solarnorms: Array<SolarNorm>;

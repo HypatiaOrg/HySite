@@ -11,7 +11,6 @@ import PeriodicTable from "@/components/settings/PeriodicTable";
 import {buttonStyle, buttonClass} from "@/components/settings/Controls";
 import CellValues from "@/components/table/CellValues";
 
-const DEFAULT_COLUMNS = "Fe,C,O,Mg,Si,S,Ca,Ti";
 // the column options beyond the elements, as the API's table tokens
 const OPTIONS: Array<[string, string]> = [
     ["stellar", "Stellar Properties"],
@@ -54,9 +53,11 @@ type Props = {
     settings: Settings;
     onChange: (changes: Record<string, string>) => void;
     showTargets: boolean;
+    // the columns a new visitor sees (the settings model's default), which Reset restores
+    defaultColumns: string;
 };
 
-export default function DataTable({summary, settings, onChange, showTargets}: Props) {
+export default function DataTable({summary, settings, onChange, showTargets, defaultColumns}: Props) {
     const [sort, setSort] = useState<{column: string | null; reverse: boolean}>({column: null, reverse: false});
     const [showRows, setShowRows] = useState(false);
     const columns = useMemo(() => new Set(listOf(settings, "tablecols")), [settings]);
@@ -124,7 +125,7 @@ export default function DataTable({summary, settings, onChange, showTargets}: Pr
                         <button
                             type="button"
                             className={buttonStyle}
-                            onClick={() => onChange({tablecols: DEFAULT_COLUMNS})}
+                            onClick={() => onChange({tablecols: defaultColumns})}
                         >
                             Reset
                         </button>
