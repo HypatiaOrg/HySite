@@ -36,9 +36,12 @@ def color_scale(color_palette: str | None) -> tuple[str, list | str, str]:
 
 
 def bin_request(bin_size: str | float | None) -> float | str:
-    """What a bin size field asks for: the number typed, or one of BIN_TAGS (the first for anything else)."""
+    """What a bin size field asks for: the number typed, if it is a width (finite and positive; "nan", "inf",
+    zero and negatives are not), or one of BIN_TAGS (the first for anything else)."""
     try:
-        return float(bin_size)
+        width = float(bin_size)
+        if math.isfinite(width) and width > 0:
+            return width
     except (ValueError, TypeError):
         pass
     key = str(bin_size or '').lower().strip().replace(' ', '')

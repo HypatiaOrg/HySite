@@ -127,6 +127,12 @@ CHECKS = [
     ("/hypatia/api/frontend/hist/?xaxis1=teff&hist_bin_size=error", bins_check(None, mode="error", size=150.0)),
     ("/hypatia/api/frontend/density/?xaxis1=disk&yaxis1=Fe&xhist_bin_size=error",
      bins_check("xaxis", mode="std dev", warning="Please plot Disk Number")),
+    # a typed bin size that is not a width ("nan" once failed the request; "inf", zero and negatives are no better)
+    # means the default rule
+    ("/hypatia/api/frontend/hist/?xaxis1=Fe&hist_bin_size=nan", bins_check(None, mode="std dev")),
+    ("/hypatia/api/frontend/hist/?xaxis1=Fe&hist_bin_size=inf", bins_check(None, mode="std dev")),
+    ("/hypatia/api/frontend/density/?xaxis1=Fe&yaxis1=Si&xhist_bin_size=-1&yhist_bin_size=0",
+     bins_check("yaxis", mode="std dev")),
 ]
 
 
