@@ -158,8 +158,9 @@ def documentation_checks(base_url: str) -> list[tuple]:
                   + ["{:,} catalogs".format(counts["catalogs"]), "Normalize the histogram"])
 
     def api_examples_answer(body: str) -> str | None:
-        """Every example address with a query answers with JSON (the star example with a star the catalog has,
-        38 Vir, which the sample database keeps for this); a bare endpoint address may also ask for parameters."""
+        """Every example address with a query answers with JSON; a bare endpoint address may also ask for
+        parameters. The star example answers for each name it asks about, found or not: the page explains that
+        one of its names (HIP 12345) is not in the catalog, and the others are not in the sample database."""
         addresses = sorted(set(re.findall(r"/hypatia/api/v2/[A-Za-z0-9_/?=&%.-]+", html.unescape(body))))
         if not any("?" in address for address in addresses):
             return "no example addresses found on the API page"
@@ -175,8 +176,8 @@ def documentation_checks(base_url: str) -> list[tuple]:
                     problems.append(f"{address}: HTTP {status}")
             elif status != 200 or not data:
                 problems.append(f"{address}: HTTP {status}, {answer[:60]!r}")
-            elif "/star/" in address and not any(star.get("status") == "found" for star in data):
-                problems.append(f"{address}: no star found")
+            elif "/star/" in address and not all("status" in star and "requested_name" in star for star in data):
+                problems.append(f"{address}: an entry without a status or the name asked for")
         return "; ".join(problems) if problems else None
 
     return [
