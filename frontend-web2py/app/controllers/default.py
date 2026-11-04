@@ -137,6 +137,18 @@ def plot_settings():
     elif session.catalogs is None:
         session.catalogs = []
 
+def axis_args(axes: dict, prefixes: str) -> dict:
+    """The keyword arguments the figure functions take for the axes the API decided (api.web2py.plots,
+    axes_from_settings): each axis's label, log and inverse, for the axes named by prefixes ('xy', 'xyz')."""
+    args = {}
+    for prefix in prefixes:
+        axis = axes.get(f'{prefix}axis', {})
+        args[f'{prefix}_label'] = axis.get('label', None)
+        args[f'do_{prefix}log'] = axis.get('log', False)
+        args[f'{prefix}axisinv'] = axis.get('inverse', False)
+    return args
+
+
 def graph():
     plot_settings()
     settings = get_settings()
@@ -144,23 +156,17 @@ def graph():
     warnings = bin_warnings(graph_data.get('bins'), BIN_BOXES_XY)
     # the plot: the API decided the labels and the log/inverted axes (api.web2py.plots); Plotly draws (models/plot_plotly.py)
     axes = graph_data['axes']
-    zaxis = axes.get('zaxis', {})
     outputs = graph_data['outputs']
     div, axis_types = create_plotly_scatter(name=outputs.get('name', []),
-                                       xaxis=outputs.get('xaxis', []),
-                                       yaxis=outputs.get('yaxis', []),
-                                       zaxis=outputs.get('zaxis', []),
-                                       x_label=axes['xaxis']['label'],
-                                       y_label=axes['yaxis']['label'],
-                                       z_label=zaxis.get('label', None),
-                                       star_count=graph_data.get('star_count', None),
-                                       planet_count=graph_data.get('planet_count', None),
-                                       do_xlog=axes['xaxis']['log'], do_ylog=axes['yaxis']['log'],
-                                       do_zlog=zaxis.get('log', False),
-                                       xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
-                                       zaxisinv=zaxis.get('inverse', False), has_zaxis='zaxis' in axes,
-                                       do_gridlines=settings['gridlines'],
-                                       bins=graph_data.get('bins'), show_hist=settings['show_scatter_hist'])
+                                            xaxis=outputs.get('xaxis', []),
+                                            yaxis=outputs.get('yaxis', []),
+                                            zaxis=outputs.get('zaxis', []),
+                                            star_count=graph_data.get('star_count', None),
+                                            planet_count=graph_data.get('planet_count', None),
+                                            has_zaxis='zaxis' in axes,
+                                            do_gridlines=settings['gridlines'],
+                                            bins=graph_data.get('bins'), show_hist=settings['show_scatter_hist'],
+                                            **axis_args(axes, 'xyz'))
     log_bin_warnings(warnings, axis_types)
     response.view = PLOT_FRAGMENT_VIEW
     return dict(div=div, warnings=warnings, container='graph')
@@ -175,15 +181,12 @@ def graph_targets():
     axes = graph_data['axes']
     outputs = graph_data['outputs']
     div, axis_types = create_plotly_targets(xaxis=outputs.get('xaxis', []),
-                                       yaxis=outputs.get('yaxis', []),
-                                       layers=graph_data['layers'],
-                                       number_of_targets=graph_data['number_of_targets'],
-                                       x_label=axes['xaxis']['label'],
-                                       y_label=axes['yaxis']['label'],
-                                       do_xlog=axes['xaxis']['log'], do_ylog=axes['yaxis']['log'],
-                                       xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
-                                       do_gridlines=settings['gridlines'],
-                                       bins=graph_data.get('bins'), show_hist=settings['show_targets_hist'])
+                                            yaxis=outputs.get('yaxis', []),
+                                            layers=graph_data['layers'],
+                                            number_of_targets=graph_data['number_of_targets'],
+                                            do_gridlines=settings['gridlines'],
+                                            bins=graph_data.get('bins'), show_hist=settings['show_targets_hist'],
+                                            **axis_args(axes, 'xy'))
     log_bin_warnings(warnings, axis_types)
     response.view = PLOT_FRAGMENT_VIEW
     return dict(div=div, warnings=warnings, container='graph_targets')
@@ -220,13 +223,9 @@ def graph_density():
                                 x_bins=bins.get('xaxis', None), y_bins=bins.get('yaxis', None),
                                 color_scale=graph_data['color_scale'],
                                 histogram_color=graph_data['histogram_color'],
-                                x_label=axes['xaxis']['label'],
-                                y_label=axes['yaxis']['label'],
-                                do_xlog=axes['xaxis']['log'], do_ylog=axes['yaxis']['log'],
-                                xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
                                 do_gridlines=settings['gridlines'],
                                 show_xyhist=graph_data['show_xyhist'],
-                                )
+                                **axis_args(axes, 'xy'))
     response.view = PLOT_FRAGMENT_VIEW
     return dict(div=div, warnings=warnings, container='density')
 
