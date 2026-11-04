@@ -90,6 +90,9 @@ session_request_vars = set(settings_data['session_keys'])
 # the density page's controls: the colour scales and the bin size keywords, as the settings model names them
 DENSITY_COLOR_PALETTES = settings_data['fields']['color_palette']['choices']
 DENSITY_BIN_TAGS = settings_data['fields']['xhist_bin_size']['keywords']
+# the words and colours the plots draw with, as the website's settings name them (hypatia.configs.website_settings)
+LOG_BINS_WARNING = settings_data['words']['log_bins_warning']
+HYPATIA_PURPLE = settings_data['colors']['hypatia_purple']
 
 for name_handle, name_label in name_handles_labels.items():
     COL_PREFERRED_NAME[name_handle] = name_label

@@ -6,7 +6,7 @@
 				{{# would give the widest column the biggest share of the spare width, leaving the centred names afloat in it; }}
 				{{# the other columns share the spare width instead }}
 				{{for column_index, cell in enumerate(columns):}}
-					<th style="text-align:center;border-bottom:2px solid #4e11b7{{if column_index == 0:}};width:1%;white-space:nowrap{{pass}}">
+					<th style="text-align:center;border-bottom:2px solid {{=HYPATIA_PURPLE}}{{if column_index == 0:}};width:1%;white-space:nowrap{{pass}}">
 						{{if cell.endswith("_err"):}}
 							<small style="color:#555">err</small>
 						{{elif cell.endswith("_ref"):}}

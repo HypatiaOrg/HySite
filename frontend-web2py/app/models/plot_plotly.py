@@ -17,7 +17,6 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-hypatia_purple = '#4E11B7'
 PLOT_WIDTH = 750
 PLOT_MARGIN_LEFT = 70   # the figures' left margin: the y axis line is here (the pages' controls line up with it)
 PLOT_HEIGHT = 625
@@ -188,14 +187,13 @@ def plotly_bins(bins: dict | None, axis_type: str) -> dict | None:
 # named by axis; controllers/default.py bin_warnings)
 BIN_BOXES_XY = [('xhist_bin_size', 'xaxis'), ('yhist_bin_size', 'yaxis')]
 BIN_BOXES_HIST = [('hist_bin_size', 'xaxis')]
-# what the bin size box says while its axis is logarithmic (the owner's words, 2026-11-02)
-LOG_BINS_WARNING = 'Logged bins chosen automatically'
 
 
 def log_bin_warnings(warnings: dict, axis_types: dict) -> dict:
     """
     plotly_bins gives a logarithmic axis Plotly's own bins whatever its bin size box says, so the box gets
-    LOG_BINS_WARNING (after any warning it has; controllers/default.py). axis_types is what the figure drew,
+    LOG_BINS_WARNING (the website's words, from the settings endpoint; models/summary.py) after any warning
+    it has (controllers/default.py). axis_types is what the figure drew,
     by axis ('log' or 'linear', from axis_range: the API allowed the log and a value was positive), as
     create_plotly_scatter and create_plotly_targets return it. Like the API's warning on the bins, this one
     is made whether or not the histograms are shown: the page hides the box with them (plot_controls.html).
@@ -275,7 +273,7 @@ def create_plotly_scatter(name: list[str],
     yaxis = np.asarray(yaxis, dtype=float)
     labels = {'xaxis': x_label if x_label else 'X Axis', 'yaxis': y_label if y_label else 'Y Axis'}
     has_zaxis = bool(has_zaxis and len(zaxis))
-    marker = dict(size=8, color=hypatia_purple, opacity=0.5, line=dict(color=hypatia_purple, width=1))
+    marker = dict(size=8, color=HYPATIA_PURPLE, opacity=0.5, line=dict(color=HYPATIA_PURPLE, width=1))
     customdata = None
     if has_zaxis:
         zaxis = np.asarray(zaxis, dtype=float)
@@ -300,7 +298,7 @@ def create_plotly_scatter(name: list[str],
     fig.update_xaxes(range=x_range, type=x_type, **axis_style(labels['xaxis'], do_gridlines))
     fig.update_yaxes(range=y_range, type=y_type, **axis_style(labels['yaxis'], do_gridlines))
     if show_hist:
-        add_marginal_histograms(fig, [dict(x=xaxis, y=yaxis, color=hypatia_purple, name='Stars')], bins,
+        add_marginal_histograms(fig, [dict(x=xaxis, y=yaxis, color=HYPATIA_PURPLE, name='Stars')], bins,
                                 x_type, y_type, do_gridlines)
     if planet_count is not None:
         title = f'{planet_count} planets selected from {star_count} stars'
