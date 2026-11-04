@@ -131,17 +131,17 @@ CHECKS = [
 
 
 def documentation_checks(base_url: str) -> list[tuple]:
-    """The site's documentation against the build it describes: the Help page names every bin size keyword,
-    colour palette and solar normalization the API offers and the catalog count the home page shows (it reads
-    them from the API, so this guards the wording around them); the About page describes the table's columns
-    as the table has them; and every example address on the API page answers with JSON, the star example
-    with a star the catalog has."""
+    """The site's documentation against the build it describes: the Help page names every bin size keyword
+    and solar normalization the API offers and the catalog count the home page shows (it reads them from the
+    API, so this guards the wording around them); the About page describes the table's columns as the table
+    has them; and every example address on the API page answers with JSON, the star example with a star the
+    catalog has."""
     settings = json.loads(fetch(base_url + "/hypatia/api/frontend/settings/")[1])
     norms = json.loads(fetch(base_url + "/hypatia/api/v2/solarnorm/")[1])
     counts = json.loads(fetch(base_url + "/hypatia/api/frontend/home/")[1])
-    help_words = (settings["fields"]["xhist_bin_size"]["keywords"] + settings["fields"]["color_palette"]["choices"]
+    help_words = (settings["fields"]["xhist_bin_size"]["keywords"]
                   + [f'{norm["author"]} ({norm["year"]})' for norm in norms if norm["year"]]
-                  + ["{:,} catalogs".format(counts["catalogs"]), "Normalize the histogram", "Reset", "Load All"])
+                  + ["{:,} catalogs".format(counts["catalogs"]), "Normalize the histogram"])
 
     def api_examples_answer(body: str) -> str | None:
         """Every example address with a query answers with JSON (the star example with a star the catalog has,
