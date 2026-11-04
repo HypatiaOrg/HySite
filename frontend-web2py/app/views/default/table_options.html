@@ -94,15 +94,11 @@
     }
 
     function reset() {
+        // the default columns, from the API's settings (models/summary.py, DEFAULT_TABLECOLS)
         $(".btn-pt").removeClass("btn-success");
-        $("#pt-Fe").addClass("btn-success");
-        $("#pt-C").addClass("btn-success");
-        $("#pt-O").addClass("btn-success");
-        $("#pt-Mg").addClass("btn-success");
-        $("#pt-Si").addClass("btn-success");
-        $("#pt-S").addClass("btn-success");
-        $("#pt-Ca").addClass("btn-success");
-        $("#pt-Ti").addClass("btn-success");
+        {{for item in DEFAULT_TABLECOLS:}}
+        $("#pt-{{=item}}").addClass("btn-success");
+        {{pass}}
         $("#tablecols").val($(".btn-success").map(function(index,dom){return dom.id.slice(3)}).toArray().join(","));
         refresh_table();
     }

@@ -82,6 +82,8 @@ settingsURL = urllib.request.urlopen(f'{BASE_API_URL}settings/')
 settings_data = json.loads(settingsURL.read().decode(settingsURL.info().get_content_charset('utf-8')))
 toggle_graph_vars = set(settings_data['toggles'])
 session_defaults_launch = settings_data['defaults']
+# the table's default columns (the Reset button; api.web2py.settings DEFAULTS, a comma-separated string)
+DEFAULT_TABLECOLS = session_defaults_launch['tablecols'].split(',')
 exported_session_vars = sorted(set(session_defaults_launch.keys()) | toggle_graph_vars)
 # the request variables that may be saved in the session; other variables a request sends are ignored
 session_request_vars = set(settings_data['session_keys'])
