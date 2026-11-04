@@ -14,21 +14,26 @@ bins_with_toggle = bool(plot_controls.get('toggle')) and plot_controls.get('bins
 bins_shown = (not bins_with_toggle) or bool(session[plot_controls['toggle']])
 }}
 <form method="post" class="form-inline plot-controls" style="margin:-5px 0 20px {{=PLOT_MARGIN_LEFT}}px;font-size:14px;font-weight:normal">
-    {{# one control per row, a label of LABEL_WIDTH and a control of CONTROL_WIDTH each: the palette menu and the bin size boxes line up on both edges }}
-    {{LABEL_WIDTH, CONTROL_WIDTH = 100, 340}}
-    {{if plot_controls.get('toggle'):}}
-    <div class="checkbox" style="display:block;margin:0 0 8px 0">
-        <label><input type="checkbox" {{if session[plot_controls['toggle']]:}}checked="checked"{{pass}} id="{{=plot_controls['toggle']}}" name="{{=plot_controls['toggle']}}" onchange="{{if bins_with_toggle:}}$('.bin-size').toggle(this.checked);{{pass}}refresh()"> Show X and Y histograms</label>
-    </div>
-    {{pass}}
-    {{if plot_controls.get('palette'):}}
-    <div class="form-group" style="display:block;margin:0 0 8px 0">
-        <label for="color_palette" style="width:{{=LABEL_WIDTH}}px;text-align:left;margin-right:8px">Color palette</label>
-        <select class="form-control" id="color_palette" name="color_palette" style="width:{{=CONTROL_WIDTH}}px" onchange="refresh()">
-            {{for color_palette in DENSITY_COLOR_PALETTES:}}
-            <option value="{{=color_palette}}" {{if session.color_palette==color_palette:}}selected="selected"{{pass}}>{{=color_palette}}</option>
-            {{pass}}
-        </select>
+    {{# the rows are one width (ROW_WIDTH: a label and a control): the toggle's row holds the checkbox at its left and the palette menu at its right, so the menu ends where the bin size boxes below end }}
+    {{LABEL_WIDTH, CONTROL_WIDTH = 85, 340}}
+    {{ROW_WIDTH = LABEL_WIDTH + 8 + CONTROL_WIDTH}}
+    {{if plot_controls.get('toggle') or plot_controls.get('palette'):}}
+    <div style="display:flex;justify-content:space-between;align-items:center;width:{{=ROW_WIDTH}}px;margin-bottom:8px">
+        {{if plot_controls.get('toggle'):}}
+        <div class="checkbox" style="margin:0">
+            <label><input type="checkbox" {{if session[plot_controls['toggle']]:}}checked="checked"{{pass}} id="{{=plot_controls['toggle']}}" name="{{=plot_controls['toggle']}}" onchange="{{if bins_with_toggle:}}$('.bin-size').toggle(this.checked);{{pass}}refresh()"> Show X and Y histograms</label>
+        </div>
+        {{pass}}
+        {{if plot_controls.get('palette'):}}
+        <div class="form-group" style="margin:0">
+            <label for="color_palette" style="margin-right:5px">Color palette</label>
+            <select class="form-control" id="color_palette" name="color_palette" onchange="refresh()">
+                {{for color_palette in DENSITY_COLOR_PALETTES:}}
+                <option value="{{=color_palette}}" {{if session.color_palette==color_palette:}}selected="selected"{{pass}}>{{=color_palette}}</option>
+                {{pass}}
+            </select>
+        </div>
+        {{pass}}
     </div>
     {{pass}}
     {{for key, label in plot_controls['bins']:}}
