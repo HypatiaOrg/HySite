@@ -141,7 +141,7 @@ class HistView(View):
         histogram = histogram_series(graph_data=graph_data, labels=labels, from_v2=from_v2,
                                      normalize=graph_settings['normalize_hist'],
                                      bins=bins['edges'] if bins else 20)
-        bins_made = {key: bins[key] for key in ('start', 'end', 'size', 'mode', 'warning') if key in bins} if bins else None
+        bins_made = {key: bins[key] for key in ('start', 'end', 'size', 'mode', 'warning', 'adjusted') if key in bins} if bins else None
         return JsonResponse({'labels': labels, 'bins': bins_made, **histogram})
 
 

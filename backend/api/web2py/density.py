@@ -107,8 +107,9 @@ def axis_bins(values: np.ndarray, requested: str | float | None, value_type: str
     One axis's bins: the range (start, end), the bin width (size) and how it was chosen (mode: "number",
     "error" or "std dev"; "error" falls back to "std dev" when the parameter has no representative error).
     With "error" asked for a menu choice in BIN_WARNINGS (selected: the setting as the visitor chose it), the
-    bins carry its warning text and use "std dev". A width changed to fit the range (check_bin_size) adds a
-    note saying the width used (BIN_SIZE_WIDENED, BIN_SIZE_CUT).
+    bins carry its warning text and use "std dev". A width changed to fit the range (check_bin_size) is marked
+    adjusted ("widened" or "cut") with a note (BIN_SIZE_WIDENED, BIN_SIZE_CUT); the frontend puts the width used
+    into the box.
     """
     start, end = axis_range(values, range_mode=range_mode, sigma=sigma, manual_min=manual_min, manual_max=manual_max)
     request = bin_request(requested)
@@ -124,8 +125,10 @@ def axis_bins(values: np.ndarray, requested: str | float | None, value_type: str
     bins = {'start': start, 'end': end, 'size': size, 'mode': mode}
     notes = [warning] if warning else []
     if size > width:
+        bins['adjusted'] = 'widened'
         notes.append(BIN_SIZE_WIDENED.format(size=size, max_bins=MAX_BINS))
     elif size < width:
+        bins['adjusted'] = 'cut'
         notes.append(BIN_SIZE_CUT.format(size=size))
     if notes:
         bins['warning'] = ' '.join(notes)

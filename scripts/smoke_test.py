@@ -62,8 +62,10 @@ CHECKS = [
     # the histogram page's bin size: a typed width, then the default rule again
     ("/hypatia/default/graph_hist.load", "plotly-graph-div", {"hist_bin_size": "0.5"}),
     ("/hypatia/default/graph_hist.load", "plotly-graph-div", {"hist_bin_size": ""}),
-    # a width too narrow for the bin cap: the page shows the API's note by the box, then the default rule again
-    ("/hypatia/default/graph_hist.load", "Bin size widened to", {"hist_bin_size": "0.00001"}),
+    # a width too narrow for the bin cap: the page shows the API's note by the box and puts the width used into the
+    # box; then the default rule again
+    ("/hypatia/default/graph_hist.load", "bin maximum", {"hist_bin_size": "0.00001"}),
+    ("/hypatia/default/graph_hist.load", 'var sizes = {"hist_bin_size": "', {"hist_bin_size": "0.00001"}),
     ("/hypatia/default/graph_hist.load", "plotly-graph-div", {"hist_bin_size": ""}),
     # the density page (the plotly branch): the plot is a Plotly figure; then its own settings changed
     # (bin sizes by keyword and by number, another colour scale, the marginal histograms off)
@@ -137,8 +139,8 @@ CHECKS = [
     ("/hypatia/api/frontend/density/?xaxis1=Fe&yaxis1=Si&xhist_bin_size=-1&yhist_bin_size=0",
      bins_check("yaxis", mode="std dev")),
     # a width the range cannot hold is changed and the bins say so: too narrow for the bin cap, or wider than the range
-    ("/hypatia/api/frontend/hist/?xaxis1=Fe&hist_bin_size=0.00001", mentions("Bin size widened to", "bins over the plotted range")),
-    ("/hypatia/api/frontend/hist/?xaxis1=Fe&hist_bin_size=1000", mentions("Bin size cut to")),
+    ("/hypatia/api/frontend/hist/?xaxis1=Fe&hist_bin_size=0.00001", bins_check(None, mode="number", adjusted="widened")),
+    ("/hypatia/api/frontend/hist/?xaxis1=Fe&hist_bin_size=1000", bins_check(None, mode="number", adjusted="cut")),
 ]
 
 

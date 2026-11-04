@@ -110,6 +110,19 @@ def bin_warnings(bins: dict | None, boxes: list) -> dict:
     return {box: bins[axis]['warning'] for box, axis in boxes if (bins.get(axis) or {}).get('warning')}
 
 
+def bin_sizes_used(bins: dict | None, boxes: list) -> dict:
+    """
+    The bin widths the API changed to fit the plotted range (api.web2py.density.check_bin_size: "adjusted" on
+    the bins), by bin size box, as text for the box. The page puts each into its box, and the session keeps
+    it, so the box shows the width the histogram has and the next request asks for that width.
+    """
+    bins = bins or {}
+    sizes = {box: f"{bins[axis]['size']:g}" for box, axis in boxes if (bins.get(axis) or {}).get('adjusted')}
+    for box, size in sizes.items():
+        session[box] = size
+    return sizes
+
+
 def plot_settings():
     all_request_vars = set(request.vars.keys())
     # set new session values (non-toggles controls) from the request; only known settings are kept
@@ -155,6 +168,7 @@ def graph():
     settings = get_settings()
     graph_data = api_json('scatter/', settings)
     warnings = bin_warnings(graph_data.get('bins'), BIN_BOXES_XY)
+    sizes = bin_sizes_used(graph_data.get('bins'), BIN_BOXES_XY)
     # the plot: the API decided the labels and the log/inverted axes (api.web2py.plots); Plotly draws (models/plot_plotly.py)
     axes = graph_data['axes']
     outputs = graph_data['outputs']
@@ -170,7 +184,7 @@ def graph():
                                             **axis_args(axes, 'xyz'))
     log_bin_warnings(warnings, axis_types)
     response.view = PLOT_FRAGMENT_VIEW
-    return dict(div=div, warnings=warnings, container='graph')
+    return dict(div=div, warnings=warnings, sizes=sizes, container='graph')
 
 
 def graph_targets():
@@ -178,6 +192,7 @@ def graph_targets():
     settings = get_settings()
     graph_data = api_json('targets/', settings)
     warnings = bin_warnings(graph_data.get('bins'), BIN_BOXES_XY)
+    sizes = bin_sizes_used(graph_data.get('bins'), BIN_BOXES_XY)
     # the plot: the API grouped the stars into layers and decided the axes (api.web2py.plots)
     axes = graph_data['axes']
     outputs = graph_data['outputs']
@@ -190,7 +205,7 @@ def graph_targets():
                                             **axis_args(axes, 'xy'))
     log_bin_warnings(warnings, axis_types)
     response.view = PLOT_FRAGMENT_VIEW
-    return dict(div=div, warnings=warnings, container='graph_targets')
+    return dict(div=div, warnings=warnings, sizes=sizes, container='graph_targets')
 
 
 def graph_hist():
@@ -198,6 +213,7 @@ def graph_hist():
     settings = get_settings()
     graph_data = api_json('hist/', settings)
     warnings = bin_warnings({'xaxis': graph_data.get('bins')}, BIN_BOXES_HIST)
+    sizes = bin_sizes_used({'xaxis': graph_data.get('bins')}, BIN_BOXES_HIST)
     # the plot: the API made the series over shared bins (api.web2py.plots)
     labels = graph_data['labels']   # the API names them by axis: 'xaxis', 'yaxis'
     div = create_plotly_hist(series=graph_data['series'], edges=graph_data['edges'],
@@ -207,7 +223,7 @@ def graph_hist():
                                     do_gridlines=settings['gridlines'],
                                     )
     response.view = PLOT_FRAGMENT_VIEW
-    return dict(div=div, warnings=warnings, container='hist')
+    return dict(div=div, warnings=warnings, sizes=sizes, container='hist')
 
 
 def graph_density():
@@ -215,6 +231,7 @@ def graph_density():
     settings = get_settings()
     graph_data = api_json('density/', settings)
     warnings = bin_warnings(graph_data.get('bins'), BIN_BOXES_XY)
+    sizes = bin_sizes_used(graph_data.get('bins'), BIN_BOXES_XY)
     # the plot: the API chose the points, the bins, the colours and the axes (api.web2py.density)
     axes = graph_data['axes']
     outputs = graph_data['outputs']
@@ -228,7 +245,7 @@ def graph_density():
                                 show_xyhist=graph_data['show_xyhist'],
                                 **axis_args(axes, 'xy'))
     response.view = PLOT_FRAGMENT_VIEW
-    return dict(div=div, warnings=warnings, container='density')
+    return dict(div=div, warnings=warnings, sizes=sizes, container='density')
 
 
 def table():

@@ -1,4 +1,4 @@
-{{import json}}{{# the plot fragment of the four plot pages (controllers/default.py graph, graph_targets, graph_hist, graph_density): the figure, then the bin size boxes' warnings and the page's plot container, named by the controller }}
+{{import json}}{{# the plot fragment of the four plot pages (controllers/default.py graph, graph_targets, graph_hist, graph_density): the figure, then the bin size boxes' warnings and changed widths, and the page's plot container, named by the controller }}
 {{=XML(div)}}
 
 <script>
@@ -8,5 +8,8 @@
     var warnings = {{=XML(json.dumps(warnings))}};
     $(".bin-warning").hide().text("");
     $.each(warnings, function(box, text) { $("#" + box + "-warning").text(text).show(); });
+    // the bin widths the API changed to fit the plotted range go into their boxes (controllers/default.py, bin_sizes_used)
+    var sizes = {{=XML(json.dumps(sizes))}};
+    $.each(sizes, function(box, size) { $("#" + box).val(size); });
     $("#{{=container}}").css("background", "white");
 </script>
