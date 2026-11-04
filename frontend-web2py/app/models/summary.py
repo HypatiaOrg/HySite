@@ -24,6 +24,8 @@ param_data = json.loads(webURL.read().decode(webURL.info().get_content_charset('
 units_and_fields = param_data['units_and_fields']
 STELLAR_PARAM_TYPES = param_data['stellar_param_types']
 PLANET_PARAM_TYPES = param_data['planet_param_types']
+# the planet parameters for an axis menu: the filter menus offer all of PLANET_PARAM_TYPES
+AXIS_PLANET_PARAM_TYPES = param_data['axis_planet_param_types']
 ranked_string_params = param_data['ranked_string_params']
 CATALOGS = [AttrDict(cat_dict) for cat_dict in param_data['catalogs']]
 SOLAR_NORMS = [AttrDict(norm_dict) for norm_dict in param_data['solarnorms']]
@@ -80,12 +82,17 @@ settingsURL = urllib.request.urlopen(f'{BASE_API_URL}settings/')
 settings_data = json.loads(settingsURL.read().decode(settingsURL.info().get_content_charset('utf-8')))
 toggle_graph_vars = set(settings_data['toggles'])
 session_defaults_launch = settings_data['defaults']
+# the table's default columns (the Reset button; api.web2py.settings DEFAULTS, a comma-separated string)
+DEFAULT_TABLECOLS = session_defaults_launch['tablecols'].split(',')
 exported_session_vars = sorted(set(session_defaults_launch.keys()) | toggle_graph_vars)
 # the request variables that may be saved in the session; other variables a request sends are ignored
 session_request_vars = set(settings_data['session_keys'])
 # the density page's controls: the colour scales and the bin size keywords, as the settings model names them
-DENSITY_COLOR_PALLETS = settings_data['fields']['color_pallet']['choices']
+DENSITY_COLOR_PALETTES = settings_data['fields']['color_palette']['choices']
 DENSITY_BIN_TAGS = settings_data['fields']['xhist_bin_size']['keywords']
+# the words and colours the plots draw with, as the website's settings name them (hypatia.configs.website_settings)
+LOG_BINS_WARNING = settings_data['words']['log_bins_warning']
+HYPATIA_PURPLE = settings_data['colors']['hypatia_purple']
 
 for name_handle, name_label in name_handles_labels.items():
     COL_PREFERRED_NAME[name_handle] = name_label

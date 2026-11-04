@@ -22,15 +22,12 @@ from api.web2py.data_process import (is_true_str, units_and_fields_v2, targets_m
                                      table_query_from_request)
 
 # the on-page table shows this many rows, with a "Load All" link for the rest; downloads always get every row
-DEFAULT_TABLE_ROWS_TO_SHOW = 1000
 # "Load All" is offered only while the whole table (rows x columns, each cell with its hover text) stays
 # small enough for a browser; above this, the page points to the downloads instead (issue #43)
-MAX_TABLE_CELLS_TO_SHOW = 250_000
 
-TABLE_NAMES = ['star_id', 'hd', '2mass', 'wds']
-TABLE_STELLAR = ['raj2000', 'decj2000', 'x_pos', 'y_pos', 'z_pos', 'dist', 'disk', 'sptype', 'vmag', 'bv',
-                 'u_vel', 'v_vel', 'w_vel', 'teff', 'logg', 'mass', 'rad']
-TABLE_PLANET = ['planet_letter', 'period', 'eccentricity', 'semi_major_axis', 'pl_mass', 'pl_radius', 'inclination']
+# the table's columns and sizes: the website's choices (hypatia.configs.website_settings)
+from hypatia.configs.website_settings import (TABLE_NAMES, TABLE_STELLAR, TABLE_PLANET, DEFAULT_TABLE_ROWS_TO_SHOW,
+                                              MAX_TABLE_CELLS_TO_SHOW)
 TARGET_HANDLE_SETTINGS = [('show_has_exo', 'has_exo'), ('show_thin_disk', 'thin_disk'),
                           ('show_thick_disk', 'thick_disk'), ('show_hwo_tier2', 'hwo_tier2'),
                           ('show_hwo_tier1', 'hwo_tier1')]

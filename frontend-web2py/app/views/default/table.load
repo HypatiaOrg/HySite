@@ -1,9 +1,12 @@
-<div style="width:100%">
+<div class="table-box" style="width:100%;padding-left:10px;padding-right:20px;overflow-x:auto">{{# a little room between the window edges and the first and last columns, more on the right, clear of the scroll bar. A table wider than the page (many columns, the errors on) scrolls sideways inside this box instead of running off the page and under the scroll bar }}
 	<table id="stars" class="table table-condensed table-striped stickyHeader" style="border-collapse: collapse;background:white">
 		<thead>
 			<tr>
-				{{for cell in columns:}}
-					<th style="text-align:center;border-bottom:2px solid #4e11b7">
+				{{# the first column (the star's name) is only as wide as its names: the table fills the page, and the browser }}
+				{{# would give the widest column the biggest share of the spare width, leaving the centred names afloat in it; }}
+				{{# the other columns share the spare width instead }}
+				{{for column_index, cell in enumerate(columns):}}
+					<th style="text-align:center;border-bottom:2px solid {{=HYPATIA_PURPLE}}{{if column_index == 0:}};width:1%;white-space:nowrap{{pass}}">
 						{{if cell.endswith("_err"):}}
 							<small style="color:#555">err</small>
 						{{elif cell.endswith("_ref"):}}
@@ -13,7 +16,9 @@
 						{{elif cell.endswith("_max_err"):}}
 							<small style="color:#555">+err</small>
 						{{else:}}
-							{{=A(COL_SHORT_DESC.get(cell) or cell, _title=COL_LONG_DESC.get(cell) or cell,_href=URL('table.load',vars=dict(sort=cell)), cid=request.cid)}}
+							{{label = COL_SHORT_DESC.get(cell) or cell}}
+							{{# an ionised element's heading ("Sc II") stays on one line: the column is narrow and centred, and the "II" wrapped under the name }}
+							{{=A(label, _title=COL_LONG_DESC.get(cell) or cell, _href=URL('table.load',vars=dict(sort=cell)), cid=request.cid, _style='white-space:nowrap' if label.endswith(' II') else None)}}
 							<br/>
 							<small class="text-uppercase" style="color:#555">{{=COL_UNITS.get(cell) or ' '}}</small>
 						{{pass}}
@@ -24,8 +29,8 @@
 		<tbody>
 			{{for row in table:}}
 				<tr>
-					{{for cell, col_name in zip(row, columns):}}
-						<td>
+					{{for column_index, (cell, col_name) in enumerate(zip(row, columns)):}}
+						<td style="text-align:center{{if column_index == 0:}};width:1%;white-space:nowrap{{pass}}">{{# every value centred under its heading, the error and reference columns too; the cell padding (the spacing between columns) is Bootstrap's as before }}
 							{{if not isinstance(cell, list):}}
                         		{{cell = [cell]}}
                     		{{pass}}
@@ -70,6 +75,10 @@ jQuery(document).ready(function ($) {
 	var tables = $('table.stickyHeader');
 	tables.each(function(i){
 		var table = tables[i];
+		// the box the table scrolls sideways in (overflow-x above): the fixed header clone sits over the box's
+		// visible width, shifted and clipped like the table below it, and follows the box's scroll as well as
+		// the window's
+		var box = $(table).closest('.table-box');
 		var tableClone = $(table).clone(true).empty().removeClass('stickyHeader');
 		var theadClone = $(table).find('thead').clone(true);
 		var stickyHeader =  $('<div></div>').addClass('stickyHeader hide').attr('aria-hidden', 'true');
@@ -82,7 +91,7 @@ jQuery(document).ready(function ($) {
 			var headerCells = $(table).find('thead th');
 			
 			var stickyHeaderCells = stickyHeader.find('th');
-			stickyHeader.css('width', tableWidth);
+			stickyHeader.find('table').css('width', tableWidth);
 			var cellWidths = [];
 			for (var i = 0, l = headerCells.length; i < l; i++) {
 				cellWidths[i] = $(headerCells[i]).width() + 10;
@@ -105,8 +114,10 @@ jQuery(document).ready(function ($) {
 		}
 		
 		var adjustHeaders = function() { 
-			var cutoffLeft = $(table).offset().left;
-			stickyHeader.css('left',-$(window).scrollLeft()+cutoffLeft);
+			// over the box's padding box (its visible width, clear of the scroll bar), the clone's table shifted
+			// by the box's scroll, as the browser shows the table itself
+			stickyHeader.css({'left': box.offset().left - $(window).scrollLeft(), 'width': box[0].clientWidth, 'overflow': 'hidden'});
+			stickyHeader.find('table').css('margin-left', parseFloat(box.css('padding-left')) - box.scrollLeft());
 			var currentPosition = $(window).scrollTop();
 			if (currentPosition > cutoffTop && currentPosition < cutoffBottom) {
 				stickyHeader.removeClass('hide');
@@ -120,6 +131,7 @@ jQuery(document).ready(function ($) {
 		}
 		
 		$(window).scroll(adjustHeaders);
+		box.scroll(adjustHeaders);
 		setInterval(adjustHeaders,100);
 	});
 });

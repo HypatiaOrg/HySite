@@ -6,7 +6,7 @@ import numpy as np
 import requests
 
 from hypatia.elements import ElementID
-from hypatia.configs.env_load import MONGO_DATABASE
+from hypatia.configs.env_load import MONGO_DATABASE, DEBUG
 from hypatia.pipeline.summary import SummaryCollection
 from hypatia.tools.color_text import attention_yellow_text
 from hypatia.configs.file_paths import element_plusminus_error_file, representative_error_url
@@ -15,17 +15,23 @@ plusminus_error_default = 0.1
 plusminus_error_decimals = 2
 
 
-# representative error file
+# the representative error of each element: the plus-minus spread the pipeline gives an abundance whose catalog
+# reports none, and the "error" bin width of the website's histograms. The file is part of the HyData data
+# repository (HypatiaOrg on GitHub), which the pipeline needs beside this code; the website reads the same table
+# from the catalog's summary document in the database, so a missing file is only worth a word with DEBUG on.
 if os.path.exists(element_plusminus_error_file):
     with open(element_plusminus_error_file, 'rb') as f:
         plusminus_error = {ElementID.from_str(key): np.round(float(value), decimals=plusminus_error_decimals)
                            for key, value in tomllib.load(f).items()}
 else:
-    print(f'No representative error file found at {element_plusminus_error_file}')
-
+    if DEBUG:
+        print(f'No representative error file at {element_plusminus_error_file}.\n'
+              f'  To run the pipeline, clone the HyData data repository (HypatiaOrg on GitHub) beside the backend;\n'
+              f'  the website needs no file: the table is read from the catalog summary in the database.')
     summary_db = SummaryCollection(db_name=MONGO_DATABASE, collection_name='summary')
     if summary_db.collection_exists():
-        print(f'  Loading Representative Error from the database')
+        if DEBUG:
+            print('  Loading the representative errors from the database')
         summary_data = summary_db.find_one()
         representative_error = summary_data['representative_error']
         plusminus_error = {ElementID.from_str(key): np.round(float(value), decimals=plusminus_error_decimals)
@@ -37,9 +43,10 @@ else:
             plusminus_error = {ElementID.from_str(key): np.round(float(value), decimals=plusminus_error_decimals)
                                for key, value in response.json().items()}
         else:
-            msg = f'Element representative error file {element_plusminus_error_file} not found.\n'
-            msg += f'Not loading representative error file from {representative_error_url}.\n'
-            msg += f'Using an empty dictionary for representative errors!'
+            msg = f'No representative errors for the elements: no file at {element_plusminus_error_file}, no catalog\n'
+            msg += f'summary in the database "{MONGO_DATABASE}", and {representative_error_url} answered {response.status_code}.\n'
+            msg += f'Clone the HyData data repository (HypatiaOrg on GitHub) beside the backend, or point MONGO_HOST at a\n'
+            msg += f'database with a built catalog. Continuing with the default of {plusminus_error_default} dex for every element.'
             plusminus_error = {}
             warn(msg)
 

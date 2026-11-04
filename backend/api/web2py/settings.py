@@ -6,9 +6,11 @@ frontend (web2py today, Next.js next) builds its state from it instead of keepin
 Until October 2026 the defaults and the toggle list lived in the web2py models (summary.py) while the
 API parsed the same names in graph_settings_from_request(); this module is the single place for both.
 """
-from api.web2py.data_process import (stellar_param_types_v2, planet_param_types_v2, plot_norms, available_elements_v2,
-                                     MAX_FILTERS)
-from api.web2py.density import COLOR_PALLETS, DEFAULT_COLOR_PALLET, BIN_TAGS
+from api.web2py.data_process import (stellar_param_types_v2, planet_param_types_v2, axis_planet_param_types_v2,
+                                     plot_norms, available_elements_v2, MAX_FILTERS)
+from hypatia.configs.website_settings import (COLOR_PALETTES, DEFAULT_COLOR_PALETTE, BIN_TAGS, BIN_WARNINGS,
+                                              LOG_BINS_WARNING, HYPATIA_PURPLE, DEFAULT_X_AXIS, DEFAULT_Y_AXIS,
+                                              DEFAULT_SOLARNORM, DEFAULT_STATISTIC, DEFAULT_TABLE_COLUMNS)
 
 # checkboxes: a page sends a toggle only when it is on, and lists its own toggles in "toggle_vars" so
 # the server knows which missing ones mean "off" (issue #40)
@@ -23,16 +25,17 @@ TOGGLES = ['normalize', 'gridlines', 'xaxislog', 'yaxislog', 'zaxislog',
 DEFAULTS = {
     # the filters: no parameter, H as the denominator, an open range
     **{f'{prefix}_{part}': value for prefix in FILTER_PREFIXES for part, value in (('1', 'none'), ('2', 'H'), ('3', ''), ('4', ''))},
-    'xaxis1': 'Fe',
-    'xaxis2': 'H',
-    'yaxis1': 'Si',
-    'yaxis2': 'H',
+    'xaxis1': DEFAULT_X_AXIS[0],
+    'xaxis2': DEFAULT_X_AXIS[1],
+    'yaxis1': DEFAULT_Y_AXIS[0],
+    'yaxis2': DEFAULT_Y_AXIS[1],
     'zaxis1': 'none',
     'zaxis2': 'H',
-    'tablecols': 'Fe,C,O,Mg,Si,S,Ca,Ti',
+    # the columns the table shows at first (hypatia.configs.website_settings); the table orders them by element
+    'tablecols': ','.join(DEFAULT_TABLE_COLUMNS),
     'cat_action': 'exclude',
-    'statistic': 'median',
-    'solarnorm': 'lodders09',
+    'statistic': DEFAULT_STATISTIC,
+    'solarnorm': DEFAULT_SOLARNORM,
     'catalogs': [],
     'star_action': 'exclude',
     'star_list': [],
@@ -48,7 +51,7 @@ DEFAULTS = {
     'yhist_bin_size': '',
     # the histogram page's bin width, the same rule
     'hist_bin_size': '',
-    'color_pallet': DEFAULT_COLOR_PALLET,
+    'color_palette': DEFAULT_COLOR_PALETTE,
 }
 
 # other form fields a page may send that the frontend keeps in its session (the table options form)
@@ -60,6 +63,7 @@ TABLE_TOKENS = ['names', 'names_all', 'planet', 'stellar', 'spread', 'ref']
 def settings_schema() -> dict:
     """The settings, their defaults and kinds; the choices where the set is finite."""
     parameters = ['none'] + list(available_elements_v2) + stellar_param_types_v2 + planet_param_types_v2
+    axis_parameters = ['none'] + list(available_elements_v2) + stellar_param_types_v2 + axis_planet_param_types_v2
     denominators = ['H'] + list(available_elements_v2)
     fields = {}
     for prefix in FILTER_PREFIXES:
@@ -69,7 +73,7 @@ def settings_schema() -> dict:
         fields[f'{prefix}_4'] = {'kind': 'number', 'about': 'the filter maximum, or empty'}
         fields[f'{prefix}_inv'] = {'kind': 'toggle', 'about': 'keep the values outside the range instead'}
     for axis in ('xaxis', 'yaxis', 'zaxis'):
-        fields[f'{axis}1'] = {'kind': 'choice', 'choices': parameters, 'about': f'the {axis[0]} axis parameter'}
+        fields[f'{axis}1'] = {'kind': 'choice', 'choices': axis_parameters, 'about': f'the {axis[0]} axis parameter'}
         fields[f'{axis}2'] = {'kind': 'choice', 'choices': denominators, 'about': 'the denominator of an element ratio'}
         fields[f'{axis}log'] = {'kind': 'toggle', 'about': 'logarithmic axis, where the parameter allows it'}
         fields[f'{axis}inv'] = {'kind': 'toggle', 'about': 'inverted axis'}
@@ -92,12 +96,12 @@ def settings_schema() -> dict:
         'show_xyhist': {'kind': 'toggle', 'about': 'density: the histograms along the x and y axes'},
         'show_scatter_hist': {'kind': 'toggle', 'about': 'scatter: the histograms along the x and y axes'},
         'show_targets_hist': {'kind': 'toggle', 'about': 'targets: the histograms along the x and y axes, one per list'},
-        'xhist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS,
+        'xhist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS, 'warnings': BIN_WARNINGS,
                            'about': 'the histograms\' x bin width in data units, or a keyword: the standard '
                                     'deviation of the data (the default) or the representative error of the parameter'},
-        'yhist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS, 'about': 'the histograms\' y bin width, as for x'},
-        'hist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS, 'about': 'histogram page: the bin width, as for x'},
-        'color_pallet': {'kind': 'choice', 'choices': list(COLOR_PALLETS), 'about': 'density: the colour scale'},
+        'yhist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS, 'warnings': BIN_WARNINGS, 'about': 'the histograms\' y bin width, as for x'},
+        'hist_bin_size': {'kind': 'text', 'keywords': BIN_TAGS, 'warnings': BIN_WARNINGS, 'about': 'histogram page: the bin width, as for x'},
+        'color_palette': {'kind': 'choice', 'choices': list(COLOR_PALETTES), 'about': 'density: the colour scale'},
         'tablecols': {'kind': 'list', 'choices': TABLE_TOKENS + list(available_elements_v2),
                       'about': 'the table columns: option tokens and element symbols'},
     })
@@ -108,4 +112,7 @@ def settings_schema() -> dict:
             field['default'] = False
     return dict(defaults=DEFAULTS, toggles=TOGGLES, max_filters=MAX_FILTERS,
                 session_keys=sorted(set(DEFAULTS) | set(TOGGLES) | set(EXTRA_SESSION_KEYS)),
-                fields=fields)
+                fields=fields,
+                # the words and colours the frontend's own drawing needs (hypatia.configs.website_settings)
+                words=dict(log_bins_warning=LOG_BINS_WARNING),
+                colors=dict(hypatia_purple=HYPATIA_PURPLE))

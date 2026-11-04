@@ -24,9 +24,12 @@ mongo/data-*/
 frontend-web2py/app/static/js/plotly.min.js
 # sandboxes data folders
 .claude
+# personal and machine-specific notes beside CLAUDE.md (Claude Code loads both; only CLAUDE.md is public)
+CLAUDE.local.md
 CWSite
 HyRoute
 screenshots
+sandboxfiles
 
 # # Standard Python .gitignore
 # Byte-compiled / optimized / DLL files

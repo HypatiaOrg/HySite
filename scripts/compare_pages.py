@@ -33,7 +33,7 @@ PLOT_SETTINGS = {"xaxis1": "Ca", "xaxis2": "H", "yaxis1": "Ti", "yaxis2": "H", "
 CHECKBOXES = {"show_all": "on", "show_thin_disk": "on", "show_thick_disk": "on"}
 # the density page's own settings: a keyword and a number as bin sizes, another colour scale, and the
 # marginal histograms switched off (a toggle listed in toggle_vars but not sent). Nothing the other pages share.
-DENSITY_SETTINGS = {"xhist_bin_size": "error", "yhist_bin_size": "0.05", "color_pallet": "Viridis",
+DENSITY_SETTINGS = {"xhist_bin_size": "error", "yhist_bin_size": "0.05", "color_palette": "Viridis",
                     "show_xyhist": "false", "gridlines": "true"}
 STAR_LIST = "; ".join([TEST_STAR] + [f"HIP {number}" for number in range(1, 1000)])
 
@@ -53,7 +53,7 @@ NEXT_REQUESTS = [
     # the largest requests: every catalog, a long star list, then the table of those stars
 ]
 # the web2py frontend's pages and fragments, in one browser-like session
-WEB2PY_DENSITY_SETTINGS = {"xhist_bin_size": "error", "yhist_bin_size": "0.05", "color_pallet": "Viridis",
+WEB2PY_DENSITY_SETTINGS = {"xhist_bin_size": "error", "yhist_bin_size": "0.05", "color_palette": "Viridis",
                            "toggle_vars": "show_xyhist,gridlines"}
 WEB2PY_REQUESTS = [
     "/", "/hypatia/default/help", "/hypatia/default/about", "/hypatia/default/nea", "/hypatia/default/credits", "/api",
@@ -97,7 +97,7 @@ API_REQUESTS = [
     "/hypatia/api/frontend/density/?xaxis1=Fe&yaxis1=Si",
     "/hypatia/api/frontend/hist/?xaxis1=Fe&hist_bin_size=error",
     "/hypatia/api/frontend/density/?xaxis1=Fe&xaxis2=C&yaxis1=teff&xhist_bin_size=error&yhist_bin_size=0.05"
-    "&color_pallet=Viridis&yaxislog=true",
+    "&color_palette=Viridis&yaxislog=true",
     # the settings model (api.web2py.settings), under the frontend API's name and its old one
     "/hypatia/api/web2py/settings/",
     "/hypatia/api/frontend/settings/",
