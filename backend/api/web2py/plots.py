@@ -9,7 +9,8 @@ create_bokeh_targets); it moved here unchanged, so the plots are the same point 
 from api.web2py.data_process import targets_metadata, is_true_str, histogram_format
 from api.web2py.table import TARGET_HANDLE_SETTINGS
 
-HISTOGRAM_SERIES = [('all', 'All Hypatia', 'maroon'), ('exo_hosts', 'Exo-Hosts', 'orange')]
+# the histogram's series and their colours: the website's choices (hypatia.configs.website_settings)
+from hypatia.configs.website_settings import HISTOGRAM_SERIES
 
 
 def requested_target_handles(settings) -> list[str]:
@@ -101,10 +102,11 @@ def group_targets(names: list[str], xaxis: list, yaxis: list, target_handles: li
 
 
 def histogram_series(graph_data: list[dict], labels: dict[str, str], from_v2: dict[str, str],
-                     normalize: bool) -> dict:
-    """The histogram as named series over shared bin edges, plus the x range of the data."""
+                     normalize: bool, bins: int | list[float] = 20) -> dict:
+    """The histogram as named series over shared bin edges (bins: a count, or the edges), plus the x range
+    of the data."""
     hist_all, hist_planet, edges, x_data = histogram_format(graph_data=graph_data, labels=labels, from_v2=from_v2,
-                                                            normalize_hist=normalize)
+                                                            normalize_hist=normalize, bins=bins)
     counts = {'all': hist_all.tolist(), 'exo_hosts': hist_planet.tolist()}
     return dict(
         hist_all=counts['all'], hist_planet=counts['exo_hosts'], edges=edges.tolist(), x_data=x_data,

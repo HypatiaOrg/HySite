@@ -20,7 +20,8 @@ def index():
 
 def help():
     session.forget(response)
-    return dict()
+    # the catalog count in the text, like the home page's numbers
+    return dict(counts=api_json('home/'))
 
 
 def about():
@@ -72,6 +73,11 @@ def hist():
     return dict()
 
 
+def density():
+    init_session()
+    return dict()
+
+
 def dropdown():
     return dict()
 
@@ -86,6 +92,36 @@ def get_settings() -> dict[str, any]:
         else:
             all_settings[graph_var] = session_value
     return all_settings
+
+# the plot fragments of the four plot pages share one view (plot.load): the figure, the bin size boxes' warnings
+# and the id of the page's plot container
+PLOT_FRAGMENT_VIEW = 'default/plot.load'
+
+
+def bin_warnings(bins: dict | None, boxes: list) -> dict:
+    """
+    The warnings the API put on a page's bins, by bin size box (boxes: BIN_BOXES_XY or BIN_BOXES_HIST,
+    models/plot_plotly.py): the "error" rule was asked for a menu choice without an error (Spectral Type, Disk),
+    so the API binned by the standard deviation instead and says why (api.web2py.density.BIN_WARNINGS). The
+    page shows the text next to the box, which keeps "error", so the rule applies as soon as another parameter
+    is chosen.
+    """
+    bins = bins or {}
+    return {box: bins[axis]['warning'] for box, axis in boxes if (bins.get(axis) or {}).get('warning')}
+
+
+def bin_sizes_used(bins: dict | None, boxes: list) -> dict:
+    """
+    The bin widths the API changed to fit the plotted range (api.web2py.density.check_bin_size: "adjusted" on
+    the bins), by bin size box, as text for the box. The page puts each into its box, and the session keeps
+    it, so the box shows the width the histogram has and the next request asks for that width.
+    """
+    bins = bins or {}
+    sizes = {box: f"{bins[axis]['size']:g}" for box, axis in boxes if (bins.get(axis) or {}).get('adjusted')}
+    for box, size in sizes.items():
+        session[box] = size
+    return sizes
+
 
 def plot_settings():
     all_request_vars = set(request.vars.keys())
@@ -115,65 +151,102 @@ def plot_settings():
     elif session.catalogs is None:
         session.catalogs = []
 
+def axis_args(axes: dict, prefixes: str) -> dict:
+    """The keyword arguments the figure functions take for the axes the API decided (api.web2py.plots,
+    axes_from_settings): each axis's label, log and inverse, for the axes named by prefixes ('xy', 'xyz')."""
+    args = {}
+    for prefix in prefixes:
+        axis = axes.get(f'{prefix}axis', {})
+        args[f'{prefix}_label'] = axis.get('label', None)
+        args[f'do_{prefix}log'] = axis.get('log', False)
+        args[f'{prefix}axisinv'] = axis.get('inverse', False)
+    return args
+
+
 def graph():
     plot_settings()
     settings = get_settings()
     graph_data = api_json('scatter/', settings)
-    # the plot: the API decided the labels and the log/inverted axes (api.web2py.plots)
+    warnings = bin_warnings(graph_data.get('bins'), BIN_BOXES_XY)
+    sizes = bin_sizes_used(graph_data.get('bins'), BIN_BOXES_XY)
+    # the plot: the API decided the labels and the log/inverted axes (api.web2py.plots); Plotly draws (models/plot_plotly.py)
     axes = graph_data['axes']
-    zaxis = axes.get('zaxis', {})
     outputs = graph_data['outputs']
-    script, div = create_bokeh_scatter(name=outputs.get('name', []),
-                                       xaxis=outputs.get('xaxis', []),
-                                       yaxis=outputs.get('yaxis', []),
-                                       zaxis=outputs.get('zaxis', []),
-                                       x_label=axes['xaxis']['label'],
-                                       y_label=axes['yaxis']['label'],
-                                       z_label=zaxis.get('label', None),
-                                       star_count=graph_data.get('star_count', None),
-                                       planet_count=graph_data.get('planet_count', None),
-                                       do_xlog=axes['xaxis']['log'], do_ylog=axes['yaxis']['log'],
-                                       do_zlog=zaxis.get('log', False),
-                                       xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
-                                       zaxisinv=zaxis.get('inverse', False), has_zaxis='zaxis' in axes,
-                                       do_gridlines=settings['gridlines'])
-    # send back to the browser
-    return dict(script=script, div=div)
+    div, axis_types = create_plotly_scatter(name=outputs.get('name', []),
+                                            xaxis=outputs.get('xaxis', []),
+                                            yaxis=outputs.get('yaxis', []),
+                                            zaxis=outputs.get('zaxis', []),
+                                            star_count=graph_data.get('star_count', None),
+                                            planet_count=graph_data.get('planet_count', None),
+                                            has_zaxis='zaxis' in axes,
+                                            do_gridlines=settings['gridlines'],
+                                            bins=graph_data.get('bins'), show_hist=settings['show_scatter_hist'],
+                                            **axis_args(axes, 'xyz'))
+    log_bin_warnings(warnings, axis_types)
+    response.view = PLOT_FRAGMENT_VIEW
+    return dict(div=div, warnings=warnings, sizes=sizes, container='graph')
 
 
 def graph_targets():
     plot_settings()
     settings = get_settings()
     graph_data = api_json('targets/', settings)
+    warnings = bin_warnings(graph_data.get('bins'), BIN_BOXES_XY)
+    sizes = bin_sizes_used(graph_data.get('bins'), BIN_BOXES_XY)
     # the plot: the API grouped the stars into layers and decided the axes (api.web2py.plots)
     axes = graph_data['axes']
     outputs = graph_data['outputs']
-    script, div = create_bokeh_targets(xaxis=outputs.get('xaxis', []),
-                                       yaxis=outputs.get('yaxis', []),
-                                       layers=graph_data['layers'],
-                                       number_of_targets=graph_data['number_of_targets'],
-                                       x_label=axes['xaxis']['label'],
-                                       y_label=axes['yaxis']['label'],
-                                       do_xlog=axes['xaxis']['log'], do_ylog=axes['yaxis']['log'],
-                                       xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
-                                       do_gridlines=settings['gridlines'])
-    return dict(script=script, div=div)
+    div, axis_types = create_plotly_targets(xaxis=outputs.get('xaxis', []),
+                                            yaxis=outputs.get('yaxis', []),
+                                            layers=graph_data['layers'],
+                                            number_of_targets=graph_data['number_of_targets'],
+                                            do_gridlines=settings['gridlines'],
+                                            bins=graph_data.get('bins'), show_hist=settings['show_targets_hist'],
+                                            **axis_args(axes, 'xy'))
+    log_bin_warnings(warnings, axis_types)
+    response.view = PLOT_FRAGMENT_VIEW
+    return dict(div=div, warnings=warnings, sizes=sizes, container='graph_targets')
 
 
 def graph_hist():
     plot_settings()
     settings = get_settings()
     graph_data = api_json('hist/', settings)
+    warnings = bin_warnings({'xaxis': graph_data.get('bins')}, BIN_BOXES_HIST)
+    sizes = bin_sizes_used({'xaxis': graph_data.get('bins')}, BIN_BOXES_HIST)
     # the plot: the API made the series over shared bins (api.web2py.plots)
-    labels = graph_data['labels']
-    script, div = create_bokeh_hist(series=graph_data['series'], edges=graph_data['edges'],
+    labels = graph_data['labels']   # the API names them by axis: 'xaxis', 'yaxis'
+    div = create_plotly_hist(series=graph_data['series'], edges=graph_data['edges'],
                                     x_range=graph_data['x_range'],
-                                    x_label=labels.get('x_label', None),
+                                    x_label=labels.get('xaxis', None),
                                     normalize=settings['normalize'], xaxisinv=settings['xaxisinv'],
                                     do_gridlines=settings['gridlines'],
                                     )
-    # send back to the browser
-    return dict(script=script, div=div)
+    response.view = PLOT_FRAGMENT_VIEW
+    return dict(div=div, warnings=warnings, sizes=sizes, container='hist')
+
+
+def graph_density():
+    plot_settings()
+    settings = get_settings()
+    graph_data = api_json('density/', settings)
+    warnings = bin_warnings(graph_data.get('bins'), BIN_BOXES_XY)
+    sizes = bin_sizes_used(graph_data.get('bins'), BIN_BOXES_XY)
+    # the plot: the API chose the points, the bins, the colours and the axes (api.web2py.density)
+    axes = graph_data['axes']
+    outputs = graph_data['outputs']
+    bins = graph_data['bins'] or {}
+    div = create_plotly_density(xaxis=outputs.get('xaxis', []),
+                                yaxis=outputs.get('yaxis', []),
+                                x_bins=bins.get('xaxis', None), y_bins=bins.get('yaxis', None),
+                                color_scale=graph_data['color_scale'],
+                                histogram_color=graph_data['histogram_color'],
+                                do_gridlines=settings['gridlines'],
+                                show_xyhist=graph_data['show_xyhist'],
+                                **axis_args(axes, 'xy'))
+    response.view = PLOT_FRAGMENT_VIEW
+    return dict(div=div, warnings=warnings, sizes=sizes, container='density')
+
 
 def table():
     """The data table page component and its downloads. The table itself is built by the API

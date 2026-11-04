@@ -1,0 +1,9 @@
+{{extend 'layout.html'}}
+{{block head}}
+<!-- Plotly, copied from the python package when the image is built (Dockerfile); the plot component embeds only the figure -->
+<script src="{{=URL('static','js/plotly.min.js')}}"></script>
+{{end}}
+{{# the density page: the shared plot page (plot_page.html) with the x and y axis menus (never logarithmic, issue #35), the histograms toggle, the bin sizes, the colour palette }}
+{{page = dict(container='density', fragment='graph_density.load', submit='density_submit', axes='xy')}}
+{{plot_controls = dict(toggle='show_xyhist', bins=[('xhist_bin_size', 'X bin size'), ('yhist_bin_size', 'Y bin size')], palette=True)}}
+{{include 'default/plot_page.html'}}

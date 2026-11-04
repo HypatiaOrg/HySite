@@ -1,0 +1,48 @@
+{{
+# The plot's own controls, under the plot: the histograms toggle, the bin size boxes and (density map) the colour
+# scale. The page sets plot_controls before including this:
+#   plot_controls = dict(toggle=<session key of the toggle, or None>, bins=[(session key, label), ...], palette=bool,
+#                        bins_with_toggle=bool)
+# With bins_with_toggle the bin size boxes only matter to the histograms the toggle shows (the scatter and targets
+# pages; the density map's bins are its cells), so they show and hide with it, in the browser as soon as it is
+# clicked and before the plot refreshes. Their values stay in the session meanwhile, and come back with the boxes.
+# A form of its own: refresh() and toggle_vars collect every form's fields, and the page's script makes Enter in a
+# box apply it in place (the form never posts). The bin size rule is the API's (api.web2py.density.BIN_TAGS).
+# The form starts where the plot area does (the figures' left margin, models/plot_plotly.py), in line with the y axis.
+bin_hint = 'Float or keywords: (' + DENSITY_BIN_TAGS[0] + ' [default], ' + ', '.join(DENSITY_BIN_TAGS[1:]) + ')'
+bins_with_toggle = bool(plot_controls.get('toggle')) and plot_controls.get('bins_with_toggle', False)
+bins_shown = (not bins_with_toggle) or bool(session[plot_controls['toggle']])
+}}
+<form method="post" class="form-inline plot-controls" style="margin:-5px 0 20px {{=PLOT_MARGIN_LEFT}}px;font-size:14px;font-weight:normal">
+    {{# every row is a box of ROW_WIDTH: the toggle's row holds the checkbox at its left and the palette menu at its right, a bin size row its label and then its input to the edge, so the menu and the boxes end together }}
+    {{LABEL_WIDTH, CONTROL_WIDTH = 85, 340}}
+    {{ROW_WIDTH = LABEL_WIDTH + 8 + CONTROL_WIDTH}}
+    {{if plot_controls.get('toggle') or plot_controls.get('palette'):}}
+    <div style="display:flex;justify-content:space-between;align-items:center;width:{{=ROW_WIDTH}}px;margin-bottom:8px">
+        {{if plot_controls.get('toggle'):}}
+        <div class="checkbox" style="margin:0">
+            <label><input type="checkbox" {{if session[plot_controls['toggle']]:}}checked="checked"{{pass}} id="{{=plot_controls['toggle']}}" name="{{=plot_controls['toggle']}}" onchange="{{if bins_with_toggle:}}$('.bin-size').toggle(this.checked);{{pass}}refresh()"> Show X and Y histograms</label>
+        </div>
+        {{pass}}
+        {{if plot_controls.get('palette'):}}
+        <div class="form-group" style="margin:0">
+            <label for="color_palette" style="margin-right:5px">Color palette</label>
+            <select class="form-control" id="color_palette" name="color_palette" onchange="refresh()">
+                {{for color_palette in DENSITY_COLOR_PALETTES:}}
+                <option value="{{=color_palette}}" {{if session.color_palette==color_palette:}}selected="selected"{{pass}}>{{=color_palette}}</option>
+                {{pass}}
+            </select>
+        </div>
+        {{pass}}
+    </div>
+    {{pass}}
+    {{for key, label in plot_controls['bins']:}}
+    <div class="form-group bin-size" style="display:{{='none' if not bins_shown else 'flex'}};align-items:center;margin:0 0 8px 0">
+        <div style="display:flex;align-items:center;width:{{=ROW_WIDTH}}px">{{# the row's box: the label, then the input to the box's edge }}
+            <label for="{{=key}}" style="width:{{=LABEL_WIDTH}}px;flex:none;text-align:left;margin-right:8px">{{=label}}</label>
+            <input type="text" id="{{=key}}" name="{{=key}}" class="form-control" style="flex:1;width:auto" placeholder="{{=bin_hint}}" value="{{=session[key] or ''}}" onchange="refresh()">
+        </div>
+        <span id="{{=key}}-warning" class="bin-warning text-danger" style="display:none;margin-left:10px"></span>{{# filled by the plot fragment (plot.load) }}
+    </div>
+    {{pass}}
+</form>

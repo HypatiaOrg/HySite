@@ -33,6 +33,9 @@ RUN chown python_kid:python_kia $SESSION_DIR
 # the rest of the files
 COPY ./web2py .
 COPY ./app ./applications/hypatia
+# Plotly's JavaScript as a static file, the copy bundled with the installed plotly package (so the versions
+# match). The density plot component then carries only the figure, not the 4.5 MB library on every refresh
+RUN python -c "import os, shutil, plotly; shutil.copy(os.path.join(os.path.dirname(plotly.__file__), 'package_data', 'plotly.min.js'), 'applications/hypatia/static/js/plotly.min.js')"
 RUN mkdir -p applications/hypatia/databases applications/hypatia/private applications/hypatia/uploads \
     applications/hypatia/cron applications/hypatia/errors
 COPY ./configs ./.

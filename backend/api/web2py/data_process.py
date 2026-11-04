@@ -3,6 +3,8 @@ from copy import copy
 import numpy as np
 
 from hypatia.element_error import get_representative_error
+from hypatia.configs.website_settings import (STELLAR_MENU, PLANET_MENU, PLANET_AXIS_MENU, RANKED_STRING_PARAMS,
+                                              DEFAULT_TABLE_COLUMNS)
 from api.db import summary_doc, hypatia_db, number_of_catalogs
 from hypatia.pipeline.star.aggregation import string_names_types
 from hypatia.elements import ElementID, RatioID, hydrogen_id, element_rank
@@ -10,18 +12,17 @@ from api.v2.data_process import (get_norm_key, get_catalog_summary, total_stars,
                                  available_wds_stars, available_nea_names, available_elements_v2, normalizations_v2)
 
 
-stellar_param_types_v2 = ['raj2000', 'decj2000', 'dist', 'x_pos', 'y_pos', 'z_pos', 'teff', 'logg',
-                          'sptype', 'sptype_num', 'vmag', 'bmag', 'bv', 'pm_ra', 'pm_dec', 'u_vel', 'v_vel', 'w_vel',
-                          'disk', 'disk_num', 'mass', 'rad']
+# the menus' parameters and order, and the table's default columns: the website's choices (hypatia.configs.website_settings)
+stellar_param_types_v2 = list(STELLAR_MENU)
 stellar_param_types_v2_set = set(stellar_param_types_v2)
-planet_param_types_v2 = ['semi_major_axis', 'eccentricity', 'inclination', 'pl_mass', 'pl_radius', 'planet_letter',
-                         'period']
+planet_param_types_v2 = list(PLANET_MENU)
 planet_param_types_v2_set = set(planet_param_types_v2)
-ranked_string_params = {'sptype': 'sptype_num', 'disk': 'disk_num'}
+axis_planet_param_types_v2 = list(PLANET_AXIS_MENU)
+ranked_string_params = dict(RANKED_STRING_PARAMS)
 nones = {None, 'none', ''}
 none_denominators = {None, 'none', '', 'h', 'H'}
 true_set = {'true', 1, 1.0, '1.0', '1', 't', 'yes', 'y', 'on', True}
-default_table_elements = ['Fe', 'C', 'O', 'Mg', 'Si', 'S', 'Ca', 'Ti']
+default_table_elements = list(DEFAULT_TABLE_COLUMNS)
 
 home_data = {
     'stars': total_stars,
@@ -468,15 +469,15 @@ def graph_query_pipeline_web2py(graph_settings: dict[str, any]) -> tuple[
 
 
 def histogram_format(graph_data: list[dict[str, any]], labels: dict[str, str],
-                     from_v2: dict[str, str], normalize_hist: bool = False) \
+                     from_v2: dict[str, str], normalize_hist: bool = False, bins: int | list[float] = 20) \
         -> tuple[np.ndarray, np.ndarray, np.ndarray, list[float]]:
     # histogram
     db_field = from_v2['xaxis']
     # value_type, param_id = axis_mapping['x']
     x_data = [db_return[db_field] for db_return in graph_data]
     x_data_with_planet = [db_return[db_field] for db_return in graph_data if 'nea_name' in db_return.keys()]
-    # builds the histogram
-    hist_all, edges = np.histogram(x_data, bins=20)
+    # builds the histogram (bins: a count, or the edges the caller chose)
+    hist_all, edges = np.histogram(x_data, bins=bins)
     hist_planet, edges = np.histogram(x_data_with_planet, bins=edges)
     # get maximum point on the histogram
     max_hist_all = float(max(hist_all))

@@ -317,12 +317,12 @@ Any star name on SIMBAD can be used.
 Spaces and letter case are ignored star names searches.
 However, if you want to use spaces, substitute '%20' for the space, which is the
 URL safe-version of the plus operator '+' to append the two components in the URL path.
-For example, 'HIP 12345' should be 'HIP%2012345'.
-Join multiple stars with '&' like so: 'HIP%2012345&2MASS%20J19154511-1623157&HIP%20113044'.
+For example, 'HIP 12345' should be 'HIP%2062875'.
+Join multiple stars with '&' like so: 'HIP%2062875&2MASS%20J19154511-1623157&HIP%20113044'.
 
-GET <a href="/hypatia/api/v2/star/?HIP12345&2MASSJ19154511-1623157&HIP113044">https://hypatiacatalog.com/hypatia/api/v2/star/?HIP12345&2MASSJ19154511-1623157&HIP113044</a>
+GET <a href="/hypatia/api/v2/star/?HIP62875&2MASSJ19154511-1623157&HIP113044">https://hypatiacatalog.com/hypatia/api/v2/star/?HIP62875&2MASSJ19154511-1623157&HIP113044</a>
     or with spaces, the same as above:
-GET <a href="/hypatia/api/v2/star/?HIP%2012345&2MASSJ19154511-1623157&HIP%20113044">https://hypatiacatalog.com/hypatia/api/v2/star/?HIP%2012345&2MASSJ19154511-1623157&HIP%20113044</a>
+GET <a href="/hypatia/api/v2/star/?HIP%2062875&2MASSJ19154511-1623157&HIP%20113044">https://hypatiacatalog.com/hypatia/api/v2/star/?HIP%2062875&2MASSJ19154511-1623157&HIP%20113044</a>
 
 If the SIMBAD star name you want to use in not parseable into a URL safe string,
 see the example below for how to use the 'name' parameter.
@@ -584,9 +584,9 @@ Any star name on SIMBAD can be used.
 Spaces and letter case are ignored star names searches.
 However, if you want to use spaces, substitute '%20' for the space, which is the
 URL safe-version of the plus operator '+' to append the two components in the URL path.
-For example, 'HIP 32970' should be 'HIP%2032970'.
+For example, 'HIP 32970' should be 'HIP%2062875'.
 
-GET <a href="/hypatia/api/v2/composition?name=HIP32970&element=ca&solarnorm=asplund09">https://hypatiacatalog.com/hypatia/api/v2/composition?name=HIP32970&element=ca&solarnorm=asplund09</a>
+GET <a href="/hypatia/api/v2/composition/?name=HIP62875&element=fe&solarnorm=asplund09">https://hypatiacatalog.com/hypatia/api/v2/composition/?name=HIP62875&element=fe&solarnorm=asplund09</a>
 
 
 Python code:
@@ -692,7 +692,7 @@ Result:
       }
     ],
     "match_name": "hip32970",
-    "requested_name": "HIP32970",
+    "requested_name": "HIP62875",
     "requested_element": "ca",
     "requested_solarnorm": "asplund09"
   }
@@ -802,7 +802,7 @@ Result:
 }
 </pre>
 <pre>
-GET <a href="hypatia/api/v2/data?mode=hist">https://hypatiacatalog.com/hypatia/api/v2/data?mode=hist</a>
+GET <a href="hypatia/api/v2/data?mode=hist">https://hypatiacatalog.com/hypatia/api/v2/data/?mode=hist</a>
 
 Python code:
 <mark>import requests
