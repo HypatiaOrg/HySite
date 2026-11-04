@@ -14,7 +14,7 @@ bins_with_toggle = bool(plot_controls.get('toggle')) and plot_controls.get('bins
 bins_shown = (not bins_with_toggle) or bool(session[plot_controls['toggle']])
 }}
 <form method="post" class="form-inline plot-controls" style="margin:-5px 0 20px {{=PLOT_MARGIN_LEFT}}px;font-size:14px;font-weight:normal">
-    {{# the rows are one width (ROW_WIDTH: a label and a control): the toggle's row holds the checkbox at its left and the palette menu at its right, so the menu ends where the bin size boxes below end }}
+    {{# every row is a box of ROW_WIDTH: the toggle's row holds the checkbox at its left and the palette menu at its right, a bin size row its label and then its input to the edge, so the menu and the boxes end together }}
     {{LABEL_WIDTH, CONTROL_WIDTH = 85, 340}}
     {{ROW_WIDTH = LABEL_WIDTH + 8 + CONTROL_WIDTH}}
     {{if plot_controls.get('toggle') or plot_controls.get('palette'):}}
@@ -37,9 +37,11 @@ bins_shown = (not bins_with_toggle) or bool(session[plot_controls['toggle']])
     </div>
     {{pass}}
     {{for key, label in plot_controls['bins']:}}
-    <div class="form-group bin-size" style="display:{{='none' if not bins_shown else 'block'}};margin:0 0 8px 0">
-        <label for="{{=key}}" style="width:{{=LABEL_WIDTH}}px;text-align:left;margin-right:8px">{{=label}}</label>{{# left-aligned: the toggle above starts at the same edge }}
-        <input type="text" id="{{=key}}" name="{{=key}}" class="form-control" style="width:{{=CONTROL_WIDTH}}px" placeholder="{{=bin_hint}}" value="{{=session[key] or ''}}" onchange="refresh()">
+    <div class="form-group bin-size" style="display:{{='none' if not bins_shown else 'flex'}};align-items:center;margin:0 0 8px 0">
+        <div style="display:flex;align-items:center;width:{{=ROW_WIDTH}}px">{{# the row's box: the label, then the input to the box's edge }}
+            <label for="{{=key}}" style="width:{{=LABEL_WIDTH}}px;flex:none;text-align:left;margin-right:8px">{{=label}}</label>
+            <input type="text" id="{{=key}}" name="{{=key}}" class="form-control" style="flex:1;width:auto" placeholder="{{=bin_hint}}" value="{{=session[key] or ''}}" onchange="refresh()">
+        </div>
         <span id="{{=key}}-warning" class="bin-warning text-danger" style="display:none;margin-left:10px"></span>{{# filled by the plot fragment (plot.load) }}
     </div>
     {{pass}}
