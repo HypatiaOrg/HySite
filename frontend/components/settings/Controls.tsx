@@ -2,15 +2,14 @@
 // The small controls the settings forms are made of, in the site's colors
 import React, {useEffect, useLayoutEffect, useRef, useState} from "react";
 
-export const labelStyle = "font-semibold text-hypurple";
-export const inputStyle =
-    "border border-hygrey/50 rounded px-2 py-1 bg-white text-black focus:outline-none focus:border-hypurple focus:ring-1 focus:ring-hypurple";
-// a button: the base, then one of the three states (never two: the later class in the stylesheet would win)
-export const buttonBase = "border rounded px-2 py-1 cursor-pointer";
-export const plainStyle = "border-hygrey/50 bg-white text-black hover:bg-hyblue/30";
-// a picked choice (an axis or filter parameter), and a column that is in the table
-export const pickedStyle = "border-hypurple bg-hypurple text-white";
-export const onStyle = "border-hygreen bg-hygreen text-white";
+// the web2py form's pieces (Bootstrap 3, app/globals.css): bold labels, white boxes, the default button; a picked
+// choice (an axis or filter parameter) is Bootstrap's blue, a column that is in the table its green
+export const labelStyle = "font-bold text-[#333]";
+export const inputStyle = "form-control";
+export const buttonBase = "btn";
+export const plainStyle = "btn-default";
+export const pickedStyle = "btn-primary";
+export const onStyle = "btn-success";
 export const buttonStyle = buttonBase + " " + plainStyle;
 // the classes of a button in a state
 export const buttonClass = (state: "plain" | "picked" | "on", extra = "") =>
@@ -18,33 +17,39 @@ export const buttonClass = (state: "plain" | "picked" | "on", extra = "") =>
 
 export function Label({children, htmlFor}: {children: React.ReactNode; htmlFor?: string}) {
     return (
-        <label htmlFor={htmlFor} className={labelStyle + " block mb-1"}>
+        <label htmlFor={htmlFor} className={labelStyle + " block"}>
             {children}
         </label>
     );
 }
 
+// a checkbox with its label, bold as the web2py form's are (plain for the ones under the plot and the target lists)
 export function Toggle({
     name,
     label,
     checked,
     onChange,
     title,
+    plain = false,
 }: {
     name: string;
     label: React.ReactNode;
     checked: boolean;
     onChange: (on: boolean) => void;
     title?: string;
+    plain?: boolean;
 }) {
     return (
-        <label className="inline-flex items-center gap-2 cursor-pointer text-black" title={title}>
+        <label
+            className={"inline-flex items-center gap-1 cursor-pointer text-[#333]" + (plain ? "" : " font-bold")}
+            title={title}
+        >
             <input
                 type="checkbox"
                 name={name}
                 checked={checked}
                 onChange={(event) => onChange(event.target.checked)}
-                className="accent-hypurple h-4 w-4"
+                className="h-[13px] w-[13px] m-0"
             />
             <span>{label}</span>
         </label>
@@ -190,14 +195,14 @@ export function Popover({
                 aria-expanded={open}
                 aria-haspopup="dialog"
                 aria-label={ariaLabel}
-                className={buttonStyle + " whitespace-nowrap" + (compact ? " max-w-full truncate" : "")}
+                className={buttonStyle + " whitespace-nowrap mr-1" + (compact ? " max-w-full truncate" : "")}
             >
-                {button} <span className="text-hygrey">▾</span>
+                {button} <span className="caret" />
             </button>
             {open && (
                 <div
                     ref={panelRef}
-                    className="absolute z-30 mt-1 left-0 w-max max-w-[calc(100vw-16px)] bg-white border border-hygrey/50 rounded-lg shadow-lg p-3 max-h-[80vh] overflow-auto"
+                    className="dropdown-panel absolute z-30 mt-0.5 left-0 w-max max-w-[calc(100vw-16px)] max-h-[80vh] overflow-auto text-left"
                     role="dialog"
                     aria-label={ariaLabel ?? title}
                     onClick={(event) => {
@@ -212,9 +217,5 @@ export function Popover({
 }
 
 export function Notice({children}: {children: React.ReactNode}) {
-    return (
-        <div className="bg-hyblue/30 border-l-4 border-hypurple rounded-r px-3 py-2 mb-3 text-hypurple text-sm">
-            {children}
-        </div>
-    );
+    return <div className="alert-info max-w-[400px]">{children}</div>;
 }

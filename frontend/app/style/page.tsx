@@ -84,7 +84,10 @@ export default function StylePage() {
             </H1>
             <P>
                 Choices made while porting the pages from web2py (October 2026), for review. Each says where it is
-                changed.
+                changed. <b>November 2026:</b> the pages took the web2py site&apos;s look (its typeface, text, buttons,
+                boxes, menu bar, table and footer; <code>app/globals.css</code> and the components named below), so that
+                a visitor does not notice the change of frontend; only the home page keeps the design these colours were
+                chosen for. The items below record the earlier choices.
             </P>
             {/* the file paths may break anywhere, so a long one does not widen a phone screen */}
             <div className="[&_code]:break-all">

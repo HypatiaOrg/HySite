@@ -164,27 +164,23 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
         density: "Density map",
     }[kind];
     return (
-        <div className="px-4 pb-8">
+        <div className="px-[30px] pb-8">
             {/* the page's heading, for the page's outline; the figure carries the visible title */}
             <h1 className="sr-only">{pageTitle} of the Hypatia Catalog</h1>
-            <div className="flex flex-wrap gap-6 justify-center">
+            {/* the plot at the left, the form beside it 20 pixels on, as the web2py page; the form drops under the
+                plot on a narrow window */}
+            <div className="flex flex-wrap gap-x-5 gap-y-6">
                 <div ref={plotBox} style={{width: PLOT_WIDTH, maxWidth: "100%"}}>
                     <div
                         className={
-                            "relative flex items-center justify-center bg-hygrey/20 transition-opacity " +
+                            "relative flex items-center justify-center bg-[#dddddd] text-xl font-bold transition-opacity " +
                             (loading ? "opacity-50" : "")
                         }
                         style={{height: plotHeight}}
                     >
-                        {error && (
-                            <div className="text-hyred text-xl font-semibold p-4">
-                                The plot could not be loaded: {error}
-                            </div>
-                        )}
-                        {!error && data && !figure && (
-                            <div className="text-xl font-semibold text-hygrey">No data points to display</div>
-                        )}
-                        {!error && !data && <div className="text-xl font-semibold text-hygrey">Loading...</div>}
+                        {error && <div className="p-4">The plot could not be loaded: {error}</div>}
+                        {!error && data && !figure && <div>No data points to display</div>}
+                        {!error && !data && <div>Loading...</div>}
                         {figure && sizedLayout && (
                             <div className="bg-white">
                                 <PlotlyFigure
@@ -207,18 +203,16 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
                         axisTypes={figure?.axisTypes}
                         onChange={change}
                     />
-                    {/* what the plot was made with, beyond its axes */}
-                    <p
-                        className={"text-center text-sm text-hygrey mt-2 " + (loading ? "opacity-50" : "")}
-                        aria-live="polite"
-                    >
+                    {/* what the plot was made with, beyond its axes: read out, not shown, so the page looks as the
+                        web2py page did (the line can be shown again by dropping sr-only) */}
+                    <p className="sr-only" aria-live="polite">
                         {loading ? "Updating: " : "Showing: "}
                         {applied(settings, summary, schema)}
                     </p>
                 </div>
 
                 <form
-                    className="w-[29rem] max-w-full"
+                    className="w-[453px] max-w-full"
                     onSubmit={(event) => {
                         event.preventDefault();
                         forceRefresh();
@@ -248,7 +242,7 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
                         />
                     )}
                     {kind === "hist" && (
-                        <div className="mb-3">
+                        <div className="mb-5">
                             <Toggle
                                 name="normalize"
                                 label="Normalize the histogram"
@@ -262,7 +256,7 @@ export default function PlotPage({kind, schema, summary, initialSettings}: Props
                     <StatisticRow settings={settings} onChange={change} />
                     <CatalogsRow summary={summary} settings={settings} onChange={change} />
                     <StarsRow settings={settings} onChange={change} />
-                    <div className="mb-3">
+                    <div className="mb-5">
                         <Toggle
                             name="gridlines"
                             label="Show gridlines"

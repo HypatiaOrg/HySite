@@ -48,17 +48,13 @@ export default function PeriodicTable({
             data-picks="1"
             title={title}
             onClick={() => onPick(id)}
-            className={buttonClass(
-                selected.has(id) ? onColor : "plain",
-                "px-0 h-6 inline-flex items-center justify-center leading-none " +
-                    (species ? "w-6 text-xs" : "w-9 text-sm"),
-            )}
+            className={buttonClass(selected.has(id) ? onColor : "plain", "btn-xs" + (species ? " !ml-px" : ""))}
         >
             {text}
         </button>
     );
     return (
-        <table className="border-separate border-spacing-x-0.5 border-spacing-y-px table-fixed">
+        <table className="border-separate border-spacing-x-0.5 border-spacing-y-px mx-2.5">
             <tbody>
                 {PERIODS.map((period, row) => (
                     <tr key={row}>
@@ -67,17 +63,12 @@ export default function PeriodicTable({
                             const hasI = available.has(element),
                                 hasII = available.has(element + "_II");
                             return (
-                                <td
-                                    key={column}
-                                    className="w-[3.75rem] whitespace-nowrap text-hygrey text-xs align-top"
-                                >
+                                <td key={column} className="whitespace-nowrap text-[#333] text-sm align-top h-[22px]">
                                     <span className="inline-flex items-center">
                                         {hasI ? (
                                             cell(element, element, names.get(element) ?? element)
                                         ) : (
-                                            <span className="inline-flex w-9 h-6 items-center justify-center text-sm">
-                                                {element}
-                                            </span>
+                                            <span className="inline-block px-[5px] text-sm">{element}</span>
                                         )}
                                         {hasII &&
                                             cell(

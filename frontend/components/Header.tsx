@@ -11,10 +11,7 @@ function MenuLink({href, children}: {href: string; children: React.ReactNode}) {
     return (
         <Suspense
             fallback={
-                <Link
-                    href={href}
-                    className="block px-4 md:px-3 xl:px-4 py-1 md:py-0 mb-1 md:mb-0 border-2 md:border-none border-hyyellow rounded-lg"
-                >
+                <Link href={href} className="block px-[15px] py-[15px] leading-5 text-white">
                     {children}
                 </Link>
             }
@@ -27,12 +24,12 @@ function MenuLink({href, children}: {href: string; children: React.ReactNode}) {
 export default function Header(): ReactElement {
     return (
         <Menu>
-            <MenuLink href="/">Home</MenuLink>
+            {/* no "Home" entry: the site's name at the left is the way home, as on the web2py site */}
             <MenuLink href={scatterURL}>Scatter</MenuLink>
             <MenuLink href={targetsURL}>Target Lists</MenuLink>
             <MenuLink href={densityURL}>Density Map</MenuLink>
             <MenuLink href={histURL}>Histogram</MenuLink>
-            <div className="md:flex md:flex-grow md:justify-end">
+            <div className="md:flex md:flex-grow md:justify-end md:items-center">
                 <MenuLink href={helpURL}>Help</MenuLink>
                 <MenuLink href={aboutURL}>About</MenuLink>
                 <MenuLink href={creditsURL}>Acknowledgements</MenuLink>

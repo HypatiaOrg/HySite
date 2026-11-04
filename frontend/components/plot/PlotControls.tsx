@@ -73,12 +73,12 @@ export default function PlotControls({kind, schema, settings, bins, axisTypes, o
 
     return (
         <form
-            className="plot-controls text-sm"
+            className="plot-controls text-sm max-w-full max-sm:!ml-0"
             style={{marginLeft: PLOT_MARGIN_LEFT, marginTop: -5, marginBottom: 20}}
             onSubmit={(event) => event.preventDefault()}
         >
             {(toggle || kind === "density") && (
-                <div className="flex items-center justify-between mb-2" style={{width: ROW_WIDTH}}>
+                <div className="flex items-center justify-between mb-2 max-w-full" style={{width: ROW_WIDTH}}>
                     {toggle && (
                         <label className="inline-flex items-center gap-2 cursor-pointer">
                             <input
@@ -101,7 +101,7 @@ export default function PlotControls({kind, schema, settings, bins, axisTypes, o
                                 name="color_palette"
                                 value={settings.color_palette}
                                 onChange={(event) => onChange({color_palette: event.target.value})}
-                                className="form-control"
+                                className="form-control form-control-inline"
                             >
                                 {(schema.fields.color_palette?.choices ?? []).map((choice) => (
                                     <option key={choice} value={choice}>
@@ -115,8 +115,12 @@ export default function PlotControls({kind, schema, settings, bins, axisTypes, o
             )}
             {boxes.map(([box, axis, label]) => (
                 <div key={box} className="bin-size items-center mb-2" style={{display: binsShown ? "flex" : "none"}}>
-                    <div className="flex items-center" style={{width: ROW_WIDTH}}>
-                        <label htmlFor={box} className="font-bold mr-2 flex-none" style={{width: LABEL_WIDTH}}>
+                    <div className="flex items-center max-w-full" style={{width: ROW_WIDTH}}>
+                        <label
+                            htmlFor={box}
+                            className="font-bold text-[#333] mr-2 flex-none"
+                            style={{width: LABEL_WIDTH}}
+                        >
                             {label}
                         </label>
                         <TextField

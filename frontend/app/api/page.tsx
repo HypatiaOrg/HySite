@@ -1,5 +1,5 @@
 import type {Metadata} from "next";
-import {Page, H1, Ext, In} from "@/components/Text";
+import {H1, Ext, In} from "@/components/Text";
 import {Callout, Definitions, Entry, Fields, Field, Note, Request, Python, Result, Pre} from "@/components/ApiDocs";
 import {scatterURL, histURL} from "@/lib/urls";
 
@@ -23,7 +23,7 @@ const endpoints = [
 
 export default function ApiPage() {
     return (
-        <Page>
+        <div className="w-[1170px] max-w-full mx-auto px-[15px] pb-16 text-sm leading-5 text-[#333]">
             <H1 id="api">Hypatia Catalog API v2.2.0</H1>
             <Callout kind="info">
                 <b>Data access no longer requires an API Key.</b>
@@ -99,7 +99,7 @@ export default function ApiPage() {
                         When you have Python and the Python-package requests installed, you can put the code snippets
                         below into a Python script or the Python interpreter.
                     </Note>
-                    <p className="bg-hyyellow/30 border border-hyyellow rounded-lg p-3 text-black">
+                    <p className="bg-[#ffffaa] py-0.5 text-black">
                         We&apos;ve highlighted some text in yellow like this; as you go through the documentation,
                         copy-and-paste the commands provided to connect to the Hypatia Catalog API.
                     </p>
@@ -877,6 +877,6 @@ print(entry.json())
                     <Ext href="https://semver.org/">here.</Ext>
                 </Entry>
             </Definitions>
-        </Page>
+        </div>
     );
 }
