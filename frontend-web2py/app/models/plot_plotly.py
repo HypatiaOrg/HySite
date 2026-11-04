@@ -188,18 +188,19 @@ def plotly_bins(bins: dict | None, axis_type: str) -> dict | None:
 LOG_BINS_WARNING = 'Logged bins chosen automatically'
 
 
-def log_bin_warnings(warnings: dict, axes: dict, outputs: dict, show_hist: bool) -> dict:
+def log_bin_warnings(warnings: dict, axes: dict, outputs: dict) -> dict:
     """
-    plotly_bins gives a logarithmic axis Plotly's own bins whatever its bin size box says, so while the
-    histograms are shown the box gets LOG_BINS_WARNING (after any warning it has; controllers/default.py).
-    The axis is logarithmic when the API allowed it (an element or a ratio is in log notation already, so its
-    log toggle changes nothing and brings no warning) and a value is positive, as axis_range decides.
+    plotly_bins gives a logarithmic axis Plotly's own bins whatever its bin size box says, so the box gets
+    LOG_BINS_WARNING (after any warning it has; controllers/default.py). Like the API's warning on the bins,
+    this one is made whether or not the histograms are shown: the page hides the box with them
+    (plot_controls.html). The axis is logarithmic when the API allowed it (an element or a ratio is in log
+    notation already, so its log toggle changes nothing and brings no warning) and a value is positive, as
+    axis_range decides.
     """
-    if show_hist:
-        for box, axis in (('xhist_bin_size', 'xaxis'), ('yhist_bin_size', 'yaxis')):
-            values = [value for value in outputs.get(axis, []) if value is not None]
-            if axes.get(axis, {}).get('log') and any(value > 0 for value in values):
-                warnings[box] = f'{warnings[box]} {LOG_BINS_WARNING}' if box in warnings else LOG_BINS_WARNING
+    for box, axis in (('xhist_bin_size', 'xaxis'), ('yhist_bin_size', 'yaxis')):
+        values = [value for value in outputs.get(axis, []) if value is not None]
+        if axes.get(axis, {}).get('log') and any(value > 0 for value in values):
+            warnings[box] = f'{warnings[box]} {LOG_BINS_WARNING}' if box in warnings else LOG_BINS_WARNING
     return warnings
 
 

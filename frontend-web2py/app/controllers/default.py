@@ -160,7 +160,7 @@ def graph():
                                        zaxisinv=zaxis.get('inverse', False), has_zaxis='zaxis' in axes,
                                        do_gridlines=settings['gridlines'],
                                        bins=graph_data.get('bins'), show_hist=settings['show_scatter_hist'])
-    log_bin_warnings(warnings, axes, outputs, show_hist=settings['show_scatter_hist'])
+    log_bin_warnings(warnings, axes, outputs)
     # send back to the browser
     return dict(div=div, warnings=warnings)
 
@@ -183,7 +183,7 @@ def graph_targets():
                                        xaxisinv=axes['xaxis']['inverse'], yaxisinv=axes['yaxis']['inverse'],
                                        do_gridlines=settings['gridlines'],
                                        bins=graph_data.get('bins'), show_hist=settings['show_targets_hist'])
-    log_bin_warnings(warnings, axes, outputs, show_hist=settings['show_targets_hist'])
+    log_bin_warnings(warnings, axes, outputs)
     return dict(div=div, warnings=warnings)
 
 
